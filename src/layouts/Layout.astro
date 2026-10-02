@@ -1,0 +1,129 @@
+---
+import '../styles/global.css';
+import '../styles/artist.css';
+import { site } from '../data/site.mjs';
+import { usesCart } from '../data/checkout.mjs';
+import Cart from '../components/Cart.astro';
+const {
+  title = 'ギャルインザミックス｜オフィシャルサイト',
+  description = `DJありねぇとDJちゃなのB2B DJユニット、ギャルインザミックス（GYARUINTHEMIX）。${site.artist.genres.map((genre) => genre.label).join('／')}、${site.artist.bpm} BPM。${site.artist.aesthetic}の音楽、出演情報、出演依頼・お問い合わせ。`,
+} = Astro.props;
+const current = Astro.url.pathname;
+const navigation = [
+  ['/about/', 'ふたりのこと'],
+  ['/music/', '音楽'],
+  ['/live/', '出演情報'],
+  ['/news/', 'お知らせ'],
+  ['/fanclub/', 'ファンクラブ'],
+  ['/shop/', 'グッズ'],
+  ['/contact/', '出演依頼・お問い合わせ'],
+];
+---
+
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#ed1689" />
+    <title>{title}</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  </head>
+  <body>
+    <a class="skip" href="#main">本文へ</a>
+    <div class="topline">
+      {site.artist.aesthetic}
+      <span aria-hidden="true">♥</span>
+      {site.artist.bpm} BPMで、ぶちアゲ。
+    </div>
+    <header class="header artist-header">
+      <a class="brand" href="/" aria-label="ギャルインザミックス ホーム"
+        ><img
+          src="/assets/logo-small.webp"
+          width="540"
+          height="180"
+          alt="ギャルインザミックス"
+        /></a
+      >
+      <nav class="desktop-navigation" aria-label="メインナビゲーション">
+        {
+          navigation.map(([href, label]) => (
+            <a
+              href={href}
+              aria-current={current.startsWith(href) ? 'page' : undefined}
+            >
+              {label}
+            </a>
+          ))
+        }
+      </nav>
+      {
+        usesCart && (
+          <button
+            class="cart-trigger"
+            data-open-cart
+            aria-haspopup="dialog"
+            aria-controls="cart-dialog"
+          >
+            バッグ <span data-cart-count>0</span>
+          </button>
+        )
+      }
+      <details class="mobile-menu">
+        <summary aria-label="メニューを開閉"
+          ><span aria-hidden="true">☰</span> メニュー</summary
+        >
+        <nav aria-label="モバイルナビゲーション">
+          <a href="/" aria-current={current === '/' ? 'page' : undefined}
+            >ホーム</a
+          >{
+            navigation.map(([href, label]) => (
+              <a
+                href={href}
+                aria-current={current.startsWith(href) ? 'page' : undefined}
+              >
+                {label}
+                <span aria-hidden="true">↗</span>
+              </a>
+            ))
+          }
+        </nav>
+      </details>
+    </header>
+    <main id="main"><slot /></main>
+    <footer class="footer">
+      <a href="/" class="footer-logo"
+        ><img
+          src="/assets/logo-small.webp"
+          width="540"
+          height="180"
+          loading="lazy"
+          alt="ギャルインザミックス"
+        /></a
+      >
+      <div>
+        <p>かわいく、強く、うちららしく。</p><nav
+          aria-label="フッターナビゲーション"
+        >
+          {navigation.map(([href, label]) => <a href={href}>{label}</a>)}<a
+            href="/legal/">特定商取引法に基づく表記</a
+          ><a href="/privacy/">プライバシー</a>
+        </nav>
+        {
+          (site.socials.length > 0 || site.bookingUrl) && (
+            <nav class="social-links" aria-label="公式リンク">
+              {site.socials.map((link) => (
+                <a href={link.url} rel="noopener noreferrer">
+                  {link.label} ↗
+                </a>
+              ))}
+            </nav>
+          )
+        }
+      </div>
+      <small>© {new Date().getFullYear()} ギャルインザミックス</small>
+    </footer>
+    {usesCart && <Cart />}
+  </body>
+</html>

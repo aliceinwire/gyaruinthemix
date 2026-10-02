@@ -1,0 +1,9 @@
+[Unit]
+Description=Update only the GYARUINTHEMIX website images
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/bouncer
+ExecStart=/usr/bin/python3 %h/bouncer/gyaruinthemix/deploy/bouncer/update.py --directory %h/bouncer
+TimeoutStartSec=15min
+UMask=0077

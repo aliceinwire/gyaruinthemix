@@ -1,0 +1,37 @@
+---
+import { site } from '../data/site.mjs';
+---
+
+<ol class="track-list">
+  {
+    site.tracks.map((track, i) => (
+      <li>
+        <span class="track-index" aria-hidden="true">
+          {String(i + 1).padStart(2, '0')}
+        </span>
+        <div>
+          <>
+            <h3>{track.title}</h3>
+            <span class="track-meta">
+              {track.url ? '楽曲リンク' : '配信情報は準備中'}
+            </span>
+          </>
+        </div>
+        {track.url ? (
+          <a
+            class="track-play"
+            href={track.url}
+            rel="noopener noreferrer"
+            aria-label={`${track.title}：${track.linkLabel}`}
+          >
+            ↗
+          </a>
+        ) : (
+          <span class="track-symbol" aria-hidden="true">
+            ♡
+          </span>
+        )}
+      </li>
+    ))
+  }
+</ol>

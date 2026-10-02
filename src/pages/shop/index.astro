@@ -1,0 +1,52 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Product from '../../components/Product.astro';
+import { products, usesCart, paymentLinks } from '../../data/checkout.mjs';
+const linksOpen = !usesCart && products.some((product) => product.checkoutUrl);
+---
+
+<Layout title="グッズ｜ギャルインザミックス">
+  <section class="section shop-section">
+    <div class="shop-heading">
+      <p class="eyebrow">ギャルインザミックス オフィシャルグッズ</p><h1>
+        好き、を連れてこ。<span>♡</span>
+      </h1><p>バッグにも、フロアにも。うちらのグッズ。</p>
+    </div><p id="catalog-status" class="notice" role="status">
+      {
+        linksOpen
+          ? paymentLinks.mode === 'test'
+            ? 'テストショップです。実際の購入・発送はありません。'
+            : '商品・セットごとに、Stripeの決済ページでご購入いただけます。表示価格は税込です。'
+          : 'ただいま販売準備中。商品仕様・価格・発売日は、決まり次第ご案内します。'
+      }
+    </p>{
+      usesCart && (
+        <noscript>
+          <p class="notice">お買い物にはJavaScriptを有効にしてください。</p>
+        </noscript>
+      )
+    }<div class="product-grid">
+      {
+        products.map((product, index) => (
+          <Product product={product} index={index} />
+        ))
+      }
+    </div><p class="collection-note">
+      画像はデザイン参考です。商品写真と詳細は販売開始までに掲載します。
+    </p><div class="shop-info">
+      <div>
+        <b>お届けについて</b><p>
+          {
+            linksOpen
+              ? 'お届け先は日本国内のみです。送料は決済ページで、発送時期は特定商取引法に基づく表記でご確認ください。'
+              : '日本国内への発送を予定しています。送料・発送時期は販売開始時にご案内します。'
+          }
+        </p>
+      </div><div>
+        <b>お支払いについて</b><p>
+          お支払いはStripeの決済ページで。クレジットカード情報を当サイトに入力することはありません。
+        </p>
+      </div>
+    </div>
+  </section>
+</Layout>

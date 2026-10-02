@@ -1,0 +1,47 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { site } from '../data/site.mjs';
+import SoundIdentity from '../components/SoundIdentity.astro';
+---
+
+<Layout title="ふたりのこと｜ギャルインザミックス"
+  ><section class="about">
+    <div class="about-image">
+      <picture
+        ><source type="image/avif" srcset="/assets/artists.avif" /><img
+          src="/assets/artists.webp"
+          width="900"
+          height="1200"
+          alt="DJありねぇとDJちゃな"
+        /></picture
+      >
+    </div><div class="about-copy">
+      <p class="eyebrow">{site.artist.aesthetic}のDJユニット</p><h1>
+        ふたりで、<br /><em>もっと強く。</em>
+      </h1><p>
+        ギャルインザミックス（GYARUINTHEMIX）は、DJありねぇとDJちゃなによるB2B
+        DJユニット。
+      </p>
+      <SoundIdentity /><p>
+        {site.artist.genres.map((genre) => genre.label).join('と')}。
+        {site.artist.bpm} BPMで、フロアをぶちアゲ。跳ねるビートにラップを乗せて、平成ギャルのテンションをそのまま音に。
+      </p><p>
+        盛り髪も、ピンクも、ヒョウ柄も。好きなものは、好きなだけ盛る。かわいさも強さも譲らん、うちらのスタイル。
+      </p><div class="profile-members">
+        {
+          site.socials.slice(1).map((link) => (
+            <a href={link.url} rel="noopener noreferrer">
+              {link.label} ↗
+            </a>
+          ))
+        }
+      </div><a class="button" href="/music/">うちらの音楽 ↗</a>{
+        site.bookingUrl && (
+          <p class="booking-link">
+            <a href="/contact/">出演依頼・お問い合わせ ↗</a>
+          </p>
+        )
+      }
+    </div>
+  </section></Layout
+>

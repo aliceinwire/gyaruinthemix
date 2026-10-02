@@ -1,0 +1,53 @@
+---
+import Layout from '../layouts/Layout.astro';
+import SoundIdentity from '../components/SoundIdentity.astro';
+import { site } from '../data/site.mjs';
+---
+
+<Layout title="出演依頼・お問い合わせ｜ギャルインザミックス">
+  <section class="page-heading">
+    <p class="eyebrow">GYARUINTHEMIX / DJありねぇ ＋ DJちゃな</p>
+    <h1>出演依頼・<em>お問い合わせ</em></h1>
+    <p>ギャルインザミックスは、ふたりでプレイするB2B DJユニットです。</p>
+    <SoundIdentity />
+  </section>
+  <section class="section contact-section">
+    <h2>公式InstagramのDMへ</h2>
+    <p>
+      DJ出演・取材のご相談、サイトに関するお問い合わせは、ギャルインザミックスの公式Instagramへお送りください。
+    </p>
+    <a class="button" href={site.bookingUrl} rel="noopener noreferrer">
+      公式Instagramでお問い合わせ ↗
+    </a>
+    <p class="collection-note">
+      @gyaruinthemix
+      のプロフィールからDMをお送りください。Instagramへのログインが必要な場合があります。
+    </p>
+    <div class="contact-details">
+      <h2>出演をご相談いただくときは</h2>
+      <p>わかる範囲で、以下の内容をお知らせください。</p>
+      <ul>
+        <li>開催日・出演時間</li>
+        <li>会場名・開催地</li>
+        <li>イベントや企画の内容</li>
+        <li>出演条件・ご予算</li>
+        <li>主催者・ご担当者名</li>
+      </ul>
+    </div>
+    <div class="contact-details">
+      <h2>ふたりのInstagram</h2>
+      <div class="profile-members">
+        {
+          site.socials.slice(1).map((link) => (
+            <a href={link.url} rel="noopener noreferrer">
+              {link.label} ↗
+            </a>
+          ))
+        }
+      </div>
+      <p class="collection-note">
+        ユニットへの出演依頼は、上記の公式アカウントへお願いします。
+      </p>
+    </div>
+  </section>
+</Layout>

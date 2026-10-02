@@ -1,0 +1,172 @@
+# Install as ~/bouncer/docker-compose.yml; retain the existing Compose project name.
+services:
+  proxy:
+    build: ./proxy
+    restart: always
+    ports:
+      - 80:80
+      - 443:443
+    labels:
+      com.github.jrcs.letsencrypt_nginx_proxy_companion.nginx_proxy: 'true'
+    volumes:
+      - certs:/etc/nginx/certs:ro
+      - vhost.d:/etc/nginx/vhost.d
+      - html:/usr/share/nginx/html
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+    networks:
+      - proxy-tier
+
+  letsencrypt-companion:
+    image: jrcs/letsencrypt-nginx-proxy-companion
+    restart: always
+    volumes:
+      - certs:/etc/nginx/certs
+      - vhost.d:/etc/nginx/vhost.d
+      - html:/usr/share/nginx/html
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - proxy-tier
+    depends_on:
+      - proxy
+
+  # Logs folder: znc-data/users/durarara/networks/
+  znc:
+    build: ./znc-docker/full/
+    container_name: znc
+    ports:
+      - 8081:8081
+      - 33313:33313
+    environment:
+      - domain=znc.alicef.me
+      - VIRTUAL_HOST=znc.alicef.me
+      - LETSENCRYPT_HOST=znc.alicef.me
+      - LETSENCRYPT_EMAIL=alicef@alicef.me
+    volumes:
+      - ./znc-data:/znc-data
+      - certs:/etc/nginx/certs:ro
+    restart: always
+
+  limnoria:
+    image: ghcr.io/linuxserver/limnoria
+    container_name: limnoria
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Asia/Tokyo
+    volumes:
+      - ./bot_config:/config
+    ports:
+      - 8080:8080
+    restart: unless-stopped
+
+  # Website services. Existing services above are unchanged.
+  gyaruinthemix-web:
+    image: ${GYARUINTHEMIX_WEB_IMAGE:-ghcr.io/aliceinwire/gyaruinthemix-web:main}
+    build:
+      context: ./gyaruinthemix
+      dockerfile: Dockerfile.web
+      labels:
+        org.opencontainers.image.source: https://github.com/aliceinwire/gyaruinthemix
+        org.opencontainers.image.revision: ${GYARUINTHEMIX_REVISION:-local}
+        io.gyaruinthemix.checkout-mode: ${CHECKOUT_MODE:-payment_links}
+      args:
+        CHECKOUT_MODE: ${CHECKOUT_MODE:-payment_links}
+    restart: unless-stopped
+    read_only: true
+    user: '101:101'
+    cap_drop: [ALL]
+    security_opt: ['no-new-privileges:true']
+    tmpfs:
+      - /tmp:size=16m,mode=1777,noexec,nosuid,nodev
+    mem_limit: ${GYARUINTHEMIX_WEB_MEMORY_LIMIT:-64m}
+    cpus: '0.50'
+    pids_limit: 50
+    expose: ['8080']
+    environment:
+      VIRTUAL_HOST: ${STORE_DOMAIN:?Set STORE_DOMAIN in bouncer/.env}
+      VIRTUAL_PORT: '8080'
+      VIRTUAL_PROTO: http
+      LETSENCRYPT_HOST: ${STORE_DOMAIN:?Set STORE_DOMAIN in bouncer/.env}
+      LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL:-alicef@alicef.me}
+      HTTPS_METHOD: redirect
+      ENABLE_HTTP_ON_MISSING_CERT: 'false'
+    networks:
+      - proxy-tier
+      - gyaruinthemix
+    logging:
+      driver: json-file
+      options:
+        max-size: '5m'
+        max-file: '3'
+
+  gyaruinthemix-api:
+    profiles: [checkout-api]
+    image: ${GYARUINTHEMIX_API_IMAGE:-ghcr.io/aliceinwire/gyaruinthemix-api:main}
+    build:
+      context: ./gyaruinthemix
+      dockerfile: Dockerfile.api
+      labels:
+        org.opencontainers.image.source: https://github.com/aliceinwire/gyaruinthemix
+        org.opencontainers.image.revision: ${GYARUINTHEMIX_REVISION:-local}
+    restart: unless-stopped
+    init: true
+    read_only: true
+    user: '10001:10001'
+    cap_drop: [ALL]
+    security_opt: ['no-new-privileges:true']
+    tmpfs:
+      - /tmp:size=8m,mode=1777,noexec,nosuid,nodev
+    mem_limit: ${GYARUINTHEMIX_API_MEMORY_LIMIT:-192m}
+    cpus: '0.75'
+    pids_limit: 60
+    stop_grace_period: 20s
+    expose: ['3000']
+    networks:
+      gyaruinthemix:
+        # The static web image resolves this name on the website-only network.
+        aliases: [api]
+    volumes:
+      - gyaruinthemix_webhook_state:/app/state
+    secrets:
+      - source: gyaruinthemix_stripe_secret_key
+        target: stripe_secret_key
+      - source: gyaruinthemix_stripe_webhook_secret
+        target: stripe_webhook_secret
+    environment:
+      NODE_ENV: production
+      SITE_URL: https://${STORE_DOMAIN:?Set STORE_DOMAIN in bouncer/.env}
+      STRIPE_MODE: ${STRIPE_MODE:-test}
+      SALES_ENABLED: ${SALES_ENABLED:-false}
+      STORE_DETAILS_REVIEWED: ${STORE_DETAILS_REVIEWED:-false}
+      LIVE_MODE_ACK: ${LIVE_MODE_ACK:-}
+      STATE_DIR: /app/state
+      STRIPE_SECRET_KEY_FILE: /run/secrets/stripe_secret_key
+      STRIPE_WEBHOOK_SECRET_FILE: /run/secrets/stripe_webhook_secret
+      STRIPE_PRICE_STICKER: ${STRIPE_PRICE_STICKER:-}
+      STRIPE_PRICE_TOWEL: ${STRIPE_PRICE_TOWEL:-}
+      STRIPE_PRICE_KEYCHAIN: ${STRIPE_PRICE_KEYCHAIN:-}
+      STRIPE_PRICE_TSHIRT: ${STRIPE_PRICE_TSHIRT:-}
+      STRIPE_SHIPPING_RATE_JP: ${STRIPE_SHIPPING_RATE_JP:-}
+    logging:
+      driver: json-file
+      options:
+        max-size: '5m'
+        max-file: '3'
+
+volumes:
+  certs:
+  vhost.d:
+  html:
+  gyaruinthemix_webhook_state:
+
+networks:
+  proxy-tier:
+    name: nginx-proxy
+  gyaruinthemix:
+    driver: bridge
+
+secrets:
+  gyaruinthemix_stripe_secret_key:
+    file: ./gyaruinthemix/secrets/stripe_secret_key
+  gyaruinthemix_stripe_webhook_secret:
+    file: ./gyaruinthemix/secrets/stripe_webhook_secret

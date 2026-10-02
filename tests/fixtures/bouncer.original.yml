@@ -1,0 +1,68 @@
+services:
+  proxy:
+    build: ./proxy
+    restart: always
+    ports:
+      - 80:80
+      - 443:443
+    labels:
+      com.github.jrcs.letsencrypt_nginx_proxy_companion.nginx_proxy: 'true'
+    volumes:
+      - certs:/etc/nginx/certs:ro
+      - vhost.d:/etc/nginx/vhost.d
+      - html:/usr/share/nginx/html
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+    networks:
+      - proxy-tier
+
+  letsencrypt-companion:
+    image: jrcs/letsencrypt-nginx-proxy-companion
+    restart: always
+    volumes:
+      - certs:/etc/nginx/certs
+      - vhost.d:/etc/nginx/vhost.d
+      - html:/usr/share/nginx/html
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - proxy-tier
+    depends_on:
+      - proxy
+
+  # Logs folder: znc-data/users/durarara/networks/
+  znc:
+    build: ./znc-docker/full/
+    container_name: znc
+    ports:
+      - 8081:8081
+      - 33313:33313
+    environment:
+      - domain=znc.alicef.me
+      - VIRTUAL_HOST=znc.alicef.me
+      - LETSENCRYPT_HOST=znc.alicef.me
+      - LETSENCRYPT_EMAIL=alicef@alicef.me
+    volumes:
+      - ./znc-data:/znc-data
+      - certs:/etc/nginx/certs:ro
+    restart: always
+
+  limnoria:
+    image: ghcr.io/linuxserver/limnoria
+    container_name: limnoria
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Asia/Tokyo
+    volumes:
+      - ./bot_config:/config
+    ports:
+      - 8080:8080
+    restart: unless-stopped
+
+volumes:
+  certs:
+  vhost.d:
+  html:
+
+networks:
+  proxy-tier:
+    name: nginx-proxy

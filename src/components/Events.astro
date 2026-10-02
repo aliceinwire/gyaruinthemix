@@ -1,0 +1,90 @@
+---
+import { site } from '../data/site.mjs';
+import { selectEvents } from '../data/events.mjs';
+const { category, period = 'upcoming', now, today } = Astro.props;
+const visibleItems = new Set(
+  selectEvents(site.events, { category, period, now, today }),
+);
+// Keep other dates in the document, hidden, so the browser can update an older
+// static build without a request, a rebuild, or inserting untrusted markup.
+const items = site.events
+  .filter((event) => !category || event.category === category)
+  .filter((event) =>
+    period === 'cancelled' ? event.cancelled : !event.cancelled,
+  )
+  .sort((a, b) =>
+    period === 'past'
+      ? b.date.localeCompare(a.date)
+      : a.date.localeCompare(b.date),
+  );
+---
+
+<div data-event-period={period}>
+  <div class="event-list" data-event-rows hidden={!visibleItems.size}>
+    {
+      items.map((event) => (
+        <article
+          class:list={['event-row', { 'event-cancelled': event.cancelled }]}
+          data-event-row
+          data-event-date={event.date}
+          data-event-end-date={event.endDate}
+          data-event-end-at={event.endAt}
+          data-event-cancelled={String(event.cancelled)}
+          hidden={!visibleItems.has(event)}
+        >
+          <time datetime={event.date}>{event.date.replaceAll('-', '.')}</time>
+          <div>
+            <span class="availability">
+              {event.category === 'live' ? 'DJ出演' : 'メディア'}
+              {event.cancelled
+                ? '・出演取りやめ'
+                : period === 'past'
+                  ? '・過去の出演'
+                  : ''}
+            </span>
+            <h3>{event.title}</h3>
+            {(event.venue || event.timeLabel) && (
+              <p>
+                {[event.venue, event.timeLabel].filter(Boolean).join(' ／ ')}
+              </p>
+            )}
+            {event.note && <p>{event.note}</p>}
+          </div>
+          {event.url && !event.cancelled && (
+            <a class="text-link" href={event.url} rel="noopener noreferrer">
+              {event.linkLabel || '詳細'} ↗
+            </a>
+          )}
+        </article>
+      ))
+    }
+  </div>
+  <div class="schedule-empty" data-event-empty hidden={visibleItems.size > 0}>
+    <span aria-hidden="true">✦</span>
+    <div>
+      <h3>
+        {
+          period === 'past'
+            ? 'これまでの出演'
+            : category === 'media'
+              ? 'メディア出演のお知らせ'
+              : '次に会える場所は、ここで。'
+        }
+      </h3>
+      <p>
+        {
+          period === 'past'
+            ? '過去の出演記録は、こちらに掲載します。'
+            : category === 'media'
+              ? '番組・掲載情報は、詳細が整い次第ご案内します。'
+              : '出演スケジュールは、詳細が整い次第ご案内します。'
+        }
+      </p>
+    </div>
+  </div>
+</div>
+
+<script>
+  import { startEventRefresh } from '../scripts/events.mjs';
+  startEventRefresh();
+</script>

@@ -1,0 +1,8 @@
+Dockerfile*
+node_modules
+dist
+public/assets
+assets
+package-lock.json
+secrets
+.env

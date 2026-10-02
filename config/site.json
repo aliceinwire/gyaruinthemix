@@ -1,0 +1,162 @@
+{
+  "artist": {
+    "genres": [
+      {
+        "name": "hard bounce",
+        "label": "ハードバウンス"
+      },
+      {
+        "name": "bounce rap",
+        "label": "バウンスラップ"
+      }
+    ],
+    "bpm": 175,
+    "aesthetic": "平成ギャル"
+  },
+  "socials": [
+    {
+      "label": "公式Instagram｜ギャルインザミックス",
+      "url": "https://www.instagram.com/gyaruinthemix/"
+    },
+    {
+      "label": "Instagram｜DJありねぇ",
+      "url": "https://www.instagram.com/arisu_gyaru/"
+    },
+    {
+      "label": "Instagram｜DJちゃな",
+      "url": "https://www.instagram.com/_sana.0403/"
+    }
+  ],
+  "bookingUrl": "https://www.instagram.com/gyaruinthemix/",
+  "fanClub": {
+    "registrationOpen": false,
+    "joinUrl": "",
+    "joinLabel": "入会案内を見る",
+    "membershipNote": "入会方法・会費・活動内容は、受付開始時にご案内します。"
+  },
+  "tracks": [
+    {
+      "title": "おーりとーりギャル",
+      "url": "",
+      "linkLabel": "聴く"
+    },
+    {
+      "title": "Floors Become Mandatory",
+      "url": "",
+      "linkLabel": "聴く"
+    },
+    {
+      "title": "フラッシュで残せ",
+      "url": "",
+      "linkLabel": "聴く"
+    },
+    {
+      "title": "盆踊りギャル",
+      "url": "",
+      "linkLabel": "聴く"
+    }
+  ],
+  "events": [
+    {
+      "published": true,
+      "category": "live",
+      "date": "2026-08-09",
+      "title": "渋谷 ruby room",
+      "venue": "渋谷 ruby room",
+      "timeLabel": "18:30〜19:00",
+      "note": "",
+      "url": "",
+      "cancelled": false
+    },
+    {
+      "published": true,
+      "category": "live",
+      "date": "2026-08-22",
+      "title": "pink drip",
+      "venue": "新宿 casablanca",
+      "timeLabel": "",
+      "note": "",
+      "url": "",
+      "cancelled": false
+    },
+    {
+      "published": true,
+      "category": "live",
+      "date": "2026-09-25",
+      "title": "AKIS SQUARE",
+      "venue": "VEK TOKYO",
+      "timeLabel": "3:20〜4:00",
+      "note": "",
+      "url": "",
+      "cancelled": false
+    },
+    {
+      "published": true,
+      "category": "media",
+      "date": "2026-09-30",
+      "title": "アキナのギャルしか勝たん",
+      "venue": "MBS毎日放送（関西）",
+      "timeLabel": "1:59〜2:29（9月29日深夜25:59〜26:29）",
+      "note": "日本時間の放送日時です。ABEMAのエピソードページは下記リンクからご確認ください。",
+      "url": "https://abema.tv/video/episode/604-1_s1_p243",
+      "cancelled": false,
+      "startAt": "2026-09-30T01:59:00+09:00",
+      "endAt": "2026-09-30T02:29:00+09:00",
+      "linkLabel": "ABEMAのエピソードページ"
+    },
+    {
+      "published": true,
+      "category": "live",
+      "date": "2026-10-03",
+      "title": "10月3日のDJ出演取りやめについて",
+      "venue": "",
+      "timeLabel": "",
+      "note": "10月3日に予定していたギャルインザミックスのDJ出演はなくなりました。",
+      "url": "",
+      "cancelled": true
+    }
+  ],
+  "news": [
+    {
+      "category": "出演情報",
+      "title": "MBS番組出演・ABEMAのエピソードページと、10月3日の出演変更について。",
+      "text": "9月25日はVEK TOKYO「AKIS SQUARE」に出演。MBS毎日放送（関西）「アキナのギャルしか勝たん」の放送は9月30日1:59〜2:29（9月29日深夜25:59〜26:29）でした。ABEMAのエピソードページは出演情報に掲載しています。10月3日に予定していたDJ出演はなくなりました。",
+      "url": "/live/",
+      "date": "2026-10-02"
+    },
+    {
+      "category": "グッズ",
+      "title": "オフィシャルグッズ、ただいま準備中。",
+      "text": "ロゴステッカー、フェイスタオル、アクリルキーホルダー。商品仕様・価格・発売日は、決まり次第ご案内します。",
+      "url": "/shop/",
+      "date": ""
+    },
+    {
+      "category": "ファンクラブ",
+      "title": "フロアの外でも、うちらと一緒に。",
+      "text": "ファンクラブの受付は準備中。ひと足先に、ふたりのフォトページを公開しています。",
+      "url": "/fanclub/",
+      "date": ""
+    }
+  ],
+  "photos": [
+    {
+      "image": "/assets/artists.webp",
+      "alt": "手書きの名前を添えた、DJありねぇとDJちゃなのツーショット",
+      "caption": "うちら、ギャルインザミックス。",
+      "tag": "ふたりのこと"
+    },
+    {
+      "image": "/assets/live.webp",
+      "alt": "ピンクの照明に包まれたDJブースのふたり",
+      "caption": "やっぱり、フロアが好き。",
+      "tag": "フロアから"
+    },
+    {
+      "image": "/assets/portrait.webp",
+      "alt": "ピンクの衣装で寄り添うDJありねぇとDJちゃな",
+      "caption": "ピンクも、盛り髪も、全力。",
+      "tag": "うちらのスタイル"
+    }
+  ]
+}

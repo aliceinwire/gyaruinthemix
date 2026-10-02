@@ -1,0 +1,16 @@
+**
+!package.json
+!package-lock.json
+!astro.config.mjs
+!api/**
+!config/**
+!src/**
+!public/favicon.svg
+!public/leopard.svg
+!assets/originals/**
+!scripts/images.mjs
+!deploy/nginx.conf
+!deploy/nginx-api.conf
+!deploy/nginx-payment-links.conf
+!deploy/security-headers.conf
+!deploy/api-healthcheck.mjs

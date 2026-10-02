@@ -1,0 +1,12 @@
+{
+  "seller": null,
+  "representative": null,
+  "address": null,
+  "phone": null,
+  "email": null,
+  "shippingTiming": null,
+  "shippingCosts": null,
+  "paymentTiming": null,
+  "returns": null,
+  "privacyContact": null
+}

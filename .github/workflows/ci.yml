@@ -1,0 +1,151 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  ASTRO_TELEMETRY_DISABLED: '1'
+
+jobs:
+  source:
+    name: Tests, lint and static build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run lint
+      - name: Check shell syntax
+        run: |
+          for script in scripts/*.sh; do bash -n "$script"; done
+      - run: npm test
+      - run: npm run test:deployment
+      - run: npm run build
+
+  secrets:
+    name: Secret scanning
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out complete history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Set up Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Install pinned Gitleaks with SHA-256 verification
+        run: |
+          bash scripts/install-gitleaks.sh "$RUNNER_TEMP/gyaru-security-tools"
+          echo "$RUNNER_TEMP/gyaru-security-tools" >> "$GITHUB_PATH"
+      - name: Verify detection and redaction with synthetic fixtures
+        run: npm run test:secret-scan
+      - name: Scan full fetched history (redacted output)
+        run: npm run security:scan
+
+  containers:
+    name: Bouncer containers (${{ matrix.mode }})
+    needs: [source, secrets]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [payment_links, api]
+    env:
+      COMPOSE_PROJECT_NAME: gyaruinthemix-ci-${{ github.run_id }}-${{ github.run_attempt }}
+      IMAGE_TAG: ci-${{ matrix.mode }}-${{ github.run_id }}-${{ github.run_attempt }}
+      CHECKOUT_MODE: ${{ matrix.mode }}
+      GYARUINTHEMIX_REVISION: ${{ github.sha }}
+      CI_PAYMENT_LINK_FIXTURE: 'true'
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Configure offline fixtures on this disposable runner
+        run: node scripts/ci-fixtures.mjs
+      - name: Build, start, check and restart only bouncer website services
+        run: node scripts/ci-bouncer.mjs
+
+  publish:
+    name: Publish tested main images
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'aliceinwire/gyaruinthemix'
+    needs: [source, secrets, containers]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    env:
+      COMPOSE_PROJECT_NAME: gyaruinthemix-ci-${{ github.run_id }}-${{ github.run_attempt }}
+      GYARUINTHEMIX_REVISION: ${{ github.sha }}
+      CI_PAYMENT_LINK_FIXTURE: 'false'
+    steps:
+      - name: Check out the exact passing main commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      # These are real release sources, never the synthetic Payment Link fixture.
+      - name: Build and smoke-test the actual static release image
+        env:
+          CHECKOUT_MODE: payment_links
+          IMAGE_TAG: release-links-${{ github.sha }}
+        run: node scripts/ci-bouncer.mjs
+      - name: Create only offline API secret fixtures
+        env:
+          CHECKOUT_MODE: api
+        run: node scripts/ci-fixtures.mjs
+      - name: Build and smoke-test the actual optional API release images
+        env:
+          CHECKOUT_MODE: api
+          IMAGE_TAG: release-api-${{ github.sha }}
+        run: node scripts/ci-bouncer.mjs
+      - name: Check this commit is still main before moving release tags
+        id: current
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          current=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq .object.sha)
+          if [ "$current" = "$GITHUB_SHA" ]; then
+            echo 'publish=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'A newer main commit exists; leaving release tags unchanged.'
+          fi
+      - name: Publish the exact tested images
+        if: steps.current.outputs.publish == 'true'
+        env:
+          GHCR_TOKEN: ${{ github.token }}
+        run: bash scripts/publish-images.sh

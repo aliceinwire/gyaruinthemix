@@ -1,0 +1,36 @@
+---
+import Layout from '../layouts/Layout.astro';
+import TrackList from '../components/TrackList.astro';
+import { site } from '../data/site.mjs';
+import SoundIdentity from '../components/SoundIdentity.astro';
+---
+
+<Layout title="音楽｜ギャルインザミックス">
+  <section class="page-heading dark-heading">
+    <p class="eyebrow">{site.artist.aesthetic}、音まで全開。</p><h1>
+      跳ねて、<em>ぶちアゲ。</em>
+    </h1><SoundIdentity /><p>
+      跳ねるビート。うちらのラップ。DJありねぇとDJちゃなの音、ここに集合。
+    </p>
+  </section>
+  <section class="section music-layout">
+    <div class="music-portrait">
+      <img
+        src="/assets/live.webp"
+        width="900"
+        height="1200"
+        alt="DJブースでプレイするギャルインザミックス"
+      /><span>ふたりの音。うちらのスタイル。</span>
+    </div><div>
+      <p class="eyebrow">うちらの楽曲</p><h2>
+        ギャルマインド、鳴らしてこ。
+      </h2><TrackList />{
+        !site.tracks.some((track) => track.url) && (
+          <p class="collection-note">
+            試聴・配信リンクは、公開の準備ができ次第ご案内します。
+          </p>
+        )
+      }<a class="button" href="/live/">出演情報を見る ↗</a>
+    </div>
+  </section>
+</Layout>

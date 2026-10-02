@@ -1,0 +1,65 @@
+---
+import { site } from '../data/site.mjs';
+---
+
+<div class="scrapbook">
+  {
+    site.photos.map((photo, i) => (
+      <figure class={`snapshot snapshot-${i}`}>
+        <button
+          class="photo-open"
+          data-photo={photo.image}
+          data-caption={photo.caption}
+          aria-label={`${photo.caption} 写真を大きく見る`}
+          aria-haspopup="dialog"
+          aria-controls="photo-dialog"
+        >
+          <img
+            src={photo.image}
+            alt={photo.alt}
+            width="900"
+            height="1200"
+            loading="lazy"
+          />
+          <span class="photo-zoom" aria-hidden="true">
+            ＋
+          </span>
+        </button>
+        <figcaption>
+          <>
+            <span>{photo.tag}</span>
+            <strong>{photo.caption}</strong>
+          </>
+        </figcaption>
+      </figure>
+    ))
+  }
+</div>
+<dialog class="photo-dialog" id="photo-dialog" aria-labelledby="photo-caption">
+  <button class="icon-button" data-photo-close aria-label="写真を閉じる"
+    >×</button
+  >
+  <img id="photo-full" alt="" width="900" height="1200" />
+  <p id="photo-caption"></p>
+</dialog>
+<script>
+  const dialog = document.querySelector<HTMLDialogElement>('#photo-dialog')!;
+  const full = document.querySelector<HTMLImageElement>('#photo-full')!;
+  const caption = document.querySelector('#photo-caption')!;
+  let opener: HTMLButtonElement | undefined;
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-photo]')
+    .forEach((button) => {
+      button.addEventListener('click', () => {
+        opener = button;
+        full.src = button.dataset.photo!;
+        full.alt = button.querySelector('img')!.alt;
+        caption.textContent = button.dataset.caption!;
+        dialog.showModal();
+      });
+    });
+  document
+    .querySelector('[data-photo-close]')!
+    .addEventListener('click', () => dialog.close());
+  dialog.addEventListener('close', () => opener?.focus());
+</script>

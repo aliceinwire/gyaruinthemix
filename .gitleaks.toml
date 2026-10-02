@@ -1,0 +1,15 @@
+title = "GYARUINTHEMIX secret protection"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "stripe-server-credential"
+description = "Stripe secret/restricted API keys and webhook signing secrets (test and live)"
+regex = '''\b((?:sk|rk)_(?:test|live)_[A-Za-z0-9]{16,}|whsec_[A-Za-z0-9]{16,})\b'''
+secretGroup = 1
+keywords = ["sk_", "rk_", "whsec_"]
+
+[[allowlists]]
+description = "Exact nonfunctional offline fixtures, including historical fixtures; never whole test files"
+regexes = ['''^(?:(?:sk|rk)_(?:test|live)_UNITTESTONLY|(?:sk|rk)_test_(?:FIXTUREONLY|CIPlaceholderNotARealKey)|whsec_(?:UNITTESTONLY|FIXTUREONLY|CIPlaceholderNotARealSecret))$''']

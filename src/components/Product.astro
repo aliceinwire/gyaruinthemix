@@ -1,0 +1,64 @@
+---
+import { usesCart } from '../data/checkout.mjs';
+import { money } from '../scripts/cart.mjs';
+const { product, index = 0 } = Astro.props;
+const availability =
+  product.availability === 'sold_out'
+    ? '売り切れ'
+    : product.checkoutUrl
+      ? '販売中'
+      : '販売準備中';
+---
+
+<article class={`product product-${product.slug}`} data-product={product.slug}>
+  <div class="product-art">
+    <span class="product-number">0{index + 1}</span>
+    <img
+      src={product.image}
+      width="900"
+      height="400"
+      loading="lazy"
+      alt={product.imageAlt}
+    />
+    <span class="image-label">{product.imageLabel}</span>
+  </div>
+  <div class="product-body">
+    <span class="availability" data-availability
+      >{usesCart ? '販売準備中' : availability}</span
+    >
+    <h3>{product.name}</h3>
+    <p>{product.description}</p>
+    <div class="product-buy">
+      <span class="price" data-price
+        >{
+          !usesCart && product.displayPriceJPY != null
+            ? money(product.displayPriceJPY)
+            : '価格未定'
+        }</span
+      >
+      {
+        usesCart ? (
+          <button
+            data-add={product.slug}
+            disabled
+            aria-label={`${product.name}をバッグに追加`}
+          >
+            準備中
+          </button>
+        ) : product.checkoutUrl ? (
+          <a
+            href={product.checkoutUrl}
+            rel="noreferrer"
+            aria-label={`${product.name}をStripeで購入する`}
+          >
+            購入する ↗
+          </a>
+        ) : (
+          <button disabled>
+            {availability === '売り切れ' ? '売り切れ' : '準備中'}
+          </button>
+        )
+      }
+    </div>
+  </div>
+</article>

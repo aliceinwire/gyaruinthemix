@@ -1,0 +1,74 @@
+---
+import Layout from '../layouts/Layout.astro';
+import PhotoGrid from '../components/PhotoGrid.astro';
+import SectionTitle from '../components/SectionTitle.astro';
+import { site } from '../data/site.mjs';
+---
+
+<Layout title="ファンクラブ｜ギャルインザミックス">
+  <section class="club-hero">
+    <div class="club-title">
+      <p class="eyebrow">ギャルインザミックス ファンクラブ</p><h1>
+        フロアの外も、<br /><em>ギャル集合。</em><span aria-hidden="true"
+          >♡</span
+        >
+      </h1><p>
+        会える日も、会えない日も。<br
+        />写真も近況も、ここでチェック。うちらと一緒に盛ってこ。
+      </p><a class="button" href="#photos">ふたりのフォトを見る ↘</a>
+    </div><div class="club-card">
+      <span class="eyebrow">ギャルインザミックス</span><span
+        class="club-card-heart"
+        aria-hidden="true">♡</span
+      ><h2>ファンクラブ</h2>{
+        site.fanClub.registrationOpen ? (
+          <a
+            class="button button-pink"
+            href={site.fanClub.joinUrl}
+            rel="noopener noreferrer"
+          >
+            {site.fanClub.joinLabel} ↗
+          </a>
+        ) : (
+          <p class="club-status">入会受付は準備中</p>
+        )
+      }<p>{site.fanClub.membershipNote}</p>
+    </div>
+  </section>
+  <section class="section photo-section" id="photos">
+    <SectionTitle
+      label="盛れてる日も、踊ってる日も。"
+      title="ふたりのフォト"
+    /><PhotoGrid /><p class="collection-note">
+      写真をタップすると、大きく見られます。
+    </p>
+  </section>
+  <section class="section fan-links">
+    <a href="/news/"
+      ><span>01 / お知らせ</span><h2>うちらの近況 ↗</h2><p>
+        グッズやファンクラブのお知らせ。
+      </p></a
+    ><a href="/live/"
+      ><span>02 / 出演情報</span><h2>次に会える場所 ↗</h2><p>
+        DJ出演とメディア情報をチェック。
+      </p></a
+    >
+  </section>
+  <section class="section club-faq">
+    <SectionTitle label="参加する前に。" title="よくある質問" /><details>
+      <summary>写真を見るのに登録は必要？</summary><p>
+        このページの写真とお知らせは、登録なしでご覧いただけます。
+      </p>
+    </details><details>
+      <summary>ファンクラブにはどうやって入るの？</summary><p>
+        {
+          site.fanClub.registrationOpen
+            ? '上の入会案内から、受付先の条件・プライバシーポリシーをご確認のうえお手続きください。'
+            : '現在は入会受付の準備中です。受付を始めるときに、このページで入会方法をご案内します。'
+        }
+      </p>
+    </details><details>
+      <summary>会費や特典は？</summary><p>{site.fanClub.membershipNote}</p>
+    </details>
+  </section>
+</Layout>

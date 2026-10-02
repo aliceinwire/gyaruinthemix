@@ -1,0 +1,158 @@
+---
+import Layout from '../layouts/Layout.astro';
+import SectionTitle from '../components/SectionTitle.astro';
+import TrackList from '../components/TrackList.astro';
+import Events from '../components/Events.astro';
+import SoundIdentity from '../components/SoundIdentity.astro';
+import { site } from '../data/site.mjs';
+---
+
+<Layout>
+  <section class="unit-hero">
+    <div class="unit-hero-copy">
+      <p class="eyebrow">
+        {site.artist.aesthetic}♡ DJありねぇ ＋ DJちゃな / B2B
+      </p>
+      <h1><span>盛って、</span><br /><em>ぶちアゲ。</em></h1>
+      <p class="unit-intro">
+        盛り髪、ピンク、ヒョウ柄。<br />好きな自分で、爆音のど真ん中へ。<br
+        />跳ねるビートもラップも、うちら全開。
+      </p>
+      <SoundIdentity />
+      <div class="hero-actions">
+        <a class="button button-pink" href="/music/"
+          >うちらの音楽 <span aria-hidden="true">↗</span></a
+        ><a class="hero-live-link" href="/live/">出演情報 ↗</a>
+      </div>
+      <p class="hero-contact-links">
+        <a href={site.bookingUrl} rel="noopener noreferrer">公式Instagram ↗</a>
+        <a href="/contact/">出演依頼・お問い合わせ ↗</a>
+      </p>
+    </div>
+    <div class="unit-hero-image">
+      <picture
+        ><source
+          type="image/avif"
+          srcset="/assets/portrait-small.avif 540w, /assets/portrait.avif 1108w"
+          sizes="(max-width: 760px) 100vw, 55vw"
+        /><img
+          src="/assets/portrait.webp"
+          srcset="/assets/portrait-small.webp 540w, /assets/portrait.webp 1108w"
+          sizes="(max-width: 760px) 100vw, 55vw"
+          width="1108"
+          height="1477"
+          fetchpriority="high"
+          alt="ピンクの衣装で寄り添うDJちゃなとDJありねぇ"
+        /></picture
+      ><span class="photo-label">かわいく、強く、うちららしく。</span>
+    </div>
+    <span class="chrome-heart" aria-hidden="true">♡</span>
+    <div class="hero-brand">
+      <img
+        src="/assets/logo.webp"
+        width="1200"
+        height="400"
+        alt="ギャルインザミックス"
+      />
+    </div>
+  </section>
+  <div class="leopard-ribbon" aria-hidden="true">
+    <div>
+      盛り髪。爆音。ギャルマインド。<span>♥</span>フロアで会お。<span>♥</span
+      >盛り髪。爆音。ギャルマインド。
+    </div>
+  </div>
+  <section class="section news-section">
+    <SectionTitle
+      label="近況、チェックしてこ。"
+      title="お知らせ"
+      href="/news/"
+    />
+    <div class="news-list">
+      {
+        site.news.slice(0, 3).map((item) => (
+          <a href={item.url} class="news-row">
+            <>
+              <span class="news-category">{item.category}</span>
+              <h3>{item.title}</h3>
+              <span aria-hidden="true">↗</span>
+            </>
+          </a>
+        ))
+      }
+    </div>
+  </section>
+  <section class="sound-section">
+    <div class="section sound-grid">
+      <div class="sound-cover">
+        <picture
+          ><source type="image/avif" srcset="/assets/live.avif" /><img
+            src="/assets/live.webp"
+            width="900"
+            height="1200"
+            loading="lazy"
+            alt="DJブースでプレイするふたり"
+          /></picture
+        ><div>
+          <span class="eyebrow">跳ねるビートに、うちらの声。</span><p>
+            音も、<br /><em>盛ってこ。</em>
+          </p>
+        </div><span class="sound-sticker" aria-hidden="true"
+          >{site.artist.bpm}<br /><small>BPM</small></span
+        >
+      </div><div class="sound-copy">
+        <SectionTitle
+          label={site.artist.genres.map((genre) => genre.label).join(' × ')}
+          title="うちらの音楽"
+        /><TrackList /><a class="text-link" href="/music/">音楽ページへ ↗</a>
+      </div>
+    </div>
+  </section>
+  <section class="section">
+    <SectionTitle
+      label="次は、フロアで。"
+      title="出演情報"
+      href="/live/"
+    /><Events period="upcoming" />
+  </section>
+  <section class="fan-banner">
+    <div class="fan-banner-inner">
+      <div>
+        <p class="eyebrow">ギャルインザミックス ファンクラブ</p><h2>
+          フロアの外でも、<br /><em>ギャル集合。</em>
+        </h2><p>
+          ふたりの写真も、次に会える予定も。<br
+          />会えない日だって、一緒に盛ってこ。
+        </p><a class="button" href="/fanclub/"
+          >ファンページへ <span aria-hidden="true">♡</span></a
+        >
+      </div><div class="fan-postcard" aria-hidden="true">
+        <img
+          src="/assets/artists-small.webp"
+          width="540"
+          height="720"
+          loading="lazy"
+          alt=""
+        /><span>うちらと、みんなで。♡</span>
+      </div>
+    </div>
+  </section>
+  <section class="section goods-teaser">
+    <div>
+      <p class="eyebrow">いつでも、一緒に。</p><h2>
+        うちらのグッズ<span aria-hidden="true">♡</span>
+      </h2><p>
+        あの日のテンション、連れて帰ろ。<br
+        />オフィシャルグッズは、ただいま販売準備中。
+      </p><a class="text-link" href="/shop/">グッズを見に行く ↗</a>
+    </div><a class="goods-art" href="/shop/" aria-label="グッズを見る"
+      ><img
+        src="/assets/banner.webp"
+        width="1536"
+        height="657"
+        loading="lazy"
+        alt="ふたりの写真とロゴのアートワーク"
+      /><span>ロゴステッカー / タオル / キーホルダー</span></a
+    >
+  </section>
+</Layout>

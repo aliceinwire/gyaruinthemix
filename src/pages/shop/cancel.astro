@@ -1,0 +1,21 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { usesCart } from '../../data/checkout.mjs';
+---
+
+<Layout title="ショップへ戻る｜ギャルインザミックス"
+  ><section class="result">
+    <span class="result-heart" aria-hidden="true">♡</span><p class="eyebrow">
+      おかえり
+    </p><h1>ゆっくり選んでね。</h1><p>もう一度、好きなものを探してみて。</p><a
+      class="button"
+      href="/shop/">グッズに戻る ↗</a
+    >{
+      usesCart && (
+        <button class="text-button" data-open-cart>
+          バッグを確認する
+        </button>
+      )
+    }
+  </section></Layout
+>

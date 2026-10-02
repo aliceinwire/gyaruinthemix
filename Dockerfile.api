@@ -1,0 +1,19 @@
+FROM node:24.21.0-alpine3.23 AS dependencies
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev --ignore-scripts --no-audit --no-fund
+
+FROM node:24.21.0-alpine3.23 AS production
+ENV NODE_ENV=production NODE_OPTIONS=--max-old-space-size=112
+WORKDIR /app
+RUN addgroup -g 10001 -S store && adduser -u 10001 -S -D -H -G store store \
+    && mkdir /app/state && chown 10001:10001 /app/state && chmod 700 /app/state
+COPY --from=dependencies /app/node_modules ./node_modules
+COPY package.json ./
+COPY api ./api
+COPY config ./config
+COPY deploy/api-healthcheck.mjs ./healthcheck.mjs
+USER 10001:10001
+EXPOSE 3000
+HEALTHCHECK --interval=30s --timeout=4s --start-period=30s --retries=3 CMD ["node", "healthcheck.mjs"]
+CMD ["node", "api/server.mjs"]

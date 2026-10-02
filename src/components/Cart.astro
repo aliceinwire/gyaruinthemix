@@ -1,0 +1,32 @@
+<dialog id="cart-dialog" class="cart-dialog" aria-labelledby="cart-title">
+  <div class="cart-heading">
+    <h2 id="cart-title">
+      マイバッグ <span aria-hidden="true">♡</span>
+    </h2><button class="icon-button" data-close-cart aria-label="バッグを閉じる"
+      >×</button
+    >
+  </div>
+  <p id="cart-mode" class="notice" hidden>
+    テストショップです。実際の購入・発送はありません。
+  </p>
+  <div id="cart-items"></div>
+  <div class="cart-summary">
+    <div>
+      <span>小計（税込）</span><strong id="cart-subtotal">¥0</strong>
+    </div><p id="cart-shipping" class="muted">
+      送料は販売開始時にご案内します。
+    </p>
+  </div>
+  <p id="cart-error" class="error" role="alert"></p>
+  <button class="button checkout" id="checkout" disabled
+    >決済へ進む <span aria-hidden="true">↗</span></button
+  >
+  <p class="cart-note">
+    お支払いはStripeの決済ページで。<br />お届け先は日本国内のみです。
+  </p>
+  <button class="text-button" data-close-cart>お買い物を続ける</button>
+</dialog>
+<p class="announcement" id="announcement" role="status" aria-live="polite"></p>
+<script>
+  import '../scripts/store.js';
+</script>

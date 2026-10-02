@@ -1,0 +1,11 @@
+[Unit]
+Description=Check for tested GYARUINTHEMIX website releases
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+RandomizedDelaySec=30s
+Unit=gyaruinthemix-update.service
+
+[Install]
+WantedBy=timers.target

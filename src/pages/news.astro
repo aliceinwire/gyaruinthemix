@@ -1,0 +1,34 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { site } from '../data/site.mjs';
+---
+
+<Layout title="お知らせ｜ギャルインザミックス"
+  ><section class="page-heading">
+    <p class="eyebrow">うちらの、いま。</p><h1>
+      お知らせ<span aria-hidden="true">✦</span>
+    </h1>
+  </section><section class="section news-articles">
+    {
+      site.news.map((item) => (
+        <article>
+          <>
+            <div>
+              <span class="news-category">{item.category}</span>
+              {item.date && (
+                <time datetime={item.date}>
+                  {item.date.replaceAll('-', '.')}
+                </time>
+              )}
+            </div>
+            <h2>{item.title}</h2>
+            <p>{item.text}</p>
+            <a class="text-link" href={item.url}>
+              詳しく見る ↗
+            </a>
+          </>
+        </article>
+      ))
+    }
+  </section></Layout
+>

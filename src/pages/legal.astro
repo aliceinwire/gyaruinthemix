@@ -1,0 +1,45 @@
+---
+import Layout from '../layouts/Layout.astro';
+import store from '../../config/store.json';
+const rows = [
+  ['販売業者', store.seller],
+  ['運営責任者', store.representative],
+  ['所在地', store.address],
+  ['電話番号', store.phone],
+  ['メールアドレス', store.email],
+  ['販売価格', '各商品ページに税込価格を表示します。'],
+  ['商品代金以外の費用', store.shippingCosts],
+  ['お支払い方法', 'Stripeを通じたクレジットカード決済'],
+  ['お支払い時期', store.paymentTiming],
+  ['商品の引渡し時期', store.shippingTiming],
+  ['返品・交換・キャンセル', store.returns],
+];
+---
+
+<Layout title="特定商取引法に基づく表記｜ギャルインザミックス"
+  ><section class="legal section">
+    <h1>特定商取引法に基づく表記</h1>{
+      Object.values(store).some((v) => !v) && (
+        <p class="notice">
+          現在は販売準備中です。販売開始までに、販売者情報・送料・発送・返品条件をご案内します。
+        </p>
+      )
+    }<dl>
+      {
+        rows.map(([name, value]) => (
+          <div>
+            <>
+              <dt>{name}</dt>
+              <dd>{value || '販売開始前に掲載します。'}</dd>
+            </>
+          </div>
+        ))
+      }
+    </dl>
+    <h2>出演依頼・お問い合わせ</h2>
+    <p>
+      出演・取材のご相談やサイトに関するお問い合わせは、公式InstagramのDMへお送りください。
+    </p>
+    <p><a href="/contact/">出演依頼・お問い合わせ窓口へ ↗</a></p>
+  </section></Layout
+>

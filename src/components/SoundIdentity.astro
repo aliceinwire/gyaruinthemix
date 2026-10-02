@@ -1,0 +1,8 @@
+---
+import { site } from '../data/site.mjs';
+---
+
+<ul class="sound-identity" aria-label="ジャンルとテンポ">
+  {site.artist.genres.map((genre) => <li>{genre.label}</li>)}
+  <li class="tempo-badge">{site.artist.bpm} BPM</li>
+</ul>
