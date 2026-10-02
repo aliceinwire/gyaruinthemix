@@ -1,0 +1,144 @@
+---
+import { musicVideos, youtubeChannel } from '../data/videos.mjs';
+const { featured = false } = Astro.props;
+const videos = featured ? musicVideos.slice(0, 1) : musicVideos;
+---
+
+<div class:list={['music-videos', { 'music-videos-featured': featured }]}>
+  {
+    videos.map((video) => (
+      <article
+        class="music-video"
+        data-music-video
+        data-video-id={video.id}
+        data-video-title={video.title}
+      >
+        <div class="music-video-screen" data-video-screen>
+          <button
+            class="music-video-load"
+            type="button"
+            data-video-load
+            hidden
+            aria-label={`${video.title}のYouTubeプレーヤーを読み込む`}
+          >
+            <span class="music-video-play" aria-hidden="true">
+              ▶
+            </span>
+            <span>YouTubeプレーヤーを読み込む</span>
+            <small>MUSIC VIDEO</small>
+          </button>
+          <noscript>
+            <a href={`https://www.youtube.com/watch?v=${video.id}`}>
+              YouTubeで動画を見る ↗
+            </a>
+          </noscript>
+        </div>
+        <h3>{video.title}</h3>
+        <a
+          class="text-link"
+          href={`https://www.youtube.com/watch?v=${video.id}`}
+          rel="noopener noreferrer"
+        >
+          YouTubeで見る ↗
+        </a>
+        <button class="music-video-close" type="button" data-video-close hidden>
+          プレーヤーを閉じる
+        </button>
+      </article>
+    ))
+  }
+</div>
+<p class="music-video-note">
+  ボタンを押すとYouTubeに接続します。自動再生はしません。再生できない場合は「YouTubeで見る」からどうぞ。<a
+    href="/privacy/">プライバシーについて</a
+  >
+</p>
+<a class="text-link" href={youtubeChannel} rel="noopener noreferrer"
+  >公式YouTubeチャンネル ↗</a
+>
+
+<script>
+  import { initializeMusicVideos } from '../scripts/music-videos.mjs';
+  initializeMusicVideos(document);
+</script>
+
+<style>
+  .music-videos {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 32px;
+  }
+  .music-videos-featured {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .music-video {
+    min-width: 0;
+  }
+  .music-video-screen {
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background: #21151e;
+    border: 2px solid #ff52ae;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    color: #fff;
+    margin-bottom: 20px;
+  }
+  .music-video-load {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    color: #fff;
+    background:
+      radial-gradient(ellipse at top right, #871449, transparent 70%), #21151e;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 12px;
+    padding: 20px;
+  }
+  .music-video-load[hidden],
+  .music-video-close[hidden] {
+    display: none;
+  }
+  .music-video-load:hover {
+    background-color: #432038;
+  }
+  .music-video-load:focus-visible {
+    outline: 3px solid white;
+    outline-offset: -6px;
+  }
+  .music-video-play {
+    font-size: 2.5rem;
+    color: #ff8fc9;
+  }
+  .music-video h3 {
+    font-size: clamp(1.25rem, 3vw, 1.8rem);
+    overflow-wrap: anywhere;
+  }
+  .music-video-screen :global(iframe) {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+  .music-video-close {
+    display: block;
+    margin-top: 16px;
+    border: 1px solid currentColor;
+    padding: 8px 12px;
+    background: transparent;
+    color: inherit;
+  }
+  .music-video-note {
+    font-size: 0.85rem;
+    margin: 24px 0 16px;
+  }
+  @media (max-width: 760px) {
+    .music-videos {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

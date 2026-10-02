@@ -1,6 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import TrackList from '../components/TrackList.astro';
+import MusicVideos from '../components/MusicVideos.astro';
 import { site } from '../data/site.mjs';
 import SoundIdentity from '../components/SoundIdentity.astro';
 ---
@@ -12,6 +13,11 @@ import SoundIdentity from '../components/SoundIdentity.astro';
     </h1><SoundIdentity /><p>
       跳ねるビート。うちらのラップ。DJありねぇとDJちゃなの音、ここに集合。
     </p>
+  </section>
+  <section class="section" aria-labelledby="music-videos-title">
+    <p class="eyebrow">公式YouTubeから、うちらの音。</p>
+    <h2 id="music-videos-title">うちらのミュージックビデオ</h2>
+    <MusicVideos />
   </section>
   <section class="section music-layout">
     <div class="music-portrait">
@@ -27,7 +33,7 @@ import SoundIdentity from '../components/SoundIdentity.astro';
       </h2><TrackList />{
         !site.tracks.some((track) => track.url) && (
           <p class="collection-note">
-            試聴・配信リンクは、公開の準備ができ次第ご案内します。
+            上記のミュージックビデオは公開中です。こちらの楽曲の試聴・配信リンクは、公開の準備ができ次第ご案内します。
           </p>
         )
       }<a class="button" href="/live/">出演情報を見る ↗</a>
