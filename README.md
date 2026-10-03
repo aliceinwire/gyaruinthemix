@@ -36,6 +36,14 @@ Verify after activation:
 - Complete an authorized Stripe test checkout with test payment data, confirm its test-mode record and signed webhook observation in Stripe, then check cancellation/back navigation and separate carts.
 - Turn the switch off and confirm the hidden API returns 404 while the ordinary site remains healthy.
 
+### Returning from sandbox checkout
+
+Sandbox checkout protocol v2 records the submitted cart snapshot and a browser-local attempt UUID. The API binds that UUID to the Checkout Session, and retrieves current session status before returning a hosted checkout URL or confirming payment. The status endpoint returns only test mode, session ID and `open` / `paid` / `pending` / `expired`; it never returns customer or payment details. The restricted key must allow Checkout Session retrieval as well as creation. A successful page visit alone is not payment proof.
+
+After a verified paid result, an unchanged test bag is cleared and its retry attempt retired. If the bag was edited in another tab or since checkout, it is kept for review so newer additions are not deleted. Cancelled/open, pending, mismatched or unverifiable returns preserve the bag; expired sessions retire only the retry key. Retries check the saved session before following its URL. An old unknown attempt is not silently renewed beyond the idempotency window. If browser storage cannot retain the return receipt, the browser stays on the shop rather than losing its recovery information.
+
+Attempts created before v2 lack a Session ID/proof and cannot be verified retrospectively. The test bag therefore asks the user to check Stripe, remove already-paid items, and explicitly acknowledge starting a new attempt. Old cached clients are rejected by the sandbox protocol gate and must reload. Public-shop cart behavior is unchanged. These checks use mocked Stripe methods in tests; no payment is made by the test suite.
+
 ## Your VPS: deploy only from ~/bouncer
 
 [deploy/bouncer](deploy/bouncer/README.md) is the only deployment path. Install its [docker-compose.yml](deploy/bouncer/docker-compose.yml) as `~/bouncer/docker-compose.yml`, preserving the existing Compose project identity. It preserves the proxy, certificate companion, ZNC and Limnoria definitions and adds the static website. The API is behind the optional `checkout-api` profile. Put this repository at `~/bouncer/gyaruinthemix`, add [these settings](deploy/bouncer/.env.example) to `~/bouncer/.env`, and follow the [one-time setup and update instructions](deploy/bouncer/README.md). **No Stripe secret files are required for the default mode.**

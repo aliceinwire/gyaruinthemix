@@ -32,6 +32,16 @@ const { testShop = false } = Astro.props;
     </p>
   </div>
   <p id="cart-error" class="error" role="alert"></p>
+  {
+    testShop && (
+      <>
+        <p id="test-checkout-status" class="notice" role="status" />
+        <button id="test-checkout-reset" class="text-button" hidden>
+          結果とバッグを確認して、新しいテスト決済を始める
+        </button>
+      </>
+    )
+  }
   <button class="button checkout" id="checkout" disabled
     >{testShop ? 'テスト決済へ進む' : '決済へ進む'}
     <span aria-hidden="true">↗</span></button
