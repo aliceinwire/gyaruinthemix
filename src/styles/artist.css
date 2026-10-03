@@ -779,8 +779,17 @@
   background: #100913e6;
 }
 .photo-dialog .icon-button {
+  color: #171217;
+  background: #fff;
   display: block;
   margin: 0 0 12px auto;
+}
+.photo-dialog .icon-button:hover {
+  background: #f6dfeb;
+}
+.photo-dialog .icon-button:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 3px;
 }
 .photo-dialog img {
   max-height: 70dvh;
