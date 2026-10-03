@@ -1,7 +1,7 @@
 ---
 import { usesCart } from '../data/checkout.mjs';
 import { money } from '../scripts/cart.mjs';
-const { product, index = 0 } = Astro.props;
+const { product, index = 0, cartEnabled = usesCart } = Astro.props;
 const availability =
   product.availability === 'sold_out'
     ? '売り切れ'
@@ -24,20 +24,20 @@ const availability =
   </div>
   <div class="product-body">
     <span class="availability" data-availability
-      >{usesCart ? '販売準備中' : availability}</span
+      >{cartEnabled ? '販売準備中' : availability}</span
     >
     <h3>{product.name}</h3>
     <p>{product.description}</p>
     <div class="product-buy">
       <span class="price" data-price
         >{
-          !usesCart && product.displayPriceJPY != null
+          !cartEnabled && product.displayPriceJPY != null
             ? money(product.displayPriceJPY)
             : '価格未定'
         }</span
       >
       {
-        usesCart ? (
+        cartEnabled ? (
           <button
             data-add={product.slug}
             disabled

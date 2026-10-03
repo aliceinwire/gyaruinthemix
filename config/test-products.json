@@ -1,0 +1,54 @@
+[
+  {
+    "slug": "sticker",
+    "name": "ロゴステッカー",
+    "description": "いつもの持ち物に、ギャルの主張を。",
+    "image": "/assets/logo.webp",
+    "imageAlt": "ギャルインザミックスのロゴデザイン",
+    "imageLabel": "ロゴデザイン参考",
+    "priceEnv": "STRIPE_PRICE_STICKER",
+    "availability": "available",
+    "maxQuantity": 5,
+    "displayPriceJPY": null,
+    "paymentLink": null
+  },
+  {
+    "slug": "towel",
+    "name": "フェイスタオル",
+    "description": "フロアでも、日常でも。一緒に盛り上がろ。",
+    "image": "/assets/banner.webp",
+    "imageAlt": "ふたりの写真とロゴを合わせたアートワーク",
+    "imageLabel": "アートワーク参考",
+    "priceEnv": "STRIPE_PRICE_TOWEL",
+    "availability": "available",
+    "maxQuantity": 5,
+    "displayPriceJPY": null,
+    "paymentLink": null
+  },
+  {
+    "slug": "keychain",
+    "name": "アクリルキーホルダー",
+    "description": "バッグにつけて、お出かけもギャル仕様に。",
+    "image": "/assets/logo.webp",
+    "imageAlt": "ギャルインザミックスのロゴデザイン",
+    "imageLabel": "ロゴデザイン参考",
+    "priceEnv": "STRIPE_PRICE_KEYCHAIN",
+    "availability": "available",
+    "maxQuantity": 5,
+    "displayPriceJPY": null,
+    "paymentLink": null
+  },
+  {
+    "slug": "tshirt",
+    "name": "Tシャツ",
+    "description": "ギャルインザミックスのTシャツ。",
+    "image": "/assets/logo.webp",
+    "imageAlt": "ギャルインザミックスのロゴデザイン",
+    "imageLabel": "ロゴデザイン参考（商品写真ではありません）",
+    "priceEnv": "STRIPE_PRICE_TSHIRT",
+    "availability": "available",
+    "maxQuantity": 5,
+    "displayPriceJPY": null,
+    "paymentLink": null
+  }
+]
