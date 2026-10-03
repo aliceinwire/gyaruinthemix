@@ -58,3 +58,37 @@ test('appearance name is AXIS SQUARE and the October cancellation is retained', 
     true,
   );
 });
+
+test('photo close button keeps contrasting icon, hover and keyboard focus colors', async () => {
+  const css = await readFile('src/styles/artist.css', 'utf8');
+  const rule = (selector) => {
+    const start = css.indexOf(`${selector} {`);
+    assert.notEqual(start, -1, `Missing ${selector}`);
+    return css.slice(start, css.indexOf('}', start));
+  };
+  const close = rule('.photo-dialog .icon-button');
+  assert.match(close, /color: #171217;/);
+  assert.match(close, /background: #fff;/);
+  assert.match(
+    rule('.photo-dialog .icon-button:hover'),
+    /background: #f6dfeb;/,
+  );
+  const focus = rule('.photo-dialog .icon-button:focus-visible');
+  assert.match(focus, /outline: 3px solid #fff;/);
+  assert.match(focus, /outline-offset: 3px;/);
+
+  const luminance = (hex) => {
+    const linear = hex.match(/../g).map((channel) => {
+      const value = parseInt(channel, 16) / 255;
+      return value <= 0.04045
+        ? value / 12.92
+        : ((value + 0.055) / 1.055) ** 2.4;
+    });
+    return linear[0] * 0.2126 + linear[1] * 0.7152 + linear[2] * 0.0722;
+  };
+  const contrast = (light, dark) =>
+    (luminance(light) + 0.05) / (luminance(dark) + 0.05);
+  assert.ok(contrast('ffffff', '171217') >= 4.5, 'Default icon contrast');
+  assert.ok(contrast('f6dfeb', '171217') >= 4.5, 'Hovered icon contrast');
+  assert.ok(contrast('ffffff', '171217') >= 3, 'Focus outline against dialog');
+});
