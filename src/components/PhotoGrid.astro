@@ -1,11 +1,13 @@
 ---
 import { site } from '../data/site.mjs';
+
+const { photos = site.photos } = Astro.props;
 ---
 
 <div class="scrapbook">
   {
-    site.photos.map((photo, i) => (
-      <figure class={`snapshot snapshot-${i}`}>
+    photos.map((photo, i) => (
+      <figure class={`snapshot snapshot-${i % 3}`}>
         <button
           class="photo-open"
           data-photo={photo.image}
@@ -14,13 +16,23 @@ import { site } from '../data/site.mjs';
           aria-haspopup="dialog"
           aria-controls="photo-dialog"
         >
-          <img
-            src={photo.image}
-            alt={photo.alt}
-            width="900"
-            height="1200"
-            loading="lazy"
-          />
+          <picture>
+            <source
+              type="image/avif"
+              srcset={`${photo.image.replace('.webp', '-small.avif')} 540w, ${photo.image.replace('.webp', '.avif')} ${photo.width || (photo.image.includes('portrait') ? 1108 : 900)}w`}
+              sizes="(max-width: 480px) 85vw, (max-width: 760px) 390px, (max-width: 1100px) 44vw, 550px"
+            />
+            <img
+              src={photo.image}
+              srcset={`${photo.image.replace('.webp', '-small.webp')} 540w, ${photo.image} ${photo.width || (photo.image.includes('portrait') ? 1108 : 900)}w`}
+              sizes="(max-width: 480px) 85vw, (max-width: 760px) 390px, (max-width: 1100px) 44vw, 550px"
+              alt={photo.alt}
+              width={photo.width || 900}
+              height={photo.height || 1200}
+              loading="lazy"
+              decoding="async"
+            />
+          </picture>
           <span class="photo-zoom" aria-hidden="true">
             ＋
           </span>
@@ -53,7 +65,10 @@ import { site } from '../data/site.mjs';
       button.addEventListener('click', () => {
         opener = button;
         full.src = button.dataset.photo!;
-        full.alt = button.querySelector('img')!.alt;
+        const preview = button.querySelector('img')!;
+        full.alt = preview.alt;
+        full.width = preview.width;
+        full.height = preview.height;
         caption.textContent = button.dataset.caption!;
         dialog.showModal();
       });

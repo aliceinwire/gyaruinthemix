@@ -709,7 +709,8 @@
 }
 .scrapbook {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
   gap: 26px;
   padding: 20px 6px;
 }
@@ -736,9 +737,9 @@
   background: #1e171d;
 }
 .photo-open img {
+  display: block;
   width: 100%;
-  aspect-ratio: 3/4;
-  object-fit: cover;
+  height: auto;
 }
 .photo-zoom {
   position: absolute;
@@ -767,7 +768,7 @@
   display: block;
 }
 .photo-dialog {
-  width: min(90vw, 640px);
+  width: min(94vw, 1000px);
   max-height: 94dvh;
   padding: 16px;
   border: 1px solid #bbb;
