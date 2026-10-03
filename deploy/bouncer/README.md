@@ -164,3 +164,7 @@ When returning to Payment Links, first reconcile pending API orders/webhooks and
 - [GitHub Container registry, package visibility and authentication](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry)
 - [GitHub publishing container images](https://docs.github.com/en/actions/tutorials/publish-packages/publish-docker-images)
 - [Docker Compose up: scoped services, no-deps, no-build, pull and wait](https://docs.docker.com/reference/cli/docker/compose/up/)
+
+## Hidden sandbox shop switch
+
+See [the hidden sandbox shop procedure](../../README.md#hidden-sandbox-shop). It uses the API-mode web image and `checkout-api` profile, with `STRIPE_MODE=test`, `SALES_ENABLED=false` and the new `TEST_SHOP_ENABLED` setting (default `false`). The API refuses live credentials/mode or enabled public sales when that switch is on. Configure the four sandbox Price IDs and Japan shipping rate first. Install the updated Compose definition before recreating the API: the image updater alone does not add the new environment variable to an existing container. `/shop/` and its catalog stay closed; only `/shop-test/` can use the isolated sandbox API. The hidden URL is not authentication.

@@ -82,6 +82,9 @@ export function readConfig(env = process.env) {
     /^whsec_[A-Za-z0-9]+$/,
   );
   const salesEnabled = bool('SALES_ENABLED');
+  const testShopEnabled = bool('TEST_SHOP_ENABLED');
+  // The hidden sandbox must never share an enabled public or live checkout.
+  if (testShopEnabled && (mode !== 'test' || salesEnabled)) fail();
   if (salesEnabled && !bool('STORE_DETAILS_REVIEWED')) fail();
   if (salesEnabled && mode === 'live') {
     const details = JSON.parse(
@@ -95,33 +98,42 @@ export function readConfig(env = process.env) {
       fail();
   }
   const shippingRate = env.STRIPE_SHIPPING_RATE_JP || '';
-  if (salesEnabled && !/^shr_[A-Za-z0-9]+$/.test(shippingRate)) fail();
-  const products = JSON.parse(
-    readFileSync(new URL('../config/products.json', import.meta.url), 'utf8'),
-  );
-  const slugs = new Set();
-  for (const product of products) {
-    if (
-      !/^[a-z0-9-]{1,40}$/.test(product.slug) ||
-      slugs.has(product.slug) ||
-      !['available', 'coming_soon', 'sold_out'].includes(
-        product.availability,
-      ) ||
-      !Number.isInteger(product.maxQuantity) ||
-      product.maxQuantity < 1 ||
-      product.maxQuantity > 10 ||
-      !/^STRIPE_PRICE_[A-Z0-9_]+$/.test(product.priceEnv)
-    )
-      fail();
-    slugs.add(product.slug);
-    product.priceId = env[product.priceEnv] || '';
-    if (
-      salesEnabled &&
-      product.availability === 'available' &&
-      !/^price_[A-Za-z0-9]+$/.test(product.priceId)
-    )
-      fail();
+  if (
+    (salesEnabled || testShopEnabled) &&
+    !/^shr_[A-Za-z0-9]+$/.test(shippingRate)
+  )
+    fail();
+  function loadProducts(filename, enabled) {
+    const products = JSON.parse(
+      readFileSync(new URL(`../config/${filename}`, import.meta.url), 'utf8'),
+    );
+    const slugs = new Set();
+    for (const product of products) {
+      if (
+        !/^[a-z0-9-]{1,40}$/.test(product.slug) ||
+        slugs.has(product.slug) ||
+        !['available', 'coming_soon', 'sold_out'].includes(
+          product.availability,
+        ) ||
+        !Number.isInteger(product.maxQuantity) ||
+        product.maxQuantity < 1 ||
+        product.maxQuantity > 10 ||
+        !/^STRIPE_PRICE_[A-Z0-9_]+$/.test(product.priceEnv)
+      )
+        fail();
+      slugs.add(product.slug);
+      product.priceId = env[product.priceEnv] || '';
+      if (
+        enabled &&
+        product.availability === 'available' &&
+        !/^price_[A-Za-z0-9]+$/.test(product.priceId)
+      )
+        fail();
+    }
+    return products;
   }
+  const products = loadProducts('products.json', salesEnabled);
+  const testProducts = loadProducts('test-products.json', testShopEnabled);
   const port = Number(env.PORT || 3000);
   if (!Number.isInteger(port) || port < 1024 || port > 65535) fail();
   return {
@@ -131,6 +143,8 @@ export function readConfig(env = process.env) {
     secretKey,
     webhookSecret,
     salesEnabled,
+    testShopEnabled,
+    testProducts,
     shippingRate,
     products,
     port,

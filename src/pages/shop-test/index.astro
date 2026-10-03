@@ -1,0 +1,51 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Product from '../../components/Product.astro';
+import products from '../../../config/test-products.json';
+---
+
+<Layout
+  testShop
+  title="テスト専用ショップ｜ギャルインザミックス"
+  description="Stripe Sandboxの動作確認専用ページです。実際のお支払い・商品の発送はありません。"
+>
+  <section class="section shop-section">
+    <div class="shop-heading">
+      <p class="eyebrow">TEST ONLY · Stripe Sandbox</p>
+      <h1>テスト専用ショップ<span>♡</span></h1>
+      <p>バッグと決済画面の動作確認用です。</p>
+    </div>
+    <p class="notice">
+      実際のお支払い・商品の発送はありません。Stripeのテスト用決済情報だけを使用してください。
+    </p>
+    <p id="catalog-status" class="notice" role="status">
+      テスト用の商品情報を確認しています。有効になるまで決済はできません。
+    </p>
+    <noscript>
+      <p class="notice">動作確認にはJavaScriptを有効にしてください。</p>
+    </noscript>
+    <div class="product-grid">
+      {
+        products.map((product, index) => (
+          <Product product={product} index={index} cartEnabled />
+        ))
+      }
+    </div>
+    <p class="collection-note">
+      画像はデザイン参考です。Tシャツはサイズ選択のない単一のテスト用SKUです。
+    </p>
+    <div class="shop-info">
+      <div>
+        <b>テスト専用</b>
+        <p>表示金額・送料は決済の動作確認用です。商品は発送されません。</p>
+      </div>
+      <div>
+        <b>お支払いについて</b>
+        <p>
+          Stripe
+          Sandboxの決済ページに移動します。本物のカード情報や個人情報は入力しないでください。
+        </p>
+      </div>
+    </div>
+  </section>
+</Layout>

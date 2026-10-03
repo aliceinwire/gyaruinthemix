@@ -4,6 +4,38 @@ The Japanese official DJ-unit website for ギャルインザミックス: artist
 
 **Delivery state:** artist/fan pages and shop implemented; fan-club enrollment is not open and has no membership backend; products ship as `coming_soon`, prices unset and sales disabled. This is a deployable implementation, not a claim that your VPS, Stripe account or live shop has been configured. See `VALIDATION.md` for verification scope and release evidence. Complete the TEST-mode launch procedure before enabling live sales.
 
+## Hidden sandbox shop
+
+`/shop-test/` is a separate testing-only shop with sticker, towel, acrylic keychain and T-shirt. It has no navigation link or sitemap entry, and its index/success/cancel pages carry `noindex`. The URL is **not access control**: anyone who knows it can open it. Test pages clearly state that no real payment or shipment occurs. The T-shirt is a single test SKU with no size selector, and its logo image is a reference rather than a product photograph.
+
+The ordinary `/shop/`, `config/products.json` and Payment Links settings remain unchanged. Sandbox definitions live only in `config/test-products.json`; no real Stripe IDs or invented display prices are committed. The test cart and checkout-attempt storage are isolated from the normal shop. The hidden page requires the existing **API web image and `checkout-api` profile**; a Payment Links-only deployment has no test checkout API.
+
+To prepare it on the API deployment, add the following non-secret settings to the existing bouncer `.env`, preserving the other site settings:
+
+```dotenv
+STRIPE_MODE=test
+SALES_ENABLED=false
+TEST_SHOP_ENABLED=false
+STRIPE_PRICE_STICKER=
+STRIPE_PRICE_TOWEL=
+STRIPE_PRICE_KEYCHAIN=
+STRIPE_PRICE_TSHIRT=
+STRIPE_SHIPPING_RATE_JP=
+```
+
+Fill the five IDs from the same Stripe sandbox as the existing `rk_test_` and webhook secret files. Each Price must be active, one-time, JPY, per-unit, a positive integer amount, inclusive-tax and attached to an active product. The shipping rate must be active, test-mode, fixed-amount JPY, inclusive-tax and a nonnegative integer amount; the configured rate applies once per checkout and delivery addresses are Japan-only. Verify the actual amounts and tax behavior in Stripe before enabling. Product `default_price` IDs alone do not prove those Price settings.
+
+After the updated images **and Compose definition** are deliberately installed, set `TEST_SHOP_ENABLED=true` and recreate only the API service using the documented bouncer workflow. The image updater does not install Compose changes or apply `.env` changes on its own. Public `SALES_ENABLED` stays `false`; `STORE_DETAILS_REVIEWED` and `LIVE_MODE_ACK` do not need to change for this test-only shop. Set `TEST_SHOP_ENABLED=false` and recreate the API to close it again.
+
+The API refuses startup if hidden tests are enabled with live mode, a non-test restricted key, enabled public sales, missing Price IDs, or invalid sandbox prices/shipping. The app independently checks the mode/key/sales boundary. `/api/test-shop/catalog` and `/api/test-shop/checkout` do not exist while disabled. Enabled tests never open `/api/checkout`; test sessions use `gyaruinthemix-test` metadata and return to `/shop-test/success/` or `/shop-test/cancel/`. The shared signed webhook accepts matching test events and records observations only; it does not fulfill orders. Visiting a success page is not payment evidence.
+
+Verify after activation:
+
+- `/api/catalog` still reports `salesEnabled: false`, and `/shop/` is still closed with its original three products.
+- `/api/test-shop/catalog` reports `mode: test`, four available test products and the reviewed JPY shipping amount.
+- Complete an authorized Stripe test checkout with test payment data, confirm its test-mode record and signed webhook observation in Stripe, then check cancellation/back navigation and separate carts.
+- Turn the switch off and confirm the hidden API returns 404 while the ordinary site remains healthy.
+
 ## Your VPS: deploy only from ~/bouncer
 
 [deploy/bouncer](deploy/bouncer/README.md) is the only deployment path. Install its [docker-compose.yml](deploy/bouncer/docker-compose.yml) as `~/bouncer/docker-compose.yml`, preserving the existing Compose project identity. It preserves the proxy, certificate companion, ZNC and Limnoria definitions and adds the static website. The API is behind the optional `checkout-api` profile. Put this repository at `~/bouncer/gyaruinthemix`, add [these settings](deploy/bouncer/.env.example) to `~/bouncer/.env`, and follow the [one-time setup and update instructions](deploy/bouncer/README.md). **No Stripe secret files are required for the default mode.**

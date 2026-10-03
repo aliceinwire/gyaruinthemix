@@ -1,0 +1,58 @@
+---
+const { testShop = false } = Astro.props;
+---
+
+<dialog
+  id="cart-dialog"
+  class="cart-dialog"
+  aria-labelledby="cart-title"
+  data-shop-scope={testShop ? 'test' : 'public'}
+>
+  <div class="cart-heading">
+    <h2 id="cart-title">
+      {testShop ? 'テスト用バッグ' : 'マイバッグ'}
+      <span aria-hidden="true">♡</span>
+    </h2><button class="icon-button" data-close-cart aria-label="バッグを閉じる"
+      >×</button
+    >
+  </div>
+  <p id="cart-mode" class="notice" hidden={!testShop}>
+    テストショップです。実際の購入・発送はありません。
+  </p>
+  <div id="cart-items"></div>
+  <div class="cart-summary">
+    <div>
+      <span>小計（税込）</span><strong id="cart-subtotal">¥0</strong>
+    </div><p id="cart-shipping" class="muted">
+      {
+        testShop
+          ? 'テスト専用です。実際のお支払い・商品の発送はありません。'
+          : '送料は販売開始時にご案内します。'
+      }
+    </p>
+  </div>
+  <p id="cart-error" class="error" role="alert"></p>
+  <button class="button checkout" id="checkout" disabled
+    >{testShop ? 'テスト決済へ進む' : '決済へ進む'}
+    <span aria-hidden="true">↗</span></button
+  >
+  <p class="cart-note">
+    {
+      testShop ? (
+        <>
+          Stripe Sandboxの動作確認専用です。
+          <br />
+          実際のお支払い・商品の発送はありません。
+        </>
+      ) : (
+        <>
+          お支払いはStripeの決済ページで。
+          <br />
+          お届け先は日本国内のみです。
+        </>
+      )
+    }
+  </p>
+  <button class="text-button" data-close-cart>お買い物を続ける</button>
+</dialog>
+<p class="announcement" id="announcement" role="status" aria-live="polite"></p>

@@ -137,6 +137,7 @@ services:
       SITE_URL: https://${STORE_DOMAIN:?Set STORE_DOMAIN in bouncer/.env}
       STRIPE_MODE: ${STRIPE_MODE:-test}
       SALES_ENABLED: ${SALES_ENABLED:-false}
+      TEST_SHOP_ENABLED: ${TEST_SHOP_ENABLED:-false}
       STORE_DETAILS_REVIEWED: ${STORE_DETAILS_REVIEWED:-false}
       LIVE_MODE_ACK: ${LIVE_MODE_ACK:-}
       STATE_DIR: /app/state
