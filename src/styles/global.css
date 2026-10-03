@@ -851,22 +851,8 @@ body:has(dialog[open]) {
     font-size: 0.8125rem;
   }
   .product-grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 25px 16px;
-  }
-  .product-grid > .product:last-child {
-    grid-column: 1/-1;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    align-items: center;
-  }
-  .product-grid > .product:last-child .product-body {
-    padding: 0;
-  }
-  .product-grid > .product:last-child .product-art {
-    min-height: 100%;
-    aspect-ratio: 1;
   }
   .product h3 {
     font-size: 1rem;
