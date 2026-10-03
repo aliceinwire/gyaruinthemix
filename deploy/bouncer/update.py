@@ -360,8 +360,7 @@ stage)
     source=/etc/nginx/certs/$domain
     openssl pkey -in "$source/key.pem" -passin pass: -check -noout >/dev/null 2>&1
     openssl x509 -in "$source/fullchain.pem" -out "$work/leaf.pem"
-    openssl x509 -in "$work/leaf.pem" -checkhost "$domain" -noout >/dev/null 2>&1
-    openssl verify -purpose sslserver -untrusted "$source/fullchain.pem" "$work/leaf.pem" >/dev/null 2>&1
+    openssl verify -purpose sslserver -verify_hostname "$domain" -untrusted "$source/fullchain.pem" "$work/leaf.pem" >/dev/null 2>&1
     openssl pkey -in "$source/key.pem" -passin pass: -pubout > "$work/key.pub"
     openssl x509 -in "$work/leaf.pem" -pubkey -noout > "$work/cert.pub"
     cmp -s "$work/key.pub" "$work/cert.pub"
@@ -370,9 +369,8 @@ stage)
     openssl pkey -in "$work/combined.pem" -passin pass: -pubout > "$work/combined.pub"
     openssl x509 -in "$work/combined.pem" -pubkey -noout > "$work/combined-cert.pub"
     cmp -s "$work/combined.pub" "$work/combined-cert.pub"
-    openssl x509 -in "$work/combined.pem" -checkhost "$domain" -noout >/dev/null 2>&1
     openssl x509 -in "$work/combined.pem" -out "$work/staged-leaf.pem"
-    openssl verify -purpose sslserver -untrusted "$work/combined.pem" "$work/staged-leaf.pem" >/dev/null 2>&1
+    openssl verify -purpose sslserver -verify_hostname "$domain" -untrusted "$work/combined.pem" "$work/staged-leaf.pem" >/dev/null 2>&1
     rm -f "$next" "$backup"
     if cmp -s "$work/combined.pem" "$live"; then
         echo unchanged
