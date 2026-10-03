@@ -8,6 +8,10 @@ for (const [source, name, width] of [
   ['portrait.jpeg', 'portrait', 1108],
   ['live.jpeg', 'live', 900],
   ['banner.jpeg', 'banner', 1536],
+  ['duo-camera.jpeg', 'duo-camera', 1536],
+  ['duo-clapperboard.jpeg', 'duo-clapperboard', 1536],
+  ['duo-outing-wide.jpeg', 'duo-outing-wide', 1536],
+  ['duo-outing-pose.jpeg', 'duo-outing-pose', 1152],
 ]) {
   for (const size of [Math.min(540, width), width]) {
     const suffix = size === width ? '' : '-small';

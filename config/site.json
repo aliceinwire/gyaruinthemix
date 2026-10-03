@@ -83,7 +83,7 @@
       "published": true,
       "category": "live",
       "date": "2026-09-25",
-      "title": "AKIS SQUARE",
+      "title": "AXIS SQUARE",
       "venue": "VEK TOKYO",
       "timeLabel": "3:20〜4:00",
       "note": "",
@@ -120,7 +120,7 @@
     {
       "category": "出演情報",
       "title": "MBS番組出演・ABEMAのエピソードページと、10月3日の出演変更について。",
-      "text": "9月25日はVEK TOKYO「AKIS SQUARE」に出演。MBS毎日放送（関西）「アキナのギャルしか勝たん」の放送は9月30日1:59〜2:29（9月29日深夜25:59〜26:29）でした。ABEMAのエピソードページは出演情報に掲載しています。10月3日に予定していたDJ出演はなくなりました。",
+      "text": "9月25日はVEK TOKYO「AXIS SQUARE」に出演。MBS毎日放送（関西）「アキナのギャルしか勝たん」の放送は9月30日1:59〜2:29（9月29日深夜25:59〜26:29）でした。ABEMAのエピソードページは出演情報に掲載しています。10月3日に予定していたDJ出演はなくなりました。",
       "url": "/live/",
       "date": "2026-10-02"
     },
@@ -140,6 +140,38 @@
     }
   ],
   "photos": [
+    {
+      "image": "/assets/duo-camera.webp",
+      "width": 1536,
+      "height": 1024,
+      "alt": "ピンクのデコカメラを持ち、顔にハートや星のシールを飾ったふたり",
+      "caption": "デコって、ハイ、チーズ。",
+      "tag": "うちらのスタイル"
+    },
+    {
+      "image": "/assets/duo-clapperboard.webp",
+      "width": 1536,
+      "height": 1024,
+      "alt": "カチンコを掲げて笑顔でポーズをとるふたり",
+      "caption": "笑顔も、キラキラも、全開。",
+      "tag": "ふたりのこと"
+    },
+    {
+      "image": "/assets/duo-outing-wide.webp",
+      "width": 1536,
+      "height": 1152,
+      "alt": "金色の衣装の等身大パネルを囲んで、両腕を広げるふたり",
+      "caption": "フロアの外でも、ぶちアゲ。",
+      "tag": "おでかけフォト"
+    },
+    {
+      "image": "/assets/duo-outing-pose.webp",
+      "width": 1152,
+      "height": 1536,
+      "alt": "ヒョウ柄と白いTシャツ姿で、等身大パネルとポーズを合わせるふたり",
+      "caption": "ふたりで、同じポーズ。",
+      "tag": "おでかけフォト"
+    },
     {
       "image": "/assets/artists.webp",
       "alt": "手書きの名前を添えた、DJありねぇとDJちゃなのツーショット",

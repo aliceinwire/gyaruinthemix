@@ -1,6 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import SectionTitle from '../components/SectionTitle.astro';
+import PhotoGrid from '../components/PhotoGrid.astro';
 import MusicVideos from '../components/MusicVideos.astro';
 import Events from '../components/Events.astro';
 import SoundIdentity from '../components/SoundIdentity.astro';
@@ -116,6 +117,15 @@ import { site } from '../data/site.mjs';
       title="出演情報"
       href="/live/"
     /><Events period="upcoming" />
+  </section>
+  <section class="section photo-section">
+    <SectionTitle
+      label="フロアの外も、うちら全開。"
+      title="ふたりのフォト"
+      href="/fanclub/#photos"
+    />
+    <PhotoGrid photos={site.photos.slice(0, 4)} />
+    <p class="collection-note">写真をタップして、大きく見てね。♡</p>
   </section>
   <section class="fan-banner">
     <div class="fan-banner-inner">
