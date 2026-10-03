@@ -149,3 +149,24 @@ test('official contact and member destinations are explicit, without opening sal
   assert.equal(cancelled.date, '2026-10-03');
   assert.equal(cancelled.url, '');
 });
+
+test('SoundCloud is linked from both music sections without an embed', async () => {
+  assert.equal(site.soundcloudUrl, 'https://soundcloud.com/gyaruinthemix');
+  assert.match(
+    await readSource('data/site.mjs'),
+    /soundcloudUrl: safeLink\(data.soundcloudUrl\)/,
+  );
+  for (const path of ['pages/index.astro', 'pages/music.astro']) {
+    const source = await readSource(path);
+    assert.match(
+      source,
+      /href=\{site.soundcloudUrl\}\s+rel="noopener noreferrer"/,
+    );
+    assert.match(source, /SoundCloud/);
+    assert.doesNotMatch(source, /w\.soundcloud\.com|api\.soundcloud\.com/);
+  }
+  for (const path of ['pages/index.astro', 'pages/music.astro']) {
+    assert.match(await readSource(path), /SoundCloudで聴く/);
+    assert.match(await readSource(path), /<MusicVideos/);
+  }
+});

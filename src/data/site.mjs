@@ -20,6 +20,7 @@ if (data.fanClub.registrationOpen && !data.fanClub.joinUrl)
 export const site = {
   ...data,
   bookingUrl: safeLink(data.bookingUrl),
+  soundcloudUrl: safeLink(data.soundcloudUrl),
   socials: data.socials.map((item) => ({ ...item, url: safeLink(item.url) })),
   fanClub: { ...data.fanClub, joinUrl: safeLink(data.fanClub.joinUrl) },
   tracks: data.tracks.map((item) => ({ ...item, url: safeLink(item.url) })),
