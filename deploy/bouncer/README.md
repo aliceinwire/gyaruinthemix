@@ -1,8 +1,8 @@
-# Bouncer deployment and automatic website updates
+# Bouncer updater: automatic website and manual shared services
 
 This is the **only supported deployment**. Keep the existing `~/bouncer` Compose project and its proxy, certificate companion, ZNC and Limnoria. The added website has no published host ports and no Docker socket. Default Payment Links mode runs only `gyaruinthemix-web`, capped at 64 MiB. Optional API mode adds a 192 MiB cap and a private journal volume. These are provisional caps, not measured VPS usage.
 
-After one-time activation, a merge into `main` runs CI, publishes tested website images to GHCR, and the host checks for them every five minutes. **This repository does not install the updater, change package visibility, connect to the VPS or deploy automatically until you activate it.** No SSH credential, webhook listener, new proxy or always-running updater container is needed. Builds happen on GitHub-hosted runners, not the 1 GB VPS.
+After one-time activation, a merge into `main` runs CI, publishes tested website images to GHCR, and the host checks for them every five minutes. **This repository does not install the updater, change package visibility, connect to the VPS or deploy automatically until you activate it.** No SSH credential, webhook listener, new proxy or always-running updater container is needed. Website builds happen on GitHub-hosted runners, not the 1 GB VPS. Explicit manual `--shared` mode uses the existing local proxy/ZNC Dockerfiles with build caching; it is never scheduled by the supplied timer.
 
 ## Release and trust boundary
 
@@ -11,7 +11,7 @@ After one-time activation, a merge into `main` runs CI, publishes tested website
 - That job builds and smoke-tests the **actual release configuration** again, then publishes those exact local images. Synthetic public Payment Links are never published. A superseded main commit is skipped before publication.
 - Images are `ghcr.io/aliceinwire/gyaruinthemix-web`, `gyaruinthemix-web-api` and `gyaruinthemix-api`. Each has `main` and `sha-<full-40-character-commit>` tags, source/revision labels, and a checkout-mode label on web images. Treat SHA tags as release names, not cryptographic immutability: package writers could overwrite tags. The host pins each activation to the pulled local content-addressed image ID.
 - The host accepts only the documented repository's matching `:main` images. API/web revisions must match, so interrupted publication cannot activate a mixed pair. Labels are consistency checks, not image signatures. Trust is the protected GitHub repository and GHCR package write access. Limit both to maintainers.
-- Updates use `up --no-deps --no-build --pull never --wait` with an explicit website service list. They never pull, build, reconcile or stop the four shared services. The existing proxy may perform its normal routing reload when website containers change.
+- Default website updates use `up --no-deps --no-build --pull never --wait` with an explicit website service list. This default mode never pulls, builds, reconciles or stops the four shared services. The existing proxy may perform its normal routing reload when website containers change.
 - Health failure restores the previous healthy website images and blocks that failed image pair until a new release or explicit `--retry`. A local lock prevents overlapping runs. Recorded pending state lets the next run recover an interrupted update. This is not zero-downtime deployment; a short website interruption is possible.
 
 ## 1. Prerequisites and read-only inspection
@@ -107,6 +107,44 @@ For a user timer to survive logout/reboot, the account must have user lingering 
 
 Pause with `systemctl --user disable --now gyaruinthemix-update.timer`; resume with `systemctl --user enable --now gyaruinthemix-update.timer`. An already-running service may finish after pausing the timer; check its status before manual operations. The updater lock file also coordinates direct invocations, but plain manual Docker commands do not acquire it.
 
+## Manual maintenance with the same updater
+
+The existing five-minute timer remains **website-only**. Two explicit, mutually exclusive manual modes replace the old broad pull/build/down/up script. There is no new daemon, container running in the background, daily task or automatic shared-service/certificate schedule. All three modes use the same nonblocking lock. If one is running, another invocation exits without work; rerun a skipped manual command after it finishes. Plain Docker commands and the old script do not use that lock: retire the old script and avoid concurrent manual changes.
+
+Review/install this updater from an approved checkout before use; installing it does not require replacing your existing Compose definitions or changing the timer. Keep backups of ZNC/Limnoria data and enough free disk for old and new images. Run as the existing deployment user with its established Docker access.
+
+### Shared service images
+
+```bash
+python3 "$HOME/bouncer/gyaruinthemix/deploy/bouncer/update.py" --directory "$HOME/bouncer" --shared
+```
+
+This mode handles only `proxy`, `letsencrypt-companion`, `znc` and `limnoria`. It does not run the website update workflow. It prepares all images before replacing anything, and recreates only changed services, one at a time. There is no `down`, dependency reconciliation or pruning.
+
+- The companion and Limnoria retain their existing registry references and default `latest` tags. This is manual maintenance of upstream images, not the website's tested release pipeline.
+- Custom `proxy` and `znc` builds use the established local contexts (`proxy/` and `znc-docker/full/`) and `build --pull` with the normal cache. Review local Dockerfiles, copied files and module sources before running it; they are trusted operator-owned inputs. Extra build options and changed image/context definitions are refused for review.
+- The current proxy Dockerfile uses `FROM jwilder/nginx-proxy`, so pulling `jwilder/nginx-proxy:alpine` separately would not refresh its base. The updater uses the actual Dockerfile and does not change the repository or tag. A cached build is not a forced package refresh when its base is unchanged.
+- ZNC's existing startup hook compiles local modules. An unchanged image does not recreate ZNC or rerun that hook. A changed ZNC image or explicit changed-certificate restart does run normal startup and can take time.
+- Candidate activation uses immutable local image IDs. Each service has its own previous/pending/rejected record in `.bouncer-shared-update.json`. A startup failure restores that service's previous image; already successful service updates stay in place. Rerun `--shared` to recover an interrupted shared transaction; use `--shared --retry` only after investigating a rejected candidate.
+- Checks honor any existing Docker healthcheck, test proxy configuration with `nginx -t`, wait up to two minutes for ZNC's existing mapped TLS listener on port 33313, and require 15 seconds without container replacement/restart. The ZNC probe checks a local TLS handshake; it does **not** validate public hostname/trust. For services without healthchecks these are startup checks, not full application readiness, IRC-network connectivity or successful certificate renewal.
+- Updating the shared proxy can briefly interrupt website traffic. Image rollback cannot undo changes to persistent bot/ZNC data, configuration or compiled modules. Verify public HTTPS, real IRC clients and bot behavior after maintenance. If startup or rollback fails, investigate the host; the journal is deliberately retained rather than pretending recovery succeeded.
+
+### ZNC certificate refresh
+
+```bash
+python3 "$HOME/bouncer/gyaruinthemix/deploy/bouncer/update.py" --directory "$HOME/bouncer" --znc-cert
+```
+
+This separate mode replaces the old certificate-copy commands. `--shared` never modifies certificates. It reads the single hostname from ZNC's existing `LETSENCRYPT_HOST` and expects the established `/etc/nginx/certs/<hostname>/key.pem` and `fullchain.pem` source layout, plus `/znc-data/znc.pem` on the existing data mount.
+
+A short-lived, network-disabled helper uses the existing ZNC image, its existing mounts and a shell entrypoint, so it does not run the module-build startup hook. It requires the image's OpenSSL tools and trusted CA store. It validates the private-key/certificate match, hostname, server-certificate purpose, trust chain and validity period without printing private material. All certificate content stays in the existing volumes. Source validation failure leaves the live certificate and container untouched.
+
+The existing PEM must be a regular, non-symlink file with mode `0600` or `0640`. Its owner, group and safe mode are preserved. Investigate and deliberately correct other permissions locally rather than pasting key contents into chat or logs. The helper stages replacement in the same filesystem and atomically renames it, keeping a rollback copy. Only a changed PEM triggers a scoped ZNC recreation/startup check. Unchanged bytes leave the container running.
+
+The `.bouncer-znc-certificate-update.json` recovery journal contains an image ID/hostname, never a key. Pending recovery restores the previous PEM and restarts the prior image; rerun `--znc-cert` after an interrupted attempt. Backups remain until the journal is completed. Do not manually delete pending journals or the helper's `.znc.pem.updater-*` files. Other updater modes stop when a different workflow needs recovery.
+
+This is a manual refresh, **not a renewal hook**. Keep the existing certificate renewal setup and verify whether it already propagates/reloads the ZNC PEM. No new certificate scheduler is installed. After a changed refresh, verify the client connection and externally presented certificate. ZNC restarts briefly disconnect clients and rerun its existing local module compilation.
+
 ## 4. Verify a merged update
 
 A merge is followed by the complete CI run and registry publication, then the next host check (normally within five minutes, with up to 30 seconds of timer jitter). A failed CI run leaves registry release tags unchanged. The host performs no Git pull and executes no new repository scripts automatically.
@@ -124,7 +162,7 @@ Compare it with the merged main commit. Recheck the changed page over public HTT
 
 ## Updates to infrastructure, checkout mode and rollback
 
-Only images auto-update. Changes to the merged Compose file, `.env`, secret paths, updater or timer need explicit review and manual installation from the approved commit. Do not replace shared infrastructure automatically. Pause the scheduler, ensure no update is active, back up configuration, copy only the reviewed deployment changes, then revalidate/restart only website services. Preserve the API journal/current valid secrets. The running website image is authoritative for content; an old checkout on the VPS is not rebuilt by the updater.
+Only images auto-update. Changes to the merged Compose file, `.env`, secret paths, updater or timer need explicit review and manual installation from the approved commit. Do not replace shared infrastructure automatically; use the explicit manual mode above for reviewed image maintenance. Pause the scheduler, ensure no update is active, back up configuration, copy only the reviewed deployment changes, then revalidate/restart only website services. Preserve the API journal/current valid secrets. The running website image is authoritative for content; an old checkout on the VPS is not rebuilt by the updater.
 
 For an intentional rollback, pause the scheduler first. Choose a verified earlier release SHA from GHCR/CI, set `GYARUINTHEMIX_WEB_IMAGE` to its `:sha-<commit>` tag in `~/bouncer/.env`, and in API mode pin `GYARUINTHEMIX_API_IMAGE` to the **same** commit too. Pull and activate only the selected services using the scoped first-start command. Validate health/public pages and the implications of old payment links or product configuration. Restore `:main` and resume scheduling only after the failed release is fixed. Pinned tags intentionally cause the updater to stop rather than silently override the operator's choice.
 
