@@ -14,7 +14,7 @@ Create a restricted key dedicated to this store in a Stripe **sandbox/test envir
 
 | Resource            | Permission | Use                                                                                   |
 | ------------------- | ---------- | ------------------------------------------------------------------------------------- |
-| Checkout Sessions   | Write      | Create hosted Checkout Sessions                                                       |
+| Checkout Sessions   | Write      | Create hosted Checkout Sessions; retrieve bound sandbox Session status                |
 | Prices              | Read       | Retrieve configured JPY Prices                                                        |
 | Products            | Read       | Expand and validate each Price's Product                                              |
 | Shipping Rates      | Read       | Retrieve the Japan shipping rate                                                      |
