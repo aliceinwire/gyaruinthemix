@@ -1,6 +1,8 @@
 import { defineConfig } from 'astro/config';
+import { siteOrigin } from './src/data/urls.mjs';
 
 export default defineConfig({
+  site: siteOrigin,
   output: 'static',
   devToolbar: { enabled: false },
   trailingSlash: 'always',

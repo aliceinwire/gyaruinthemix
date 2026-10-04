@@ -416,3 +416,19 @@ test('health is lightweight and degrades on journal failure', async (t) => {
   x.journal.healthy = () => false;
   assert.equal((await x.app.inject('/api/health')).statusCode, 503);
 });
+
+test('new production origin controls public return URLs and rejects the legacy origin', async (t) => {
+  const x = await setup(t, {
+    config: { siteUrl: 'https://gyaruinthemix.com' },
+  });
+  assert.equal((await x.checkout()).statusCode, 200);
+  const [params] = x.calls[0];
+  assert.equal(params.success_url, 'https://gyaruinthemix.com/shop/success/');
+  assert.equal(params.cancel_url, 'https://gyaruinthemix.com/shop/cancel/');
+  assert.equal(
+    (await x.checkout(undefined, { origin: 'https://gyaruinthemix.alicef.me' }))
+      .statusCode,
+    403,
+  );
+  assert.equal(x.calls.length, 1);
+});

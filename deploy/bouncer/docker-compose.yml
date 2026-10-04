@@ -83,10 +83,11 @@ services:
     pids_limit: 50
     expose: ['8080']
     environment:
-      VIRTUAL_HOST: ${STORE_DOMAIN:?Set STORE_DOMAIN in bouncer/.env}
+      # Optional aliases affect routing/certificates only, never API origin checks.
+      VIRTUAL_HOST: ${STORE_HOSTS:-${STORE_DOMAIN:?Set STORE_DOMAIN in bouncer/.env}}
       VIRTUAL_PORT: '8080'
       VIRTUAL_PROTO: http
-      LETSENCRYPT_HOST: ${STORE_DOMAIN:?Set STORE_DOMAIN in bouncer/.env}
+      LETSENCRYPT_HOST: ${STORE_HOSTS:-${STORE_DOMAIN:?Set STORE_DOMAIN in bouncer/.env}}
       LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL:-alicef@alicef.me}
       HTTPS_METHOD: redirect
       ENABLE_HTTP_ON_MISSING_CERT: 'false'

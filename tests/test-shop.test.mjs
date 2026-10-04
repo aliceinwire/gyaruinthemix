@@ -754,3 +754,38 @@ test('open checkout uses only the freshly retrieved, trusted Stripe destination'
   });
   assert.equal((await x.checkout()).statusCode, 503);
 });
+
+test('new domain keeps sandbox returns separate and rejects legacy checkout/status origins', async (t) => {
+  const x = await setup(t, { env: { SITE_URL: 'https://gyaruinthemix.com' } });
+  const attemptId = randomUUID();
+  const response = await x.checkout(
+    undefined,
+    {},
+    { 'idempotency-key': attemptId },
+  );
+  assert.equal(response.statusCode, 200);
+  const [params] = x.calls.checkout[0];
+  assert.equal(
+    params.success_url,
+    'https://gyaruinthemix.com/shop-test/success/?session_id={CHECKOUT_SESSION_ID}',
+  );
+  assert.equal(
+    params.cancel_url,
+    'https://gyaruinthemix.com/shop-test/cancel/',
+  );
+  const sessionId = response.json().sessionId;
+  assert.equal((await x.status(sessionId, attemptId)).statusCode, 200);
+  for (const origin of [
+    'https://gyaruinthemix.alicef.me',
+    'https://www.gyaruinthemix.com',
+  ]) {
+    assert.equal((await x.checkout(undefined, {}, { origin })).statusCode, 403);
+    assert.equal(
+      (await x.status(sessionId, attemptId, {}, { origin })).statusCode,
+      403,
+    );
+  }
+  assert.equal(x.calls.checkout.length, 1);
+  assert.equal((await x.checkout('/api/checkout')).statusCode, 503);
+  assert.equal((await x.app.inject('/api/catalog')).json().salesEnabled, false);
+});

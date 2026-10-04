@@ -412,7 +412,11 @@ test('all hidden routes use noindex layout and explicit test labels; normal navi
   const layout = await read('src/layouts/Layout.astro');
   assert.match(
     layout,
-    /testShop && <meta name="robots" content="noindex, nofollow, noarchive"/,
+    /const indexable = !testShop && publicPaths.includes\(current\)/,
+  );
+  assert.match(
+    layout,
+    /!indexable && \(\s*<meta name="robots" content="noindex, nofollow, noarchive"/,
   );
   assert.match(layout, /position: sticky/);
   assert.match(layout, /実際のお支払い・商品の発送はありません/);
