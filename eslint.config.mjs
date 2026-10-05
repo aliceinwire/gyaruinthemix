@@ -9,7 +9,7 @@ export default [
     ],
   },
   {
-    files: ['**/*.mjs', 'src/scripts/*.js'],
+    files: ['**/*.mjs', 'src/scripts/*.js', 'src/pages/**/*.js'],
     languageOptions: { ecmaVersion: 'latest', sourceType: 'module' },
     rules: {
       'no-unused-vars': [

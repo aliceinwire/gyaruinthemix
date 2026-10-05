@@ -4,6 +4,10 @@ This is the **only supported deployment**. Keep the existing `~/bouncer` Compose
 
 After one-time activation, a merge into `main` runs CI, publishes tested website images to GHCR, and the host checks for them every five minutes. **This repository does not install the updater, change package visibility, connect to the VPS or deploy automatically until you activate it.** No SSH credential, webhook listener, new proxy or always-running updater container is needed. Website builds happen on GitHub-hosted runners, not the 1 GB VPS. Explicit manual `--shared` mode uses the existing local proxy/ZNC Dockerfiles with build caching; it is never scheduled by the supplied timer.
 
+## Website domain
+
+The public domain is `gyaruinthemix.com`. Set `STORE_DOMAIN=gyaruinthemix.com` for a new installation after DNS/TLS preparation. For the existing `gyaruinthemix.alicef.me` deployment, follow the [staged domain migration](DOMAIN-MIGRATION.md) before changing the primary origin. Optional `STORE_HOSTS` routes/certifies multiple names while the API still accepts exactly one `STORE_DOMAIN`; it does not install a redirect or migrate browser carts. Existing `.env` values are not overwritten by source/image updates.
+
 ## Release and trust boundary
 
 - Pull requests run tests with read-only repository permissions and offline fixtures. They cannot publish images. Neither `pull_request_target` nor privileged `workflow_run` consumption is used.
@@ -55,7 +59,7 @@ cp -n docker-compose.yml docker-compose.yml.before-gyaruinthemix
 cp gyaruinthemix/deploy/bouncer/docker-compose.yml docker-compose.yml
 ```
 
-Edit the **existing** `~/bouncer/.env` using [`.env.example`](.env.example) as a checklist; preserve unrelated values and the established project name. Set `STORE_DOMAIN` to the real bare hostname and review `LETSENCRYPT_EMAIL`. Default mode is `CHECKOUT_MODE=payment_links`, with no `checkout-api` profile and no Stripe secret files. Do not enable sales just to deploy the artist website.
+Edit the **existing** `~/bouncer/.env` using [`.env.example`](.env.example) as a checklist; preserve unrelated values and the established project name. Set `STORE_DOMAIN=gyaruinthemix.com` after DNS/TLS preparation and review `LETSENCRYPT_EMAIL`. Default mode is `CHECKOUT_MODE=payment_links`, with no `checkout-api` profile and no Stripe secret files. Do not enable sales just to deploy the artist website.
 
 The first successful trusted-main CI run creates the GHCR packages. GitHub initially makes new container packages private. After reviewing their contents, the owner can make the three release packages public in GitHub package settings so the VPS can pull without storing a token. **Changing package visibility is an owner action and is not performed by this change.** If public images are unsuitable, arrange narrowly scoped existing registry access separately; do not put tokens in this repository, `.env` or a cron command. Pull failure leaves the current site untouched.
 

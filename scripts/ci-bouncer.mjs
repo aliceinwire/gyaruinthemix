@@ -31,6 +31,7 @@ const env = {
   COMPOSE_PROJECT_NAME: project,
   COMPOSE_FILE: join(directory, 'docker-compose.yml'),
   STORE_DOMAIN: 'gyaruinthemix.example',
+  STORE_HOSTS: '',
   SITE_URL: 'https://gyaruinthemix.example',
   LETSENCRYPT_EMAIL: 'ci@example.test',
   GYARUINTHEMIX_WEB_IMAGE: `gyaruinthemix-web:${process.env.IMAGE_TAG}`,
@@ -107,6 +108,21 @@ try {
     );
   }
   assert.equal(web.environment.LETSENCRYPT_HOST, web.environment.VIRTUAL_HOST);
+  // Both hosts can acquire TLS while checkout remains bound to the primary origin.
+  env.STORE_HOSTS = `${env.STORE_DOMAIN},legacy.gyaruinthemix.example`;
+  const staged = render(env.COMPOSE_FILE);
+  const stagedWeb = staged.services['gyaruinthemix-web'];
+  assert.equal(stagedWeb.environment.VIRTUAL_HOST, env.STORE_HOSTS);
+  assert.equal(stagedWeb.environment.LETSENCRYPT_HOST, env.STORE_HOSTS);
+  if (apiMode)
+    assert.equal(
+      staged.services['gyaruinthemix-api'].environment.SITE_URL,
+      env.SITE_URL,
+    );
+  for (const name of oldServices)
+    assert.deepEqual(staged.services[name], original.services[name]);
+  env.STORE_HOSTS = '';
+
   assert.equal(web.environment.VIRTUAL_PORT, '8080');
   assert.equal(web.environment.HTTPS_METHOD, 'redirect');
   assert.ok(!web.depends_on);

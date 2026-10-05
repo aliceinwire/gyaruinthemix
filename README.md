@@ -324,7 +324,11 @@ The 64 MiB nginx / 192 MiB Node memory limits are **provisional caps**, not meas
 
 ## 5. Domain, proxy and TLS
 
-Set `STORE_DOMAIN=YOUR_REAL_DOMAIN` and `LETSENCRYPT_EMAIL` in `~/bouncer/.env`, using a new hostname rather than `znc.alicef.me`. The bouncer file derives the API's `SITE_URL=https://STORE_DOMAIN` and uses the stack's existing `proxy-tier`/`nginx-proxy` network. Update DNS using the existing provider. Preserve Cloudflare if present; it is not a requirement. If using it, require strict HTTPS to the existing origin, bypass caching/challenges for `/api/*`, and do not log/cache Checkout responses or webhook payloads.
+The public canonical domain is **https://gyaruinthemix.com**. `src/data/urls.mjs` drives Astro's site URL, canonical/Open Graph metadata, `robots.txt` and the sitemap. Its explicit public-page list excludes hidden sandbox pages, checkout returns and errors, which remain `noindex`. Update that list when adding an indexable page. These URLs are built into both frontend image modes; local development and the API's runtime `SITE_URL` remain separate.
+
+To move the existing `gyaruinthemix.alicef.me` deployment, use the [staged domain migration guide](deploy/bouncer/DOMAIN-MIGRATION.md). It covers DNS/TLS, optional routing aliases, origin-scoped carts, pending sandbox sessions and the existing Stripe webhook destination. Merging a code change does not perform that migration or install an old-domain redirect.
+
+For a new installation, set `STORE_DOMAIN=gyaruinthemix.com` and `LETSENCRYPT_EMAIL` in `~/bouncer/.env`, using a new hostname rather than `znc.alicef.me`. The bouncer file derives the API's `SITE_URL=https://STORE_DOMAIN` and uses the stack's existing `proxy-tier`/`nginx-proxy` network. Update DNS using the existing provider. Preserve Cloudflare if present; it is not a requirement. If using it, require strict HTTPS to the existing origin, bypass caching/challenges for `/api/*`, and do not log/cache Checkout responses or webhook payloads.
 
 The existing proxy and certificate companion use `VIRTUAL_HOST`, `VIRTUAL_PORT=8080`, `LETSENCRYPT_HOST` and `LETSENCRYPT_EMAIL`. The website gains no public port, Docker socket or certificate mount. The companion manages the new certificate and the proxy's established routing. Inspect their actual health before deployment; do not restart or recreate the shared proxy to troubleshoot the website blindly. If the supplied stack does not match the target, stop and review its configuration before proceeding.
 
@@ -344,7 +348,7 @@ After preflight, configure a restricted TEST key, TEST Price IDs, TEST shipping 
 - `checkout.session.async_payment_succeeded`
 - `checkout.session.async_payment_failed`
 
-Destination: `https://YOUR_REAL_DOMAIN/api/stripe/webhook`. Match the event API version to the pinned SDK's API version; obtain it without credentials using `node --input-type=module -e 'import Stripe from "stripe"; console.log(Stripe.API_VERSION)'` on the development machine. When updating Stripe SDK/API versions, rerun tests and test delivery before release.
+Destination: `https://gyaruinthemix.com/api/stripe/webhook` after completing the domain cutover. Match the event API version to the pinned SDK's API version; obtain it without credentials using `node --input-type=module -e 'import Stripe from "stripe"; console.log(Stripe.API_VERSION)'` on the development machine. When updating Stripe SDK/API versions, rerun tests and test delivery before release.
 
 After configuring API mode, review the complete shared stack without starting it:
 

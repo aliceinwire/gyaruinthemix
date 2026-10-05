@@ -2,6 +2,7 @@
 import '../styles/global.css';
 import '../styles/artist.css';
 import { site } from '../data/site.mjs';
+import { canonicalUrl, publicPaths } from '../data/urls.mjs';
 import { usesCart } from '../data/checkout.mjs';
 import Cart from '../components/Cart.astro';
 import TestCart from '../components/TestCart.astro';
@@ -11,6 +12,8 @@ const {
   description = `DJありねぇとDJちゃなのB2B DJユニット、ギャルインザミックス（GYARUINTHEMIX）。${site.artist.genres.map((genre) => genre.label).join('／')}、${site.artist.bpm} BPM。${site.artist.aesthetic}の音楽、出演情報、出演依頼・お問い合わせ。`,
 } = Astro.props;
 const current = Astro.url.pathname;
+const indexable = !testShop && publicPaths.includes(current);
+const canonical = canonicalUrl(current);
 const navigation = [
   ['/about/', 'ふたりのこと'],
   ['/music/', '音楽'],
@@ -29,7 +32,29 @@ const navigation = [
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
     <meta name="theme-color" content="#ed1689" />
-    {testShop && <meta name="robots" content="noindex, nofollow, noarchive" />}
+    {
+      !indexable && (
+        <meta name="robots" content="noindex, nofollow, noarchive" />
+      )
+    }
+    {
+      indexable && (
+        <>
+          <link rel="canonical" href={canonical} />
+          <meta property="og:url" content={canonical} />
+          <meta property="og:type" content="website" />
+          <meta property="og:site_name" content="ギャルインザミックス" />
+          <meta property="og:locale" content="ja_JP" />
+          <meta property="og:title" content={title} />
+          <meta property="og:description" content={description} />
+          <meta
+            property="og:image"
+            content={canonicalUrl('/assets/logo.webp')}
+          />
+          <meta property="og:image:alt" content="ギャルインザミックス" />
+        </>
+      )
+    }
     <title>{title}</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   </head>
