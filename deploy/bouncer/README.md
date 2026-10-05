@@ -6,7 +6,7 @@ After one-time activation, a merge into `main` runs CI, publishes tested website
 
 ## Website domain
 
-The public domain is `gyaruinthemix.com`. Set `STORE_DOMAIN=gyaruinthemix.com` for a new installation after DNS/TLS preparation. For the existing `gyaruinthemix.alicef.me` deployment, follow the [staged domain migration](DOMAIN-MIGRATION.md) before changing the primary origin. Optional `STORE_HOSTS` routes/certifies multiple names while the API still accepts exactly one `STORE_DOMAIN`; it does not install a redirect or migrate browser carts. Existing `.env` values are not overwritten by source/image updates.
+The public domain is `gyaruinthemix.com`. Set `STORE_DOMAIN=gyaruinthemix.com` after DNS/TLS preparation. Optional `STORE_HOSTS` routes/certifies multiple names while the API still accepts exactly one `STORE_DOMAIN`. The web image includes an exact `www.gyaruinthemix.com` → HTTPS apex redirect; follow the [www activation and verification guide](WWW-REDIRECT.md) to add its DNS and routing/certificate alias. It does not migrate browser carts or restore the retired hostname. Existing `.env` values are not overwritten by source/image updates. The [staged domain-migration guide](DOMAIN-MIGRATION.md) remains a reference for deployments that have not yet moved their primary origin.
 
 ## Release and trust boundary
 

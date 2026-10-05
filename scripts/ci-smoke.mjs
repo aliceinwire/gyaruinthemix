@@ -129,6 +129,19 @@ assert.equal(JSON.parse((await request('/api/health')).text).status, 'ok');
 const catalog = JSON.parse((await request('/api/catalog')).text);
 assert.equal(catalog.mode, 'test');
 assert.equal(catalog.salesEnabled, false);
+// www routing/redirects never grant an additional browser checkout origin.
+await request('/api/checkout', 403, {
+  method: 'POST',
+  headers: {
+    'content-type': 'application/json',
+    origin: 'https://www.gyaruinthemix.com',
+    'idempotency-key': randomUUID(),
+  },
+  body: JSON.stringify({
+    items: [{ product: 'sticker', quantity: 1 }],
+    catalogVersion: 'a'.repeat(64),
+  }),
+});
 await request('/api/checkout', 503, {
   method: 'POST',
   headers: {

@@ -84,6 +84,7 @@ services:
     expose: ['8080']
     environment:
       # Optional aliases affect routing/certificates only, never API origin checks.
+      # The web image redirects www.gyaruinthemix.com to the fixed HTTPS apex.
       VIRTUAL_HOST: ${STORE_HOSTS:-${STORE_DOMAIN:?Set STORE_DOMAIN in bouncer/.env}}
       VIRTUAL_PORT: '8080'
       VIRTUAL_PROTO: http
