@@ -12,6 +12,7 @@ import {
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { checkWwwRedirect } from './check-www-redirect.mjs';
 
 assert.equal(process.env.GITHUB_ACTIONS, 'true');
 assert.equal(process.env.RUNNER_ENVIRONMENT, 'github-hosted');
@@ -108,8 +109,9 @@ try {
     );
   }
   assert.equal(web.environment.LETSENCRYPT_HOST, web.environment.VIRTUAL_HOST);
-  // Both hosts can acquire TLS while checkout remains bound to the primary origin.
-  env.STORE_HOSTS = `${env.STORE_DOMAIN},legacy.gyaruinthemix.example`;
+  // www is opt-in routing/TLS only; checkout remains bound to the apex origin.
+  env.STORE_DOMAIN = 'gyaruinthemix.com';
+  env.STORE_HOSTS = `${env.STORE_DOMAIN},www.gyaruinthemix.com`;
   const staged = render(env.COMPOSE_FILE);
   const stagedWeb = staged.services['gyaruinthemix-web'];
   assert.equal(stagedWeb.environment.VIRTUAL_HOST, env.STORE_HOSTS);
@@ -117,10 +119,11 @@ try {
   if (apiMode)
     assert.equal(
       staged.services['gyaruinthemix-api'].environment.SITE_URL,
-      env.SITE_URL,
+      'https://gyaruinthemix.com',
     );
   for (const name of oldServices)
     assert.deepEqual(staged.services[name], original.services[name]);
+  env.STORE_DOMAIN = 'gyaruinthemix.example';
   env.STORE_HOSTS = '';
 
   assert.equal(web.environment.VIRTUAL_PORT, '8080');
@@ -207,6 +210,7 @@ try {
         ),
       );
     smoke();
+    await checkWwwRedirect('http://127.0.0.1:8089');
     docker('compose', 'restart', ...appServices);
     docker(
       'compose',
@@ -221,6 +225,7 @@ try {
       ...appServices,
     );
     smoke();
+    await checkWwwRedirect('http://127.0.0.1:8089');
     console.log(
       'PASS merged website startup and restart; existing services were never started',
     );

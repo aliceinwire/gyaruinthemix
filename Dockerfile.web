@@ -16,6 +16,7 @@ RUN npm run build && if [ "$CHECKOUT_MODE" = "api" ]; then cp nginx-api.conf che
 
 FROM nginx:1.30.5-alpine3.24-slim AS production
 COPY deploy/nginx.conf /etc/nginx/nginx.conf
+COPY deploy/bouncer/nginx-www-redirect.conf /etc/nginx/www-redirect.conf
 COPY deploy/security-headers.conf /etc/nginx/security-headers.conf
 COPY --from=build /build/checkout-location.conf /etc/nginx/checkout-location.conf
 COPY --from=build /build/dist /usr/share/nginx/html

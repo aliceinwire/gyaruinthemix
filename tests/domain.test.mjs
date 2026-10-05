@@ -54,3 +54,35 @@ test('deployment defaults use the new domain without changing local or sales def
   assert.match(compose, /VIRTUAL_HOST: \$\{STORE_HOSTS:-\$\{STORE_DOMAIN:/);
   assert.match(compose, /LETSENCRYPT_HOST: \$\{STORE_HOSTS:-\$\{STORE_DOMAIN:/);
 });
+
+test('www redirect ships in both web modes with a fixed destination and safe exceptions', async () => {
+  const nginx = await read('deploy/nginx.conf');
+  assert.match(nginx, /listen 8080 default_server;/);
+  assert.match(nginx, /include \/etc\/nginx\/www-redirect\.conf;/);
+  const redirect = await read('deploy/bouncer/nginx-www-redirect.conf');
+  assert.match(redirect, /server_name www\.gyaruinthemix\.com;/);
+  assert.match(
+    redirect,
+    /return 308 https:\/\/gyaruinthemix\.com\$request_uri;/,
+  );
+  assert.doesNotMatch(
+    redirect,
+    /\$(?:host|http_|scheme)|gyaruinthemix\.alicef\.me/,
+  );
+  assert.match(redirect, /location = \/web-health \{[^}]*return 200 'ok';/);
+  assert.match(
+    redirect,
+    /location \^~ \/\.well-known\/acme-challenge\/ \{ return 404; \}/,
+  );
+  const dockerfile = await read('Dockerfile.web');
+  assert.match(
+    dockerfile,
+    /COPY deploy\/bouncer\/nginx-www-redirect\.conf \/etc\/nginx\/www-redirect\.conf/,
+  );
+  assert.match(
+    await read('.dockerignore'),
+    /^!deploy\/bouncer\/nginx-www-redirect\.conf$/m,
+  );
+  const ci = await read('scripts/ci-bouncer.mjs');
+  assert.equal(ci.match(/await checkWwwRedirect\(/g).length, 2);
+});
