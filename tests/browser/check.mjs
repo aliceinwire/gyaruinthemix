@@ -107,7 +107,29 @@ async function scenario(label, action, page) {
 }
 async function screenshot(page, name) {
   const file = name.replace(/[^a-zA-Z0-9_-]/g, '-') + '.png';
-  await page.screenshot({ path: resolve(out, file), fullPage: true });
+  const modalOpen = (await page.locator('dialog[open]').count()) > 0;
+  if (!modalOpen) {
+    const position = await page.evaluate(() => ({ x: scrollX, y: scrollY }));
+    // Full-page capture alone does not trigger below-fold lazy images. Scroll
+    // each visible image into view and decode it before reviewing the pixels.
+    for (const img of await page.locator('img[src]').all()) {
+      if (!(await img.isVisible())) continue;
+      await img.scrollIntoViewIfNeeded();
+      try {
+        await img.evaluate((image) => image.decode());
+      } catch (error) {
+        check(false, name + ' screenshot image loads', {
+          src: await img.getAttribute('src'),
+          error: error.message,
+        });
+      }
+    }
+    await page.evaluate(({ x, y }) => window.scrollTo(x, y), position);
+  }
+  await page.evaluate(() => document.fonts.ready);
+  // A modal is viewport-bound; do not append a misleading, un-dimmed document
+  // beneath it in a full-page screenshot.
+  await page.screenshot({ path: resolve(out, file), fullPage: !modalOpen });
   report.screenshots.push(file);
 }
 const definitions = JSON.parse(
@@ -229,6 +251,22 @@ async function inspect(page, pathname, width) {
   const label = pathname + ' at ' + width;
   check(response.ok(), label + ' response', response.status());
   await overflow(page, label);
+  if (width > 760 && ['/', '/en/'].includes(pathname)) {
+    const geometry = await page.evaluate(() => ({
+      logoTop: document.querySelector('.hero-brand').getBoundingClientRect()
+        .top,
+      contactBottom: document
+        .querySelector('.hero-contact-links')
+        .getBoundingClientRect().bottom,
+    }));
+    const separated = geometry.logoTop >= geometry.contactBottom + 8;
+    check(
+      separated,
+      label + ' hero logo clears contact links by 8px',
+      geometry,
+    );
+    if (!separated) await screenshot(page, 'hero-overlap-' + label);
+  }
   const en = pathname.startsWith('/en/');
   check(
     (await page.locator('html').getAttribute('lang')) === (en ? 'en' : 'ja'),
@@ -553,13 +591,20 @@ async function cartScenarios() {
           origin + '/en' + base + 'success/?session_id=cs_test_QA',
           { waitUntil: 'networkidle' },
         );
-        if (testShop)
+        if (testShop) {
+          const returnStatus = await page
+            .locator('#test-return-status')
+            .innerText();
+          const cautious =
+            /No verifiable checkout|previous test checkout/i.test(returnStatus);
           check(
-            /No verifiable checkout|previous test checkout/i.test(
-              await page.locator('#test-return-status').innerText(),
-            ),
+            cautious,
             base + ' unverified return remains cautious',
+            returnStatus,
           );
+          if (!cautious)
+            await screenshot(page, 'unverified-test-return-status');
+        }
       },
       page,
     );

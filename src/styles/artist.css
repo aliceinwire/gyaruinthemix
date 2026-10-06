@@ -73,7 +73,8 @@
   isolation: isolate;
 }
 .unit-hero-copy {
-  padding: 70px 4% 210px 9%;
+  /* Reserve space for the large rotated logo below all text and links. */
+  padding: 70px 4% clamp(270px, 34vw, 400px) 9%;
   position: relative;
   z-index: 1;
 }
