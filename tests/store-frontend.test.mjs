@@ -90,6 +90,7 @@ function fixture({
   blockedStorage = false,
   returnPage,
   search = '',
+  pathname = '/',
   initialReplies = [],
 } = {}) {
   const ids = Object.fromEntries(
@@ -169,7 +170,7 @@ function fixture({
       requests.push({ url, options });
       return replies.length ? replies.shift() : response(catalog);
     },
-    location: { search, assign: (url) => destinations.push(url) },
+    location: { pathname, search, assign: (url) => destinations.push(url) },
     crypto: { randomUUID: () => `test-uuid-${++uuid}` },
     setTimeout: () => 1,
     clearTimeout: () => {},
@@ -233,6 +234,7 @@ test('sandbox calls only test catalog and checkout, with no real-payment or ship
   assert.deepEqual(JSON.parse(ui.requests[1].options.body), {
     items: [{ product: 'sticker', quantity: 1 }],
     catalogVersion: 'catalog-v1',
+    locale: 'ja',
   });
 });
 
@@ -467,6 +469,7 @@ function pendingFixture({
   search = '?session_id=cs_test_fixture',
   replyStatus = 200,
   attemptPatch = {},
+  pathname = '/',
 } = {}) {
   const local = storage({
     'gyaru-test-cart-v1': JSON.stringify(current),
@@ -498,6 +501,7 @@ function pendingFixture({
     productCards: false,
     returnPage,
     search,
+    pathname,
     initialReplies: [
       response(
         { mode: 'test', sessionId: 'cs_test_fixture', status },
@@ -801,4 +805,194 @@ test('an unsaved in-memory cart cannot redirect to a payment that would leave a 
     JSON.parse(local.getItem('gyaru-test-cart-v1')),
     submittedCart,
   );
+});
+
+test('English test shop localizes products, controls, accessible labels and sandbox notices', async () => {
+  const ui = fixture({ pathname: '/en/shop-test/' });
+  await ui.controller.ready;
+  assert.equal(ui.requests[0].options.headers['X-Shop-Locale'], 'en');
+  assert.match(
+    ui.ids['cart-items'].children[0].textContent,
+    /Your bag is empty/,
+  );
+  assert.match(
+    ui.ids['catalog-status'].textContent,
+    /No real purchases or shipping/,
+  );
+  assert.match(
+    ui.cards[0].querySelector('[data-price]').textContent,
+    /¥800 \(tax included\)/,
+  );
+  assert.equal(
+    ui.cards[0].querySelector('[data-availability]').textContent,
+    'Test only',
+  );
+  assert.equal(ui.cards[0].add.textContent, 'Add to bag ＋');
+  ui.cards[0].add.click();
+  assert.equal(
+    ui.ids['cart-items'].children[0].children[0].textContent,
+    'Logo sticker',
+  );
+  const buttons = ui.ids['cart-items'].querySelectorAll('button');
+  assert.deepEqual(
+    buttons.map((b) => b.getAttribute('aria-label')),
+    [
+      'Decrease quantity of Logo sticker',
+      'Increase quantity of Logo sticker',
+      'Remove Logo sticker',
+    ],
+  );
+  assert.equal(buttons[2].textContent, 'Remove');
+  assert.match(
+    ui.ids['cart-shipping'].textContent,
+    /No real payment or shipping/,
+  );
+  assert.equal(ui.ids['announcement'].textContent, 'Added to your bag ♡');
+  assert.equal(ui.ids.checkout.textContent, 'Continue to test checkout ↗');
+  ui.replies.push(response({ error: 'Please retry later.' }, 503));
+  await ui.ids.checkout.click();
+  const request = ui.requests[1];
+  assert.equal(JSON.parse(request.options.body).locale, 'en');
+  assert.equal(request.options.headers['X-Shop-Locale'], 'en');
+  assert.equal(ui.ids['cart-error'].textContent, 'Please retry later.');
+});
+
+test('English closed catalogs and failed checkout stay disabled or safely retryable with English errors', async () => {
+  const disabled = fixture({
+    pathname: '/en/shop-test/',
+    catalog: { ...availableCatalog(), salesEnabled: false, products: [] },
+  });
+  await disabled.controller.ready;
+  assert.equal(disabled.ids.checkout.disabled, true);
+  assert.match(
+    disabled.ids['catalog-status'].textContent,
+    /currently disabled/,
+  );
+  const malformed = fixture({
+    pathname: '/en/shop-test/',
+    catalog: availableCatalog('live'),
+  });
+  await malformed.controller.ready;
+  assert.equal(malformed.ids.checkout.disabled, true);
+  assert.match(
+    malformed.ids['catalog-status'].textContent,
+    /could not be loaded/,
+  );
+  const ui = fixture({ pathname: '/en/shop-test/' });
+  await ui.controller.ready;
+  ui.cards[0].add.click();
+  ui.replies.push(
+    response({
+      mode: 'live',
+      sessionId: 'cs_test_fake',
+      status: 'open',
+      url: 'https://checkout.stripe.com/',
+    }),
+  );
+  await ui.ids.checkout.click();
+  assert.equal(
+    ui.ids['cart-error'].textContent,
+    'The test checkout could not be verified.',
+  );
+  assert.deepEqual(ui.destinations, []);
+});
+
+test('language switches reuse the original attempt locale, body and key instead of starting another payment', async () => {
+  for (const [from, to, originalLocale] of [
+    ['/en/shop-test/', '/shop-test/', 'en'],
+    ['/shop-test/', '/en/shop-test/', 'ja'],
+  ]) {
+    const first = fixture({ pathname: from });
+    await first.controller.ready;
+    first.cards[0].add.click();
+    first.replies.push(response({ error: 'retry' }, 503));
+    await first.ids.checkout.click();
+    const saved = JSON.parse(first.session.getItem('gyaru-test-checkout-v1'));
+    assert.equal(saved.locale, originalLocale);
+    assert.equal(JSON.parse(saved.body).locale, undefined);
+    const second = fixture({
+      pathname: to,
+      local: first.local,
+      session: first.session,
+    });
+    await second.controller.ready;
+    second.replies.push(response({ error: 'retry' }, 503));
+    await second.ids.checkout.click();
+    assert.equal(
+      first.requests[1].options.headers['Idempotency-Key'],
+      second.requests[1].options.headers['Idempotency-Key'],
+    );
+    assert.equal(
+      first.requests[1].options.body,
+      second.requests[1].options.body,
+    );
+    assert.equal(
+      JSON.parse(second.requests[1].options.body).locale,
+      originalLocale,
+    );
+    assert.equal(
+      second.requests[1].options.headers['X-Shop-Locale'],
+      originalLocale === 'en' ? 'ja' : 'en',
+    );
+  }
+});
+
+test('an old Japanese attempt stays Japanese on an English retry with the exact same key', async () => {
+  const first = fixture();
+  await first.controller.ready;
+  first.cards[0].add.click();
+  first.replies.push(response({ error: 'retry' }, 503));
+  await first.ids.checkout.click();
+  const saved = JSON.parse(first.session.getItem('gyaru-test-checkout-v1'));
+  delete saved.locale;
+  first.session.setItem('gyaru-test-checkout-v1', JSON.stringify(saved));
+  const english = fixture({
+    pathname: '/en/shop-test/',
+    local: first.local,
+    session: first.session,
+  });
+  await english.controller.ready;
+  english.replies.push(response({ error: 'retry' }, 503));
+  await english.ids.checkout.click();
+  assert.equal(
+    english.requests[1].options.headers['Idempotency-Key'],
+    saved.key,
+  );
+  assert.equal(JSON.parse(english.requests[1].options.body).locale, 'ja');
+});
+
+test('English test returns verify receipts and explain paid, pending and missing states without changing safety', async () => {
+  const paid = pendingFixture({ pathname: '/en/shop-test/success/' });
+  await paid.controller.ready;
+  assert.deepEqual(JSON.parse(paid.local.getItem('gyaru-test-cart-v1')), []);
+  assert.match(
+    paid.ids['test-return-status'].textContent,
+    /Test payment was verified/,
+  );
+  assert.equal(paid.requests[0].options.headers['X-Shop-Locale'], 'en');
+  const pending = pendingFixture({
+    pathname: '/en/shop-test/success/',
+    status: 'pending',
+  });
+  await pending.controller.ready;
+  assert.deepEqual(
+    JSON.parse(pending.local.getItem('gyaru-test-cart-v1')),
+    submittedCart,
+  );
+  assert.equal(pending.ids.checkout.disabled, true);
+  assert.match(
+    pending.ids['test-return-status'].textContent,
+    /To prevent duplicates/,
+  );
+  const direct = fixture({
+    pathname: '/en/shop-test/success/',
+    productCards: false,
+    returnPage: 'success',
+  });
+  await direct.controller.ready;
+  assert.match(
+    direct.ids['test-return-status'].textContent,
+    /Opening|No verifiable checkout details/,
+  );
+  assert.equal(direct.requests.length, 0);
 });

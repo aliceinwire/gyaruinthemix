@@ -131,11 +131,11 @@ test('official contact and member destinations are explicit, without opening sal
   assert.match(contact, /B2B DJユニット/);
   assert.match(
     await readSource('layouts/Layout.astro'),
-    /\['\/contact\/', '出演依頼・お問い合わせ'\]/,
+    /\['\/contact\/', t\('出演依頼・お問い合わせ', 'Bookings & contact'\)\]/,
   );
   for (const page of ['legal', 'privacy']) {
     const source = await readSource(`pages/${page}.astro`);
-    assert.match(source, /href="\/contact\/"/);
+    assert.match(source, /href=\{localizePath\('\/contact\/', locale\)\}/);
     assert.doesNotMatch(source, /販売開始前にお問い合わせ先をご案内/);
   }
   assert.equal(site.tracks.length, 4);

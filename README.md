@@ -1,8 +1,16 @@
 # GYARUINTHEMIX official artist website, fan hub and store
 
-The Japanese official DJ-unit website for ギャルインザミックス: artist identity, music, live/media listings, news, a public fan hub and merchandise, with an Astro build, nginx and Stripe-hosted Checkout. The default uses public Stripe Payment Links and stores no Stripe credentials; a Fastify custom-cart API is optional. The supplied logo is preserved. Photos are supplied project assets. No third-party analytics, card forms, database server, Redis or admin panel. GitHub CI publishes tested images for optional pull-based website updates on the VPS.
+The bilingual Japanese/English official DJ-unit website for ギャルインザミックス: artist identity, music, live/media listings, news, a public fan hub and merchandise, with an Astro build, nginx and Stripe-hosted Checkout. The default uses public Stripe Payment Links and stores no Stripe credentials; a Fastify custom-cart API is optional. The supplied logo is preserved. Photos are supplied project assets. No third-party analytics, card forms, database server, Redis or admin panel. GitHub CI publishes tested images for optional pull-based website updates on the VPS.
 
 **Delivery state:** artist/fan pages and shop implemented; fan-club enrollment is not open and has no membership backend; products ship as `coming_soon`, prices unset and sales disabled. This is a deployable implementation, not a claim that your VPS, Stripe account or live shop has been configured. See `VALIDATION.md` for verification scope and release evidence. Complete the TEST-mode launch procedure before enabling live sales.
+
+## Japanese and English
+
+Japanese remains the default at `/`; the complete English counterpart lives at `/en/`. The visible 日本語 / English links keep visitors on the equivalent page and preserve query parameters and photo anchors in the browser. Both languages share page templates and the same catalog, cart and sales gates. Song titles and the supplied logo retain their original identity.
+
+Editorial English text is in `config/site.en.json`; source dates, destinations and publication/registration flags remain in `config/site.json`. Update both language copies when editing public content. Shared page and UI copy is localized in the templates and small locale modules. The sitemap lists both public route sets with reciprocal language alternates and Japanese as `x-default`. English sandbox and checkout-return pages remain `noindex` and excluded from the sitemap; sandbox routes have no public navigation links.
+
+API checkout accepts only `ja` or `en` and returns to that language's success/cancel page. Existing saved checkout attempts retain their original language on retry, including after switching the site language, so localization cannot cause a new payment attempt. Language changes do not alter public sales status, payment configuration or shipping rules.
 
 ## Hidden sandbox shop
 
@@ -233,6 +241,7 @@ For offline UI development, `npm run test:ui-api` may replace `npm run dev:api`.
 
 - **Secret scanning:** checksum-pinned Gitleaks scans the fetched Git history, including removed credentials, and tests staged scans/commit hooks with synthetic fixtures. Output is redacted. Install the local hook using `npm run security:hooks` after the [scanner setup](SECURITY.md#secret-scanning-before-commits-and-in-ci).
 - **Tests, lint and static build:** installs the lockfile with `npm ci`, checks lint/formatting and script syntax, runs the offline unit suite, then generates the Astro site and optimized images.
+- **Bilingual browser checks:** builds each checkout mode, then checks Japanese/English navigation, 320–1440 px layouts, gallery/video controls, and mocked cart states with isolated Playwright tooling. External requests are blocked, no payment is created, and screenshots/results are saved as short-lived workflow artifacts. See `tests/browser/README.md` for local use.
 - **Key-free bouncer integration:** validates the default single web service without Stripe secret files, synthetic public links, assets/headers, API isolation and restart recovery.
 - **Optional API bouncer integration:** builds API-mode images, validates the same deployment file, checks container hardening, routes/headers, closed checkout, signed/invalid webhook handling and duplicate-event persistence after restart.
 

@@ -48,6 +48,7 @@ async function setup(t, overrides = {}) {
   const calls = { prices: [], shipping: [], checkout: [], retrieve: [] };
   const sessions = new Map();
   const cachedCreates = new Map();
+  const cachedParams = new Map();
   const stripe = {
     webhooks: signer.webhooks,
     prices: {
@@ -85,7 +86,11 @@ async function setup(t, overrides = {}) {
           calls.checkout.push(args);
           if (overrides.createFailure) throw new Error('Mock create failure');
           const [params, options] = args;
+          const previous = cachedParams.get(options.idempotencyKey);
+          if (previous && JSON.stringify(previous) !== JSON.stringify(params))
+            throw new Error('Stripe idempotency parameter mismatch');
           if (!cachedCreates.has(options.idempotencyKey)) {
+            cachedParams.set(options.idempotencyKey, structuredClone(params));
             const id = `cs_test_UNITTESTONLY_${cachedCreates.size + 1}`;
             const session = {
               id,
@@ -280,6 +285,7 @@ test('sandbox cart uses all four runtime prices, JP shipping, isolated metadata 
     'https://shop.example/shop-test/success/?session_id={CHECKOUT_SESSION_ID}',
   );
   assert.equal(params.cancel_url, 'https://shop.example/shop-test/cancel/');
+  assert.equal(params.locale, 'ja');
   assert.deepEqual(params.metadata, {
     store: 'gyaruinthemix-test',
     checkout_attempt: createHash('sha256')
@@ -300,6 +306,113 @@ test('sandbox cart uses all four runtime prices, JP shipping, isolated metadata 
     url: 'https://checkout.stripe.com/c/pay/cs_test_UNITTESTONLY_1',
   });
   assert.deepEqual(x.calls.retrieve, ['cs_test_UNITTESTONLY_1']);
+});
+
+test('English sandbox checkout keeps trusted test settings and localized return paths', async (t) => {
+  const x = await setup(t);
+  const response = await x.checkout(undefined, { locale: 'en' });
+  assert.equal(response.statusCode, 200);
+  const [params] = x.calls.checkout[0];
+  assert.equal(params.locale, 'en');
+  assert.equal(
+    params.success_url,
+    'https://shop.example/en/shop-test/success/?session_id={CHECKOUT_SESSION_ID}',
+  );
+  assert.equal(params.cancel_url, 'https://shop.example/en/shop-test/cancel/');
+  assert.deepEqual(params.shipping_address_collection, {
+    allowed_countries: ['JP'],
+  });
+  assert.deepEqual(params.adaptive_pricing, { enabled: false });
+  assert.deepEqual(params.payment_intent_data.metadata, {
+    store: 'gyaruinthemix-test',
+  });
+  assert.equal(params.metadata.store, 'gyaruinthemix-test');
+  assert.equal(response.json().mode, 'test');
+  assert.equal(
+    (await x.checkout('/api/checkout', { locale: 'en' })).statusCode,
+    503,
+  );
+  assert.equal(x.calls.checkout.length, 1);
+});
+
+for (const [initial, changed] of [
+  ['ja', 'en'],
+  ['en', 'ja'],
+])
+  test(`switching a sandbox attempt from ${initial} to ${changed} cannot create a duplicate session`, async (t) => {
+    const x = await setup(t);
+    const headers = { 'idempotency-key': randomUUID() };
+    const first = await x.checkout(undefined, { locale: initial }, headers);
+    assert.equal(first.statusCode, 200);
+    const changedLocale = await x.checkout(
+      undefined,
+      { locale: changed },
+      headers,
+    );
+    assert.equal(changedLocale.statusCode, 503);
+    assert.deepEqual(Object.keys(changedLocale.json()), ['error']);
+    assert.doesNotMatch(changedLocale.body, /checkout\.stripe\.com|mismatch/);
+    assert.equal(
+      x.calls.checkout[0][1].idempotencyKey,
+      x.calls.checkout[1][1].idempotencyKey,
+    );
+    assert.equal(x.sessions.size, 1);
+    assert.equal(x.calls.retrieve.length, 1);
+    const retry = await x.checkout(undefined, { locale: initial }, headers);
+    assert.deepEqual(retry.json(), first.json());
+    assert.deepEqual(x.calls.checkout[0], x.calls.checkout[2]);
+    assert.equal(x.sessions.size, 1);
+  });
+
+test('legacy sandbox attempt retries with explicit Japanese retain the original session', async (t) => {
+  const x = await setup(t);
+  const headers = { 'idempotency-key': randomUUID() };
+  const first = await x.checkout(undefined, {}, headers);
+  const retry = await x.checkout(undefined, { locale: 'ja' }, headers);
+  assert.equal(first.statusCode, 200);
+  assert.deepEqual(retry.json(), first.json());
+  assert.deepEqual(x.calls.checkout[0], x.calls.checkout[1]);
+  assert.equal(x.sessions.size, 1);
+});
+
+test('sandbox locale validation and English errors preserve protocol and status safeguards', async (t) => {
+  const x = await setup(t);
+  const headers = { 'x-shop-locale': 'en' };
+  for (const locale of ['fr', 'EN', '', '/en', null, 1, ['en']]) {
+    const invalid = await x.checkout(undefined, { locale }, headers);
+    assert.equal(invalid.statusCode, 400);
+    assert.equal(
+      invalid.json().error,
+      'Please check the information you entered.',
+    );
+  }
+  const protocol = await x.checkout(
+    undefined,
+    { locale: 'en' },
+    { 'x-checkout-protocol': '1' },
+  );
+  assert.equal(protocol.statusCode, 409);
+  assert.equal(
+    protocol.json().error,
+    'Please reload the page and review your bag.',
+  );
+  const attemptId = randomUUID();
+  const unknown = await x.status('cs_test_UNKNOWN', attemptId, {}, headers);
+  assert.equal(unknown.statusCode, 404);
+  assert.equal(
+    unknown.json().error,
+    'Checkout information could not be verified.',
+  );
+  const denied = await x.status(
+    'cs_test_UNKNOWN',
+    attemptId,
+    {},
+    { ...headers, origin: 'https://evil.example' },
+  );
+  assert.equal(denied.statusCode, 403);
+  assert.equal(denied.json().error, 'Please try again from the shop.');
+  assert.equal(x.calls.checkout.length, 0);
+  assert.deepEqual(x.calls.retrieve, ['cs_test_UNKNOWN']);
 });
 
 for (const [name, overrides] of [

@@ -1,5 +1,9 @@
 ---
-import { site } from '../data/site.mjs';
+import { getSite } from '../data/site.mjs';
+import { getLocale, translator } from '../data/i18n.mjs';
+const locale = getLocale(Astro.url.pathname);
+const t = translator(locale);
+const site = getSite(locale);
 
 const { photos = site.photos } = Astro.props;
 ---
@@ -12,7 +16,7 @@ const { photos = site.photos } = Astro.props;
           class="photo-open"
           data-photo={photo.image}
           data-caption={photo.caption}
-          aria-label={`${photo.caption} 写真を大きく見る`}
+          aria-label={`${photo.caption} ${t('写真を大きく見る', 'Enlarge photo')}`}
           aria-haspopup="dialog"
           aria-controls="photo-dialog"
         >
@@ -48,8 +52,10 @@ const { photos = site.photos } = Astro.props;
   }
 </div>
 <dialog class="photo-dialog" id="photo-dialog" aria-labelledby="photo-caption">
-  <button class="icon-button" data-photo-close aria-label="写真を閉じる"
-    >×</button
+  <button
+    class="icon-button"
+    data-photo-close
+    aria-label={t('写真を閉じる', 'Close photo')}>×</button
   >
   <img id="photo-full" alt="" width="900" height="1200" />
   <p id="photo-caption"></p>

@@ -1,15 +1,44 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import { getLocale, localizePath, translator } from '../../data/i18n.mjs';
+const locale = getLocale(Astro.url.pathname);
+const t = translator(locale);
 ---
 
-<Layout testShop title="テストショップへ戻る｜ギャルインザミックス">
+<Layout
+  testShop
+  title={t(
+    'テストショップへ戻る｜ギャルインザミックス',
+    'Back to the test shop | Gyaru in the Mix',
+  )}
+>
   <section class="result">
     <span class="result-heart" aria-hidden="true">♡</span>
     <p class="eyebrow">TEST ONLY · Stripe Sandbox</p>
-    <h1>テストを<br />続けられます。</h1>
-    <p>実際のお支払い・商品の発送はありません。</p>
-    <p class="muted">テスト用バッグの内容を確認して、もう一度試せます。</p>
-    <a class="button" href="/shop-test/">テストショップへ戻る ↗</a>
-    <button class="text-button" data-open-cart>テスト用バッグを確認する</button>
+    <h1>
+      {t('テストを', 'You can keep')}<br />{t('続けられます。', 'testing.')}
+    </h1>
+    <p>
+      {
+        t(
+          '実際のお支払い・商品の発送はありません。',
+          'No real payment or shipping takes place.',
+        )
+      }
+    </p>
+    <p class="muted">
+      {
+        t(
+          'テスト用バッグの内容を確認して、もう一度試せます。',
+          'Review your test bag and try again.',
+        )
+      }
+    </p>
+    <a class="button" href={localizePath('/shop-test/', locale)}
+      >{t('テストショップへ戻る ↗', 'Back to the test shop ↗')}</a
+    >
+    <button class="text-button" data-open-cart
+      >{t('テスト用バッグを確認する', 'Review your test bag')}</button
+    >
   </section>
 </Layout>

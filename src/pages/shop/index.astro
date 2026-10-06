@@ -2,49 +2,98 @@
 import Layout from '../../layouts/Layout.astro';
 import Product from '../../components/Product.astro';
 import { products, usesCart, paymentLinks } from '../../data/checkout.mjs';
+import { getLocale, translator } from '../../data/i18n.mjs';
+const t = translator(getLocale(Astro.url.pathname));
 const linksOpen = !usesCart && products.some((product) => product.checkoutUrl);
 ---
 
-<Layout title="グッズ｜ギャルインザミックス">
+<Layout
+  title={t('グッズ｜ギャルインザミックス', 'Merchandise | Gyaru in the Mix')}
+>
   <section class="section shop-section">
     <div class="shop-heading">
-      <p class="eyebrow">ギャルインザミックス オフィシャルグッズ</p><h1>
-        好き、を連れてこ。<span>♡</span>
-      </h1><p>バッグにも、フロアにも。うちらのグッズ。</p>
+      <p class="eyebrow">
+        {
+          t(
+            'ギャルインザミックス オフィシャルグッズ',
+            'Gyaru in the Mix official merchandise',
+          )
+        }
+      </p><h1>
+        {t('好き、を連れてこ。', 'Take what you love.')}<span>♡</span>
+      </h1><p>
+        {
+          t(
+            'バッグにも、フロアにも。うちらのグッズ。',
+            'For your bag and the dance floor. Our merch, your way.',
+          )
+        }
+      </p>
     </div><p id="catalog-status" class="notice" role="status">
       {
         linksOpen
           ? paymentLinks.mode === 'test'
-            ? 'テストショップです。実際の購入・発送はありません。'
-            : '商品・セットごとに、Stripeの決済ページでご購入いただけます。表示価格は税込です。'
-          : 'ただいま販売準備中。商品仕様・価格・発売日は、決まり次第ご案内します。'
+            ? t(
+                'テストショップです。実際の購入・発送はありません。',
+                'This is a test shop. No real purchases or shipping take place.',
+              )
+            : t(
+                '商品・セットごとに、Stripeの決済ページでご購入いただけます。表示価格は税込です。',
+                'Each item or set can be purchased through Stripe checkout. Displayed prices include tax.',
+              )
+          : t(
+              'ただいま販売準備中。商品仕様・価格・発売日は、決まり次第ご案内します。',
+              'Our shop is getting ready. Product details, prices and release dates will be announced once confirmed.',
+            )
       }
     </p>{
       usesCart && (
         <noscript>
-          <p class="notice">お買い物にはJavaScriptを有効にしてください。</p>
+          <p class="notice">
+            {t(
+              'お買い物にはJavaScriptを有効にしてください。',
+              'Please enable JavaScript to shop.',
+            )}
+          </p>
         </noscript>
       )
-    }<div class="product-grid">
+    }
+    <div class="product-grid">
       {
         products.map((product, index) => (
           <Product product={product} index={index} />
         ))
       }
     </div><p class="collection-note">
-      画像はデザイン参考です。商品写真と詳細は販売開始までに掲載します。
+      {
+        t(
+          '画像はデザイン参考です。商品写真と詳細は販売開始までに掲載します。',
+          'Images are design references. Product photos and details will be added before sales open.',
+        )
+      }
     </p><div class="shop-info">
       <div>
-        <b>お届けについて</b><p>
+        <b>{t('お届けについて', 'Shipping')}</b><p>
           {
             linksOpen
-              ? 'お届け先は日本国内のみです。送料は決済ページで、発送時期は特定商取引法に基づく表記でご確認ください。'
-              : '日本国内への発送を予定しています。送料・発送時期は販売開始時にご案内します。'
+              ? t(
+                  'お届け先は日本国内のみです。送料は決済ページで、発送時期は特定商取引法に基づく表記でご確認ください。',
+                  'Shipping is available within Japan only. Check checkout for shipping costs and our commerce disclosure for dispatch timing.',
+                )
+              : t(
+                  '日本国内への発送を予定しています。送料・発送時期は販売開始時にご案内します。',
+                  'We plan to ship within Japan. Shipping costs and dispatch timing will be announced when sales open.',
+                )
           }
         </p>
       </div><div>
-        <b>お支払いについて</b><p>
-          お支払いはStripeの決済ページで。クレジットカード情報を当サイトに入力することはありません。
+        <b>{t('お支払いについて', 'Payment')}</b><p>
+          {
+            t(
+              'お支払いはStripeの決済ページで。クレジットカード情報を当サイトに入力することはありません。',
+              'Payment is handled on Stripe’s checkout page. You will never enter credit card details on this website.',
+            )
+          }
         </p>
       </div>
     </div>

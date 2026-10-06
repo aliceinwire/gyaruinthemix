@@ -1,41 +1,82 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import SoundIdentity from '../components/SoundIdentity.astro';
-import { site } from '../data/site.mjs';
+import { getSite } from '../data/site.mjs';
+import { getLocale, translator } from '../data/i18n.mjs';
+const locale = getLocale(Astro.url.pathname);
+const t = translator(locale);
+const site = getSite(locale);
 ---
 
-<Layout title="出演依頼・お問い合わせ｜ギャルインザミックス">
+<Layout
+  title={t(
+    '出演依頼・お問い合わせ｜ギャルインザミックス',
+    'Bookings & Contact | GYARUINTHEMIX',
+  )}
+>
   <section class="page-heading">
-    <p class="eyebrow">GYARUINTHEMIX / DJありねぇ ＋ DJちゃな</p>
-    <h1>出演依頼・<em>お問い合わせ</em></h1>
-    <p>ギャルインザミックスは、ふたりでプレイするB2B DJユニットです。</p>
+    <p class="eyebrow">
+      {
+        t(
+          'GYARUINTHEMIX / DJありねぇ ＋ DJちゃな',
+          'GYARUINTHEMIX / DJ Arinee + DJ Chana',
+        )
+      }
+    </p>
+    <h1>
+      {t('出演依頼・', 'Bookings & ')}<em>{t('お問い合わせ', 'contact')}</em>
+    </h1>
+    <p>
+      {
+        t(
+          'ギャルインザミックスは、ふたりでプレイするB2B DJユニットです。',
+          'GYARUINTHEMIX is a B2B DJ duo, with both members performing together.',
+        )
+      }
+    </p>
     <SoundIdentity />
   </section>
   <section class="section contact-section">
-    <h2>公式InstagramのDMへ</h2>
+    <h2>{t('公式InstagramのDMへ', 'DM our official Instagram')}</h2>
     <p>
-      DJ出演・取材のご相談、サイトに関するお問い合わせは、ギャルインザミックスの公式Instagramへお送りください。
+      {
+        t(
+          'DJ出演・取材のご相談、サイトに関するお問い合わせは、ギャルインザミックスの公式Instagramへお送りください。',
+          'For DJ bookings, press inquiries, or questions about this website, please contact GYARUINTHEMIX on our official Instagram.',
+        )
+      }
     </p>
     <a class="button" href={site.bookingUrl} rel="noopener noreferrer">
-      公式Instagramでお問い合わせ ↗
+      {t('公式Instagramでお問い合わせ ↗', 'Contact us on Instagram ↗')}
     </a>
     <p class="collection-note">
-      @gyaruinthemix
-      のプロフィールからDMをお送りください。Instagramへのログインが必要な場合があります。
+      {
+        t(
+          '@gyaruinthemix\n      のプロフィールからDMをお送りください。Instagramへのログインが必要な場合があります。',
+          'Send a DM from the @gyaruinthemix profile. You may need to log in to Instagram.',
+        )
+      }
     </p>
     <div class="contact-details">
-      <h2>出演をご相談いただくときは</h2>
-      <p>わかる範囲で、以下の内容をお知らせください。</p>
+      <h2>{t('出演をご相談いただくときは', 'For booking inquiries')}</h2>
+      <p>
+        {
+          t(
+            'わかる範囲で、以下の内容をお知らせください。',
+            'Please include the following details, as far as you know them.',
+          )
+        }
+      </p>
       <ul>
-        <li>開催日・出演時間</li>
-        <li>会場名・開催地</li>
-        <li>イベントや企画の内容</li>
-        <li>出演条件・ご予算</li>
-        <li>主催者・ご担当者名</li>
+        <li>{t('開催日・出演時間', 'Event date and performance time')}</li>
+        <li>{t('会場名・開催地', 'Venue name and location')}</li>
+        <li>{t('イベントや企画の内容', 'Details of the event or project')}</li>
+        <li>{t('出演条件・ご予算', 'Performance terms and budget')}</li>
+        <li>{t('主催者・ご担当者名', 'Organizer and contact person')}</li>
       </ul>
     </div>
     <div class="contact-details">
-      <h2>ふたりのInstagram</h2>
+      <h2>{t('ふたりのInstagram', "The duo's Instagram accounts")}</h2>
       <div class="profile-members">
         {
           site.socials.slice(1).map((link) => (
@@ -46,7 +87,12 @@ import { site } from '../data/site.mjs';
         }
       </div>
       <p class="collection-note">
-        ユニットへの出演依頼は、上記の公式アカウントへお願いします。
+        {
+          t(
+            'ユニットへの出演依頼は、上記の公式アカウントへお願いします。',
+            'For duo bookings, please use the official account linked above.',
+          )
+        }
       </p>
     </div>
   </section>

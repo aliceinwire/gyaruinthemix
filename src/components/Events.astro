@@ -1,5 +1,9 @@
 ---
-import { site } from '../data/site.mjs';
+import { getSite } from '../data/site.mjs';
+import { getLocale, translator } from '../data/i18n.mjs';
+const locale = getLocale(Astro.url.pathname);
+const t = translator(locale);
+const site = getSite(locale);
 import { selectEvents } from '../data/events.mjs';
 const { category, period = 'upcoming', now, today } = Astro.props;
 const visibleItems = new Set(
@@ -35,11 +39,13 @@ const items = site.events
           <time datetime={event.date}>{event.date.replaceAll('-', '.')}</time>
           <div>
             <span class="availability">
-              {event.category === 'live' ? 'DJ出演' : 'メディア'}
+              {event.category === 'live'
+                ? t('DJ出演', 'DJ set')
+                : t('メディア', 'Media')}
               {event.cancelled
-                ? '・出演取りやめ'
+                ? t('・出演取りやめ', ' · Cancelled')
                 : period === 'past'
-                  ? '・過去の出演'
+                  ? t('・過去の出演', ' · Past appearance')
                   : ''}
             </span>
             <h3>{event.title}</h3>
@@ -52,7 +58,7 @@ const items = site.events
           </div>
           {event.url && !event.cancelled && (
             <a class="text-link" href={event.url} rel="noopener noreferrer">
-              {event.linkLabel || '詳細'} ↗
+              {event.linkLabel || t('詳細', 'Details')} ↗
             </a>
           )}
         </article>
@@ -65,19 +71,28 @@ const items = site.events
       <h3>
         {
           period === 'past'
-            ? 'これまでの出演'
+            ? t('これまでの出演', 'Past appearances')
             : category === 'media'
-              ? 'メディア出演のお知らせ'
-              : '次に会える場所は、ここで。'
+              ? t('メディア出演のお知らせ', 'Media updates')
+              : t('次に会える場所は、ここで。', 'Meet us on the floor.')
         }
       </h3>
       <p>
         {
           period === 'past'
-            ? '過去の出演記録は、こちらに掲載します。'
+            ? t(
+                '過去の出演記録は、こちらに掲載します。',
+                'Past appearances will be listed here.',
+              )
             : category === 'media'
-              ? '番組・掲載情報は、詳細が整い次第ご案内します。'
-              : '出演スケジュールは、詳細が整い次第ご案内します。'
+              ? t(
+                  '番組・掲載情報は、詳細が整い次第ご案内します。',
+                  'Broadcast and press details will be announced when confirmed.',
+                )
+              : t(
+                  '出演スケジュールは、詳細が整い次第ご案内します。',
+                  'Upcoming appearances will be announced when the details are confirmed.',
+                )
         }
       </p>
     </div>

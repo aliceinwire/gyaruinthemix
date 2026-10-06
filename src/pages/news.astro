@@ -1,12 +1,16 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import { site } from '../data/site.mjs';
+import { getSite } from '../data/site.mjs';
+import { getLocale, translator, localizePath } from '../data/i18n.mjs';
+const locale = getLocale(Astro.url.pathname);
+const t = translator(locale);
+const site = getSite(locale);
 ---
 
-<Layout title="お知らせ｜ギャルインザミックス"
+<Layout title={t('お知らせ｜ギャルインザミックス', 'News | GYARUINTHEMIX')}
   ><section class="page-heading">
-    <p class="eyebrow">うちらの、いま。</p><h1>
-      お知らせ<span aria-hidden="true">✦</span>
+    <p class="eyebrow">{t('うちらの、いま。', 'The latest from us.')}</p><h1>
+      {t('お知らせ', 'News')}<span aria-hidden="true">✦</span>
     </h1>
   </section><section class="section news-articles">
     {
@@ -23,8 +27,8 @@ import { site } from '../data/site.mjs';
             </div>
             <h2>{item.title}</h2>
             <p>{item.text}</p>
-            <a class="text-link" href={item.url}>
-              詳しく見る ↗
+            <a class="text-link" href={localizePath(item.url, locale)}>
+              {t('詳しく見る ↗', 'Read more ↗')}
             </a>
           </>
         </article>

@@ -1,5 +1,9 @@
 ---
-import { site } from '../data/site.mjs';
+import { getSite } from '../data/site.mjs';
+import { getLocale, translator } from '../data/i18n.mjs';
+const locale = getLocale(Astro.url.pathname);
+const t = translator(locale);
+const site = getSite(locale);
 ---
 
 <ol class="track-list">
@@ -13,7 +17,9 @@ import { site } from '../data/site.mjs';
           <>
             <h3>{track.title}</h3>
             <span class="track-meta">
-              {track.url ? '楽曲リンク' : '配信情報は準備中'}
+              {track.url
+                ? t('楽曲リンク', 'Track link')
+                : t('配信情報は準備中', 'Release links coming soon')}
             </span>
           </>
         </div>

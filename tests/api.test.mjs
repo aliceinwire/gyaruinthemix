@@ -16,6 +16,7 @@ async function setup(t, overrides = {}) {
   const directory = await mkdtemp(join(tmpdir(), 'gyaru-test-'));
   const journal = await openJournal(directory);
   const calls = [];
+  const createdSessions = new Map();
   const observed = [];
   const logs = [];
   const config = {
@@ -67,6 +68,11 @@ async function setup(t, overrides = {}) {
           calls.push(args);
           if (overrides.stripeFailure)
             throw new Error(`leak ${secretKey} ${webhookSecret} /secret/file`);
+          const [params, options] = args;
+          const previous = createdSessions.get(options.idempotencyKey);
+          if (previous && JSON.stringify(previous) !== JSON.stringify(params))
+            throw new Error('Stripe idempotency parameter mismatch');
+          createdSessions.set(options.idempotencyKey, structuredClone(params));
           return { url: 'https://checkout.stripe.com/c/pay/cs_test' };
         },
       },
@@ -155,6 +161,7 @@ async function setup(t, overrides = {}) {
     config,
     journal,
     calls,
+    createdSessions,
     observed,
     logs,
     valid,
@@ -180,9 +187,152 @@ test('valid cart uses trusted Price IDs, Japan shipping and fixed return URLs', 
   assert.deepEqual(params.shipping_options, [{ shipping_rate: 'shr_test' }]);
   assert.equal(params.success_url, 'https://shop.example/shop/success/');
   assert.equal(params.cancel_url, 'https://shop.example/shop/cancel/');
+  assert.equal(params.locale, 'ja');
   assert.deepEqual(params.adaptive_pricing, { enabled: false });
   assert.match(options.idempotencyKey, /^gyaru-[a-f0-9]{64}$/);
   assert.equal('price_data' in params.line_items[0], false);
+});
+test('English checkout changes only locale and localized return paths', async (t) => {
+  const x = await setup(t);
+  assert.equal((await x.checkout()).statusCode, 200);
+  assert.equal(
+    (await x.checkout({ ...x.valid, locale: 'en' })).statusCode,
+    200,
+  );
+  const [japanese] = x.calls[0];
+  const [english] = x.calls[1];
+  assert.deepEqual(english, {
+    ...japanese,
+    locale: 'en',
+    success_url: 'https://shop.example/en/shop/success/',
+    cancel_url: 'https://shop.example/en/shop/cancel/',
+  });
+});
+test('explicit Japanese locale preserves legacy checkout parameters and key', async (t) => {
+  const x = await setup(t);
+  const headers = { 'idempotency-key': randomUUID() };
+  assert.equal((await x.checkout(x.valid, headers)).statusCode, 200);
+  assert.equal(
+    (await x.checkout({ ...x.valid, locale: 'ja' }, headers)).statusCode,
+    200,
+  );
+  assert.deepEqual(x.calls[0], x.calls[1]);
+  assert.equal(x.createdSessions.size, 1);
+});
+for (const [initial, changed] of [
+  ['ja', 'en'],
+  ['en', 'ja'],
+])
+  test(`switching an existing public checkout attempt from ${initial} to ${changed} never creates a new session`, async (t) => {
+    const x = await setup(t);
+    const headers = { 'idempotency-key': randomUUID() };
+    const payload = { ...x.valid, locale: initial };
+    assert.equal((await x.checkout(payload, headers)).statusCode, 200);
+    const response = await x.checkout({ ...payload, locale: changed }, headers);
+    assert.equal(response.statusCode, 503);
+    assert.deepEqual(Object.keys(response.json()), ['error']);
+    assert.doesNotMatch(response.body, /checkout\.stripe\.com|mismatch/);
+    assert.equal(x.calls[0][1].idempotencyKey, x.calls[1][1].idempotencyKey);
+    assert.equal(x.createdSessions.size, 1);
+    assert.equal((await x.checkout(payload, headers)).statusCode, 200);
+    assert.deepEqual(x.calls[0], x.calls[2]);
+    assert.equal(x.createdSessions.size, 1);
+  });
+test('checkout locale is strictly bounded before any Stripe session is created', async (t) => {
+  const x = await setup(t);
+  for (const locale of [
+    'fr',
+    'EN',
+    '',
+    '/en',
+    '//evil.example',
+    null,
+    1,
+    true,
+    ['en'],
+    { locale: 'en' },
+  ])
+    assert.equal((await x.checkout({ ...x.valid, locale })).statusCode, 400);
+  assert.equal(x.calls.length, 0);
+});
+test('display-language header localizes errors without changing checkout language', async (t) => {
+  const x = await setup(t);
+  const headers = { 'x-shop-locale': 'en' };
+  assert.equal((await x.checkout(x.valid, headers)).statusCode, 200);
+  assert.equal(x.calls[0][0].locale, 'ja');
+  assert.equal(x.calls[0][0].success_url, 'https://shop.example/shop/success/');
+  const invalid = await x.checkout({ ...x.valid, items: [] }, headers);
+  assert.equal(invalid.statusCode, 400);
+  assert.equal(
+    invalid.json().error,
+    'Please check the information you entered.',
+  );
+  const bodyLocale = await x.checkout({ ...x.valid, locale: 'en', items: [] });
+  assert.equal(bodyLocale.json().error, invalid.json().error);
+  const japaneseHeader = await x.checkout(
+    { ...x.valid, locale: 'en', items: [] },
+    { 'x-shop-locale': 'ja' },
+  );
+  assert.equal(japaneseHeader.json().error, '入力内容を確認してください。');
+  const invalidHeader = await x.checkout(
+    { ...x.valid, items: [] },
+    { 'x-shop-locale': 'fr' },
+  );
+  assert.equal(invalidHeader.json().error, '入力内容を確認してください。');
+});
+test('English safe errors preserve sales, origin, catalog and availability gates', async (t) => {
+  const x = await setup(t);
+  const payload = { ...x.valid, locale: 'en' };
+  const origin = await x.checkout(payload, { origin: 'https://evil.example' });
+  assert.equal(origin.statusCode, 403);
+  assert.equal(origin.json().error, 'Please try again from the shop.');
+  const stale = await x.checkout({
+    ...payload,
+    catalogVersion: 'b'.repeat(64),
+  });
+  assert.equal(stale.statusCode, 409);
+  assert.equal(
+    stale.json().error,
+    'Product information has changed. Please review your bag and try again.',
+  );
+  const unavailable = await x.checkout({
+    ...payload,
+    items: [{ product: 'unknown', quantity: 1 }],
+  });
+  assert.equal(unavailable.statusCode, 400);
+  assert.equal(
+    unavailable.json().error,
+    'Please check the products and quantities.',
+  );
+  assert.equal(x.calls.length, 0);
+  const closed = await setup(t, { config: { salesEnabled: false } });
+  const response = await closed.checkout({ ...closed.valid, locale: 'en' });
+  assert.equal(response.statusCode, 503);
+  assert.equal(response.json().error, 'Sales are not open yet.');
+  assert.equal(closed.calls.length, 0);
+});
+test('English catalog and generic errors remain safe and no-store', async (t) => {
+  const x = await setup(t, { price: { active: false } });
+  const headers = { 'x-shop-locale': 'en' };
+  const catalog = await x.app.inject({ url: '/api/catalog', headers });
+  assert.equal(catalog.statusCode, 503);
+  assert.equal(
+    catalog.json().error,
+    'Product information is unavailable. Please try again later.',
+  );
+  assert.equal(catalog.headers['cache-control'], 'no-store');
+  const missing = await x.app.inject({ url: '/api/unknown', headers });
+  assert.equal(missing.statusCode, 404);
+  assert.equal(missing.json().error, 'Not found.');
+  const malformed = await x.checkout('{', {
+    ...headers,
+    'content-type': 'application/json',
+  });
+  assert.equal(malformed.statusCode, 400);
+  assert.equal(
+    malformed.json().error,
+    'Please check the information you entered.',
+  );
 });
 for (const [name, items] of [
   ['unknown product', [{ product: 'unknown', quantity: 1 }]],
@@ -301,6 +451,9 @@ test('checkout rate limit returns 429', async (t) => {
   await x.checkout();
   await x.checkout();
   assert.equal((await x.checkout()).statusCode, 429);
+  const english = await x.checkout(x.valid, { 'x-shop-locale': 'en' });
+  assert.equal(english.statusCode, 429);
+  assert.equal(english.json().error, 'Please wait a moment and try again.');
 });
 test('invalid webhook signature is rejected without logging payload', async (t) => {
   const x = await setup(t);
@@ -392,6 +545,7 @@ test('secrets and customer details never appear in responses or logs', async (t)
   const x = await setup(t, { stripeFailure: true });
   const responses = [
     await x.checkout(),
+    await x.checkout({ ...x.valid, locale: 'en' }),
     await x.webhook(),
     await x.app.inject('/api/catalog'),
     await x.app.inject('/api/health'),

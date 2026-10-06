@@ -1220,3 +1220,42 @@
   margin: 10px 0;
   line-height: 1.8;
 }
+
+/* Keep the language choice visible at every viewport, outside the menu. */
+.language-switcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: 24px;
+  letter-spacing: normal;
+  white-space: nowrap;
+}
+.language-switcher a {
+  padding: 7px 2px;
+  font-weight: 700;
+  text-underline-offset: 4px;
+}
+.language-switcher a[aria-current] {
+  color: #ffb4db;
+  text-decoration: none;
+}
+.language-switcher span {
+  margin: 0;
+}
+.language-switcher :focus-visible {
+  outline-color: #ffbade;
+}
+:lang(en) .unit-hero h1 {
+  font-size: clamp(3.1rem, 5.7vw, 6.3rem);
+  line-height: 1.1;
+}
+:lang(en) .eyebrow {
+  letter-spacing: 0.09em;
+}
+@media (max-width: 760px) {
+  .language-switcher {
+    display: flex;
+    justify-content: center;
+    margin: 4px 0 0;
+  }
+}

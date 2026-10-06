@@ -1,15 +1,38 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import { getLocale, localizePath, translator } from '../../data/i18n.mjs';
+const locale = getLocale(Astro.url.pathname);
+const t = translator(locale);
 ---
 
-<Layout title="お支払い手続きのあとに｜ギャルインザミックス"
-  ><section class="result">
-    <span class="result-heart" aria-hidden="true">♡</span><p class="eyebrow">
-      決済ページから戻りました
-    </p><h1>お手続き、<br />ありがとう。</h1><p>
-      お支払いの結果は、Stripeの決済画面や確認メールをご確認ください。決済方法によっては、確認に時間がかかる場合があります。
-    </p><p class="muted">
-      このページの表示だけでは、お支払いの完了や発送は確定しません。
-    </p><a class="button" href="/shop/">ショップへ戻る ↗</a>
-  </section></Layout
+<Layout
+  title={t(
+    'お支払い手続きのあとに｜ギャルインザミックス',
+    'After checkout | Gyaru in the Mix',
+  )}
 >
+  <section class="result">
+    <span class="result-heart" aria-hidden="true">♡</span><p class="eyebrow">
+      {t('決済ページから戻りました', 'You have returned from checkout')}
+    </p>
+    <h1>
+      {t('お手続き、', 'Thanks for')}<br />{t('ありがとう。', 'checking out.')}
+    </h1><p>
+      {
+        t(
+          'お支払いの結果は、Stripeの決済画面や確認メールをご確認ください。決済方法によっては、確認に時間がかかる場合があります。',
+          'Check the Stripe checkout page or your confirmation email for the payment result. Some payment methods may take time to confirm.',
+        )
+      }
+    </p><p class="muted">
+      {
+        t(
+          'このページの表示だけでは、お支払いの完了や発送は確定しません。',
+          'Seeing this page alone does not confirm that payment is complete or that your order will ship.',
+        )
+      }
+    </p><a class="button" href={localizePath('/shop/', locale)}
+      >{t('ショップへ戻る ↗', 'Back to the shop ↗')}</a
+    >
+  </section>
+</Layout>

@@ -2,35 +2,85 @@
 import Layout from '../layouts/Layout.astro';
 import store from '../../config/store.json';
 import { usesCart } from '../data/checkout.mjs';
+import { getLocale, translator, localizePath } from '../data/i18n.mjs';
+const locale = getLocale(Astro.url.pathname);
+const t = translator(locale);
 ---
 
-<Layout title="プライバシー｜ギャルインザミックス"
+<Layout
+  title={t('プライバシー｜ギャルインザミックス', 'Privacy | GYARUINTHEMIX')}
   ><section class="legal section">
-    <h1>プライバシーについて</h1><h2>お買い物と個人情報</h2><p>
-      ご購入時のお名前・メールアドレス・お届け先・お支払い情報は、Stripeの決済ページで入力いただきます。販売者は注文の確認、発送、お問い合わせへの対応に必要な情報をStripeで確認します。当サイトのアプリケーションは、カード番号・有効期限・セキュリティコードを受け取りません。
-    </p><h2>ブラウザに保存する情報</h2><p>
+    <h1>{t('プライバシーについて', 'About your privacy')}</h1><h2>
+      {t('お買い物と個人情報', 'Shopping and personal information')}
+    </h2><p>
+      {
+        t(
+          'ご購入時のお名前・メールアドレス・お届け先・お支払い情報は、Stripeの決済ページで入力いただきます。販売者は注文の確認、発送、お問い合わせへの対応に必要な情報をStripeで確認します。当サイトのアプリケーションは、カード番号・有効期限・セキュリティコードを受け取りません。',
+          'When making a purchase, you enter your name, email address, delivery address, and payment details on Stripe’s checkout page. The seller accesses the information needed to confirm orders, ship purchases, and respond to inquiries through Stripe. This website’s application does not receive card numbers, expiry dates, or security codes.',
+        )
+      }
+    </p><h2>
+      {t('ブラウザに保存する情報', 'Information stored in your browser')}
+    </h2><p>
       {
         usesCart
-          ? 'バッグの商品と数量を、お使いのブラウザに保存します。決済の重複作成を防ぐため、一時的な識別子も保存します。お名前・住所・カード情報は保存しません。ブラウザのサイトデータ設定から削除できます。'
-          : '当サイトはお買い物の情報をブラウザに保存しません。決済ページでの情報の取り扱いはStripeのプライバシーポリシーをご確認ください。'
+          ? t(
+              'バッグの商品と数量を、お使いのブラウザに保存します。決済の重複作成を防ぐため、一時的な識別子も保存します。お名前・住所・カード情報は保存しません。ブラウザのサイトデータ設定から削除できます。',
+              'We store the items and quantities in your bag in your browser. We also store a temporary identifier to prevent duplicate checkout sessions. We do not store your name, address, or card details. You can remove this information through your browser’s site data settings.',
+            )
+          : t(
+              '当サイトはお買い物の情報をブラウザに保存しません。決済ページでの情報の取り扱いはStripeのプライバシーポリシーをご確認ください。',
+              'This website does not store shopping information in your browser. Please see Stripe’s privacy policy for how information is handled on its checkout page.',
+            )
       }
-    </p><h2>アクセスと決済の記録</h2><p>
-      不正利用防止や障害対応のため、アクセスや決済通知の識別子を記録することがあります。広告用の解析スクリプトは使用していません。
-    </p><h2>YouTubeの動画</h2><p>
-      ミュージックビデオは、プレーヤーの読み込みボタンを押した場合にのみ、YouTubeのプライバシー強化モード（youtube-nocookie.com）で読み込みます。読み込み後は、IPアドレスなどの接続情報がYouTubeに送信され、同サービスのポリシーが適用されます。「プレーヤーを閉じる」で埋め込みを終了できます。YouTubeへの直接リンクを開いた場合も、同サービスのポリシーが適用されます。
-      <a href="https://policies.google.com/privacy?hl=ja" rel="noreferrer"
-        >Googleのプライバシーポリシー ↗</a
+    </p><h2>{t('アクセスと決済の記録', 'Access and payment records')}</h2><p>
+      {
+        t(
+          '不正利用防止や障害対応のため、アクセスや決済通知の識別子を記録することがあります。広告用の解析スクリプトは使用していません。',
+          'We may record identifiers associated with access to the site and payment notifications to prevent misuse and troubleshoot issues. We do not use analytics scripts for advertising.',
+        )
+      }
+    </p><h2>{t('YouTubeの動画', 'YouTube videos')}</h2><p>
+      {
+        t(
+          'ミュージックビデオは、プレーヤーの読み込みボタンを押した場合にのみ、YouTubeのプライバシー強化モード（youtube-nocookie.com）で読み込みます。読み込み後は、IPアドレスなどの接続情報がYouTubeに送信され、同サービスのポリシーが適用されます。「プレーヤーを閉じる」で埋め込みを終了できます。YouTubeへの直接リンクを開いた場合も、同サービスのポリシーが適用されます。',
+          'Music videos load in YouTube’s privacy-enhanced mode (youtube-nocookie.com) only when you press the button to load a player. After loading, connection information such as your IP address is sent to YouTube, and its policies apply. You can stop the embed by selecting “Close player.” YouTube’s policies also apply if you open a direct link to YouTube.',
+        )
+      }
+      <a
+        href={t(
+          'https://policies.google.com/privacy?hl=ja',
+          'https://policies.google.com/privacy?hl=en',
+        )}
+        rel="noreferrer"
+        >{t('Googleのプライバシーポリシー ↗', 'Google privacy policy ↗')}</a
       >
-    </p><h2>お問い合わせ</h2>
+    </p><h2>{t('お問い合わせ', 'Contact')}</h2>
     {store.privacyContact && <p>{store.privacyContact}</p>}
     <p>
-      個人情報の取り扱いに関するお問い合わせは、公式InstagramのDMで受け付けています。
-      <a href="/contact/">出演依頼・お問い合わせ窓口へ ↗</a>
+      {
+        t(
+          '個人情報の取り扱いに関するお問い合わせは、公式InstagramのDMで受け付けています。',
+          'For questions about how personal information is handled, please DM our official Instagram.',
+        )
+      }
+      <a href={localizePath('/contact/', locale)}
+        >{
+          t('出演依頼・お問い合わせ窓口へ ↗', 'Go to bookings & contact ↗')
+        }</a
+      >
     </p><p>
-      Instagramへのリンク先では、同サービスのプライバシーポリシーが適用されます。お問い合わせに必要な範囲の情報のみお送りください。
+      {
+        t(
+          'Instagramへのリンク先では、同サービスのプライバシーポリシーが適用されます。お問い合わせに必要な範囲の情報のみお送りください。',
+          'Instagram’s privacy policy applies when you visit its site. Please send only the information necessary for your inquiry.',
+        )
+      }
     </p><p>
-      <a href="https://stripe.com/jp/privacy" rel="noreferrer"
-        >Stripeのプライバシーポリシー ↗</a
+      <a
+        href={t('https://stripe.com/jp/privacy', 'https://stripe.com/privacy')}
+        rel="noreferrer"
+        >{t('Stripeのプライバシーポリシー ↗', 'Stripe privacy policy ↗')}</a
       >
     </p>
   </section></Layout

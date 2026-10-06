@@ -1,12 +1,20 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import { getLocale, translator, localizePath } from '../data/i18n.mjs';
+const locale = getLocale(Astro.url.pathname);
+const t = translator(locale);
 ---
 
-<Layout title="ページが見つかりません｜ギャルインザミックス"
+<Layout
+  title={t(
+    'ページが見つかりません｜ギャルインザミックス',
+    'Page Not Found | GYARUINTHEMIX',
+  )}
   ><section class="result">
-    <p class="eyebrow">404</p><h1>ここには、ないみたい。</h1><a
-      class="button"
-      href="/shop/">グッズを見にいこ ↗</a
+    <p class="eyebrow">404</p><h1>
+      {t('ここには、ないみたい。', "Looks like it isn't here.")}
+    </h1><a class="button" href={localizePath('/shop/', locale)}
+      >{t('グッズを見にいこ ↗', 'Explore the merch ↗')}</a
     >
   </section></Layout
 >

@@ -2,48 +2,81 @@
 import Layout from '../layouts/Layout.astro';
 import Events from '../components/Events.astro';
 import SectionTitle from '../components/SectionTitle.astro';
-import { site } from '../data/site.mjs';
+import { getSite } from '../data/site.mjs';
 import { selectEvents } from '../data/events.mjs';
+import { getLocale, translator, localizePath } from '../data/i18n.mjs';
+const locale = getLocale(Astro.url.pathname);
+const t = translator(locale);
+const site = getSite(locale);
 const now = new Date();
 const cancellations = selectEvents(site.events, { period: 'cancelled', now });
 ---
 
-<Layout title="出演情報｜ギャルインザミックス">
+<Layout
+  title={t('出演情報｜ギャルインザミックス', 'Appearances | GYARUINTHEMIX')}
+>
   <section class="page-heading">
-    <p class="eyebrow">フロアでも、画面の向こうでも。</p>
-    <h1>次は、<em>どこで会う？</em></h1>
-    <p>これからの予定も、これまでの思い出も。</p>
+    <p class="eyebrow">
+      {t('フロアでも、画面の向こうでも。', 'On the floor and on your screen.')}
+    </p>
+    <h1>
+      {t('次は、', 'Where will we ')}<em
+        >{t('どこで会う？', 'see you next?')}</em
+      >
+    </h1>
+    <p>
+      {
+        t(
+          'これからの予定も、これまでの思い出も。',
+          "What's next, and the moments we've shared.",
+        )
+      }
+    </p>
   </section>
   <section class="section schedule-section">
-    <SectionTitle label="フロアで会お。" title="今後のDJ出演" />
+    <SectionTitle
+      label={t('フロアで会お。', 'See you on the floor.')}
+      title={t('今後のDJ出演', 'Upcoming DJ appearances')}
+    />
     <Events category="live" {now} />
     <div class="media-section">
-      <SectionTitle label="ふたりをチェック。" title="今後のメディア出演" />
+      <SectionTitle
+        label={t('ふたりをチェック。', 'Catch us on screen.')}
+        title={t('今後のメディア出演', 'Upcoming media appearances')}
+      />
       <Events category="media" {now} />
     </div>
     {
       cancellations.length > 0 && (
         <div class="media-section">
           <SectionTitle
-            label="ご来場前に確認してね。"
-            title="出演変更のお知らせ"
+            label={t('ご来場前に確認してね。', 'Check before you head out.')}
+            title={t('出演変更のお知らせ', 'Appearance updates')}
           />
           <Events period="cancelled" {now} />
         </div>
       )
     }
     <p class="collection-note">
-      日付・時間は日本時間です。開催日時・入場条件・チケットは、各イベントの公式案内をご確認ください。
+      {
+        t(
+          '日付・時間は日本時間です。開催日時・入場条件・チケットは、各イベントの公式案内をご確認ください。',
+          "All dates and times are in Japan Standard Time. Check each event's official information for schedules, entry requirements, and tickets.",
+        )
+      }
     </p>
     {
       site.bookingUrl && (
-        <a class="button booking-link" href="/contact/">
-          出演依頼・お問い合わせ ↗
+        <a class="button booking-link" href={localizePath('/contact/', locale)}>
+          {t('出演依頼・お問い合わせ ↗', 'Bookings & contact ↗')}
         </a>
       )
     }
     <div class="media-section">
-      <SectionTitle label="あの夜も、うちららしく。" title="これまでの出演" />
+      <SectionTitle
+        label={t('あの夜も、うちららしく。', 'Our nights, our way.')}
+        title={t('これまでの出演', 'Past appearances')}
+      />
       <Events period="past" {now} />
     </div>
   </section>

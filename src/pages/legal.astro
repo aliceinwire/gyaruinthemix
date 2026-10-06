@@ -1,27 +1,59 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import store from '../../config/store.json';
+import { getLocale, translator, localizePath } from '../data/i18n.mjs';
+const locale = getLocale(Astro.url.pathname);
+const t = translator(locale);
 const rows = [
-  ['販売業者', store.seller],
-  ['運営責任者', store.representative],
-  ['所在地', store.address],
-  ['電話番号', store.phone],
-  ['メールアドレス', store.email],
-  ['販売価格', '各商品ページに税込価格を表示します。'],
-  ['商品代金以外の費用', store.shippingCosts],
-  ['お支払い方法', 'Stripeを通じたクレジットカード決済'],
-  ['お支払い時期', store.paymentTiming],
-  ['商品の引渡し時期', store.shippingTiming],
-  ['返品・交換・キャンセル', store.returns],
+  [t('販売業者', 'Seller'), store.seller],
+  [t('運営責任者', 'Business representative'), store.representative],
+  [t('所在地', 'Address'), store.address],
+  [t('電話番号', 'Phone number'), store.phone],
+  [t('メールアドレス', 'Email address'), store.email],
+  [
+    t('販売価格', 'Prices'),
+    t(
+      '各商品ページに税込価格を表示します。',
+      'Prices including tax will be shown on each product page.',
+    ),
+  ],
+  [t('商品代金以外の費用', 'Additional charges'), store.shippingCosts],
+  [
+    t('お支払い方法', 'Payment method'),
+    t(
+      'Stripeを通じたクレジットカード決済',
+      'Credit card payment through Stripe',
+    ),
+  ],
+  [t('お支払い時期', 'Payment timing'), store.paymentTiming],
+  [t('商品の引渡し時期', 'Delivery timing'), store.shippingTiming],
+  [
+    t('返品・交換・キャンセル', 'Returns, exchanges, and cancellations'),
+    store.returns,
+  ],
 ];
 ---
 
-<Layout title="特定商取引法に基づく表記｜ギャルインザミックス"
+<Layout
+  title={t(
+    '特定商取引法に基づく表記｜ギャルインザミックス',
+    'Legal Notice | GYARUINTHEMIX',
+  )}
   ><section class="legal section">
-    <h1>特定商取引法に基づく表記</h1>{
+    <h1>
+      {
+        t(
+          '特定商取引法に基づく表記',
+          "Notice under Japan's Act on Specified Commercial Transactions",
+        )
+      }
+    </h1>{
       Object.values(store).some((v) => !v) && (
         <p class="notice">
-          現在は販売準備中です。販売開始までに、販売者情報・送料・発送・返品条件をご案内します。
+          {t(
+            '現在は販売準備中です。販売開始までに、販売者情報・送料・発送・返品条件をご案内します。',
+            'Sales are currently being prepared. Seller details, shipping charges, delivery information, and return terms will be provided before sales begin.',
+          )}
         </p>
       )
     }<dl>
@@ -30,16 +62,33 @@ const rows = [
           <div>
             <>
               <dt>{name}</dt>
-              <dd>{value || '販売開始前に掲載します。'}</dd>
+              <dd>
+                {value ||
+                  t(
+                    '販売開始前に掲載します。',
+                    'To be published before sales begin.',
+                  )}
+              </dd>
             </>
           </div>
         ))
       }
     </dl>
-    <h2>出演依頼・お問い合わせ</h2>
+    <h2>{t('出演依頼・お問い合わせ', 'Bookings & contact')}</h2>
     <p>
-      出演・取材のご相談やサイトに関するお問い合わせは、公式InstagramのDMへお送りください。
+      {
+        t(
+          '出演・取材のご相談やサイトに関するお問い合わせは、公式InstagramのDMへお送りください。',
+          'For bookings, press inquiries, or questions about this website, please DM our official Instagram.',
+        )
+      }
     </p>
-    <p><a href="/contact/">出演依頼・お問い合わせ窓口へ ↗</a></p>
+    <p>
+      <a href={localizePath('/contact/', locale)}
+        >{
+          t('出演依頼・お問い合わせ窓口へ ↗', 'Go to bookings & contact ↗')
+        }</a
+      >
+    </p>
   </section></Layout
 >
