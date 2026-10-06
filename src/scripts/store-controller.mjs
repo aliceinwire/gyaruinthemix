@@ -222,6 +222,14 @@ export function initializeStore(
       return 'legacy';
     }
     if (!attempt.sessionId) {
+      // A failed/incomplete redirect has no verifiable receipt. A return-page
+      // visit must not leave a permanent loading message or retire the retry key.
+      if (document.querySelector('[data-checkout-return]'))
+        setStatus(
+          t(
+            '確認できる決済情報がこのブラウザーに保存されていません。バッグは変更していません。結果はStripe Sandboxで確認してください。',
+          ),
+        );
       if (
         !Number.isFinite(attempt.at) ||
         attempt.at > Date.now() ||

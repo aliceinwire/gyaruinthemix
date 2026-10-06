@@ -996,3 +996,49 @@ test('English test returns verify receipts and explain paid, pending and missing
   );
   assert.equal(direct.requests.length, 0);
 });
+
+test('fresh failed test checkout returns show a warning while preserving the bag and retry identity in both languages', async () => {
+  for (const locale of ['ja', 'en']) {
+    const prefix = locale === 'en' ? '/en' : '';
+    const original = fixture({ pathname: `${prefix}/shop-test/` });
+    await original.controller.ready;
+    original.cards[0].add.click();
+    original.replies.push(response({ error: 'Offline checkout failure' }, 503));
+    await original.ids.checkout.click();
+    const saved = original.session.getItem('gyaru-test-checkout-v1');
+    assert.equal(JSON.parse(saved).sessionId, undefined);
+    const returned = fixture({
+      pathname: `${prefix}/shop-test/success/`,
+      returnPage: 'success',
+      search: '?session_id=cs_test_unverified',
+      productCards: false,
+      local: original.local,
+      session: original.session,
+    });
+    await returned.controller.ready;
+    assert.match(
+      returned.ids['test-return-status'].textContent,
+      locale === 'en'
+        ? /No verifiable checkout details/
+        : /確認できる決済情報がこのブラウザーに保存されていません/,
+    );
+    assert.equal(returned.session.getItem('gyaru-test-checkout-v1'), saved);
+    assert.deepEqual(
+      JSON.parse(returned.local.getItem('gyaru-test-cart-v1')),
+      submittedCart,
+    );
+    assert.equal(returned.requests.length, 0);
+    assert.equal(returned.destinations.length, 0);
+    await returned.controller.refreshCatalog();
+    returned.replies.push(response({ error: 'Offline retry failure' }, 503));
+    await returned.ids.checkout.click();
+    const retried = returned.requests.find((request) =>
+      request.url.endsWith('/checkout'),
+    );
+    assert.equal(
+      retried.options.headers['Idempotency-Key'],
+      JSON.parse(saved).key,
+    );
+    assert.equal(JSON.parse(retried.options.body).locale, locale);
+  }
+});

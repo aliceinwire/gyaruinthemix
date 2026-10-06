@@ -220,7 +220,7 @@ class DeploymentContractTests(unittest.TestCase):
         self.assertNotIn("pull_request_target", workflow)
         self.assertNotIn("workflow_run", workflow)
         self.assertIn("github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'aliceinwire/gyaruinthemix'", workflow)
-        self.assertIn("needs: [source, secrets, containers]", workflow)
+        self.assertIn("needs: [source, secrets, containers, browser]", workflow)
         self.assertEqual(workflow.count("packages: write"), 1)
         self.assertIn("CI_PAYMENT_LINK_FIXTURE: 'false'", workflow)
         publish = (ROOT / "scripts/publish-images.sh").read_text()
