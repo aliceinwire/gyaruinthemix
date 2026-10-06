@@ -1,8 +1,15 @@
 ---
-import { site } from '../data/site.mjs';
+import { getSite } from '../data/site.mjs';
+import { getLocale, translator } from '../data/i18n.mjs';
+const locale = getLocale(Astro.url.pathname);
+const t = translator(locale);
+const site = getSite(locale);
 ---
 
-<ul class="sound-identity" aria-label="ジャンルとテンポ">
+<ul
+  class="sound-identity"
+  aria-label={t('ジャンルとテンポ', 'Genres and tempo')}
+>
   {site.artist.genres.map((genre) => <li>{genre.label}</li>)}
   <li class="tempo-badge">{site.artist.bpm} BPM</li>
 </ul>

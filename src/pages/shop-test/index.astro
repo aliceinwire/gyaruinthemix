@@ -2,28 +2,60 @@
 import Layout from '../../layouts/Layout.astro';
 import Product from '../../components/Product.astro';
 import products from '../../../config/test-products.json';
+import { getLocale, translator } from '../../data/i18n.mjs';
+const t = translator(getLocale(Astro.url.pathname));
 ---
 
 <Layout
   testShop
-  title="テスト専用ショップ｜ギャルインザミックス"
-  description="Stripe Sandboxの動作確認専用ページです。実際のお支払い・商品の発送はありません。"
+  title={t(
+    'テスト専用ショップ｜ギャルインザミックス',
+    'Test shop | Gyaru in the Mix',
+  )}
+  description={t(
+    'Stripe Sandboxの動作確認専用ページです。実際のお支払い・商品の発送はありません。',
+    'For Stripe Sandbox testing only. No real payment or shipping takes place.',
+  )}
 >
   <section class="section shop-section">
     <div class="shop-heading">
       <p class="eyebrow">TEST ONLY · Stripe Sandbox</p>
-      <h1>テスト専用ショップ<span>♡</span></h1>
-      <p>バッグと決済画面の動作確認用です。</p>
+      <h1>{t('テスト専用ショップ', 'Test shop')}<span>♡</span></h1>
+      <p>
+        {
+          t(
+            'バッグと決済画面の動作確認用です。',
+            'For testing the bag and checkout flow.',
+          )
+        }
+      </p>
     </div>
     <p class="notice">
-      実際のお支払い・商品の発送はありません。Stripeのテスト用決済情報だけを使用してください。
+      {
+        t(
+          '実際のお支払い・商品の発送はありません。Stripeのテスト用決済情報だけを使用してください。',
+          'No real payment or shipping takes place. Use only Stripe test payment details.',
+        )
+      }
     </p>
     <p id="catalog-status" class="notice" role="status">
-      テスト用の商品情報を確認しています。有効になるまで決済はできません。
+      {
+        t(
+          'テスト用の商品情報を確認しています。有効になるまで決済はできません。',
+          'Checking test product information. Checkout is unavailable until the test shop is enabled.',
+        )
+      }
     </p>
-    <noscript>
-      <p class="notice">動作確認にはJavaScriptを有効にしてください。</p>
-    </noscript>
+    <noscript
+      ><p class="notice">
+        {
+          t(
+            '動作確認にはJavaScriptを有効にしてください。',
+            'Please enable JavaScript to test the shop.',
+          )
+        }
+      </p></noscript
+    >
     <div class="product-grid">
       {
         products.map((product, index) => (
@@ -32,18 +64,34 @@ import products from '../../../config/test-products.json';
       }
     </div>
     <p class="collection-note">
-      画像はデザイン参考です。Tシャツはサイズ選択のない単一のテスト用SKUです。
+      {
+        t(
+          '画像はデザイン参考です。Tシャツはサイズ選択のない単一のテスト用SKUです。',
+          'Images are design references. The T-shirt is a single test SKU with no size selection.',
+        )
+      }
     </p>
     <div class="shop-info">
       <div>
-        <b>テスト専用</b>
-        <p>表示金額・送料は決済の動作確認用です。商品は発送されません。</p>
+        <b>{t('テスト専用', 'For testing only')}</b>
+        <p>
+          {
+            t(
+              '表示金額・送料は決済の動作確認用です。商品は発送されません。',
+              'Displayed prices and shipping costs are for checkout testing only. No products will be shipped.',
+            )
+          }
+        </p>
       </div>
       <div>
-        <b>お支払いについて</b>
+        <b>{t('お支払いについて', 'Payment')}</b>
         <p>
-          Stripe
-          Sandboxの決済ページに移動します。本物のカード情報や個人情報は入力しないでください。
+          {
+            t(
+              'Stripe Sandboxの決済ページに移動します。本物のカード情報や個人情報は入力しないでください。',
+              'You will be taken to Stripe Sandbox checkout. Do not enter real card details or personal information.',
+            )
+          }
         </p>
       </div>
     </div>

@@ -43,7 +43,42 @@ function testSessionStatus(session) {
     return session.status;
   throw new Error('Unverified test checkout status');
 }
-const errorBody = (message) => ({ error: message });
+const englishErrors = Object.freeze({
+  '処理できませんでした。時間をおいてお試しください。':
+    'Something went wrong. Please try again later.',
+  '少し時間をおいて、もう一度お試しください。':
+    'Please wait a moment and try again.',
+  '入力内容を確認してください。': 'Please check the information you entered.',
+  '見つかりません。': 'Not found.',
+  '商品情報を取得できません。時間をおいてお試しください。':
+    'Product information is unavailable. Please try again later.',
+  'ショップからもう一度お試しください。': 'Please try again from the shop.',
+  'ページを再読み込みして、カートを確認してください。':
+    'Please reload the page and review your bag.',
+  'ただいま販売準備中です。': 'Sales are not open yet.',
+  '商品または数量を確認してください。':
+    'Please check the products and quantities.',
+  '一度に購入できるのは合計20点までです。':
+    'You can buy up to 20 items in one order.',
+  '商品情報が更新されました。カートを確認して、もう一度お試しください。':
+    'Product information has changed. Please review your bag and try again.',
+  '決済ページを開けませんでした。少し待ってから、もう一度お試しください。':
+    'Checkout could not be opened. Please wait a moment and try again.',
+  '決済情報を確認できません。': 'Checkout information could not be verified.',
+  '決済情報を確認できません。時間をおいてお試しください。':
+    'Checkout information could not be verified. Please try again later.',
+});
+function errorLocale(request) {
+  // The bounded header only chooses error copy. Checkout language comes from
+  // the saved attempt's body.locale, so changing page language cannot alter it.
+  const header = request?.headers['x-shop-locale'];
+  if (header === 'en' || header === 'ja') return header;
+  return request?.body?.locale === 'en' ? 'en' : 'ja';
+}
+const errorBody = (message, request) => ({
+  error:
+    errorLocale(request) === 'en' ? englishErrors[message] || message : message,
+});
 
 export async function buildApp({
   config,
@@ -117,11 +152,12 @@ export async function buildApp({
             : status === 429
               ? '少し時間をおいて、もう一度お試しください。'
               : '入力内容を確認してください。',
+          request,
         ),
       );
   });
-  app.setNotFoundHandler((_request, reply) =>
-    reply.code(404).send(errorBody('見つかりません。')),
+  app.setNotFoundHandler((request, reply) =>
+    reply.code(404).send(errorBody('見つかりません。', request)),
   );
   app.get('/api/health', async (_request, reply) => {
     if (!journal.healthy()) {
@@ -140,9 +176,9 @@ export async function buildApp({
     app.get(
       `${apiPrefix}/catalog`,
       { config: { rateLimit: { max: 120 } } },
-      async (_request, reply) => {
+      async (request, reply) => {
         if (sandbox && !testShopAllowed)
-          return reply.code(404).send(errorBody('見つかりません。'));
+          return reply.code(404).send(errorBody('見つかりません。', request));
         try {
           return await storeCatalog.get();
         } catch {
@@ -152,6 +188,7 @@ export async function buildApp({
             .send(
               errorBody(
                 '商品情報を取得できません。時間をおいてお試しください。',
+                request,
               ),
             );
         }
@@ -167,6 +204,7 @@ export async function buildApp({
             additionalProperties: false,
             required: ['items', 'catalogVersion'],
             properties: {
+              locale: { type: 'string', enum: ['ja', 'en'] },
               catalogVersion: { type: 'string', pattern: '^[a-f0-9]{64}$' },
               items: {
                 type: 'array',
@@ -188,24 +226,29 @@ export async function buildApp({
       },
       async (request, reply) => {
         if (sandbox && !testShopAllowed)
-          return reply.code(404).send(errorBody('見つかりません。'));
+          return reply.code(404).send(errorBody('見つかりません。', request));
         if (request.headers.origin !== storeConfig.siteUrl)
           return reply
             .code(403)
-            .send(errorBody('ショップからもう一度お試しください。'));
+            .send(errorBody('ショップからもう一度お試しください。', request));
         const token = request.headers['idempotency-key'];
         if (typeof token !== 'string' || !attemptPattern.test(token))
           return reply
             .code(400)
-            .send(errorBody('ショップからもう一度お試しください。'));
+            .send(errorBody('ショップからもう一度お試しください。', request));
         if (sandbox && request.headers['x-checkout-protocol'] !== '2')
           return reply
             .code(409)
             .send(
-              errorBody('ページを再読み込みして、カートを確認してください。'),
+              errorBody(
+                'ページを再読み込みして、カートを確認してください。',
+                request,
+              ),
             );
         if (!storeConfig.salesEnabled)
-          return reply.code(503).send(errorBody('ただいま販売準備中です。'));
+          return reply
+            .code(503)
+            .send(errorBody('ただいま販売準備中です。', request));
         const items = [...request.body.items].sort((a, b) =>
           a.product.localeCompare(b.product),
         );
@@ -224,7 +267,7 @@ export async function buildApp({
           )
             return reply
               .code(400)
-              .send(errorBody('商品または数量を確認してください。'));
+              .send(errorBody('商品または数量を確認してください。', request));
           unique.add(item.product);
           total += item.quantity;
           lines.push({ price: product.priceId, quantity: item.quantity });
@@ -232,7 +275,7 @@ export async function buildApp({
         if (total > 20)
           return reply
             .code(400)
-            .send(errorBody('一度に購入できるのは合計20点までです。'));
+            .send(errorBody('一度に購入できるのは合計20点までです。', request));
         try {
           const current = await storeCatalog.get();
           if (request.body.catalogVersion !== current.version)
@@ -241,8 +284,15 @@ export async function buildApp({
               .send(
                 errorBody(
                   '商品情報が更新されました。カートを確認して、もう一度お試しください。',
+                  request,
                 ),
               );
+          const locale = request.body.locale === 'en' ? 'en' : 'ja';
+          const returnPrefix =
+            locale === 'en' ? `/en${pagePrefix}` : pagePrefix;
+          // Locale is deliberately excluded: the same attempt cannot create a
+          // second session after a language change. Stripe rejects changed
+          // parameters for an existing key; the client preserves attempt locale.
           const key =
             (sandbox ? 'gyaru-test-v2-' : 'gyaru-') +
             createHash('sha256')
@@ -258,14 +308,14 @@ export async function buildApp({
           const session = await stripe.checkout.sessions.create(
             {
               mode: 'payment',
-              locale: 'ja',
+              locale,
               line_items: lines,
               payment_method_types: ['card'],
               adaptive_pricing: { enabled: false },
               shipping_address_collection: { allowed_countries: ['JP'] },
               shipping_options: [{ shipping_rate: storeConfig.shippingRate }],
-              success_url: `${storeConfig.siteUrl}${pagePrefix}/success/${sandbox ? '?session_id={CHECKOUT_SESSION_ID}' : ''}`,
-              cancel_url: `${storeConfig.siteUrl}${pagePrefix}/cancel/`,
+              success_url: `${storeConfig.siteUrl}${returnPrefix}/success/${sandbox ? '?session_id={CHECKOUT_SESSION_ID}' : ''}`,
+              cancel_url: `${storeConfig.siteUrl}${returnPrefix}/cancel/`,
               metadata: {
                 store: sandbox ? 'gyaruinthemix-test' : 'gyaruinthemix',
                 ...(sandbox
@@ -315,6 +365,7 @@ export async function buildApp({
             .send(
               errorBody(
                 '決済ページを開けませんでした。少し待ってから、もう一度お試しください。',
+                request,
               ),
             );
         }
@@ -345,18 +396,18 @@ export async function buildApp({
         },
         async (request, reply) => {
           if (!testShopAllowed)
-            return reply.code(404).send(errorBody('見つかりません。'));
+            return reply.code(404).send(errorBody('見つかりません。', request));
           if (request.headers.origin !== storeConfig.siteUrl)
             return reply
               .code(403)
-              .send(errorBody('ショップからもう一度お試しください。'));
+              .send(errorBody('ショップからもう一度お試しください。', request));
           const { sessionId, attemptId } = request.body;
           try {
             const session = await stripe.checkout.sessions.retrieve(sessionId);
             if (!testSessionMatches(session, sessionId, attemptId))
               return reply
                 .code(404)
-                .send(errorBody('決済情報を確認できません。'));
+                .send(errorBody('決済情報を確認できません。', request));
             return {
               mode: 'test',
               sessionId,
@@ -372,6 +423,7 @@ export async function buildApp({
               .send(
                 errorBody(
                   '決済情報を確認できません。時間をおいてお試しください。',
+                  request,
                 ),
               );
           }

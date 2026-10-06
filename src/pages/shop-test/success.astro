@@ -1,20 +1,51 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import { getLocale, localizePath, translator } from '../../data/i18n.mjs';
+const locale = getLocale(Astro.url.pathname);
+const t = translator(locale);
 ---
 
-<Layout testShop title="テスト決済から戻りました｜ギャルインザミックス">
+<Layout
+  testShop
+  title={t(
+    'テスト決済から戻りました｜ギャルインザミックス',
+    'Returned from test checkout | Gyaru in the Mix',
+  )}
+>
   <section class="result" data-checkout-return="success">
     <span class="result-heart" aria-hidden="true">♡</span>
     <p class="eyebrow">TEST ONLY · Stripe Sandbox</p>
-    <h1>テスト決済から<br />戻りました。</h1>
-    <p>実際のお支払い・商品の発送はありません。</p>
+    <h1>
+      {t('テスト決済から', 'You have returned')}<br />{
+        t('戻りました。', 'from test checkout.')
+      }
+    </h1>
+    <p>
+      {
+        t(
+          '実際のお支払い・商品の発送はありません。',
+          'No real payment or shipping takes place.',
+        )
+      }
+    </p>
     <p id="test-return-status" class="notice" role="status">
-      保存されたテスト決済を確認しています。
+      {
+        t(
+          '保存されたテスト決済を確認しています。',
+          'Checking your saved test checkout.',
+        )
+      }
     </p>
     <p class="muted">
-      保存されたテスト決済の完了を確認できた場合だけ、変更されていないバッグを空にします。このページを開いただけでは決済完了にはなりません。結果はStripe
-      Sandboxで確認してください。
+      {
+        t(
+          '保存されたテスト決済の完了を確認できた場合だけ、変更されていないバッグを空にします。このページを開いただけでは決済完了にはなりません。結果はStripe Sandboxで確認してください。',
+          'Your bag will be cleared only after the saved test payment is verified as complete and only if the bag has not changed. Opening this page does not confirm payment. Check the result in Stripe Sandbox.',
+        )
+      }
     </p>
-    <a class="button" href="/shop-test/">テストショップへ戻る ↗</a>
+    <a class="button" href={localizePath('/shop-test/', locale)}
+      >{t('テストショップへ戻る ↗', 'Back to the test shop ↗')}</a
+    >
   </section>
 </Layout>

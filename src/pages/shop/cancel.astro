@@ -1,21 +1,38 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import { usesCart } from '../../data/checkout.mjs';
+import { getLocale, localizePath, translator } from '../../data/i18n.mjs';
+const locale = getLocale(Astro.url.pathname);
+const t = translator(locale);
 ---
 
-<Layout title="ショップへ戻る｜ギャルインザミックス"
-  ><section class="result">
+<Layout
+  title={t(
+    'ショップへ戻る｜ギャルインザミックス',
+    'Back to the shop | Gyaru in the Mix',
+  )}
+>
+  <section class="result">
     <span class="result-heart" aria-hidden="true">♡</span><p class="eyebrow">
-      おかえり
-    </p><h1>ゆっくり選んでね。</h1><p>もう一度、好きなものを探してみて。</p><a
-      class="button"
-      href="/shop/">グッズに戻る ↗</a
-    >{
+      {t('おかえり', 'Welcome back')}
+    </p>
+    <h1>{t('ゆっくり選んでね。', 'Take your time.')}</h1><p>
+      {
+        t(
+          'もう一度、好きなものを探してみて。',
+          'Have another look and find something you love.',
+        )
+      }
+    </p>
+    <a class="button" href={localizePath('/shop/', locale)}
+      >{t('グッズに戻る ↗', 'Back to merchandise ↗')}</a
+    >
+    {
       usesCart && (
         <button class="text-button" data-open-cart>
-          バッグを確認する
+          {t('バッグを確認する', 'Review your bag')}
         </button>
       )
     }
-  </section></Layout
->
+  </section>
+</Layout>

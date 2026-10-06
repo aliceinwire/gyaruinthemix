@@ -1,13 +1,18 @@
 ---
 import { usesCart } from '../data/checkout.mjs';
+import { getLocale, translator } from '../data/i18n.mjs';
+import { localizeProduct } from '../data/shop-i18n.mjs';
 import { money } from '../scripts/cart.mjs';
-const { product, index = 0, cartEnabled = usesCart } = Astro.props;
+const { product: definition, index = 0, cartEnabled = usesCart } = Astro.props;
+const locale = getLocale(Astro.url.pathname);
+const t = translator(locale);
+const product = localizeProduct(definition, locale);
 const availability =
   product.availability === 'sold_out'
-    ? '売り切れ'
+    ? t('売り切れ', 'Sold out')
     : product.checkoutUrl
-      ? '販売中'
-      : '販売準備中';
+      ? t('販売中', 'Available')
+      : t('販売準備中', 'Coming soon');
 ---
 
 <article class={`product product-${product.slug}`} data-product={product.slug}>
@@ -24,7 +29,7 @@ const availability =
   </div>
   <div class="product-body">
     <span class="availability" data-availability
-      >{cartEnabled ? '販売準備中' : availability}</span
+      >{cartEnabled ? t('販売準備中', 'Coming soon') : availability}</span
     >
     <h3>{product.name}</h3>
     <p>{product.description}</p>
@@ -33,7 +38,7 @@ const availability =
         >{
           !cartEnabled && product.displayPriceJPY != null
             ? money(product.displayPriceJPY)
-            : '価格未定'
+            : t('価格未定', 'Price to be announced')
         }</span
       >
       {
@@ -41,21 +46,29 @@ const availability =
           <button
             data-add={product.slug}
             disabled
-            aria-label={`${product.name}をバッグに追加`}
+            aria-label={t(
+              `${product.name}をバッグに追加`,
+              `Add ${product.name} to your bag`,
+            )}
           >
-            準備中
+            {t('準備中', 'Coming soon')}
           </button>
         ) : product.checkoutUrl ? (
           <a
             href={product.checkoutUrl}
             rel="noreferrer"
-            aria-label={`${product.name}をStripeで購入する`}
+            aria-label={t(
+              `${product.name}をStripeで購入する`,
+              `Buy ${product.name} through Stripe`,
+            )}
           >
-            購入する ↗
+            {t('購入する ↗', 'Buy now ↗')}
           </a>
         ) : (
           <button disabled>
-            {availability === '売り切れ' ? '売り切れ' : '準備中'}
+            {product.availability === 'sold_out'
+              ? t('売り切れ', 'Sold out')
+              : t('準備中', 'Coming soon')}
           </button>
         )
       }

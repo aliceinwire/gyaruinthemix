@@ -1,5 +1,8 @@
 ---
 import { musicVideos, youtubeChannel } from '../data/videos.mjs';
+import { getLocale, translator, localizePath } from '../data/i18n.mjs';
+const locale = getLocale(Astro.url.pathname);
+const t = translator(locale);
 const { featured = false } = Astro.props;
 const videos = featured ? musicVideos.slice(0, 1) : musicVideos;
 ---
@@ -19,17 +22,22 @@ const videos = featured ? musicVideos.slice(0, 1) : musicVideos;
             type="button"
             data-video-load
             hidden
-            aria-label={`${video.title}のYouTubeプレーヤーを読み込む`}
+            aria-label={t(
+              `${video.title}のYouTubeプレーヤーを読み込む`,
+              `Load the YouTube player for ${video.title}`,
+            )}
           >
             <span class="music-video-play" aria-hidden="true">
               ▶
             </span>
-            <span>YouTubeプレーヤーを読み込む</span>
+            <span>
+              {t('YouTubeプレーヤーを読み込む', 'Load YouTube player')}
+            </span>
             <small>MUSIC VIDEO</small>
           </button>
           <noscript>
             <a href={`https://www.youtube.com/watch?v=${video.id}`}>
-              YouTubeで動画を見る ↗
+              {t('YouTubeで動画を見る ↗', 'Watch on YouTube ↗')}
             </a>
           </noscript>
         </div>
@@ -39,22 +47,28 @@ const videos = featured ? musicVideos.slice(0, 1) : musicVideos;
           href={`https://www.youtube.com/watch?v=${video.id}`}
           rel="noopener noreferrer"
         >
-          YouTubeで見る ↗
+          {t('YouTubeで見る ↗', 'Watch on YouTube ↗')}
         </a>
         <button class="music-video-close" type="button" data-video-close hidden>
-          プレーヤーを閉じる
+          {t('プレーヤーを閉じる', 'Close player')}
         </button>
       </article>
     ))
   }
 </div>
 <p class="music-video-note">
-  ボタンを押すとYouTubeに接続します。自動再生はしません。再生できない場合は「YouTubeで見る」からどうぞ。<a
-    href="/privacy/">プライバシーについて</a
+  {
+    t(
+      'ボタンを押すとYouTubeに接続します。自動再生はしません。再生できない場合は「YouTubeで見る」からどうぞ。',
+      'Loading the player connects to YouTube. Videos do not autoplay. If playback is unavailable, use “Watch on YouTube.”',
+    )
+  }
+  <a href={localizePath('/privacy/', locale)}
+    >{t('プライバシーについて', 'About privacy')}</a
   >
 </p>
 <a class="text-link" href={youtubeChannel} rel="noopener noreferrer"
-  >公式YouTubeチャンネル ↗</a
+  >{t('公式YouTubeチャンネル ↗', 'Official YouTube channel ↗')}</a
 >
 
 <script>

@@ -1,0 +1,108 @@
+{
+  "artist": {
+    "genres": [{ "label": "hard bounce" }, { "label": "bounce rap" }],
+    "aesthetic": "Heisei tsuyome gyaru"
+  },
+  "socials": [
+    { "label": "Official Instagram | GYARUINTHEMIX" },
+    { "label": "Instagram | DJ Arinee" },
+    { "label": "Instagram | DJ Chana" }
+  ],
+  "fanClub": {
+    "joinLabel": "How to join",
+    "membershipNote": "How to join, membership fees, and club activities will be announced when registration opens."
+  },
+  "tracks": [
+    { "linkLabel": "Listen" },
+    { "linkLabel": "Listen" },
+    { "linkLabel": "Listen" },
+    { "linkLabel": "Listen" }
+  ],
+  "events": [
+    {
+      "title": "ruby room, Shibuya",
+      "venue": "ruby room, Shibuya",
+      "timeLabel": "18:30–19:00",
+      "note": ""
+    },
+    {
+      "title": "pink drip",
+      "venue": "casablanca, Shinjuku",
+      "timeLabel": "",
+      "note": ""
+    },
+    {
+      "title": "AXIS SQUARE",
+      "venue": "VEK TOKYO",
+      "timeLabel": "03:20–04:00",
+      "note": ""
+    },
+    {
+      "title": "アキナのギャルしか勝たん",
+      "venue": "MBS Mainichi Broadcasting (Kansai)",
+      "timeLabel": "01:59–02:29 on September 30 (listed as 25:59–26:29 on September 29)",
+      "note": "Broadcast date and times are in Japan Standard Time. See the ABEMA episode page at the link below.",
+      "linkLabel": "ABEMA episode page"
+    },
+    {
+      "title": "October 3 DJ appearance cancelled",
+      "venue": "",
+      "timeLabel": "",
+      "note": "GYARUINTHEMIX's DJ appearance scheduled for October 3 has been cancelled."
+    }
+  ],
+  "news": [
+    {
+      "category": "Appearances",
+      "title": "MBS appearance, the ABEMA episode page, and a change to our October 3 plans.",
+      "text": "We played AXIS SQUARE at VEK TOKYO on September 25. Our appearance on MBS Mainichi Broadcasting (Kansai)'s アキナのギャルしか勝たん aired on September 30, 01:59–02:29 JST (listed as September 29, 25:59–26:29). Find the ABEMA episode page in our appearances section. Our DJ appearance scheduled for October 3 has been cancelled."
+    },
+    {
+      "category": "Merch",
+      "title": "Official merch is on the way.",
+      "text": "Logo stickers, face towels, and acrylic keychains. Product details, prices, and release dates will be announced once confirmed."
+    },
+    {
+      "category": "Fan club",
+      "title": "Stay with us beyond the dance floor.",
+      "text": "Fan club registration is still in the works. In the meantime, our photo page is now open."
+    }
+  ],
+  "photos": [
+    {
+      "alt": "The duo holding a pink decorated camera, with heart and star stickers on their faces",
+      "caption": "All decked out. Say cheese.",
+      "tag": "Our style"
+    },
+    {
+      "alt": "The duo smiling and posing with a clapperboard",
+      "caption": "Big smiles. Full sparkle.",
+      "tag": "Meet the duo"
+    },
+    {
+      "alt": "The duo with their arms outstretched beside a life-size standee wearing a gold outfit",
+      "caption": "Bringing the energy beyond the floor.",
+      "tag": "Out and about"
+    },
+    {
+      "alt": "The duo in leopard print and a white T-shirt, matching the pose of a life-size standee",
+      "caption": "Same pose. Two of us.",
+      "tag": "Out and about"
+    },
+    {
+      "alt": "DJ Arinee and DJ Chana together, with their handwritten names",
+      "caption": "We're GYARUINTHEMIX.",
+      "tag": "Meet the duo"
+    },
+    {
+      "alt": "The duo in a DJ booth surrounded by pink lighting",
+      "caption": "The dance floor has our hearts.",
+      "tag": "From the floor"
+    },
+    {
+      "alt": "DJ Arinee and DJ Chana leaning together in pink outfits",
+      "caption": "All-out pink. All-out big hair.",
+      "tag": "Our style"
+    }
+  ]
+}

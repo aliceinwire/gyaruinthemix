@@ -40,6 +40,43 @@ jobs:
       - run: npm run test:deployment
       - run: npm run build
 
+  browser:
+    name: Bilingual browser checks (${{ matrix.mode }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [payment_links, api]
+    env:
+      CHECKOUT_MODE: ${{ matrix.mode }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Install isolated browser test tools
+        run: |
+          npm install --prefix tests/browser --ignore-scripts --no-audit --no-fund
+          tests/browser/node_modules/.bin/playwright install --with-deps chromium
+      - run: npm run build
+      - name: Check responsive layouts and repeated interactions offline
+        run: node tests/browser/check.mjs
+      - name: Save browser screenshots and results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: bilingual-browser-${{ matrix.mode }}
+          path: artifacts/browser/
+          if-no-files-found: warn
+          retention-days: 7
+
   secrets:
     name: Secret scanning
     runs-on: ubuntu-24.04
@@ -97,7 +134,7 @@ jobs:
   publish:
     name: Publish tested main images
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'aliceinwire/gyaruinthemix'
-    needs: [source, secrets, containers]
+    needs: [source, secrets, containers, browser]
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     permissions:

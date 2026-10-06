@@ -1,32 +1,42 @@
 ---
 import '../styles/global.css';
 import '../styles/artist.css';
-import { site } from '../data/site.mjs';
+import { getSite } from '../data/site.mjs';
+import { getLocale, localizePath, translator } from '../data/i18n.mjs';
+const locale = getLocale(Astro.url.pathname);
+const t = translator(locale);
+const site = getSite(locale);
 import { canonicalUrl, publicPaths } from '../data/urls.mjs';
 import { usesCart } from '../data/checkout.mjs';
 import Cart from '../components/Cart.astro';
 import TestCart from '../components/TestCart.astro';
 const {
   testShop = false,
-  title = 'ギャルインザミックス｜オフィシャルサイト',
-  description = `DJありねぇとDJちゃなのB2B DJユニット、ギャルインザミックス（GYARUINTHEMIX）。${site.artist.genres.map((genre) => genre.label).join('／')}、${site.artist.bpm} BPM。${site.artist.aesthetic}の音楽、出演情報、出演依頼・お問い合わせ。`,
+  title = t(
+    'ギャルインザミックス｜オフィシャルサイト',
+    'GYARUINTHEMIX | Official Website',
+  ),
+  description = t(
+    `DJありねぇとDJちゃなのB2B DJユニット、ギャルインザミックス（GYARUINTHEMIX）。${site.artist.genres.map((genre) => genre.label).join('／')}、${site.artist.bpm} BPM。${site.artist.aesthetic}の音楽、出演情報、出演依頼・お問い合わせ。`,
+    `GYARUINTHEMIX is the B2B DJ duo of DJ Arinee and DJ Chana. Hard bounce and bounce rap at ${site.artist.bpm} BPM, with Heisei gyaru spirit. Music, appearances, bookings and contact.`,
+  ),
 } = Astro.props;
 const current = Astro.url.pathname;
 const indexable = !testShop && publicPaths.includes(current);
 const canonical = canonicalUrl(current);
 const navigation = [
-  ['/about/', 'ふたりのこと'],
-  ['/music/', '音楽'],
-  ['/live/', '出演情報'],
-  ['/news/', 'お知らせ'],
-  ['/fanclub/', 'ファンクラブ'],
-  ['/shop/', 'グッズ'],
-  ['/contact/', '出演依頼・お問い合わせ'],
-];
+  ['/about/', t('ふたりのこと', 'About us')],
+  ['/music/', t('音楽', 'Music')],
+  ['/live/', t('出演情報', 'Live & media')],
+  ['/news/', t('お知らせ', 'News')],
+  ['/fanclub/', t('ファンクラブ', 'Fan club')],
+  ['/shop/', t('グッズ', 'Merch')],
+  ['/contact/', t('出演依頼・お問い合わせ', 'Bookings & contact')],
+].map(([href, label]) => [localizePath(href, locale), label]);
 ---
 
 <!doctype html>
-<html lang="ja">
+<html lang={locale}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -41,17 +51,37 @@ const navigation = [
       indexable && (
         <>
           <link rel="canonical" href={canonical} />
+          {['ja', 'en', 'x-default'].map((language) => (
+            <link
+              rel="alternate"
+              hreflang={language}
+              href={canonicalUrl(localizePath(current, language))}
+            />
+          ))}
           <meta property="og:url" content={canonical} />
           <meta property="og:type" content="website" />
-          <meta property="og:site_name" content="ギャルインザミックス" />
-          <meta property="og:locale" content="ja_JP" />
+          <meta
+            property="og:site_name"
+            content={t('ギャルインザミックス', 'GYARUINTHEMIX')}
+          />
+          <meta
+            property="og:locale"
+            content={locale === 'en' ? 'en_US' : 'ja_JP'}
+          />
+          <meta
+            property="og:locale:alternate"
+            content={locale === 'en' ? 'ja_JP' : 'en_US'}
+          />
           <meta property="og:title" content={title} />
           <meta property="og:description" content={description} />
           <meta
             property="og:image"
             content={canonicalUrl('/assets/logo.webp')}
           />
-          <meta property="og:image:alt" content="ギャルインザミックス" />
+          <meta
+            property="og:image:alt"
+            content={t('ギャルインザミックス', 'GYARUINTHEMIX')}
+          />
         </>
       )
     }
@@ -59,31 +89,65 @@ const navigation = [
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   </head>
   <body>
-    <a class="skip" href="#main">本文へ</a>
+    <a class="skip" href="#main">{t('本文へ', 'Skip to content')}</a>
     {
       testShop && (
-        <aside class="test-shop-banner" aria-label="テスト専用の注意">
+        <aside
+          class="test-shop-banner"
+          aria-label={t('テスト専用の注意', 'Test-only notice')}
+        >
           TEST ONLY · Stripe Sandbox
           <br />
-          実際のお支払い・商品の発送はありません。
+          {t(
+            '実際のお支払い・商品の発送はありません。',
+            'No real payments or shipments.',
+          )}
         </aside>
       )
     }
     <div class="topline">
       {site.artist.aesthetic}
       <span aria-hidden="true">♥</span>
-      {site.artist.bpm} BPMで、ぶちアゲ。
+      {
+        t(
+          `${site.artist.bpm} BPMで、ぶちアゲ。`,
+          `Turn it up at ${site.artist.bpm} BPM.`,
+        )
+      }
+      <nav class="language-switcher" aria-label={t('言語', 'Language')}>
+        <a
+          href={localizePath(current, 'ja')}
+          lang="ja"
+          hreflang="ja"
+          aria-current={locale === 'ja' ? 'page' : undefined}
+          data-language-link>日本語</a
+        >
+        <span aria-hidden="true">/</span>
+        <a
+          href={localizePath(current, 'en')}
+          lang="en"
+          hreflang="en"
+          aria-current={locale === 'en' ? 'page' : undefined}
+          data-language-link>English</a
+        >
+      </nav>
     </div>
     <header class="header artist-header">
-      <a class="brand" href="/" aria-label="ギャルインザミックス ホーム"
+      <a
+        class="brand"
+        href={localizePath('/', locale)}
+        aria-label={t('ギャルインザミックス ホーム', 'GYARUINTHEMIX home')}
         ><img
           src="/assets/logo-small.webp"
           width="540"
           height="180"
-          alt="ギャルインザミックス"
+          alt={t('ギャルインザミックス', 'GYARUINTHEMIX')}
         /></a
       >
-      <nav class="desktop-navigation" aria-label="メインナビゲーション">
+      <nav
+        class="desktop-navigation"
+        aria-label={t('メインナビゲーション', 'Main navigation')}
+      >
         {
           navigation.map(([href, label]) => (
             <a
@@ -103,18 +167,21 @@ const navigation = [
             aria-haspopup="dialog"
             aria-controls="cart-dialog"
           >
-            {testShop ? 'テスト用バッグ' : 'バッグ'}{' '}
+            {testShop ? t('テスト用バッグ', 'Test bag') : t('バッグ', 'Bag')}{' '}
             <span data-cart-count>0</span>
           </button>
         )
       }
       <details class="mobile-menu">
-        <summary aria-label="メニューを開閉"
-          ><span aria-hidden="true">☰</span> メニュー</summary
+        <summary aria-label={t('メニューを開閉', 'Toggle menu')}
+          ><span aria-hidden="true">☰</span> {t('メニュー', 'Menu')}</summary
         >
-        <nav aria-label="モバイルナビゲーション">
-          <a href="/" aria-current={current === '/' ? 'page' : undefined}
-            >ホーム</a
+        <nav aria-label={t('モバイルナビゲーション', 'Mobile navigation')}>
+          <a
+            href={localizePath('/', locale)}
+            aria-current={current === localizePath('/', locale)
+              ? 'page'
+              : undefined}>{t('ホーム', 'Home')}</a
           >{
             navigation.map(([href, label]) => (
               <a
@@ -131,26 +198,32 @@ const navigation = [
     </header>
     <main id="main"><slot /></main>
     <footer class="footer">
-      <a href="/" class="footer-logo"
+      <a href={localizePath('/', locale)} class="footer-logo"
         ><img
           src="/assets/logo-small.webp"
           width="540"
           height="180"
           loading="lazy"
-          alt="ギャルインザミックス"
+          alt={t('ギャルインザミックス', 'GYARUINTHEMIX')}
         /></a
       >
       <div>
-        <p>かわいく、強く、うちららしく。</p><nav
-          aria-label="フッターナビゲーション"
-        >
+        <p>
+          {t('かわいく、強く、うちららしく。', 'Cute, fierce, and true to us.')}
+        </p><nav aria-label={t('フッターナビゲーション', 'Footer navigation')}>
           {navigation.map(([href, label]) => <a href={href}>{label}</a>)}<a
-            href="/legal/">特定商取引法に基づく表記</a
-          ><a href="/privacy/">プライバシー</a>
+            href={localizePath('/legal/', locale)}
+            >{t('特定商取引法に基づく表記', 'Seller information')}</a
+          ><a href={localizePath('/privacy/', locale)}
+            >{t('プライバシー', 'Privacy')}</a
+          >
         </nav>
         {
           (site.socials.length > 0 || site.bookingUrl) && (
-            <nav class="social-links" aria-label="公式リンク">
+            <nav
+              class="social-links"
+              aria-label={t('公式リンク', 'Official links')}
+            >
               {site.socials.map((link) => (
                 <a href={link.url} rel="noopener noreferrer">
                   {link.label} ↗
@@ -160,9 +233,21 @@ const navigation = [
           )
         }
       </div>
-      <small>© {new Date().getFullYear()} ギャルインザミックス</small>
+      <small
+        >© {new Date().getFullYear()}
+        {t('ギャルインザミックス', 'GYARUINTHEMIX')}</small
+      >
     </footer>
     {testShop ? <TestCart /> : usesCart && <Cart />}
+    <script>
+      // Preserve fragments and checkout return parameters only in the user's browser.
+      for (const link of document.querySelectorAll<HTMLAnchorElement>(
+        '[data-language-link]',
+      )) {
+        link.search = window.location.search;
+        link.hash = window.location.hash;
+      }
+    </script>
   </body>
 </html>
 

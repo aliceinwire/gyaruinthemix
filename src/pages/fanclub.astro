@@ -2,25 +2,40 @@
 import Layout from '../layouts/Layout.astro';
 import PhotoGrid from '../components/PhotoGrid.astro';
 import SectionTitle from '../components/SectionTitle.astro';
-import { site } from '../data/site.mjs';
+import { getSite } from '../data/site.mjs';
+import { getLocale, translator, localizePath } from '../data/i18n.mjs';
+const locale = getLocale(Astro.url.pathname);
+const t = translator(locale);
+const site = getSite(locale);
 ---
 
-<Layout title="ファンクラブ｜ギャルインザミックス">
+<Layout
+  title={t('ファンクラブ｜ギャルインザミックス', 'Fan Club | GYARUINTHEMIX')}
+>
   <section class="club-hero">
     <div class="club-title">
-      <p class="eyebrow">ギャルインザミックス ファンクラブ</p><h1>
-        フロアの外も、<br /><em>ギャル集合。</em><span aria-hidden="true"
-          >♡</span
-        >
+      <p class="eyebrow">
+        {t('ギャルインザミックス ファンクラブ', 'GYARUINTHEMIX FAN CLUB')}
+      </p><h1>
+        {t('フロアの外も、', 'Beyond the floor,')}<br /><em
+          >{t('ギャル集合。', 'gyaru unite.')}</em
+        ><span aria-hidden="true">♡</span>
       </h1><p>
-        会える日も、会えない日も。<br
-        />写真も近況も、ここでチェック。うちらと一緒に盛ってこ。
-      </p><a class="button" href="#photos">ふたりのフォトを見る ↘</a>
+        {t('会える日も、会えない日も。', "Whether we're together or apart.")}<br
+        />{
+          t(
+            '写真も近況も、ここでチェック。うちらと一緒に盛ってこ。',
+            'Find our photos and latest news here. Go all out with us.',
+          )
+        }
+      </p><a class="button" href="#photos"
+        >{t('ふたりのフォトを見る ↘', 'Explore the photo gallery ↘')}</a
+      >
     </div><div class="club-card">
-      <span class="eyebrow">ギャルインザミックス</span><span
-        class="club-card-heart"
-        aria-hidden="true">♡</span
-      ><h2>ファンクラブ</h2>{
+      <span class="eyebrow">{t('ギャルインザミックス', 'GYARUINTHEMIX')}</span
+      ><span class="club-card-heart" aria-hidden="true">♡</span><h2>
+        {t('ファンクラブ', 'Fan club')}
+      </h2>{
         site.fanClub.registrationOpen ? (
           <a
             class="button button-pink"
@@ -30,45 +45,92 @@ import { site } from '../data/site.mjs';
             {site.fanClub.joinLabel} ↗
           </a>
         ) : (
-          <p class="club-status">入会受付は準備中</p>
+          <p class="club-status">
+            {t('入会受付は準備中', 'Registration is in the works')}
+          </p>
         )
       }<p>{site.fanClub.membershipNote}</p>
     </div>
   </section>
   <section class="section photo-section" id="photos">
     <SectionTitle
-      label="盛れてる日も、踊ってる日も。"
-      title="ふたりのフォト"
+      label={t('盛れてる日も、踊ってる日も。', 'Glam days and dance days.')}
+      title={t('ふたりのフォト', 'Photo gallery')}
     /><PhotoGrid /><p class="collection-note">
-      写真をタップすると、大きく見られます。
+      {
+        t(
+          '写真をタップすると、大きく見られます。',
+          'Tap a photo to see it full size.',
+        )
+      }
     </p>
   </section>
   <section class="section fan-links">
-    <a href="/news/"
-      ><span>01 / お知らせ</span><h2>うちらの近況 ↗</h2><p>
-        グッズやファンクラブのお知らせ。
+    <a href={localizePath('/news/', locale)}
+      ><span>{t('01 / お知らせ', '01 / NEWS')}</span><h2>
+        {t('うちらの近況 ↗', 'The latest from us ↗')}
+      </h2><p>
+        {
+          t(
+            'グッズやファンクラブのお知らせ。',
+            'News about merch and the fan club.',
+          )
+        }
       </p></a
-    ><a href="/live/"
-      ><span>02 / 出演情報</span><h2>次に会える場所 ↗</h2><p>
-        DJ出演とメディア情報をチェック。
+    ><a href={localizePath('/live/', locale)}
+      ><span>{t('02 / 出演情報', '02 / APPEARANCES')}</span><h2>
+        {t('次に会える場所 ↗', 'Where to see us next ↗')}
+      </h2><p>
+        {
+          t(
+            'DJ出演とメディア情報をチェック。',
+            'Check our DJ and media appearances.',
+          )
+        }
       </p></a
     >
   </section>
   <section class="section club-faq">
-    <SectionTitle label="参加する前に。" title="よくある質問" /><details>
-      <summary>写真を見るのに登録は必要？</summary><p>
-        このページの写真とお知らせは、登録なしでご覧いただけます。
-      </p>
-    </details><details>
-      <summary>ファンクラブにはどうやって入るの？</summary><p>
+    <SectionTitle
+      label={t('参加する前に。', 'Before you join.')}
+      title={t('よくある質問', 'Frequently asked questions')}
+    /><details>
+      <summary
+        >{
+          t(
+            '写真を見るのに登録は必要？',
+            'Do I need to register to view the photos?',
+          )
+        }</summary
+      ><p>
         {
-          site.fanClub.registrationOpen
-            ? '上の入会案内から、受付先の条件・プライバシーポリシーをご確認のうえお手続きください。'
-            : '現在は入会受付の準備中です。受付を始めるときに、このページで入会方法をご案内します。'
+          t(
+            'このページの写真とお知らせは、登録なしでご覧いただけます。',
+            'The photos and news on this page are available without registration.',
+          )
         }
       </p>
     </details><details>
-      <summary>会費や特典は？</summary><p>{site.fanClub.membershipNote}</p>
+      <summary
+        >{
+          t('ファンクラブにはどうやって入るの？', 'How do I join the fan club?')
+        }</summary
+      ><p>
+        {
+          site.fanClub.registrationOpen
+            ? t(
+                '上の入会案内から、受付先の条件・プライバシーポリシーをご確認のうえお手続きください。',
+                'Use the joining link above, and review the registration provider’s terms and privacy policy before signing up.',
+              )
+            : t(
+                '現在は入会受付の準備中です。受付を始めるときに、このページで入会方法をご案内します。',
+                'Registration is currently being prepared. We will explain how to join on this page when registration opens.',
+              )
+        }
+      </p>
+    </details><details>
+      <summary>{t('会費や特典は？', 'What are the fees and benefits?')}</summary
+      ><p>{site.fanClub.membershipNote}</p>
     </details>
   </section>
 </Layout>

@@ -1,5 +1,8 @@
 ---
-const { label, title, href, link = 'すべて見る' } = Astro.props;
+import { getLocale, translator, localizePath } from '../data/i18n.mjs';
+const locale = getLocale(Astro.url.pathname);
+const t = translator(locale);
+const { label, title, href, link = t('すべて見る', 'View all') } = Astro.props;
 ---
 
 <div class="section-heading editorial-heading">
@@ -10,7 +13,7 @@ const { label, title, href, link = 'すべて見る' } = Astro.props;
   </div>
   {
     href && (
-      <a class="text-link" href={href}>
+      <a class="text-link" href={localizePath(href, locale)}>
         {link} ↗
       </a>
     )

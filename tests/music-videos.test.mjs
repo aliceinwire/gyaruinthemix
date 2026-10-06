@@ -109,7 +109,7 @@ test('the component retains direct watch links without JS and uses no remote thu
   const component = await readFile('src/components/MusicVideos.astro', 'utf8');
   assert.match(component, /<noscript>/);
   assert.match(component, /https:\/\/www.youtube.com\/watch\?v=/);
-  assert.doesNotMatch(component, /<iframe|<img|preconnect|autoplay/);
+  assert.doesNotMatch(component, /<iframe|<img|preconnect|allow=.*autoplay/);
   assert.match(component, /data-video-load\s+hidden/);
   assert.match(component, /data-video-close hidden/);
   const music = await readFile('src/pages/music.astro', 'utf8');

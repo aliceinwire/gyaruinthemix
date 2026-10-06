@@ -91,11 +91,23 @@ for (const path of [
   '/shop/cancel/',
   '/legal/',
   '/privacy/',
+  '/en/',
+  '/en/about/',
+  '/en/contact/',
+  '/en/music/',
+  '/en/live/',
+  '/en/news/',
+  '/en/fanclub/',
+  '/en/shop/',
+  '/en/shop/success/',
+  '/en/shop/cancel/',
+  '/en/legal/',
+  '/en/privacy/',
 ]) {
   const { response, text } = await request(path);
   assert.ok(
-    text.includes('ギャルインザミックス'),
-    `${path}: expected Japanese page`,
+    text.includes(`<html lang="${path.startsWith('/en/') ? 'en' : 'ja'}"`),
+    `${path}: expected document language`,
   );
   for (const header of [
     'content-security-policy',
@@ -124,6 +136,10 @@ for (const path of [
 await request('/favicon.svg');
 await request('/leopard.svg');
 await request('/page-that-does-not-exist/', 404);
+assert.match(
+  (await request('/en/page-that-does-not-exist/', 404)).text,
+  /<html lang="en"/,
+);
 await request('/.env', 403);
 assert.equal(JSON.parse((await request('/api/health')).text).status, 'ok');
 const catalog = JSON.parse((await request('/api/catalog')).text);

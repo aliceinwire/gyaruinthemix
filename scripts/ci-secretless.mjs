@@ -65,6 +65,18 @@ for (const path of [
   '/shop/success/',
   '/shop/cancel/',
   '/privacy/',
+  '/en/',
+  '/en/about/',
+  '/en/contact/',
+  '/en/music/',
+  '/en/live/',
+  '/en/news/',
+  '/en/fanclub/',
+  '/en/shop/',
+  '/en/shop/success/',
+  '/en/shop/cancel/',
+  '/en/legal/',
+  '/en/privacy/',
 ]) {
   const response = await fetch(base + path);
   assert.equal(response.status, 200, path);
@@ -99,6 +111,9 @@ assert.equal(
   (await fetch(base + '/api/checkout', { method: 'POST', body: '{}' })).status,
   404,
 );
+const english404 = await fetch(base + '/en/page-that-does-not-exist/');
+assert.equal(english404.status, 404);
+assert.match(await english404.text(), /<html lang="en"/);
 assert.equal((await fetch(base + '/web-health')).status, 200);
 console.log(
   'PASS secretless startup: only static web, no credentials/mounts/API/cart requests; hosted links, JPY, test notice, assets, headers and health',

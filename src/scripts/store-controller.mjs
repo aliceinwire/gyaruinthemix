@@ -1,3 +1,5 @@
+import { getLocale } from '../data/i18n.mjs';
+import { localizeProduct, shopText } from '../data/shop-i18n.mjs';
 import { money, sanitizeCart, subtotal } from './cart.mjs';
 
 // Both storefronts share behavior, never endpoints or browser state.
@@ -17,6 +19,8 @@ export function initializeStore(
     AbortController,
   } = environment;
 
+  const locale = getLocale(location.pathname || '/');
+  const t = (message) => shopText(locale, message);
   const storageKey = testShop ? 'gyaru-test-cart-v1' : 'gyaru-cart-v1';
   const attemptKey = testShop ? 'gyaru-test-checkout-v1' : 'gyaru-checkout-v1';
   const catalogUrl = testShop ? '/api/test-shop/catalog' : '/api/catalog';
@@ -95,13 +99,13 @@ export function initializeStore(
         attempt.cartDurable = true;
       } catch {
         throw new Error(
-          'バッグを保存できません。ブラウザーの保存設定を確認してください。',
+          t('バッグを保存できません。ブラウザーの保存設定を確認してください。'),
         );
       }
     }
     if (!saveAttempt())
       throw new Error(
-        '決済情報を保存できません。ブラウザーの保存設定を確認してください。',
+        t('決済情報を保存できません。ブラウザーの保存設定を確認してください。'),
       );
   }
   function setStatus(message, canReset = false) {
@@ -128,7 +132,9 @@ export function initializeStore(
     if (!readable) {
       attemptBlocked = true;
       setStatus(
-        'テスト決済は完了していますが、保存されたバッグを確認できません。決済情報を保持しています。保存設定を確認して再読み込みしてください。',
+        t(
+          'テスト決済は完了していますが、保存されたバッグを確認できません。決済情報を保持しています。保存設定を確認して再読み込みしてください。',
+        ),
       );
       return;
     }
@@ -145,7 +151,9 @@ export function initializeStore(
         cart = current;
         attemptBlocked = true;
         setStatus(
-          'テスト決済は完了していますが、バッグを保存できませんでした。重複を避けるため決済情報を保持しています。保存設定を確認して再読み込みしてください。',
+          t(
+            'テスト決済は完了していますが、バッグを保存できませんでした。重複を避けるため決済情報を保持しています。保存設定を確認して再読み込みしてください。',
+          ),
         );
         return;
       }
@@ -156,12 +164,16 @@ export function initializeStore(
         /* The empty cart is already durable. */
       }
       setStatus(
-        'テスト決済の完了を確認し、決済したバッグを空にしました。実際のお支払い・発送はありません。',
+        t(
+          'テスト決済の完了を確認し、決済したバッグを空にしました。実際のお支払い・発送はありません。',
+        ),
       );
     } else {
       cart = current;
       setStatus(
-        'テスト決済の完了を確認しました。バッグは決済開始後に変更されているため保持しました。支払済みの商品が残っていれば削除してください。',
+        t(
+          'テスト決済の完了を確認しました。バッグは決済開始後に変更されているため保持しました。支払済みの商品が残っていれば削除してください。',
+        ),
       );
     }
     attempt = null;
@@ -170,25 +182,29 @@ export function initializeStore(
   }
   function acceptStatus(result, checked) {
     if (attempt !== checked)
-      throw new Error('決済情報が更新されたため、古い結果を適用しません。');
+      throw new Error(t('決済情報が更新されたため、古い結果を適用しません。'));
     if (
       result?.mode !== 'test' ||
       result.sessionId !== checked.sessionId ||
       !['open', 'paid', 'pending', 'expired'].includes(result.status)
     )
-      throw new Error('テスト決済の状態を確認できませんでした。');
+      throw new Error(t('テスト決済の状態を確認できませんでした。'));
     if (result.status === 'paid') finishAttempt(checked);
     else if (result.status === 'expired') {
       attempt = null;
       attemptBlocked = false;
       saveAttempt();
       setStatus(
-        '以前のテスト決済は期限切れです。バッグを確認して、もう一度テスト決済へ進んでください。',
+        t(
+          '以前のテスト決済は期限切れです。バッグを確認して、もう一度テスト決済へ進んでください。',
+        ),
       );
     } else if (result.status === 'pending') {
       attemptBlocked = true;
       setStatus(
-        'テスト決済は確認中です。重複を避けるため、新しい決済は開始しません。時間をおいて再読み込みしてください。',
+        t(
+          'テスト決済は確認中です。重複を避けるため、新しい決済は開始しません。時間をおいて再読み込みしてください。',
+        ),
       );
     } else attemptBlocked = false;
     return result.status;
@@ -198,12 +214,22 @@ export function initializeStore(
     if (attempt.version !== 2) {
       attemptBlocked = true;
       setStatus(
-        '以前のテスト決済はこのバッグから自動確認できません。Stripeで結果を確認し、支払済みの商品を削除してから、新しいテスト決済を始めてください。',
+        t(
+          '以前のテスト決済はこのバッグから自動確認できません。Stripeで結果を確認し、支払済みの商品を削除してから、新しいテスト決済を始めてください。',
+        ),
         true,
       );
       return 'legacy';
     }
     if (!attempt.sessionId) {
+      // A failed/incomplete redirect has no verifiable receipt. A return-page
+      // visit must not leave a permanent loading message or retire the retry key.
+      if (document.querySelector('[data-checkout-return]'))
+        setStatus(
+          t(
+            '確認できる決済情報がこのブラウザーに保存されていません。バッグは変更していません。結果はStripe Sandboxで確認してください。',
+          ),
+        );
       if (
         !Number.isFinite(attempt.at) ||
         attempt.at > Date.now() ||
@@ -211,7 +237,9 @@ export function initializeStore(
       ) {
         attemptBlocked = true;
         setStatus(
-          '以前のテスト決済の状態を確認できません。Stripeで結果を確認してから、新しいテスト決済を始めてください。',
+          t(
+            '以前のテスト決済の状態を確認できません。Stripeで結果を確認してから、新しいテスト決済を始めてください。',
+          ),
           true,
         );
         return 'unknown';
@@ -227,13 +255,15 @@ export function initializeStore(
     ) {
       attemptBlocked = true;
       setStatus(
-        'この戻り先と保存されたテスト決済が一致しないため、バッグを変更しません。テストショップへ戻って確認してください。',
+        t(
+          'この戻り先と保存されたテスト決済が一致しないため、バッグを変更しません。テストショップへ戻って確認してください。',
+        ),
       );
       return 'unknown';
     }
     const response = await fetch('/api/test-shop/checkout-status', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-Shop-Locale': locale },
       body: JSON.stringify({
         sessionId: checked.sessionId,
         attemptId: checked.key,
@@ -243,7 +273,9 @@ export function initializeStore(
     });
     if (!response.ok)
       throw new Error(
-        'テスト決済の状態を確認できませんでした。再読み込みして確認してください。',
+        t(
+          'テスト決済の状態を確認できませんでした。再読み込みして確認してください。',
+        ),
       );
     return acceptStatus(await response.json(), checked);
   }
@@ -257,7 +289,9 @@ export function initializeStore(
     } catch {
       attemptBlocked = true;
       setStatus(
-        'テスト決済の状態を確認できませんでした。バッグは保持しています。再読み込みして確認してください。',
+        t(
+          'テスト決済の状態を確認できませんでした。バッグは保持しています。再読み込みして確認してください。',
+        ),
       );
     } finally {
       if (activity === operation) {
@@ -273,7 +307,9 @@ export function initializeStore(
       attemptBlocked = false;
       saveAttempt();
       setStatus(
-        '新しいテスト決済を開始できます。支払済みの商品をもう一度含めないよう、バッグを確認してください。',
+        t(
+          '新しいテスト決済を開始できます。支払済みの商品をもう一度含めないよう、バッグを確認してください。',
+        ),
       );
       render();
     });
@@ -301,7 +337,7 @@ export function initializeStore(
       (cart.reduce((n, p) => n + p.quantity, 0) >= 20 ||
         (existing?.quantity || 0) >= p.maxQuantity)
     ) {
-      announce('購入できる数量の上限です。');
+      announce(t('購入できる数量の上限です。'));
       return;
     }
     if (existing) existing.quantity += delta;
@@ -319,13 +355,18 @@ export function initializeStore(
     itemsNode.replaceChildren();
     if (!cart.length)
       itemsNode.append(
-        node('p', 'バッグはまだ空っぽ。好きなものを見つけてね。', 'cart-empty'),
+        node(
+          'p',
+          t('バッグはまだ空っぽ。好きなものを見つけてね。'),
+          'cart-empty',
+        ),
       );
     for (const item of cart) {
-      const product = (catalog?.products || definitions).find(
+      const definition = (catalog?.products || definitions).find(
         (p) => p.slug === item.product,
       );
-      if (!product) continue;
+      if (!definition) continue;
+      const product = localizeProduct(definition, locale);
       const row = node('div', undefined, 'cart-row');
       row.append(
         node('h3', product.name),
@@ -333,7 +374,7 @@ export function initializeStore(
           'p',
           Number.isInteger(product.amount)
             ? money(product.amount)
-            : '現在は購入できません',
+            : t('現在は購入できません'),
           'muted',
         ),
       );
@@ -345,7 +386,9 @@ export function initializeStore(
         const button = node('button', label, 'quantity-button');
         button.setAttribute(
           'aria-label',
-          `${product.name}の数量を${delta < 0 ? '減らす' : '増やす'}`,
+          locale === 'en'
+            ? `${delta < 0 ? 'Decrease' : 'Increase'} quantity of ${product.name}`
+            : `${product.name}の数量を${delta < 0 ? '減らす' : '増やす'}`,
         );
         button.disabled =
           busy ||
@@ -362,11 +405,22 @@ export function initializeStore(
             )
             ?.focus();
         });
-        if (delta > 0) controls.append(node('span', `${item.quantity}点`));
+        if (delta > 0)
+          controls.append(
+            node(
+              'span',
+              locale === 'en'
+                ? `${item.quantity} ${item.quantity === 1 ? 'item' : 'items'}`
+                : `${item.quantity}点`,
+            ),
+          );
         controls.append(button);
       }
-      const remove = node('button', '削除', 'cart-remove');
-      remove.setAttribute('aria-label', `${product.name}を削除`);
+      const remove = node('button', t('削除'), 'cart-remove');
+      remove.setAttribute(
+        'aria-label',
+        locale === 'en' ? `Remove ${product.name}` : `${product.name}を削除`,
+      );
       remove.disabled = busy;
       remove.addEventListener('click', () => {
         cart = cart.filter((p) => p.product !== item.product);
@@ -384,12 +438,14 @@ export function initializeStore(
         ? null
         : 0;
     document.querySelector('#cart-subtotal').textContent =
-      sum === null ? '確認中' : money(sum);
+      sum === null ? t('確認中') : money(sum);
     document.querySelector('#cart-shipping').textContent = testShop
-      ? 'テスト専用です。実際のお支払い・商品の発送はありません。'
+      ? t('テスト専用です。実際のお支払い・商品の発送はありません。')
       : catalog?.shipping
-        ? `送料（税込） ${money(catalog.shipping.amount)} ／ 日本国内のみ`
-        : '送料は販売開始時にご案内します。';
+        ? locale === 'en'
+          ? `Shipping (tax included): ${money(catalog.shipping.amount)} / Japan only`
+          : `送料（税込） ${money(catalog.shipping.amount)} ／ 日本国内のみ`
+        : t('送料は販売開始時にご案内します。');
     document.querySelector('#cart-mode').hidden =
       !testShop && (!catalog?.salesEnabled || catalog.mode !== 'test');
     checkout.disabled =
@@ -399,10 +455,10 @@ export function initializeStore(
       sum === null ||
       !catalog?.salesEnabled;
     checkout.textContent = busy
-      ? '決済ページを準備しています…'
+      ? t('決済ページを準備しています…')
       : testShop
-        ? 'テスト決済へ進む ↗'
-        : '決済へ進む ↗';
+        ? t('テスト決済へ進む ↗')
+        : t('決済へ進む ↗');
   }
   function openCart(event) {
     opener = event?.currentTarget;
@@ -422,13 +478,14 @@ export function initializeStore(
   dialog.addEventListener('close', () => opener?.focus());
   document.querySelectorAll('[data-add]').forEach((button) =>
     button.addEventListener('click', () => {
-      if (change(button.dataset.add, 1)) announce('バッグに追加しました ♡');
+      if (change(button.dataset.add, 1)) announce(t('バッグに追加しました ♡'));
     }),
   );
 
   async function refreshCatalog() {
     try {
       const response = await fetch(catalogUrl, {
+        headers: { 'X-Shop-Locale': locale },
         cache: 'no-store',
         signal: AbortSignal.timeout(12000),
       });
@@ -448,33 +505,39 @@ export function initializeStore(
         const p = catalog.products.find((p) => p.slug === card.dataset.product);
         if (!p) continue;
         card.querySelector('[data-price]').textContent =
-          p.amount === null ? '価格未定' : `${money(p.amount)}（税込）`;
+          p.amount === null
+            ? t('価格未定')
+            : locale === 'en'
+              ? `${money(p.amount)} (tax included)`
+              : `${money(p.amount)}（税込）`;
         card.querySelector('[data-availability]').textContent =
           p.availability === 'available'
             ? testShop
-              ? 'テスト用'
-              : '販売中'
+              ? t('テスト用')
+              : t('販売中')
             : p.availability === 'sold_out'
               ? 'SOLD OUT'
-              : '販売準備中';
+              : t('販売準備中');
         const button = card.querySelector('[data-add]');
         button.disabled = p.availability !== 'available';
         button.textContent =
           p.availability === 'available'
-            ? 'バッグに追加 ＋'
+            ? t('バッグに追加 ＋')
             : p.availability === 'sold_out'
-              ? '売り切れ'
-              : '準備中';
+              ? t('売り切れ')
+              : t('準備中');
       }
       const status = document.querySelector('#catalog-status');
       if (status && testShop && !catalog.salesEnabled) {
         status.hidden = false;
-        status.textContent =
-          'テストショップは現在無効です。実際のお支払い・商品の発送はありません。';
+        status.textContent = t(
+          'テストショップは現在無効です。実際のお支払い・商品の発送はありません。',
+        );
       } else if (status && catalog.salesEnabled) {
         status.hidden = !testShop && catalog.mode === 'live';
-        status.textContent =
-          'テストショップです。実際の購入・発送はありません。';
+        status.textContent = t(
+          'テストショップです。実際の購入・発送はありません。',
+        );
       }
     } catch {
       catalog = undefined;
@@ -484,8 +547,9 @@ export function initializeStore(
       const status = document.querySelector('#catalog-status');
       if (status) {
         status.hidden = false;
-        status.textContent =
-          '商品情報を読み込めませんでした。時間をおいてページを再読み込みしてください。';
+        status.textContent = t(
+          '商品情報を読み込めませんでした。時間をおいてページを再読み込みしてください。',
+        );
       }
     }
     render();
@@ -517,7 +581,7 @@ export function initializeStore(
       ) {
         const target = new URL(attempt.url);
         if (target.origin !== 'https://checkout.stripe.com')
-          throw new Error('決済ページを開けませんでした。');
+          throw new Error(t('決済ページを開けませんでした。'));
         saveRedirectReceipt();
         navigationPending = true;
         location.assign(target.href);
@@ -525,7 +589,7 @@ export function initializeStore(
       }
       if (testShop && attempt?.sessionId && attempt.body === body)
         throw new Error(
-          '以前のテスト決済を再開できません。結果を確認してください。',
+          t('以前のテスト決済を再開できません。結果を確認してください。'),
         );
       if (
         !attempt ||
@@ -535,7 +599,9 @@ export function initializeStore(
         attempt.at > Date.now() ||
         Date.now() - attempt.at > 24 * 60 * 60 * 1000
       ) {
-        attempt = { body, key: crypto.randomUUID(), at: Date.now() };
+        // Locale is fixed for this attempt; switching language must not create
+        // a fresh key or change Stripe parameters on a retry. Old attempts are ja.
+        attempt = { body, locale, key: crypto.randomUUID(), at: Date.now() };
         if (testShop) {
           let revision;
           let durable = false;
@@ -572,30 +638,36 @@ export function initializeStore(
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-Shop-Locale': locale,
           'Idempotency-Key': attempt.key,
           ...(testShop ? { 'X-Checkout-Protocol': '2' } : {}),
         },
-        body,
+        body: JSON.stringify({
+          ...JSON.parse(body),
+          locale: attempt.locale === 'en' ? 'en' : 'ja',
+        }),
         signal: AbortSignal.timeout(25000),
       });
       const result = await response.json();
       if (testShop && attempt !== sentAttempt)
-        throw new Error('決済情報が更新されたため、古い結果を適用しません。');
+        throw new Error(
+          t('決済情報が更新されたため、古い結果を適用しません。'),
+        );
       if (!response.ok) {
         if (response.status === 409) await refreshCatalog();
-        throw new Error(result.error || '決済ページを開けませんでした。');
+        throw new Error(result.error || t('決済ページを開けませんでした。'));
       }
       if (testShop) {
         if (
           typeof result.sessionId !== 'string' ||
           !/^cs_test_[A-Za-z0-9]+$/.test(result.sessionId)
         )
-          throw new Error('テスト決済を確認できませんでした。');
+          throw new Error(t('テスト決済を確認できませんでした。'));
         if (
           result.mode !== 'test' ||
           !['open', 'paid', 'pending', 'expired'].includes(result.status)
         )
-          throw new Error('テスト決済を確認できませんでした。');
+          throw new Error(t('テスト決済を確認できませんでした。'));
         attempt.sessionId = result.sessionId;
         if (result.status !== 'open') saveAttempt();
         if (acceptStatus(result, attempt) !== 'open') {
@@ -609,7 +681,7 @@ export function initializeStore(
         target.origin !== 'https://checkout.stripe.com' ||
         (testShop && result.mode !== 'test')
       )
-        throw new Error('決済ページを開けませんでした。');
+        throw new Error(t('決済ページを開けませんでした。'));
       if (testShop) {
         attempt.url = target.href;
         saveRedirectReceipt();
@@ -619,7 +691,7 @@ export function initializeStore(
     } catch (failure) {
       error.textContent =
         failure.name === 'TimeoutError' || failure instanceof TypeError
-          ? '通信を確認して、もう一度お試しください。'
+          ? t('通信を確認して、もう一度お試しください。')
           : failure.message;
       if (activity === operation) {
         busy = false;
@@ -661,7 +733,9 @@ export function initializeStore(
       document.querySelector('[data-checkout-return]')
     )
       setStatus(
-        '確認できる決済情報がこのブラウザーに保存されていません。バッグは変更していません。結果はStripe Sandboxで確認してください。',
+        t(
+          '確認できる決済情報がこのブラウザーに保存されていません。バッグは変更していません。結果はStripe Sandboxで確認してください。',
+        ),
       );
     await restoreCheckout();
   })();
