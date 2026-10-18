@@ -1,0 +1,155 @@
+---
+const { locale = 'ja' } = Astro.props;
+const t = (ja, en) => (locale === 'en' ? en : ja);
+---
+
+<section
+  class="section membership-panel"
+  data-membership
+  data-locale={locale}
+  aria-labelledby="membership-title"
+>
+  <p class="eyebrow">FAN CLUB MEMBERSHIP</p>
+  <h2 id="membership-title">
+    {t('メンバー限定ブログ・写真', 'Members-only blog and photos')}
+  </h2>
+  <p>
+    {
+      t(
+        '月額会員の方は、ログインして限定コンテンツをご覧いただけます。',
+        'Monthly members can sign in to read the private blog and view members-only photos.',
+      )
+    }
+  </p>
+  <p data-membership-status role="status" aria-live="polite">
+    {
+      t(
+        '入会受付の準備状況を確認しています。',
+        'Checking membership availability.',
+      )
+    }
+  </p>
+  <form data-member-login hidden>
+    <label for="member-email">{t('メールアドレス', 'Email address')}</label>
+    <input
+      id="member-email"
+      name="email"
+      type="email"
+      autocomplete="email"
+      maxlength="254"
+      required
+    />
+    <button type="submit" class="button"
+      >{t('ログインリンクを送る', 'Email me a sign-in link')}</button
+    >
+    <p>
+      {
+        t(
+          'メールのリンクは、このブラウザで開いてください。',
+          'Open the email link in this same browser.',
+        )
+      }
+    </p>
+  </form>
+  <button type="button" class="button" data-member-verify hidden
+    >{t('ログインを確認する', 'Confirm sign-in')}</button
+  >
+  <div data-member-account hidden>
+    <p data-member-email></p>
+    <button type="button" class="button" data-member-logout
+      >{t('ログアウト', 'Sign out')}</button
+    >
+  </div>
+  <div data-member-plan hidden>
+    <p data-member-price></p>
+    <p>
+      {
+        t(
+          '毎月自動更新される継続課金です。解約するまで毎月請求されます。解約・支払い情報の管理はStripeで行えます。',
+          'This is a recurring monthly subscription. You will be charged every month until you cancel. Manage cancellation and billing through Stripe.',
+        )
+      }
+    </p>
+    <p>
+      {
+        t(
+          '決済前にStripeの画面で金額・条件をご確認ください。',
+          'Review the amount and terms on Stripe before paying.',
+        )
+      }
+    </p>
+    <button type="button" class="button button-pink" data-member-join disabled
+      >{t('月額会員として入会する', 'Subscribe monthly')}</button
+    >
+  </div>
+  <a data-member-portal class="button" hidden rel="noopener noreferrer"
+    >{t('支払い情報・解約を管理', 'Manage billing and cancellation')}</a
+  >
+  <section
+    data-member-feed
+    hidden
+    aria-label={t('メンバー限定コンテンツ', 'Members-only content')}
+  >
+  </section>
+  <noscript
+    ><p>
+      {
+        t(
+          'ログインと入会にはJavaScriptを有効にしてください。',
+          'Enable JavaScript to sign in and subscribe.',
+        )
+      }
+    </p></noscript
+  >
+</section>
+<script>
+  import '../scripts/membership.js';
+</script>
+<style>
+  .membership-panel {
+    max-width: 960px;
+    margin-inline: auto;
+  }
+  .membership-panel p {
+    line-height: 1.8;
+  }
+  form {
+    display: grid;
+    gap: 1rem;
+    max-width: 32rem;
+    margin-block: 1.5rem;
+  }
+  input {
+    padding: 0.9rem;
+    border: 1px solid currentColor;
+    background: white;
+    color: #171717;
+    font: inherit;
+  }
+  button,
+  a {
+    margin-block: 0.5rem;
+    cursor: pointer;
+  }
+  button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  [hidden] {
+    display: none !important;
+  }
+  [data-member-feed] {
+    margin-block: 2rem;
+  }
+  :global([data-member-feed] article) {
+    border-top: 1px solid currentColor;
+    padding-block: 1.5rem;
+  }
+  :global([data-member-feed] .member-post-body) {
+    white-space: pre-wrap;
+  }
+  :global([data-member-feed] img) {
+    max-width: 100%;
+    height: auto;
+  }
+</style>

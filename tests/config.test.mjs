@@ -122,3 +122,24 @@ test('secret files must be regular, nonempty, small files; errors reveal no valu
     message: 'Invalid store configuration; check README and environment names.',
   });
 });
+
+test('membership defaults disabled at configurable 500 JPY and requires reviewed secure setup', async (t) => {
+  const env = await configuration(t);
+  const defaults = readConfig(env);
+  assert.equal(defaults.membershipEnabled, false);
+  assert.equal(defaults.memberAuthEnabled, false);
+  assert.equal(defaults.membershipAmountJPY, 500);
+  assert.equal(defaults.inventory['test:sandbox'].keychain, 10);
+  for (const extra of [
+    { MEMBERSHIP_ENABLED: 'true' },
+    { MEMBERSHIP_AMOUNT_JPY: '0' },
+    { MEMBERSHIP_AMOUNT_JPY: '1.5' },
+    { MEMBERSHIP_PORTAL_URL: 'https://evil.example/p/login/test_x' },
+    { MEMBER_AUTH_ENABLED: 'true' },
+  ])
+    assert.throws(() => readConfig({ ...env, ...extra }));
+  assert.equal(
+    readConfig({ ...env, MEMBERSHIP_AMOUNT_JPY: '800' }).membershipAmountJPY,
+    800,
+  );
+});

@@ -1,12 +1,11 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import MembershipPanel from '../components/MembershipPanel.astro';
 import PhotoGrid from '../components/PhotoGrid.astro';
 import SectionTitle from '../components/SectionTitle.astro';
-import { getSite } from '../data/site.mjs';
 import { getLocale, translator, localizePath } from '../data/i18n.mjs';
 const locale = getLocale(Astro.url.pathname);
 const t = translator(locale);
-const site = getSite(locale);
 ---
 
 <Layout
@@ -35,23 +34,20 @@ const site = getSite(locale);
       <span class="eyebrow">{t('ギャルインザミックス', 'GYARUINTHEMIX')}</span
       ><span class="club-card-heart" aria-hidden="true">♡</span><h2>
         {t('ファンクラブ', 'Fan club')}
-      </h2>{
-        site.fanClub.registrationOpen ? (
-          <a
-            class="button button-pink"
-            href={site.fanClub.joinUrl}
-            rel="noopener noreferrer"
-          >
-            {site.fanClub.joinLabel} ↗
-          </a>
-        ) : (
-          <p class="club-status">
-            {t('入会受付は準備中', 'Registration is in the works')}
-          </p>
-        )
-      }<p>{site.fanClub.membershipNote}</p>
+      </h2><a class="button button-pink" href="#membership-title"
+        >{t('入会・ログイン', 'Membership and sign-in')}</a
+      >
+      <p>
+        {
+          t(
+            '月額会員向けの限定ブログ・写真をご用意しています。入会受付と会費は下の案内でご確認ください。',
+            'Monthly membership includes a private blog and photos. See availability and pricing below.',
+          )
+        }
+      </p>
     </div>
   </section>
+  <MembershipPanel locale={locale} />
   <section class="section photo-section" id="photos">
     <SectionTitle
       label={t('盛れてる日も、踊ってる日も。', 'Glam days and dance days.')}
@@ -117,20 +113,22 @@ const site = getSite(locale);
         }</summary
       ><p>
         {
-          site.fanClub.registrationOpen
-            ? t(
-                '上の入会案内から、受付先の条件・プライバシーポリシーをご確認のうえお手続きください。',
-                'Use the joining link above, and review the registration provider’s terms and privacy policy before signing up.',
-              )
-            : t(
-                '現在は入会受付の準備中です。受付を始めるときに、このページで入会方法をご案内します。',
-                'Registration is currently being prepared. We will explain how to join on this page when registration opens.',
-              )
+          t(
+            '上の入会・ログイン欄からメールでログインし、受付中の場合はStripeの画面で月額会員登録をお手続きください。',
+            'Sign in by email above. When subscriptions are open, continue to Stripe to subscribe monthly.',
+          )
         }
       </p>
     </details><details>
       <summary>{t('会費や特典は？', 'What are the fees and benefits?')}</summary
-      ><p>{site.fanClub.membershipNote}</p>
+      ><p>
+        {
+          t(
+            '受付中の月額会費は入会欄に表示されます。会員の方は限定ブログと写真をご覧いただけます。',
+            'The current monthly fee is shown above when subscriptions are open. Members can access the private blog and photos.',
+          )
+        }
+      </p>
     </details>
   </section>
 </Layout>

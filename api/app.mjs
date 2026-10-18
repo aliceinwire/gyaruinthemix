@@ -7,6 +7,7 @@ const supportedEvents = new Set([
   'checkout.session.completed',
   'checkout.session.async_payment_succeeded',
   'checkout.session.async_payment_failed',
+  'checkout.session.expired',
 ]);
 const idPattern = /^[A-Za-z0-9_]{1,255}$/;
 const attemptPattern =
@@ -84,6 +85,9 @@ export async function buildApp({
   config,
   stripe,
   journal,
+  inventory,
+  membership,
+  memberAccess,
   logger = true,
   rateMax = 10,
   observe,
@@ -130,10 +134,11 @@ export async function buildApp({
       Object.assign(new Error('Rate limited'), { statusCode: 429 }),
   });
   app.addHook('onSend', async (_req, reply, payload) => {
-    reply
-      .header('Cache-Control', 'no-store')
-      .header('X-Content-Type-Options', 'nosniff')
-      .header('Referrer-Policy', 'strict-origin-when-cross-origin');
+    if (!reply.hasHeader('Cache-Control'))
+      reply.header('Cache-Control', 'no-store');
+    reply.header('X-Content-Type-Options', 'nosniff');
+    if (!reply.hasHeader('Referrer-Policy'))
+      reply.header('Referrer-Policy', 'strict-origin-when-cross-origin');
     return payload;
   });
   app.setErrorHandler((error, request, reply) => {
@@ -160,7 +165,11 @@ export async function buildApp({
     reply.code(404).send(errorBody('見つかりません。', request)),
   );
   app.get('/api/health', async (_request, reply) => {
-    if (!journal.healthy()) {
+    if (
+      !journal.healthy() ||
+      (inventory && !inventory.healthy()) ||
+      (membership && !membership.healthy())
+    ) {
       app.log.warn({ event: 'health_unavailable' });
       return reply.code(503).send({ status: 'unavailable' });
     }
@@ -173,6 +182,7 @@ export async function buildApp({
     storeCatalog,
     sandbox = false,
   ) {
+    const inventoryScope = `${config.mode}:${sandbox ? 'sandbox' : 'public'}`;
     app.get(
       `${apiPrefix}/catalog`,
       { config: { rateLimit: { max: 120 } } },
@@ -180,7 +190,10 @@ export async function buildApp({
         if (sandbox && !testShopAllowed)
           return reply.code(404).send(errorBody('見つかりません。', request));
         try {
-          return await storeCatalog.get();
+          const current = await storeCatalog.get();
+          return inventory
+            ? inventory.decorateCatalog(inventoryScope, current)
+            : current;
         } catch {
           app.log.error({ event: 'catalog_unavailable' });
           return reply
@@ -305,31 +318,36 @@ export async function buildApp({
                 }),
               )
               .digest('hex');
-          const session = await stripe.checkout.sessions.create(
-            {
-              mode: 'payment',
-              locale,
-              line_items: lines,
-              payment_method_types: ['card'],
-              adaptive_pricing: { enabled: false },
-              shipping_address_collection: { allowed_countries: ['JP'] },
-              shipping_options: [{ shipping_rate: storeConfig.shippingRate }],
-              success_url: `${storeConfig.siteUrl}${returnPrefix}/success/${sandbox ? '?session_id={CHECKOUT_SESSION_ID}' : ''}`,
-              cancel_url: `${storeConfig.siteUrl}${returnPrefix}/cancel/`,
+          const params = {
+            mode: 'payment',
+            locale,
+            line_items: lines,
+            payment_method_types: ['card'],
+            adaptive_pricing: { enabled: false },
+            shipping_address_collection: { allowed_countries: ['JP'] },
+            shipping_options: [{ shipping_rate: storeConfig.shippingRate }],
+            success_url: `${storeConfig.siteUrl}${returnPrefix}/success/${sandbox ? '?session_id={CHECKOUT_SESSION_ID}' : ''}`,
+            cancel_url: `${storeConfig.siteUrl}${returnPrefix}/cancel/`,
+            metadata: {
+              store: sandbox ? 'gyaruinthemix-test' : 'gyaruinthemix',
+              ...(sandbox ? { checkout_attempt: testAttemptProof(token) } : {}),
+            },
+            payment_intent_data: {
               metadata: {
                 store: sandbox ? 'gyaruinthemix-test' : 'gyaruinthemix',
-                ...(sandbox
-                  ? { checkout_attempt: testAttemptProof(token) }
-                  : {}),
-              },
-              payment_intent_data: {
-                metadata: {
-                  store: sandbox ? 'gyaruinthemix-test' : 'gyaruinthemix',
-                },
               },
             },
-            { idempotencyKey: key },
-          );
+          };
+          const session = inventory
+            ? await inventory.checkout({
+                scope: inventoryScope,
+                attemptId: token.toLowerCase(),
+                items,
+                params,
+              })
+            : await stripe.checkout.sessions.create(params, {
+                idempotencyKey: key,
+              });
           if (sandbox) {
             if (
               session.livemode !== false ||
@@ -354,11 +372,36 @@ export async function buildApp({
               throw new Error('Invalid checkout destination');
             return { ...result, url: target.href };
           }
+          if (inventory && session.status !== 'open')
+            return reply
+              .code(409)
+              .send(
+                errorBody(
+                  'この決済は終了しています。カートを確認してください。',
+                  request,
+                ),
+              );
           const target = new URL(session.url);
           if (target.origin !== 'https://checkout.stripe.com')
             throw new Error('Invalid checkout destination');
           return { url: target.href };
-        } catch {
+        } catch (error) {
+          if (
+            [
+              'INSUFFICIENT_STOCK',
+              'INVENTORY_UNAVAILABLE',
+              'ATTEMPT_CONFLICT',
+              'RECONCILIATION_REQUIRED',
+            ].includes(error.code)
+          )
+            return reply
+              .code(409)
+              .send(
+                errorBody(
+                  '在庫または決済状況が変わりました。カートを確認して、時間をおいてお試しください。',
+                  request,
+                ),
+              );
           app.log.error({ event: 'stripe_api_failure', requestId: request.id });
           return reply
             .code(503)
@@ -430,6 +473,73 @@ export async function buildApp({
         },
       );
   }
+  if (memberAccess) memberAccess.registerRoutes(app);
+  if (membership) {
+    app.get(
+      '/api/membership/plan',
+      { config: { rateLimit: { max: 60 } } },
+      async (_request, reply) => {
+        try {
+          return await membership.getPlan();
+        } catch {
+          return reply.code(503).send({ error: 'Membership is unavailable.' });
+        }
+      },
+    );
+    app.post(
+      '/api/membership/checkout',
+      {
+        config: { rateLimit: { max: rateMax } },
+        schema: {
+          body: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['planVersion'],
+            properties: {
+              planVersion: { type: 'string', pattern: '^[a-f0-9]{64}$' },
+              locale: { type: 'string', enum: ['ja', 'en'] },
+            },
+          },
+        },
+      },
+      async (request, reply) => {
+        if (request.headers.origin !== config.siteUrl)
+          return reply.code(403).send({ error: 'Invalid origin.' });
+        const attemptId = request.headers['idempotency-key'];
+        if (typeof attemptId !== 'string' || !attemptPattern.test(attemptId))
+          return reply.code(400).send({ error: 'Invalid request.' });
+        const account =
+          memberAccess && (await memberAccess.requireAccount(request, reply));
+        if (!account)
+          return reply.sent
+            ? reply
+            : reply.code(401).send({ error: 'Sign in first.' });
+        try {
+          return await membership.checkout({
+            ...request.body,
+            attemptId: attemptId.toLowerCase(),
+            accountId: account.id,
+            accountEmail: account.email,
+          });
+        } catch (error) {
+          const safeCodes = [
+            'PLAN_CHANGED',
+            'ATTEMPT_CONFLICT',
+            'ATTEMPT_REQUIRES_REVIEW',
+            'CHECKOUT_ALREADY_OPEN',
+            'ALREADY_SUBSCRIBED',
+            'DISABLED',
+            'AUTH_REQUIRED',
+          ].map((code) => `MEMBERSHIP_${code}`);
+          return reply.code(409).send({
+            error:
+              'Membership checkout is unavailable. Please refresh and try again.',
+            ...(safeCodes.includes(error.code) ? { code: error.code } : {}),
+          });
+        }
+      },
+    );
+  }
   registerShop('/api', '/shop', config, catalog);
   if (testShopAllowed)
     registerShop('/api/test-shop', '/shop-test', testConfig, testCatalog, true);
@@ -460,6 +570,16 @@ export async function buildApp({
         }
         if (event.livemode !== (config.mode === 'live'))
           return reply.code(400).send(errorBody('Invalid event mode'));
+        try {
+          if (membership) await membership.handleWebhook(event);
+          if (inventory) await inventory.handleWebhook(event);
+        } catch {
+          app.log.error({
+            event: 'commerce_webhook_failure',
+            requestId: request.id,
+          });
+          return reply.code(503).send(errorBody('Please retry later'));
+        }
         if (!supportedEvents.has(event.type)) return { received: true };
         const session = event.data?.object;
         const store = session?.metadata?.store;
@@ -509,6 +629,7 @@ export async function buildApp({
   app.decorate('validateCatalog', async () => {
     await catalog.get();
     if (testShopAllowed) await testCatalog.get();
+    if (membership) await membership.getPlan();
   });
   return app;
 }

@@ -488,3 +488,10 @@ For default-mode issues, see [Payment Links troubleshooting](deploy/PAYMENT-LINK
 ## Official references
 
 Implementation references: [Stripe Checkout Session creation](https://docs.stripe.com/api/checkout/sessions/create), [webhook raw-body signature verification](https://docs.stripe.com/webhooks/signature), [fulfillment guidance](https://docs.stripe.com/checkout/fulfillment), [Compose secrets](https://docs.docker.com/compose/how-tos/use-secrets/), [Compose services and file-secret ownership limitations](https://docs.docker.com/reference/compose-file/services/#secrets).
+
+## Shared inventory and authenticated fan club
+
+See [COMMERCE.md](COMMERCE.md) for the disabled-by-default API implementation,
+SQLite persistence, configurable monthly price (default ¥500), private content,
+sandbox acceptance checks and deployment prerequisites. Existing Payment Links
+do not enforce the new shared stock ledger.

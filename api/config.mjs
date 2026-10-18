@@ -134,10 +134,86 @@ export function readConfig(env = process.env) {
   }
   const products = loadProducts('products.json', salesEnabled);
   const testProducts = loadProducts('test-products.json', testShopEnabled);
+  // Counts seed a new durable ledger once; changing this file cannot restock it.
+  const inventory = JSON.parse(
+    readFileSync(new URL('../config/inventory.json', import.meta.url), 'utf8'),
+  );
+  for (const [scope, counts] of Object.entries(inventory)) {
+    if (
+      !['test:public', 'test:sandbox', 'live:public'].includes(scope) ||
+      !counts ||
+      Array.isArray(counts) ||
+      typeof counts !== 'object'
+    )
+      fail();
+    for (const [sku, count] of Object.entries(counts))
+      if (
+        !/^[a-z0-9-]{1,40}$/.test(sku) ||
+        !Number.isSafeInteger(count) ||
+        count < 0
+      )
+        fail();
+  }
+  const membershipEnabled = bool('MEMBERSHIP_ENABLED');
+  const memberAuthEnabled = bool('MEMBER_AUTH_ENABLED');
+  const membershipPriceId = env.STRIPE_PRICE_MEMBERSHIP || '';
+  const membershipAmountJPY = Number(env.MEMBERSHIP_AMOUNT_JPY || 500);
+  const membershipPortalUrl = env.MEMBERSHIP_PORTAL_URL || '';
+  if (membershipPortalUrl) {
+    let portal;
+    try {
+      portal = new URL(membershipPortalUrl);
+    } catch {
+      fail();
+    }
+    if (
+      portal.origin !== 'https://billing.stripe.com' ||
+      !portal.pathname.startsWith('/p/login/') ||
+      portal.username ||
+      portal.password ||
+      portal.hash ||
+      portal.search
+    )
+      fail();
+  }
+  if (!Number.isSafeInteger(membershipAmountJPY) || membershipAmountJPY < 1)
+    fail();
+  const memberEmailFrom = env.MEMBER_EMAIL_FROM || '';
+  let memberResendApiKey = '';
+  if (memberAuthEnabled) {
+    if (
+      url.protocol !== 'https:' ||
+      !/^[^\r\n]+<[^<>\s]+@[^<>\s]+>$|^[^<>\s]+@[^<>\s]+$/.test(memberEmailFrom)
+    )
+      fail();
+    memberResendApiKey = secret(
+      'MEMBER_EMAIL_API_KEY',
+      '/run/secrets/member_email_api_key',
+      /^re_[A-Za-z0-9_-]+$/,
+    );
+  }
+  if (
+    membershipEnabled &&
+    (!membershipPortalUrl ||
+      !memberAuthEnabled ||
+      !bool('MEMBERSHIP_DETAILS_REVIEWED') ||
+      !/^price_[A-Za-z0-9]+$/.test(membershipPriceId))
+  )
+    fail();
   const port = Number(env.PORT || 3000);
   if (!Number.isInteger(port) || port < 1024 || port > 65535) fail();
   return {
     mode,
+    inventory,
+    membershipEnabled,
+    membershipPriceId,
+    membershipAmountJPY,
+    membershipPortalUrl,
+    memberAuthEnabled,
+    memberEmailFrom,
+    memberResendApiKey,
+    memberContentDirectory: env.MEMBER_CONTENT_DIR || '',
+    siteOrigin: siteUrl,
     production,
     siteUrl,
     secretKey,
