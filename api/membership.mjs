@@ -328,7 +328,7 @@ export function createMembership({ config, stripe, db, now = Date.now }) {
   async function handleWebhook(event) {
     if (!EVENTS.has(event.type)) return false;
     if (event.livemode !== live) fail('MEMBERSHIP_EVENT_MODE_INVALID');
-    if (!/^evt_[A-Za-z0-9]+$/.test(event.id || ''))
+    if (!/^evt_[A-Za-z0-9_]{1,251}$/.test(event.id || ''))
       fail('MEMBERSHIP_EVENT_INVALID');
     const object = event.data?.object;
     let subscriptionId;

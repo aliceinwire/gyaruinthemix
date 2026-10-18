@@ -214,3 +214,59 @@ test('edge preserves no-referrer for authenticated responses', async () => {
     /Referrer-Policy 'no-referrer'/,
   );
 });
+
+test('enabled commerce components preserve signed legacy merchandise webhook observations', async (t) => {
+  const { createMembership } = await import('../api/membership.mjs');
+  const db = new DatabaseSync(':memory:');
+  const config = {
+    mode: 'test',
+    siteUrl: 'https://shop.example',
+    products: [],
+    salesEnabled: false,
+  };
+  const stripe = {
+    webhooks: { constructEvent: (body) => JSON.parse(body.toString()) },
+  };
+  const membership = createMembership({ db, config, stripe });
+  const inventory = createInventory({ db, stripe, stock: {} });
+  let claims = 0;
+  const app = await buildApp({
+    config,
+    stripe,
+    membership,
+    inventory,
+    logger: false,
+    journal: {
+      healthy: () => true,
+      claim: async () => {
+        claims++;
+        return true;
+      },
+      close: async () => {},
+    },
+  });
+  t.after(async () => {
+    await app.close();
+    db.close();
+  });
+  const payload = {
+    id: 'evt_ci_restart',
+    livemode: false,
+    type: 'checkout.session.completed',
+    data: {
+      object: {
+        id: 'cs_ci_restart',
+        object: 'checkout.session',
+        payment_status: 'paid',
+        metadata: { store: 'gyaruinthemix' },
+      },
+    },
+  };
+  const response = await app.inject({
+    method: 'POST',
+    url: '/api/stripe/webhook',
+    payload,
+  });
+  assert.equal(response.statusCode, 200);
+  assert.equal(claims, 1);
+});
