@@ -1,0 +1,5 @@
+{
+  "test:public": {},
+  "test:sandbox": { "keychain": 10 },
+  "live:public": {}
+}
