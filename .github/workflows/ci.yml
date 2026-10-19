@@ -68,6 +68,8 @@ jobs:
       - run: npm run build
       - name: Check responsive layouts and repeated interactions offline
         run: node tests/browser/check.mjs
+      - name: Check unlisted game subpath and scoped CSP offline
+        run: node tests/browser/game-test.mjs
       - name: Save browser screenshots and results
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

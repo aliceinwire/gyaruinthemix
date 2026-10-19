@@ -1,0 +1,1457 @@
+{
+  "generator": "image_gen__imagegen (built-in)",
+  "reference": {
+    "file": "shibuya/scramble-four-seasons-master.png",
+    "usage": "Style and 4-row atlas layout only; original Asakusa architecture"
+  },
+  "export": {
+    "method": "Pillow exact crop and nearest-neighbor resampling",
+    "runtimeSize": [
+      528,
+      165
+    ],
+    "note": "No overlays; four original seasonal paintings. Architecture closely consistent, not pixel-identical."
+  },
+  "scenes": [
+    {
+      "id": "asakusa-kaminarimon",
+      "name": "雷門の大提灯",
+      "english": "KAMINARIMON APPROACH",
+      "files": {
+        "spring": "asakusa-kaminarimon-spring.png",
+        "summer": "asakusa-kaminarimon-summer.png",
+        "autumn": "asakusa-kaminarimon-autumn.png",
+        "winter": "asakusa-kaminarimon-winter.png"
+      },
+      "master": {
+        "file": "asakusa-kaminarimon-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "f0d0ff83edad46705dfcbe0efcd56770b0a878aa5dc9c0d467ef0a2c199f1a93"
+      },
+      "prompt": "CRITICAL: PORTRAIT CANVAS matching reference's 4 horizontal stacked panoramas, NOT landscape canvas, NOT 2x2. Match reference 1122x1402 overall portrait ratio and crisp detailed pixel art style only, entirely new Asakusa architecture. Use case: stylized-concept. Original richly hand-detailed 16-bit pixel-art panorama atlas for a Japanese driving game, exquisite commercial game background density: intricate roof tiles, individual timber beams, luminous windows, warm small interiors, utility wires, layered city depth, pixel clusters not smooth vectors.\nLayout EXACTLY FOUR full-width panoramic strips stacked vertically, equal height, no margins, borders, labels or captions. Canvas preferred 1536x1920, four 1536x480 scenes. All FOUR show same architecture/camera/building placements and sizes, top spring pink blossoms, next summer lush green trees, next autumn vivid amber vermilion foliage, last winter genuinely bare branches and snow on roofs. Seasonal foliage and light integrated into artwork, never recolor filter. Frontal elevation seen across an unseen road, buildings meet bottom with only thin sidewalk lip. NO foreground road, cars, large people, UI, empty blocks, geometric overlays. Restrained nuanced pixel palette with clear warm lights, rich shadow, incredible small architectural detail. Each strip is whole horizontal district, not panels. \nDistrict: Asakusa Kaminarimon approach. Left narrow weathered two-story timber souvenir shops with rust-red noren, intricate ceramics counters, tiled roofs and a flowering cherry behind them. Center-right the immense vermilion Kaminarimon gate, dark majestic hip-and-gable ceramic roof, huge red hanging paper lantern and elaborately carved brackets, guardian niches. Gate offset right, not symmetric picture. Behind gate see dense rows of traditional shops and rooftops, distant low Tokyo apartment silhouettes. Far right a traditional confectionery storefront with illuminated glass cabinets and cream stucco upper floor. Tiny stone lanterns, potted plants, bamboo shades, patinated railings. Gate fills height dramatically but entirely contained. Same buildings and gate all four seasons.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "asakusa-kaminarimon-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            340
+          ],
+          "sha256": "965e0452f9f0e62d6550f2b978d5efb0f34a8bf941368b6cc77d7fd895f502ac"
+        },
+        {
+          "season": "summer",
+          "file": "asakusa-kaminarimon-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            350,
+            1122,
+            345
+          ],
+          "sha256": "bdf7801ef36b599f7a86269a502546c6b3607a09e5e07b8078a8e30cb049669c"
+        },
+        {
+          "season": "autumn",
+          "file": "asakusa-kaminarimon-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            702,
+            1122,
+            343
+          ],
+          "sha256": "297ab969dc86bf8c961598752a137ec784b4a941ccebe9c57963738fe7814741"
+        },
+        {
+          "season": "winter",
+          "file": "asakusa-kaminarimon-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1053,
+            1122,
+            349
+          ],
+          "sha256": "8808f5c14d8c515303cedb4ce11587ce0a09fa433b6bb5ad050dc19a1b400db2"
+        }
+      ]
+    },
+    {
+      "id": "asakusa-nakamise",
+      "name": "仲見世の屋根並み",
+      "english": "NAKAMISE ROOFLINE",
+      "files": {
+        "spring": "asakusa-nakamise-spring.png",
+        "summer": "asakusa-nakamise-summer.png",
+        "autumn": "asakusa-nakamise-autumn.png",
+        "winter": "asakusa-nakamise-winter.png"
+      },
+      "master": {
+        "file": "asakusa-nakamise-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "b281b82387a8320354151b302443a0c11199bc79cfa06c615965f91924283ffc"
+      },
+      "prompt": "CRITICAL: PORTRAIT CANVAS matching reference's 4 horizontal stacked panoramas, NOT landscape canvas, NOT 2x2. Match reference 1122x1402 overall portrait ratio and crisp detailed pixel art style only, entirely new Asakusa architecture. undefinedAsakusa Nakamise roofline, a dense intimate market panorama visually DIFFERENT from Kaminarimon, NO giant gate. Left frontal line of intricate low red timber souvenir shops and dark tiled gables, folded fans, tiny paper lanterns, dolls, patterned textiles and rice cracker display cases; middle a narrow receding lane through these little shop stalls with alternating scarlet awnings, exquisite blue ceramic roof tiles, overhead decorative floral sprigs and illuminated signboards; right taller pale ochre heritage corner confectionery with curved eaves, a cherry tree, stacks of wooden boxes, rooftop air conditioners. Distant temple roof and pagoda only small above dense layered roofs. Camera broad frontal, alley narrow, buildings much more dominant than ground, shop walls end at bottom image. Seasonal small trees and roof-edge decorations visibly blossom, green, amber, then bare with snowy eaves. Credible old Tokyo market crafts in astonishing hand-painted pixel detail.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "asakusa-nakamise-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            358
+          ],
+          "sha256": "d8ff81dcada8492232cfb93657c7748fc060a0864e5f37900e00d337f25e0f3a"
+        },
+        {
+          "season": "summer",
+          "file": "asakusa-nakamise-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            364,
+            1122,
+            359
+          ],
+          "sha256": "e8227496fd640a0214a1eecd71b228cfac060eed9bc24433c57c77c19ed07778"
+        },
+        {
+          "season": "autumn",
+          "file": "asakusa-nakamise-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            730,
+            1122,
+            358
+          ],
+          "sha256": "c3a93b0d59e704bd28b13aa298911f6d8644241d3767fcac436b9f1111ff4a5c"
+        },
+        {
+          "season": "winter",
+          "file": "asakusa-nakamise-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1094,
+            1122,
+            308
+          ],
+          "sha256": "c4c8a093cafaea2c6c022b360333891d58841312dddece6e520fcad03839c61c"
+        }
+      ]
+    },
+    {
+      "id": "asakusa-sensoji",
+      "name": "浅草寺の境内",
+      "english": "SENSOJI PRECINCT",
+      "files": {
+        "spring": "asakusa-sensoji-spring.png",
+        "summer": "asakusa-sensoji-summer.png",
+        "autumn": "asakusa-sensoji-autumn.png",
+        "winter": "asakusa-sensoji-winter.png"
+      },
+      "master": {
+        "file": "asakusa-sensoji-four-seasons-master.png",
+        "width": 1072,
+        "height": 1467,
+        "sha256": "6d276dbdf8bee530e3e2f7c2029da6fc998bb05b158e54b88825d9dc844f73a6"
+      },
+      "prompt": "CRITICAL: PORTRAIT canvas 1122x1402, exactly FOUR full-width horizontal strips vertically stacked, matching reference 4-row layout. Reference for pixel-art style and framing ONLY, never its buildings. Each row must be 350 pixels high including final winter row, preserve all four street bottoms. Entire scene frontage fully framed from roofs down to narrow pavement edge. Use case: stylized-concept. Original richly hand-detailed 16-bit pixel-art panorama atlas for a Japanese driving game, exquisite commercial game background density: intricate roof tiles, individual timber beams, luminous windows, warm small interiors, utility wires, layered city depth, pixel clusters not smooth vectors.\nLayout EXACTLY FOUR full-width panoramic strips stacked vertically, equal height, no margins, borders, labels or captions. Canvas preferred 1536x1920, four 1536x480 scenes. All FOUR show same architecture/camera/building placements and sizes, top spring pink blossoms, next summer lush green trees, next autumn vivid amber vermilion foliage, last winter genuinely bare branches and snow on roofs. Seasonal foliage and light integrated into artwork, never recolor filter. Frontal elevation seen across an unseen road, buildings meet bottom with only thin sidewalk lip. NO foreground road, cars, large people, UI, empty blocks, geometric overlays. Restrained nuanced pixel palette with clear warm lights, rich shadow, incredible small architectural detail. Each strip is whole horizontal district, not panels. \nDistrict: Sensoji precinct: massive low sweeping temple eaves across left half with glowing red-pillared main hall and incense burner, tall narrow five-storey pagoda at right third, stone lantern court behind a low fence, ancient pines and cherry tree clusters. Temple and pagoda have unequal silhouette. No Kaminarimon gate, no shop street.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "asakusa-sensoji-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1072,
+            363
+          ],
+          "sha256": "761467272e3ade7c6341d6d27e64cfb812fe89c8b2154ee573e8f29db41d8b06"
+        },
+        {
+          "season": "summer",
+          "file": "asakusa-sensoji-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            369,
+            1072,
+            363
+          ],
+          "sha256": "6d1056bb3ebbc05f1be6a39d156879e39ea0c7cbda44d4eb90148c81583400ea"
+        },
+        {
+          "season": "autumn",
+          "file": "asakusa-sensoji-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            736,
+            1072,
+            362
+          ],
+          "sha256": "abe9ce7e6fb43d498cb90f0e28c240d474ee7d478e4448dd9c5b413ca7e84731"
+        },
+        {
+          "season": "winter",
+          "file": "asakusa-sensoji-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1102,
+            1072,
+            363
+          ],
+          "sha256": "12fc136ed364405cb0bce45c76f1b983589e4b094ebaaf94426c92dedbed3c06"
+        }
+      ]
+    },
+    {
+      "id": "asakusa-sumida",
+      "name": "隅田川の桜堤",
+      "english": "SUMIDA CHERRY BANK",
+      "files": {
+        "spring": "asakusa-sumida-spring.png",
+        "summer": "asakusa-sumida-summer.png",
+        "autumn": "asakusa-sumida-autumn.png",
+        "winter": "asakusa-sumida-winter.png"
+      },
+      "master": {
+        "file": "asakusa-sumida-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "69a50b122b05c0b8aa08818b53940c6037673ca1ff5a3d85ee05e188f1685b92"
+      },
+      "prompt": "CRITICAL: PORTRAIT canvas 1122x1402, exactly FOUR full-width horizontal strips vertically stacked, matching reference 4-row layout. Reference for pixel-art style and framing ONLY, never its buildings. Each row must be 350 pixels high including final winter row, preserve all four street bottoms. Entire scene frontage fully framed from roofs down to narrow pavement edge. Use case: stylized-concept. Original richly hand-detailed 16-bit pixel-art panorama atlas for a Japanese driving game, exquisite commercial game background density: intricate roof tiles, individual timber beams, luminous windows, warm small interiors, utility wires, layered city depth, pixel clusters not smooth vectors.\nLayout EXACTLY FOUR full-width panoramic strips stacked vertically, equal height, no margins, borders, labels or captions. Canvas preferred 1536x1920, four 1536x480 scenes. All FOUR show same architecture/camera/building placements and sizes, top spring pink blossoms, next summer lush green trees, next autumn vivid amber vermilion foliage, last winter genuinely bare branches and snow on roofs. Seasonal foliage and light integrated into artwork, never recolor filter. Frontal elevation seen across an unseen road, buildings meet bottom with only thin sidewalk lip. NO foreground road, cars, large people, UI, empty blocks, geometric overlays. Restrained nuanced pixel palette with clear warm lights, rich shadow, incredible small architectural detail. Each strip is whole horizontal district, not panels. \nDistrict: Sumida cherry bank: broad landscaped river promenade, majestic cherry trees across left and center above textured stone embankment, curved low sightseeing-boat pier at right, river behind railings, distant Skytree and blue skyline, fine steel bridge far left, small waterside kiosk. Entire composition is park and waterfront, not shops. Foreground only thin promenade lip.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "asakusa-sumida-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            346
+          ],
+          "sha256": "3537ffcd3f5ec2a32398547e8809e223496bb22156eb69bc776e0346217e77fe"
+        },
+        {
+          "season": "summer",
+          "file": "asakusa-sumida-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            352,
+            1122,
+            347
+          ],
+          "sha256": "ab68419a38acfa9231c7369eb145b6ae804316205fe178ea7aa3a2f47d420f4d"
+        },
+        {
+          "season": "autumn",
+          "file": "asakusa-sumida-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            703,
+            1122,
+            347
+          ],
+          "sha256": "5b1a0ce06f8b12951626253fcb7733cefee6b3ac7d55e5ddf240ada03e63394e"
+        },
+        {
+          "season": "winter",
+          "file": "asakusa-sumida-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1054,
+            1122,
+            346
+          ],
+          "sha256": "cbf521ea582f10c352ecb838b072f524ede4c33f55e21f229400a9adbf32dd39"
+        }
+      ]
+    },
+    {
+      "id": "asakusa-azuma",
+      "name": "吾妻橋のたもと",
+      "english": "AZUMABASHI EMBANKMENT",
+      "files": {
+        "spring": "asakusa-azuma-spring.png",
+        "summer": "asakusa-azuma-summer.png",
+        "autumn": "asakusa-azuma-autumn.png",
+        "winter": "asakusa-azuma-winter.png"
+      },
+      "master": {
+        "file": "asakusa-azuma-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "77ba6ee8694bfc57bc7763bc0cbb530188b5ff0941c12e8d49ffb31fa0d0a4f0"
+      },
+      "prompt": "CRITICAL: PORTRAIT canvas 1122x1402, exactly FOUR full-width horizontal strips vertically stacked, matching reference 4-row layout. Reference for pixel-art style and framing ONLY, never its buildings. Each row must be 350 pixels high including final winter row, preserve all four street bottoms. Entire scene frontage fully framed from roofs down to narrow pavement edge. Use case: stylized-concept. Original richly hand-detailed 16-bit pixel-art panorama atlas for a Japanese driving game, exquisite commercial game background density: intricate roof tiles, individual timber beams, luminous windows, warm small interiors, utility wires, layered city depth, pixel clusters not smooth vectors.\nLayout EXACTLY FOUR full-width panoramic strips stacked vertically, equal height, no margins, borders, labels or captions. Canvas preferred 1536x1920, four 1536x480 scenes. All FOUR show same architecture/camera/building placements and sizes, top spring pink blossoms, next summer lush green trees, next autumn vivid amber vermilion foliage, last winter genuinely bare branches and snow on roofs. Seasonal foliage and light integrated into artwork, never recolor filter. Frontal elevation seen across an unseen road, buildings meet bottom with only thin sidewalk lip. NO foreground road, cars, large people, UI, empty blocks, geometric overlays. Restrained nuanced pixel palette with clear warm lights, rich shadow, incredible small architectural detail. Each strip is whole horizontal district, not panels. \nDistrict: Azumabashi embankment: huge vivid red riveted steel bridge crossing diagonally behind scene left half, stone stairs descending toward boat moorings in center, right waterside warehouses and boat-ticket pavilion. Across river gold building and tiny distant skyline. Cherry tree right and riverside planter leaves with strong seasonal change. Bridge, stairs and wharf are primary architecture.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "asakusa-azuma-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            346
+          ],
+          "sha256": "8a2505e8746361527204b290f655ed0ec050efc1a50f8be93828f6b42bfe748d"
+        },
+        {
+          "season": "summer",
+          "file": "asakusa-azuma-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            352,
+            1122,
+            347
+          ],
+          "sha256": "2b49adfea13df89de2943f29df662390ceeaf00c46f22fcba477408a06cf2b92"
+        },
+        {
+          "season": "autumn",
+          "file": "asakusa-azuma-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            703,
+            1122,
+            347
+          ],
+          "sha256": "087d2a8828f0379b2a4ca009f95d984a7f5b47c83094929d1a338421327c1aa7"
+        },
+        {
+          "season": "winter",
+          "file": "asakusa-azuma-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1054,
+            1122,
+            346
+          ],
+          "sha256": "ecdfc712c67fe93d09d2505aa1423d795ea5f06e1da9addbbcef3132af7f0304"
+        }
+      ]
+    },
+    {
+      "id": "asakusa-denboin",
+      "name": "伝法院通り",
+      "english": "DENBOIN CRAFT LANE",
+      "files": {
+        "spring": "asakusa-denboin-spring.png",
+        "summer": "asakusa-denboin-summer.png",
+        "autumn": "asakusa-denboin-autumn.png",
+        "winter": "asakusa-denboin-winter.png"
+      },
+      "master": {
+        "file": "asakusa-denboin-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "42c5b0aa6dcd802005442ffc6732b75fb85e367d5805bea87937d0f6e85d5201"
+      },
+      "prompt": "CRITICAL: PORTRAIT canvas 1122x1402, exactly FOUR full-width horizontal strips vertically stacked, matching reference 4-row layout. Reference for pixel-art style and framing ONLY, never its buildings. Each row must be 350 pixels high including final winter row, preserve all four street bottoms. Entire scene frontage fully framed from roofs down to narrow pavement edge. Use case: stylized-concept. Original richly hand-detailed 16-bit pixel-art panorama atlas for a Japanese driving game, exquisite commercial game background density: intricate roof tiles, individual timber beams, luminous windows, warm small interiors, utility wires, layered city depth, pixel clusters not smooth vectors.\nLayout EXACTLY FOUR full-width panoramic strips stacked vertically, equal height, no margins, borders, labels or captions. Canvas preferred 1536x1920, four 1536x480 scenes. All FOUR show same architecture/camera/building placements and sizes, top spring pink blossoms, next summer lush green trees, next autumn vivid amber vermilion foliage, last winter genuinely bare branches and snow on roofs. Seasonal foliage and light integrated into artwork, never recolor filter. Frontal elevation seen across an unseen road, buildings meet bottom with only thin sidewalk lip. NO foreground road, cars, large people, UI, empty blocks, geometric overlays. Restrained nuanced pixel palette with clear warm lights, rich shadow, incredible small architectural detail. Each strip is whole horizontal district, not panels. \nDistrict: Denboin craft lane: Edo-period black lattice fronts staggered across whole frame, black tiled stepped rooflines, ochre plaster, small timber gateway offset left, a fan-maker window center and hand-dyed textile merchant right. Dense ornamental roof brackets, wooden shop plaques, red lanterns, cherry tree behind courtyard wall. Quiet low-rise horizontal architecture, no pagoda or massive temple.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "asakusa-denboin-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            346
+          ],
+          "sha256": "e8f268f484d4760340db1a323a592e21ae2425836a8d7f0f461914305d91aa14"
+        },
+        {
+          "season": "summer",
+          "file": "asakusa-denboin-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            352,
+            1122,
+            347
+          ],
+          "sha256": "4ccf4f74df4bb8d73315e94bebc658ef488d3bcfba43c138ad63ef7b72f22f8c"
+        },
+        {
+          "season": "autumn",
+          "file": "asakusa-denboin-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            703,
+            1122,
+            347
+          ],
+          "sha256": "a074ca7029b21a004271a3e0fce87501629f7366af8563e95ad4e737cf56d667"
+        },
+        {
+          "season": "winter",
+          "file": "asakusa-denboin-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1054,
+            1122,
+            346
+          ],
+          "sha256": "7e6a56b7a595c7b4b2c9c512e53a23aa8786f31bf26688eddf954eb07408a557"
+        }
+      ]
+    },
+    {
+      "id": "asakusa-hanayashiki",
+      "name": "花やしき遊園地前",
+      "english": "HANAYASHIKI FUN FAIR",
+      "files": {
+        "spring": "asakusa-hanayashiki-spring.png",
+        "summer": "asakusa-hanayashiki-summer.png",
+        "autumn": "asakusa-hanayashiki-autumn.png",
+        "winter": "asakusa-hanayashiki-winter.png"
+      },
+      "master": {
+        "file": "asakusa-hanayashiki-four-seasons-master.png",
+        "width": 1072,
+        "height": 1467,
+        "sha256": "146c0d65e5546e5e1ceeee534eb413abcb66bc1acfb402b919bdf6ab46a4de99"
+      },
+      "prompt": "CRITICAL: PORTRAIT canvas 1122x1402, exactly FOUR full-width horizontal strips vertically stacked, matching reference 4-row layout. Reference for pixel-art style and framing ONLY, never its buildings. Each row must be 350 pixels high including final winter row, preserve all four street bottoms. Entire scene frontage fully framed from roofs down to narrow pavement edge. Use case: stylized-concept. Original richly hand-detailed 16-bit pixel-art panorama atlas for a Japanese driving game, exquisite commercial game background density: intricate roof tiles, individual timber beams, luminous windows, warm small interiors, utility wires, layered city depth, pixel clusters not smooth vectors.\nLayout EXACTLY FOUR full-width panoramic strips stacked vertically, equal height, no margins, borders, labels or captions. Canvas preferred 1536x1920, four 1536x480 scenes. All FOUR show same architecture/camera/building placements and sizes, top spring pink blossoms, next summer lush green trees, next autumn vivid amber vermilion foliage, last winter genuinely bare branches and snow on roofs. Seasonal foliage and light integrated into artwork, never recolor filter. Frontal elevation seen across an unseen road, buildings meet bottom with only thin sidewalk lip. NO foreground road, cars, large people, UI, empty blocks, geometric overlays. Restrained nuanced pixel palette with clear warm lights, rich shadow, incredible small architectural detail. Each strip is whole horizontal district, not panels. \nDistrict: Hanayashiki fun fair: quirky vintage amusement park frontage with scalloped pink ticket building at left, compact pastel carousel glimpsed through center ornamental entrance, intricate rollercoaster rails winding in background behind cream four-storey tower right. Candy stall and pinwheel decorations, tiny lantern string and trees. Distinct festive layered mechanical silhouettes, no generic office streets.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "asakusa-hanayashiki-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1072,
+            363
+          ],
+          "sha256": "a6dad082a7c3b5effacb2542abd79af515ad0558b28a7ebd623f66e1c8dd7105"
+        },
+        {
+          "season": "summer",
+          "file": "asakusa-hanayashiki-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            369,
+            1072,
+            363
+          ],
+          "sha256": "b80021114fb866cc6802e48ac032c336080ba2fd0e80576b82aef7d8308eef13"
+        },
+        {
+          "season": "autumn",
+          "file": "asakusa-hanayashiki-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            736,
+            1072,
+            362
+          ],
+          "sha256": "2c7928e8e624b1cdb6d6d38dac26bbecf80027c124c73063c69ab7e3eb3d313d"
+        },
+        {
+          "season": "winter",
+          "file": "asakusa-hanayashiki-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1102,
+            1072,
+            363
+          ],
+          "sha256": "b2eac7dae81f460cc99a670a98042d1fe308aa9ee8bc942806795ca8548431a5"
+        }
+      ]
+    },
+    {
+      "id": "asakusa-rokku",
+      "name": "浅草六区の劇場",
+      "english": "ROKKU THEATER STREET",
+      "files": {
+        "spring": "asakusa-rokku-spring.png",
+        "summer": "asakusa-rokku-summer.png",
+        "autumn": "asakusa-rokku-autumn.png",
+        "winter": "asakusa-rokku-winter.png"
+      },
+      "master": {
+        "file": "asakusa-rokku-four-seasons-master.png",
+        "width": 1072,
+        "height": 1467,
+        "sha256": "6483c98fb26d1ab8de31313aa1b66a27bc4f793f936d61724753f0e2d366effc"
+      },
+      "prompt": "CRITICAL: PORTRAIT canvas 1122x1402, exactly FOUR full-width horizontal strips vertically stacked, matching reference 4-row layout. Reference for pixel-art style and framing ONLY, never its buildings. Each row must be 350 pixels high including final winter row, preserve all four street bottoms. Entire scene frontage fully framed from roofs down to narrow pavement edge. Use case: stylized-concept. Original richly hand-detailed 16-bit pixel-art panorama atlas for a Japanese driving game, exquisite commercial game background density: intricate roof tiles, individual timber beams, luminous windows, warm small interiors, utility wires, layered city depth, pixel clusters not smooth vectors.\nLayout EXACTLY FOUR full-width panoramic strips stacked vertically, equal height, no margins, borders, labels or captions. Canvas preferred 1536x1920, four 1536x480 scenes. All FOUR show same architecture/camera/building placements and sizes, top spring pink blossoms, next summer lush green trees, next autumn vivid amber vermilion foliage, last winter genuinely bare branches and snow on roofs. Seasonal foliage and light integrated into artwork, never recolor filter. Frontal elevation seen across an unseen road, buildings meet bottom with only thin sidewalk lip. NO foreground road, cars, large people, UI, empty blocks, geometric overlays. Restrained nuanced pixel palette with clear warm lights, rich shadow, incredible small architectural detail. Each strip is whole horizontal district, not panels. \nDistrict: Rokku theater street: two contrasting old Japanese theater fronts, large weathered ivory Art Deco cinema on left with vertical lightbulb sign and framed portraits, lower dark-red wood variety theater right with elaborate marquee and yellow lanterns, narrow record store and poster-lined stair between. Rich brick and neon detail. Tall cherry tree at far left and small street trees right.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "asakusa-rokku-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1072,
+            368
+          ],
+          "sha256": "6a06586af54057e3e458482b2182b1701fe434940b3dbb8da4a304be12ca219b"
+        },
+        {
+          "season": "summer",
+          "file": "asakusa-rokku-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            376,
+            1072,
+            366
+          ],
+          "sha256": "4fdfc38361b910c8c163b027da853d0c51b3979b744c75f052024b3984dbb9c1"
+        },
+        {
+          "season": "autumn",
+          "file": "asakusa-rokku-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            750,
+            1072,
+            366
+          ],
+          "sha256": "27fc4365c8f581e3482e9a579dd8fba99b42510ccfbba7ead147107bf5142f7a"
+        },
+        {
+          "season": "winter",
+          "file": "asakusa-rokku-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1125,
+            1072,
+            342
+          ],
+          "sha256": "7c2d3b0778aedcfa4b2f8f8ce4832ed7de6d9e32468decddf545f9ef2a916209"
+        }
+      ]
+    },
+    {
+      "id": "asakusa-hoppy",
+      "name": "ホッピー通り",
+      "english": "HOPPY STREET",
+      "files": {
+        "spring": "asakusa-hoppy-spring.png",
+        "summer": "asakusa-hoppy-summer.png",
+        "autumn": "asakusa-hoppy-autumn.png",
+        "winter": "asakusa-hoppy-winter.png"
+      },
+      "master": {
+        "file": "asakusa-hoppy-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "7fce00ed2030c015f998f202c27f39b41b0e473fbba912a67af2574acb8bb40c"
+      },
+      "prompt": "CRITICAL: PORTRAIT canvas 1122x1402, exactly FOUR full-width horizontal strips vertically stacked, matching reference 4-row layout. Reference for pixel-art style and framing ONLY, never its buildings. Each row must be 350 pixels high including final winter row, preserve all four street bottoms. Entire scene frontage fully framed from roofs down to narrow pavement edge. Use case: stylized-concept. Original richly hand-detailed 16-bit pixel-art panorama atlas for a Japanese driving game, exquisite commercial game background density: intricate roof tiles, individual timber beams, luminous windows, warm small interiors, utility wires, layered city depth, pixel clusters not smooth vectors.\nLayout EXACTLY FOUR full-width panoramic strips stacked vertically, equal height, no margins, borders, labels or captions. Canvas preferred 1536x1920, four 1536x480 scenes. All FOUR show same architecture/camera/building placements and sizes, top spring pink blossoms, next summer lush green trees, next autumn vivid amber vermilion foliage, last winter genuinely bare branches and snow on roofs. Seasonal foliage and light integrated into artwork, never recolor filter. Frontal elevation seen across an unseen road, buildings meet bottom with only thin sidewalk lip. NO foreground road, cars, large people, UI, empty blocks, geometric overlays. Restrained nuanced pixel palette with clear warm lights, rich shadow, incredible small architectural detail. Each strip is whole horizontal district, not panels. \nDistrict: Hoppy street: warm low-rise tavern row, open izakaya counter left under a faded striped canvas awning, dense strings of red and cream paper lanterns overhead, tiny round tables tucked under timber decks in center, cream two-storey corner bar with green shutters right. Roll-up shutters, beer crates, kitchen steam, exposed pipes, potted plants and two strong seasonal trees. No giant temple, no broad road.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "asakusa-hoppy-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            346
+          ],
+          "sha256": "8bd9d34d9a6fe10f41a24dccd64256c06e0b8338984e193f163f8ae28e01a281"
+        },
+        {
+          "season": "summer",
+          "file": "asakusa-hoppy-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            352,
+            1122,
+            347
+          ],
+          "sha256": "95f0382d9f0fc731b5e4f0d7da57fa31841082664b121919aaa74c4cd558cbea"
+        },
+        {
+          "season": "autumn",
+          "file": "asakusa-hoppy-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            703,
+            1122,
+            347
+          ],
+          "sha256": "27ba6c19ec91a94af5ec06a258e9744f7925109c119a0b37f0f0ebe0c09ab2c7"
+        },
+        {
+          "season": "winter",
+          "file": "asakusa-hoppy-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1054,
+            1122,
+            346
+          ],
+          "sha256": "f5a7e8ebc6417ba820862d7b027baa3c82812a46ad252fa094f84e1402a4b29c"
+        }
+      ]
+    },
+    {
+      "id": "asakusa-imado",
+      "name": "今戸の招き猫路地",
+      "english": "IMADO LUCKY CAT LANE",
+      "files": {
+        "spring": "asakusa-imado-spring.png",
+        "summer": "asakusa-imado-summer.png",
+        "autumn": "asakusa-imado-autumn.png",
+        "winter": "asakusa-imado-winter.png"
+      },
+      "master": {
+        "file": "asakusa-imado-four-seasons-master.png",
+        "width": 1072,
+        "height": 1467,
+        "sha256": "576d1395d97c87621a7617e56e6b5ccbcc8d642a3cfc83998da6aafc59b3a536"
+      },
+      "prompt": "CRITICAL: PORTRAIT canvas 1122x1402, exactly FOUR full-width horizontal strips vertically stacked, matching reference 4-row layout. Reference for pixel-art style and framing ONLY, never its buildings. Each row must be 350 pixels high including final winter row, preserve all four street bottoms. Entire scene frontage fully framed from roofs down to narrow pavement edge. Use case: stylized-concept. Original richly hand-detailed 16-bit pixel-art panorama atlas for a Japanese driving game, exquisite commercial game background density: intricate roof tiles, individual timber beams, luminous windows, warm small interiors, utility wires, layered city depth, pixel clusters not smooth vectors.\nLayout EXACTLY FOUR full-width panoramic strips stacked vertically, equal height, no margins, borders, labels or captions. Canvas preferred 1536x1920, four 1536x480 scenes. All FOUR show same architecture/camera/building placements and sizes, top spring pink blossoms, next summer lush green trees, next autumn vivid amber vermilion foliage, last winter genuinely bare branches and snow on roofs. Seasonal foliage and light integrated into artwork, never recolor filter. Frontal elevation seen across an unseen road, buildings meet bottom with only thin sidewalk lip. NO foreground road, cars, large people, UI, empty blocks, geometric overlays. Restrained nuanced pixel palette with clear warm lights, rich shadow, incredible small architectural detail. Each strip is whole horizontal district, not panels. \nDistrict: Imado lucky cat lane: compact vermilion neighborhood shrine at left behind stone fence, paired large ceramic lucky cat statues center near mossy stone lantern, right asymmetrical ceramics workshop with chimney and open display of tiny white maneki-neko. Behind low garden walls cherry and maple crowns, timber homes. Fine handmade ceramic, bamboo and carved wood texture.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "asakusa-imado-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1072,
+            363
+          ],
+          "sha256": "312a20ade6e657232f2969bb8c8b7c6e65ffb3267806e80c691cf00f69fde46d"
+        },
+        {
+          "season": "summer",
+          "file": "asakusa-imado-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            369,
+            1072,
+            363
+          ],
+          "sha256": "c7d56f07d2d8e4cdbe305ce652acef035980ea96b96f4d6eba6816702aa7ab8c"
+        },
+        {
+          "season": "autumn",
+          "file": "asakusa-imado-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            736,
+            1072,
+            362
+          ],
+          "sha256": "0d6d9b15c0be3c163bb0e2dc4f64b88613792c2fe618486b177f392050a22757"
+        },
+        {
+          "season": "winter",
+          "file": "asakusa-imado-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1102,
+            1072,
+            363
+          ],
+          "sha256": "31f5c68a38f5bcdc66876b3a50e26643ad1545721b3a84d4e340b1827ff5d0f4"
+        }
+      ]
+    },
+    {
+      "id": "asakusa-matsuchi",
+      "name": "待乳山の石段",
+      "english": "MATSUTCHIYAMA STEPS",
+      "files": {
+        "spring": "asakusa-matsuchi-spring.png",
+        "summer": "asakusa-matsuchi-summer.png",
+        "autumn": "asakusa-matsuchi-autumn.png",
+        "winter": "asakusa-matsuchi-winter.png"
+      },
+      "master": {
+        "file": "asakusa-matsuchi-four-seasons-master.png",
+        "width": 1072,
+        "height": 1467,
+        "sha256": "4be36137b9b44c30981a21cf0c27a8fc15325ff8378de783cf726a86890344a8"
+      },
+      "prompt": "CRITICAL: PORTRAIT canvas 1122x1402, exactly FOUR full-width horizontal strips vertically stacked, matching reference 4-row layout. Reference for pixel-art style and framing ONLY, never its buildings. Each row must be 350 pixels high including final winter row, preserve all four street bottoms. Entire scene frontage fully framed from roofs down to narrow pavement edge. Use case: stylized-concept. Original richly hand-detailed 16-bit pixel-art panorama atlas for a Japanese driving game, exquisite commercial game background density: intricate roof tiles, individual timber beams, luminous windows, warm small interiors, utility wires, layered city depth, pixel clusters not smooth vectors.\nLayout EXACTLY FOUR full-width panoramic strips stacked vertically, equal height, no margins, borders, labels or captions. Canvas preferred 1536x1920, four 1536x480 scenes. All FOUR show same architecture/camera/building placements and sizes, top spring pink blossoms, next summer lush green trees, next autumn vivid amber vermilion foliage, last winter genuinely bare branches and snow on roofs. Seasonal foliage and light integrated into artwork, never recolor filter. Frontal elevation seen across an unseen road, buildings meet bottom with only thin sidewalk lip. NO foreground road, cars, large people, UI, empty blocks, geometric overlays. Restrained nuanced pixel palette with clear warm lights, rich shadow, incredible small architectural detail. Each strip is whole horizontal district, not panels. \nDistrict: Matsuchiyama hilltop steps: a long broad stone stair climbs steeply at left center to raised red Buddhist temple on terraced retaining wall, massive spreading tree behind temple, right below hill an old confectionery and narrow wooden house, topographic level changes clearly visible. Stone lanterns follow stair, carved walls, shrub beds, pine plus deciduous trees.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "asakusa-matsuchi-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1072,
+            363
+          ],
+          "sha256": "4ac925fac6d200cf46339d97b8f4bbb56f2ff676f52a410b759ce3e7ac002880"
+        },
+        {
+          "season": "summer",
+          "file": "asakusa-matsuchi-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            369,
+            1072,
+            363
+          ],
+          "sha256": "3553833365c59423d0b8712c73bf85de6e2cde59734e71ecd4d32e5ff26b9394"
+        },
+        {
+          "season": "autumn",
+          "file": "asakusa-matsuchi-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            736,
+            1072,
+            362
+          ],
+          "sha256": "7a568472e81f66f64d4e35f690d8e01c3973712ccaa1aa964aced3d819b4026c"
+        },
+        {
+          "season": "winter",
+          "file": "asakusa-matsuchi-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1102,
+            1072,
+            363
+          ],
+          "sha256": "c86da6d1fdff1bc3c17bea0d0a8398b9b695fe9c30c8bede9bae51401d5e2377"
+        }
+      ]
+    },
+    {
+      "id": "asakusa-mukojima",
+      "name": "向島の花街",
+      "english": "MUKOJIMA RIVER LANES",
+      "files": {
+        "spring": "asakusa-mukojima-spring.png",
+        "summer": "asakusa-mukojima-summer.png",
+        "autumn": "asakusa-mukojima-autumn.png",
+        "winter": "asakusa-mukojima-winter.png"
+      },
+      "master": {
+        "file": "asakusa-mukojima-four-seasons-master.png",
+        "width": 1072,
+        "height": 1467,
+        "sha256": "d2279832e9ef052537f561be9a0e8ea74011b13f017a739419593af3b7c45b9d"
+      },
+      "prompt": "CRITICAL: PORTRAIT canvas 1122x1402, exactly FOUR full-width horizontal strips vertically stacked, matching reference 4-row layout. Reference for pixel-art style and framing ONLY, never its buildings. Each row must be 350 pixels high including final winter row, preserve all four street bottoms. Entire scene frontage fully framed from roofs down to narrow pavement edge. Use case: stylized-concept. Original richly hand-detailed 16-bit pixel-art panorama atlas for a Japanese driving game, exquisite commercial game background density: intricate roof tiles, individual timber beams, luminous windows, warm small interiors, utility wires, layered city depth, pixel clusters not smooth vectors.\nLayout EXACTLY FOUR full-width panoramic strips stacked vertically, equal height, no margins, borders, labels or captions. Canvas preferred 1536x1920, four 1536x480 scenes. All FOUR show same architecture/camera/building placements and sizes, top spring pink blossoms, next summer lush green trees, next autumn vivid amber vermilion foliage, last winter genuinely bare branches and snow on roofs. Seasonal foliage and light integrated into artwork, never recolor filter. Frontal elevation seen across an unseen road, buildings meet bottom with only thin sidewalk lip. NO foreground road, cars, large people, UI, empty blocks, geometric overlays. Restrained nuanced pixel palette with clear warm lights, rich shadow, incredible small architectural detail. Each strip is whole horizontal district, not panels. \nDistrict: Mukojima river lanes: intimate raised wooden teahouse balconies beside a narrow canal with small arched pedestrian bridge off-center left, screened dining terraces right, delicate willow branches and cherry canopy, pale stucco houses behind. Rain chains, woven shades, bamboo fences, waterside planters, paper lanterns. Low canal visible behind foreground stone railing.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "asakusa-mukojima-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1072,
+            363
+          ],
+          "sha256": "5bf8b99e034a9f675db435ffaa0f0d416fa23b4cdb251bd423bf483287719fcf"
+        },
+        {
+          "season": "summer",
+          "file": "asakusa-mukojima-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            369,
+            1072,
+            363
+          ],
+          "sha256": "984db357f0a1280ca3f9cf6b5fbe7f57912b888bc7026b5c9077e6103e963f40"
+        },
+        {
+          "season": "autumn",
+          "file": "asakusa-mukojima-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            736,
+            1072,
+            362
+          ],
+          "sha256": "eaf7b66d72c4adf43d3582f5936d183c921e42c1085819f4be8663e960d71a38"
+        },
+        {
+          "season": "winter",
+          "file": "asakusa-mukojima-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1102,
+            1072,
+            363
+          ],
+          "sha256": "219c05e5bb567b7f9d29493cf58936ec69e9d531f433e799b8d075281615891d"
+        }
+      ]
+    },
+    {
+      "id": "asakusa-tawara",
+      "name": "田原町の仏具通り",
+      "english": "TAWARAMACHI CRAFT ROW",
+      "files": {
+        "spring": "asakusa-tawara-spring.png",
+        "summer": "asakusa-tawara-summer.png",
+        "autumn": "asakusa-tawara-autumn.png",
+        "winter": "asakusa-tawara-winter.png"
+      },
+      "master": {
+        "file": "asakusa-tawara-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "ebfe5c15291d289ed65f850f2850f7f26c1ca699e355dd09564e0d73e39f6dc4"
+      },
+      "prompt": "CRITICAL: PORTRAIT canvas 1122x1402, exactly FOUR full-width horizontal strips vertically stacked, matching reference 4-row layout. Reference for pixel-art style and framing ONLY, never its buildings. Each row must be 350 pixels high including final winter row, preserve all four street bottoms. Entire scene frontage fully framed from roofs down to narrow pavement edge. Use case: stylized-concept. Original richly hand-detailed 16-bit pixel-art panorama atlas for a Japanese driving game, exquisite commercial game background density: intricate roof tiles, individual timber beams, luminous windows, warm small interiors, utility wires, layered city depth, pixel clusters not smooth vectors.\nLayout EXACTLY FOUR full-width panoramic strips stacked vertically, equal height, no margins, borders, labels or captions. Canvas preferred 1536x1920, four 1536x480 scenes. All FOUR show same architecture/camera/building placements and sizes, top spring pink blossoms, next summer lush green trees, next autumn vivid amber vermilion foliage, last winter genuinely bare branches and snow on roofs. Seasonal foliage and light integrated into artwork, never recolor filter. Frontal elevation seen across an unseen road, buildings meet bottom with only thin sidewalk lip. NO foreground road, cars, large people, UI, empty blocks, geometric overlays. Restrained nuanced pixel palette with clear warm lights, rich shadow, incredible small architectural detail. Each strip is whole horizontal district, not panels. \nDistrict: Tawaramachi Buddhist craft row: lacquerware and altar supply shops with black-and-gold cabinet windows at left, weathered gray corrugated warehouse center, elaborate incense shop right near small subway stair entrance canopy. Dense three-storey utilitarian ochre buildings with tiled awnings, shutter textures, lantern displays and street trees. No temple; merchant district.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "asakusa-tawara-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            346
+          ],
+          "sha256": "aab92815d05b171f38625844e23c14a70785e372fc4ba26bcd0ffc2e7f71f131"
+        },
+        {
+          "season": "summer",
+          "file": "asakusa-tawara-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            352,
+            1122,
+            347
+          ],
+          "sha256": "18c811c81d7077205fbd242574d49dc4ea1d3c856a3b8f5bc9e4649ae5b1ba2c"
+        },
+        {
+          "season": "autumn",
+          "file": "asakusa-tawara-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            703,
+            1122,
+            347
+          ],
+          "sha256": "0588f7e5af7eafbe285bb725fc173b2a7be69876357d764e8adc6ffef4e2cf35"
+        },
+        {
+          "season": "winter",
+          "file": "asakusa-tawara-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1054,
+            1122,
+            346
+          ],
+          "sha256": "2e67710d9d4ed893f492d734db171e19193b598177eb61b242c2e162e70f2a82"
+        }
+      ]
+    },
+    {
+      "id": "asakusa-kuramae",
+      "name": "蔵前の倉庫カフェ",
+      "english": "KURAMAE WAREHOUSE CAFES",
+      "files": {
+        "spring": "asakusa-kuramae-spring.png",
+        "summer": "asakusa-kuramae-summer.png",
+        "autumn": "asakusa-kuramae-autumn.png",
+        "winter": "asakusa-kuramae-winter.png"
+      },
+      "master": {
+        "file": "asakusa-kuramae-four-seasons-master.png",
+        "width": 1072,
+        "height": 1467,
+        "sha256": "eeeca8708b10d5e7fac53bd97bb854256a976d8afe2f843c182b95d5ed955bec"
+      },
+      "prompt": "CRITICAL: PORTRAIT canvas 1122x1402, exactly FOUR full-width horizontal strips vertically stacked, matching reference 4-row layout. Reference for pixel-art style and framing ONLY, never its buildings. Each row must be 350 pixels high including final winter row, preserve all four street bottoms. Entire scene frontage fully framed from roofs down to narrow pavement edge. Use case: stylized-concept. Original richly hand-detailed 16-bit pixel-art panorama atlas for a Japanese driving game, exquisite commercial game background density: intricate roof tiles, individual timber beams, luminous windows, warm small interiors, utility wires, layered city depth, pixel clusters not smooth vectors.\nLayout EXACTLY FOUR full-width panoramic strips stacked vertically, equal height, no margins, borders, labels or captions. Canvas preferred 1536x1920, four 1536x480 scenes. All FOUR show same architecture/camera/building placements and sizes, top spring pink blossoms, next summer lush green trees, next autumn vivid amber vermilion foliage, last winter genuinely bare branches and snow on roofs. Seasonal foliage and light integrated into artwork, never recolor filter. Frontal elevation seen across an unseen road, buildings meet bottom with only thin sidewalk lip. NO foreground road, cars, large people, UI, empty blocks, geometric overlays. Restrained nuanced pixel palette with clear warm lights, rich shadow, incredible small architectural detail. Each strip is whole horizontal district, not panels. \nDistrict: Kuramae warehouse cafes: broad old red brick warehouse on left renovated into coffee roastery with huge arched iron windows, narrow pale concrete minimalist cafe center, timber river loading dock right below sawtooth-roof craft factory, chimneys, crates, copper pipes, tables behind waterside railing. Trees beside warehouse, overgrown vine on brick. Industrial waterfront atmosphere.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "asakusa-kuramae-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1072,
+            356
+          ],
+          "sha256": "af98f159ca2d6ff0b7ad63b7c2cb0b65729efd3ad26c53b792205006e53fe62f"
+        },
+        {
+          "season": "summer",
+          "file": "asakusa-kuramae-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            364,
+            1072,
+            360
+          ],
+          "sha256": "c83152b866eee19445779136c0823463df9933714f27fd806bd185fde5dbc41f"
+        },
+        {
+          "season": "autumn",
+          "file": "asakusa-kuramae-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            732,
+            1072,
+            354
+          ],
+          "sha256": "b1c332a99533388dc1c770edda5b7502f7fc772481f2fb321464f982816ea800"
+        },
+        {
+          "season": "winter",
+          "file": "asakusa-kuramae-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1095,
+            1072,
+            372
+          ],
+          "sha256": "9e7c8790dd4d5f1ef571ef83a95775eeb2952787eb5e509218917b82d9484eb2"
+        }
+      ]
+    },
+    {
+      "id": "asakusa-okachimachi",
+      "name": "御徒町ガード市場",
+      "english": "OKACHIMACHI RAIL MARKET",
+      "files": {
+        "spring": "asakusa-okachimachi-spring.png",
+        "summer": "asakusa-okachimachi-summer.png",
+        "autumn": "asakusa-okachimachi-autumn.png",
+        "winter": "asakusa-okachimachi-winter.png"
+      },
+      "master": {
+        "file": "asakusa-okachimachi-four-seasons-master.png",
+        "width": 1072,
+        "height": 1467,
+        "sha256": "8ca8032a1895a3475cbb57785c46e8680c093660636b2d726138086239724fea"
+      },
+      "prompt": "CRITICAL: PORTRAIT canvas 1122x1402, exactly FOUR full-width horizontal strips vertically stacked, matching reference 4-row layout. Reference for pixel-art style and framing ONLY, never its buildings. Each row must be 350 pixels high including final winter row, preserve all four street bottoms. Entire scene frontage fully framed from roofs down to narrow pavement edge. Use case: stylized-concept. Original richly hand-detailed 16-bit pixel-art panorama atlas for a Japanese driving game, exquisite commercial game background density: intricate roof tiles, individual timber beams, luminous windows, warm small interiors, utility wires, layered city depth, pixel clusters not smooth vectors.\nLayout EXACTLY FOUR full-width panoramic strips stacked vertically, equal height, no margins, borders, labels or captions. Canvas preferred 1536x1920, four 1536x480 scenes. All FOUR show same architecture/camera/building placements and sizes, top spring pink blossoms, next summer lush green trees, next autumn vivid amber vermilion foliage, last winter genuinely bare branches and snow on roofs. Seasonal foliage and light integrated into artwork, never recolor filter. Frontal elevation seen across an unseen road, buildings meet bottom with only thin sidewalk lip. NO foreground road, cars, large people, UI, empty blocks, geometric overlays. Restrained nuanced pixel palette with clear warm lights, rich shadow, incredible small architectural detail. Each strip is whole horizontal district, not panels. \nDistrict: Okachimachi rail market: massive dark green riveted railway viaduct across upper left, tiny bright food and jewelry stalls nested in brick arches beneath it, dense stacked signs and striped awnings, narrow gem shop center and glazed shopping arcade entrance right. Railway structure main silhouette. Small cherry tree at right and planters seasonal; no trains or cars.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "asakusa-okachimachi-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1072,
+            365
+          ],
+          "sha256": "546e715da80e6479924f5e18722d34ddaa16cfc12aa56863cd5afaaac3a2d1e2"
+        },
+        {
+          "season": "summer",
+          "file": "asakusa-okachimachi-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            374,
+            1072,
+            361
+          ],
+          "sha256": "8b6e17c756a535822284002f5d856fd7c6be7d27de09c5fd2fbdb92e54a22ae8"
+        },
+        {
+          "season": "autumn",
+          "file": "asakusa-okachimachi-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            745,
+            1072,
+            359
+          ],
+          "sha256": "56b3c35f7c6d0ceca6d9054841a4f8a0e1aa3016ea00bec01931de39741132a1"
+        },
+        {
+          "season": "winter",
+          "file": "asakusa-okachimachi-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1112,
+            1072,
+            355
+          ],
+          "sha256": "9ff0d8be267ed787ca0799b8b0fdd288384c269b3b2c9b89042997df501223c1"
+        }
+      ]
+    },
+    {
+      "id": "asakusa-kappabashi",
+      "name": "かっぱ橋道具街",
+      "english": "KAPPABASHI KITCHEN ROW",
+      "files": {
+        "spring": "asakusa-kappabashi-spring.png",
+        "summer": "asakusa-kappabashi-summer.png",
+        "autumn": "asakusa-kappabashi-autumn.png",
+        "winter": "asakusa-kappabashi-winter.png"
+      },
+      "master": {
+        "file": "asakusa-kappabashi-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "ed571dbf287f18025cffc5799e5d0972afb30abc128dcd28294940a21791135b"
+      },
+      "prompt": "Make the output TALL PORTRAIT 1122 pixels wide by 1402 high, not wide landscape. Four rows should each have 3.2:1 aspect ratio. CRITICAL: PORTRAIT canvas 1122x1402, exactly FOUR full-width horizontal strips vertically stacked, matching reference 4-row layout. Reference for pixel-art style and framing ONLY, never its buildings. Each row must be 350 pixels high including final winter row, preserve all four street bottoms. Entire scene frontage fully framed from roofs down to narrow pavement edge. Use case: stylized-concept. Original richly hand-detailed 16-bit pixel-art panorama atlas for a Japanese driving game, exquisite commercial game background density: intricate roof tiles, individual timber beams, luminous windows, warm small interiors, utility wires, layered city depth, pixel clusters not smooth vectors.\nLayout EXACTLY FOUR full-width panoramic strips stacked vertically, equal height, no margins, borders, labels or captions. Canvas preferred 1536x1920, four 1536x480 scenes. All FOUR show same architecture/camera/building placements and sizes, top spring pink blossoms, next summer lush green trees, next autumn vivid amber vermilion foliage, last winter genuinely bare branches and snow on roofs. Seasonal foliage and light integrated into artwork, never recolor filter. Frontal elevation seen across an unseen road, buildings meet bottom with only thin sidewalk lip. NO foreground road, cars, large people, UI, empty blocks, geometric overlays. Restrained nuanced pixel palette with clear warm lights, rich shadow, incredible small architectural detail. Each strip is whole horizontal district, not panels. \nDistrict: Kappabashi kitchenware street: dense varied 3-5 storey concrete and timber shopfronts with kitchen pot displays, ceramic stacks in lit glass windows, hanging metal pans, big whimsical chef-head rooftop sculpture at left, golden kappa statue at center, narrow old brick utensil warehouse at right. Side-on storefront elevation, no temple. Two street trees and planters.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "asakusa-kappabashi-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            346
+          ],
+          "sha256": "6ef9744b4c1e69c54e713a8618ff986f4af39d3bf40cca497143b1c7693c16de"
+        },
+        {
+          "season": "summer",
+          "file": "asakusa-kappabashi-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            352,
+            1122,
+            347
+          ],
+          "sha256": "b1f21457bd5b4a6f2cfe0049f632dd446326df5e6cbb38849869dd6f43bae721"
+        },
+        {
+          "season": "autumn",
+          "file": "asakusa-kappabashi-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            703,
+            1122,
+            347
+          ],
+          "sha256": "5d893aaf75dac5770b5dfc92e3abc84f1de68b70c82db8a3fc9a2e97e4714e8a"
+        },
+        {
+          "season": "winter",
+          "file": "asakusa-kappabashi-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1054,
+            1122,
+            346
+          ],
+          "sha256": "7910b34034a914729166b458a826edb5d94dd151a11e4ba3dfa61ccb3c93c8b0"
+        }
+      ]
+    },
+    {
+      "id": "asakusa-uenoedge",
+      "name": "上野の不忍みち",
+      "english": "UENO POND EDGE",
+      "files": {
+        "spring": "asakusa-uenoedge-spring.png",
+        "summer": "asakusa-uenoedge-summer.png",
+        "autumn": "asakusa-uenoedge-autumn.png",
+        "winter": "asakusa-uenoedge-winter.png"
+      },
+      "master": {
+        "file": "asakusa-uenoedge-four-seasons-master.png",
+        "width": 1024,
+        "height": 1536,
+        "sha256": "f17b47e9a5baada8a1c061d956e2c6e9f3dd8bc6ad1dbcb32f18a856bd3c1826"
+      },
+      "prompt": "CRITICAL: PORTRAIT canvas 1122x1402, exactly FOUR full-width horizontal strips vertically stacked, matching reference 4-row layout. Reference for pixel-art style and framing ONLY, never its buildings. Each row must be 350 pixels high including final winter row, preserve all four street bottoms. Entire scene frontage fully framed from roofs down to narrow pavement edge. Use case: stylized-concept. Original richly hand-detailed 16-bit pixel-art panorama atlas for a Japanese driving game, exquisite commercial game background density: intricate roof tiles, individual timber beams, luminous windows, warm small interiors, utility wires, layered city depth, pixel clusters not smooth vectors.\nLayout EXACTLY FOUR full-width panoramic strips stacked vertically, equal height, no margins, borders, labels or captions. Canvas preferred 1536x1920, four 1536x480 scenes. All FOUR show same architecture/camera/building placements and sizes, top spring pink blossoms, next summer lush green trees, next autumn vivid amber vermilion foliage, last winter genuinely bare branches and snow on roofs. Seasonal foliage and light integrated into artwork, never recolor filter. Frontal elevation seen across an unseen road, buildings meet bottom with only thin sidewalk lip. NO foreground road, cars, large people, UI, empty blocks, geometric overlays. Restrained nuanced pixel palette with clear warm lights, rich shadow, incredible small architectural detail. Each strip is whole horizontal district, not panels. \nDistrict: Ueno pond edge: huge pond with intricate lily leaves and small vermilion hexagonal pavilion off-center left, arched stone footbridge center, enormous spreading cherry tree right before broad pale classical museum façade. Stone balustrade and planted walkway bottom, layered gardens and reeds. Seasonal pond plants genuinely change, winter bare reeds and ice, blossoms spring.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "asakusa-uenoedge-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1024,
+            380
+          ],
+          "sha256": "20a18c063f67cebe067c133630e4157a8230687a76a5d4569f42606296f5b079"
+        },
+        {
+          "season": "summer",
+          "file": "asakusa-uenoedge-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            386,
+            1024,
+            380
+          ],
+          "sha256": "14b9d4d20ccc57b1e061e4e0f3711f847aec3f018d0335d81889ba4e7881e53b"
+        },
+        {
+          "season": "autumn",
+          "file": "asakusa-uenoedge-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            770,
+            1024,
+            380
+          ],
+          "sha256": "172f6dac15c1ce5d9e58f617f3d71fb9fe90942d00fe221ae8210c0007796543"
+        },
+        {
+          "season": "winter",
+          "file": "asakusa-uenoedge-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1154,
+            1024,
+            380
+          ],
+          "sha256": "43a5d9516c97af16eb468e4a233ca33fc75df93eb0b834af7817fd52be3e5930"
+        }
+      ]
+    },
+    {
+      "id": "asakusa-yanaka",
+      "name": "谷中の夕やけ段々",
+      "english": "YANAKA SUNSET STEPS",
+      "files": {
+        "spring": "asakusa-yanaka-spring.png",
+        "summer": "asakusa-yanaka-summer.png",
+        "autumn": "asakusa-yanaka-autumn.png",
+        "winter": "asakusa-yanaka-winter.png"
+      },
+      "master": {
+        "file": "asakusa-yanaka-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "b1b7997d1954a5e361d91aac1a86b219267d5a9f7f34ae20582f701c5b22589d"
+      },
+      "prompt": "CRITICAL: PORTRAIT canvas 1122x1402, exactly FOUR full-width horizontal strips vertically stacked, matching reference 4-row layout. Reference for pixel-art style and framing ONLY, never its buildings. Each row must be 350 pixels high including final winter row, preserve all four street bottoms. Entire scene frontage fully framed from roofs down to narrow pavement edge. Use case: stylized-concept. Original richly hand-detailed 16-bit pixel-art panorama atlas for a Japanese driving game, exquisite commercial game background density: intricate roof tiles, individual timber beams, luminous windows, warm small interiors, utility wires, layered city depth, pixel clusters not smooth vectors.\nLayout EXACTLY FOUR full-width panoramic strips stacked vertically, equal height, no margins, borders, labels or captions. Canvas preferred 1536x1920, four 1536x480 scenes. All FOUR show same architecture/camera/building placements and sizes, top spring pink blossoms, next summer lush green trees, next autumn vivid amber vermilion foliage, last winter genuinely bare branches and snow on roofs. Seasonal foliage and light integrated into artwork, never recolor filter. Frontal elevation seen across an unseen road, buildings meet bottom with only thin sidewalk lip. NO foreground road, cars, large people, UI, empty blocks, geometric overlays. Restrained nuanced pixel palette with clear warm lights, rich shadow, incredible small architectural detail. Each strip is whole horizontal district, not panels. \nDistrict: Yanaka sunset steps: broad stone stair descending at left center between a weathered pale timber house and compact old market stalls, cats on low wall, row of fishmongers and confectionery with patchwork blue and red awnings right, lower tiled roofs continuing into distance. Uneven terrain, dense utility wires, cherry tree at left and gold seasonal tree far right.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "asakusa-yanaka-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            346
+          ],
+          "sha256": "231e6b2ebb34cdd322329ef6ae4d4437120227552c74419d63e5763ad5ed3aaa"
+        },
+        {
+          "season": "summer",
+          "file": "asakusa-yanaka-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            352,
+            1122,
+            347
+          ],
+          "sha256": "5aba6fdf9878529cc1ceae4e186addde32f68dae644f28af99917e972b71ad6a"
+        },
+        {
+          "season": "autumn",
+          "file": "asakusa-yanaka-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            703,
+            1122,
+            347
+          ],
+          "sha256": "501201ca81d4a649aede929cd7d8631d3d96b68fcc04ee0e446577f5d9eaced4"
+        },
+        {
+          "season": "winter",
+          "file": "asakusa-yanaka-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1054,
+            1122,
+            346
+          ],
+          "sha256": "df1a7d55e612569a38bfe5b4114c41a5bfbaeff1c03ebf7dcf786507f40e7d35"
+        }
+      ]
+    },
+    {
+      "id": "asakusa-yoshiwara",
+      "name": "吉原の柳並木",
+      "english": "YOSHIWARA WILLOW WALK",
+      "files": {
+        "spring": "asakusa-yoshiwara-spring.png",
+        "summer": "asakusa-yoshiwara-summer.png",
+        "autumn": "asakusa-yoshiwara-autumn.png",
+        "winter": "asakusa-yoshiwara-winter.png"
+      },
+      "master": {
+        "file": "asakusa-yoshiwara-four-seasons-master.png",
+        "width": 1072,
+        "height": 1467,
+        "sha256": "b504bc595e9c925811f9f3144f87c5b40e545d7e172bb43cc5f69e0533201e3c"
+      },
+      "prompt": "CRITICAL: PORTRAIT canvas 1122x1402, exactly FOUR full-width horizontal strips vertically stacked, matching reference 4-row layout. Reference for pixel-art style and framing ONLY, never its buildings. Each row must be 350 pixels high including final winter row, preserve all four street bottoms. Entire scene frontage fully framed from roofs down to narrow pavement edge. Use case: stylized-concept. Original richly hand-detailed 16-bit pixel-art panorama atlas for a Japanese driving game, exquisite commercial game background density: intricate roof tiles, individual timber beams, luminous windows, warm small interiors, utility wires, layered city depth, pixel clusters not smooth vectors.\nLayout EXACTLY FOUR full-width panoramic strips stacked vertically, equal height, no margins, borders, labels or captions. Canvas preferred 1536x1920, four 1536x480 scenes. All FOUR show same architecture/camera/building placements and sizes, top spring pink blossoms, next summer lush green trees, next autumn vivid amber vermilion foliage, last winter genuinely bare branches and snow on roofs. Seasonal foliage and light integrated into artwork, never recolor filter. Frontal elevation seen across an unseen road, buildings meet bottom with only thin sidewalk lip. NO foreground road, cars, large people, UI, empty blocks, geometric overlays. Restrained nuanced pixel palette with clear warm lights, rich shadow, incredible small architectural detail. Each strip is whole horizontal district, not panels. \nDistrict: Yoshiwara willow walk: gracefully drooping willow trees frame quiet old stone marker and small low shrine at center, aged dark wooden townhouse left, modest pale pink neighborhood cafe and faded cream apartment with laundry balconies right. Restrained quiet historic street, wrought-iron lamps, stone gutters, little garden. Spring willow buds and nearby cherry bloom, summer full trailing green, autumn golden, winter bare fine twigs.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "asakusa-yoshiwara-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1072,
+            363
+          ],
+          "sha256": "df332043e3d726cbe0bd15af957df5fe4828de6bdd33b0576694f9625b98bb8a"
+        },
+        {
+          "season": "summer",
+          "file": "asakusa-yoshiwara-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            369,
+            1072,
+            363
+          ],
+          "sha256": "6134ae2449ac350f96c74198d57e80b0d22fcb8dd4ef52f4637fd2d013af4cdb"
+        },
+        {
+          "season": "autumn",
+          "file": "asakusa-yoshiwara-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            736,
+            1072,
+            362
+          ],
+          "sha256": "d6264af9a4d51ddcb80b29f68d20c42f4049f27dd1ed413b012df5ed4f58e73b"
+        },
+        {
+          "season": "winter",
+          "file": "asakusa-yoshiwara-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1102,
+            1072,
+            363
+          ],
+          "sha256": "5dc6181a73aa9a9a3bc2539443b585f344a739e27f34ed6bc3052c98ad8d6293"
+        }
+      ]
+    },
+    {
+      "id": "asakusa-festivaldock",
+      "name": "隅田の祭り船着場",
+      "english": "SUMIDA FESTIVAL PIER",
+      "files": {
+        "spring": "asakusa-festivaldock-spring.png",
+        "summer": "asakusa-festivaldock-summer.png",
+        "autumn": "asakusa-festivaldock-autumn.png",
+        "winter": "asakusa-festivaldock-winter.png"
+      },
+      "master": {
+        "file": "asakusa-festivaldock-four-seasons-master.png",
+        "width": 1072,
+        "height": 1467,
+        "sha256": "00e827e252f91860bb9a0a884134da3a3c6700f822645801de42433be3e8b1e6"
+      },
+      "prompt": "CRITICAL: PORTRAIT canvas 1122x1402, exactly FOUR full-width horizontal strips vertically stacked, matching reference 4-row layout. Reference for pixel-art style and framing ONLY, never its buildings. Each row must be 350 pixels high including final winter row, preserve all four street bottoms. Entire scene frontage fully framed from roofs down to narrow pavement edge. Use case: stylized-concept. Original richly hand-detailed 16-bit pixel-art panorama atlas for a Japanese driving game, exquisite commercial game background density: intricate roof tiles, individual timber beams, luminous windows, warm small interiors, utility wires, layered city depth, pixel clusters not smooth vectors.\nLayout EXACTLY FOUR full-width panoramic strips stacked vertically, equal height, no margins, borders, labels or captions. Canvas preferred 1536x1920, four 1536x480 scenes. All FOUR show same architecture/camera/building placements and sizes, top spring pink blossoms, next summer lush green trees, next autumn vivid amber vermilion foliage, last winter genuinely bare branches and snow on roofs. Seasonal foliage and light integrated into artwork, never recolor filter. Frontal elevation seen across an unseen road, buildings meet bottom with only thin sidewalk lip. NO foreground road, cars, large people, UI, empty blocks, geometric overlays. Restrained nuanced pixel palette with clear warm lights, rich shadow, incredible small architectural detail. Each strip is whole horizontal district, not panels. \nDistrict: Sumida festival pier: detailed raised wooden landing with moored traditional roofed pleasure boat at left, open festival food kiosks center, red small ceremonial arch right near timber viewing terrace; many delicate lantern strings overhead, river and distant bridge, skyline, cherry trees and seasonal planting. Pier railings, mooring ropes, carved posts, paper lanterns, handcrafted festival decorations. No road.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "asakusa-festivaldock-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1072,
+            363
+          ],
+          "sha256": "76ba2e9e0c24fdc8d90b4fe2d22044dc4b900cc4b11397bffa5d4587cc182b7f"
+        },
+        {
+          "season": "summer",
+          "file": "asakusa-festivaldock-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            369,
+            1072,
+            363
+          ],
+          "sha256": "9139960718fd21b9cc05a2eecb4aaa43b3024be235e5384e86a52927a1042e1d"
+        },
+        {
+          "season": "autumn",
+          "file": "asakusa-festivaldock-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            736,
+            1072,
+            362
+          ],
+          "sha256": "2fce5bd6d1ef92e92e40c18b8b53bd18c5ad17915edb64e455319a85108b01fc"
+        },
+        {
+          "season": "winter",
+          "file": "asakusa-festivaldock-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1102,
+            1072,
+            363
+          ],
+          "sha256": "b68f519c2b5168d5d2e65dc872b35806cafe2fd26fc405c0400991d59099b613"
+        }
+      ]
+    }
+  ]
+}

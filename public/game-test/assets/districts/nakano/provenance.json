@@ -1,0 +1,1387 @@
+{
+  "generatedAt": "2026-10-19T16:49:45Z",
+  "generator": "image_gen__imagegen (built-in)",
+  "reference": {
+    "file": "assets/cities/nakano.png",
+    "sha256": "3ddfa03edbc8e769c1789e82ee55cee2feeb855637e28cc2dff2664122fc069f",
+    "usage": "Style reference only; original district compositions"
+  },
+  "export": {
+    "method": "Native @napi-rs/canvas crop and nearest-neighbor resampling; imageSmoothingEnabled=false",
+    "runtimeSize": [
+      528,
+      165
+    ],
+    "note": "Source atlas row heights vary slightly. Crops remove flat pavement and preserve architecture to the road boundary. Generated seasonal architecture is closely consistent but not pixel-identical."
+  },
+  "scenes": [
+    {
+      "id": "nakano-broadway",
+      "title": "Nakano Broadway shopping arcade side streets",
+      "master": {
+        "file": "nakano-broadway-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "941d463f7eb4214368f18d228b42507d044c72549c9a0c258d5bee650f1fe357"
+      },
+      "prompt": "Use case: stylized-concept.\nCreate an ORIGINAL, richly painted 16-bit pixel-art environment atlas for a Japanese driving game. Reference image 1 is STYLE ONLY: match its intricate architectural detail, colorful warm windows, textured roofs, luminous atmosphere and hand-placed pixel clusters. Do not reuse its buildings, landmarks or composition.\n\nImage layout: exactly FOUR equal-height full-width panoramic strips stacked vertically, no margins, no borders, no captions, no letters labelling seasons. Preferred canvas 1536 x 1920 pixels (each panorama 1536 x 480); all four images fill their entire strip. Each strip depicts EXACTLY THE SAME camera, building silhouettes, storefront widths, windows, utility poles and perspective; only foliage, snow, weather and seasonal light change. Top to bottom SPRING, SUMMER, AUTUMN, WINTER. Never combine two seasons within one strip. All strips aligned on precisely the same architectural geometry.\n\nDistrict subject: Nakano Broadway shopping arcade and its surrounding narrow side streets in Tokyo, NOT Nakano Sunplaza. A dense horizontal urban composition: left, layered crooked low-rise shops with a comic/book store, old record shop, tiny noodle bar, striped awnings and outdoor display cabinets; center, the tall rectangular mid-century concrete Broadway complex with long bands of small windows above a glowing deep shopping arcade entry, crowded small vertical shop signs and shallow side alleys; right, an inviting low-rise side lane opening between a tile-roofed izakaya and a weathered blue-gray apartment block with balconies, roof water tanks and utility wires. The arcade is the visual anchor but not centered symmetrically. View the street frontage mostly straight-on from across the avenue, with just enough recession in side lanes. Two cherry trees and dense planter vegetation break up the facades. Make the architecture materially varied, individually drawn and credible, with tiny crates, shutters, vending machines, exposed pipes, grills, antennas, rich tile and concrete texture, a few readable modest Japanese shop markings but NO large headings or image labels.\n\nSpring strip: pink cherry blossom foliage, pale rosy evening sky, soft warm shop light.\nSummer strip: lush green trees, clear blue-cyan late-afternoon sky, bright golden shop windows.\nAutumn strip: red-orange foliage, peach amber evening sky, amber reflections and warm interiors.\nWinter strip: leafless branches and light snow on roof edges, awnings and planters, icy pale violet sky, warm interiors.\nAll buildings and landmarks must be fully redrawn consistently in all four strips. Horizon architecture reaches the very bottom edge of EACH strip, only a narrow pavement lip at bottom. NO foreground road, NO vehicles, NO prominent foreground people, NO UI, NO labels, NO poster montage, NO giant plain geometric placeholder blocks. Render polished original game background art, nuanced shading and layered fine pixel detail everywhere.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "nakano-broadway-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            305
+          ],
+          "sha256": "6fbde6387abe84b9a1986ebd5aa0184396d83dd419d5f86ed719967da21bfc2b"
+        },
+        {
+          "season": "summer",
+          "file": "nakano-broadway-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            326,
+            1122,
+            313
+          ],
+          "sha256": "17ad72aad16e9857add9e398c26ec7816fc813021b445aa7100c1beab7e5d049"
+        },
+        {
+          "season": "autumn",
+          "file": "nakano-broadway-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            662,
+            1122,
+            313
+          ],
+          "sha256": "f49b7d27479e33aebb8f297af710a65ddeb72cc75ff20622931f0188c67cb04f"
+        },
+        {
+          "season": "winter",
+          "file": "nakano-broadway-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            997,
+            1122,
+            321
+          ],
+          "sha256": "b4a1156623b4537ef1bb3a08b36cbde64063da66639e3285c352e7cf3a76b1a4"
+        }
+      ]
+    },
+    {
+      "id": "arai-yakushi",
+      "title": "Arai Yakushi temple shopping lane",
+      "master": {
+        "file": "arai-yakushi-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "dae60bd7dd22f7453521544a56e8ce6b83c43401b83bde03acedcba9ca872c36"
+      },
+      "prompt": "Use case: stylized-concept.\nCreate an ORIGINAL richly painted 16-bit pixel-art environment atlas for a Japanese driving game. Reference image 1 is STYLE ONLY: match its finely textured hand-painted pixel architecture, luminous warm shop interiors, clustered foliage, delicate windows and sophisticated rich palette. Do not copy its buildings, Nakano Sunplaza, shopping arcade gate, or composition.\n\nLayout: exactly FOUR equal-height full-width panoramic strips vertically stacked, flush edge to edge, no margins, no borders and absolutely no season captions. Preferred canvas 1536 x 1920 pixels, four 1536 x 480 panoramas. Every strip has precisely identical camera, building shapes, roof geometry, window locations and street layout. Only tree foliage, snow and seasonal illumination change. Top row SPRING; second SUMMER; third AUTUMN; bottom WINTER.\n\nDistrict: Arai Yakushi temple shopping lane in Nakano, Tokyo. A unique low-rise old-neighborhood composition different from a downtown skyline. Left third: a substantial traditional Buddhist temple entrance with a dark curved ceramic tiled roof, timber pillars, a copper-green hanging lantern, stone lanterns and a view inward toward another temple roof; an ancient spreading tree rises behind it. Midground center: the shopping lane mouth is a narrow gap between intimate two-story wooden tea and rice-cracker shops with paper lanterns, baskets and warm glass counters, small Japanese shop plaques and potted plants. Right third: a varied row of old neighborhood businesses including a florist with buckets and a tiny kissaten with a rust-colored awning, one weathered cream three-story apartment with tiny balconies behind them. Dense power lines, mossy wall sections, layered roof tiles and ceramic details establish lived-in Nakano. Composition mostly broad side-on frontal street elevation across an unseen road, no large vanishing-point road and no empty foreground. Highly individual hand-painted architectural forms, roof ridges, slats, window grids, patterned noren curtains, aging stucco, gutters, signs, meticulously shaded textures. Rich detailed background neighborhood roofs visible between large branches. Temple and modest street shops share the panoramic frontage.\n\nRow 1 SPRING: flowering cherry trees in soft pink, tender leaves, rose-and-gold late-afternoon light.\nRow 2 SUMMER: broad deep green shade trees, flower-shop hydrangeas, turquoise-blue sky and warm sunlight.\nRow 3 AUTUMN: blazing vermilion and gold maple canopy, scattered leaves on eaves, soft golden sky.\nRow 4 WINTER: bare branches, light fresh snow delicately defining roofs and stone lanterns, pale lavender sky and warm glowing windows.\nArchitecture remains identical across all four seasonal strips, with seasonal changes integrated into the actual artwork rather than overlays. The buildings, temple wall, shops and plants meet the very bottom edge of each strip; only a thin sidewalk edge. NO foreground roadway, cars, scooters, bicycles, large people, text labels, UI, picture frames, watermarks or crude geometric abstractions. Expert-level original pixel-art scenery, intricate and atmospheric, worthy of a polished commercial game.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "arai-yakushi-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            333
+          ],
+          "sha256": "e14c7d752ac517469f6e5b56480aed3e0c41aa7c9e927940ef83f9a8abd9d5df"
+        },
+        {
+          "season": "summer",
+          "file": "arai-yakushi-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            351,
+            1122,
+            332
+          ],
+          "sha256": "ce76c844964297bb9556052f93594e83d9d9a108acda254ac73b6b38a748ed10"
+        },
+        {
+          "season": "autumn",
+          "file": "arai-yakushi-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            702,
+            1122,
+            333
+          ],
+          "sha256": "f877e443a7e766b5ab2576c38371d6490771ebd58835cecc2d7b8b5105e221ed"
+        },
+        {
+          "season": "winter",
+          "file": "arai-yakushi-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1052,
+            1122,
+            332
+          ],
+          "sha256": "b0be71f61ded8213e0dedfd0c6f24a27a4847646d9ad219dea0a0db5c15fa03b"
+        }
+      ]
+    },
+    {
+      "id": "nakano-sunmall",
+      "title": "Sun Mall gate",
+      "master": {
+        "file": "nakano-sunmall-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "4975b0939780db9b654bd24946ad306a9e9e167cdcb8e41042d4b61a94ed090f"
+      },
+      "prompt": "Use case: stylized-concept. Create an ORIGINAL richly illustrated pixel-art district background atlas for a polished Japanese driving game. Reference image 1 is STYLE REFERENCE ONLY: use its intricate pixel clusters, sophisticated violet shadows and luminous windows, densely shaded architectural materials and warm lived-in atmosphere. Create completely new architecture and composition as described below, NOT a rearrangement of the reference skyline.\n\nATLAS REQUIREMENTS: exactly FOUR separate full-width panoramic images stacked vertically in ONE canvas. Preferred canvas 1536 x 1920, each strip 1536 x 480. Panels fill every pixel, absolutely no gaps, borders, headings or season labels. Horizontal boundaries at EXACTLY 25%, 50% and 75% of canvas height. The four panoramas depict EXACTLY THE SAME district, identical camera position, identical building shapes, structural geometry, windows and object locations. Architecture MUST keep precisely the same scale and alignment in each season. Top to bottom: SPRING / SUMMER / AUTUMN / WINTER.\n\nSEASONS: first row has pink cherry blossoms, fresh pale-green foliage and soft rosy-golden sky; second has ALL broadleaf foliage fully lush GREEN with NO pink, orange or red trees, sky clear cyan-blue, hydrangeas and warm sunlight; third has golden-orange and vermilion autumn leaves, warm amber sky; fourth has bare deciduous branches, delicate snow on roofs, walls and planting beds, cool pale-lavender sky, warm window light. Seasonal changes must be integrated into every relevant plant and surface, not a global color filter. EVERGREENS remain green. No snow in spring/summer/autumn.\n\nGAME COMPOSITION: shallow frontal side-on panoramic environment viewed across an unseen road. Background architecture/landscape should extend to the BOTTOM edge of EACH strip. At most a hairline pavement lip, NO blank foreground ground plane and NO foreground road. Keep enough detailed architecture in the lower half for visibility behind gameplay. Exquisite roof tiles, boards, brickwork, stone, aged plaster, balcony railings, gutters, tiny detailed shopfronts or relevant landscape details. Strong silhouette design and layered depth, never crude abstract rectangular placeholder shapes. Finely drawn environmental storytelling, deliberately varied materials. Small contextual Japanese sign marks acceptable; no large words. NO large foreground people, vehicles, cars, UI, text overlays, watermarks, or season labels.\n\nDISTRICT COMPOSITION:\nNAKANO SUN MALL GATE: A frontal street panorama anchored on the LEFT by a wide rounded shopping-arcade entrance whose arched translucent pink-and-cream canopy carries repeating semicircular ribs far into a deep illuminated passage. The central band is a lively covered fresh-food market frontage with checkerboard awnings, hanging lanterns, fishmonger display cases and colorful vegetable bins; to the RIGHT is a tall narrow corner coffee building with a wraparound glass mezzanine and old record shop underneath. Behind them smaller offset tiled rooftops, a chunky exterior staircase, ornamental lamps, telephone cables and tiny roof gardens, not a skyscraper downtown skyline. The entrance must be much wider and lower than the tall red Broadway block, pink arches are the main motif. Two small deciduous street trees in planters provide seasonal contrast. No temple, no Sunplaza triangle, no centered symmetrical building.\n\nFinal check: exactly FOUR aligned season strips, each has the SAME district geometry, no season labels, summer trees green, architecture and landscape reach each panel’s bottom edge.",
+      "referenceImages": [
+        "assets/cities/nakano.png"
+      ],
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "nakano-sunmall-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            349
+          ],
+          "sha256": "dbdb2342dfdd62daaac3eddb2ed6f3de1e1f6fffa6f337795a5cc6fdfde9c2e1"
+        },
+        {
+          "season": "summer",
+          "file": "nakano-sunmall-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            351,
+            1122,
+            348
+          ],
+          "sha256": "2090368a46307adbe00c195548b3f52063aff11ea3400eb137595eaadeefe96a"
+        },
+        {
+          "season": "autumn",
+          "file": "nakano-sunmall-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            702,
+            1122,
+            349
+          ],
+          "sha256": "b85a23214ccf44bdbd02805701ea5468b6e42573d331e9dfb1f205c840d06449"
+        },
+        {
+          "season": "winter",
+          "file": "nakano-sunmall-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1053,
+            1122,
+            349
+          ],
+          "sha256": "9b1ff82db867940e235f6cd2bd933151d15ec90a4ca8052ca2d561a93b7b2196"
+        }
+      ]
+    },
+    {
+      "id": "nakano-sunplaza",
+      "title": "Sunplaza music plaza",
+      "master": {
+        "file": "nakano-sunplaza-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "8b7b5bce608346c71887e84647fb8e654d446cb86cf790f1dcdf63d1fa60a08f"
+      },
+      "prompt": "Use case: stylized-concept. Create an ORIGINAL richly illustrated pixel-art district background atlas for a polished Japanese driving game. Reference image 1 is STYLE REFERENCE ONLY: use its intricate pixel clusters, sophisticated violet shadows and luminous windows, densely shaded architectural materials and warm lived-in atmosphere. Create completely new architecture and composition as described below, NOT a rearrangement of the reference skyline.\n\nATLAS REQUIREMENTS: exactly FOUR separate full-width panoramic images stacked vertically in ONE canvas. Preferred canvas 1536 x 1920, each strip 1536 x 480. Panels fill every pixel, absolutely no gaps, borders, headings or season labels. Horizontal boundaries at EXACTLY 25%, 50% and 75% of canvas height. The four panoramas depict EXACTLY THE SAME district, identical camera position, identical building shapes, structural geometry, windows and object locations. Architecture MUST keep precisely the same scale and alignment in each season. Top to bottom: SPRING / SUMMER / AUTUMN / WINTER.\n\nSEASONS: first row has pink cherry blossoms, fresh pale-green foliage and soft rosy-golden sky; second has ALL broadleaf foliage fully lush GREEN with NO pink, orange or red trees, sky clear cyan-blue, hydrangeas and warm sunlight; third has golden-orange and vermilion autumn leaves, warm amber sky; fourth has bare deciduous branches, delicate snow on roofs, walls and planting beds, cool pale-lavender sky, warm window light. Seasonal changes must be integrated into every relevant plant and surface, not a global color filter. EVERGREENS remain green. No snow in spring/summer/autumn.\n\nGAME COMPOSITION: shallow frontal side-on panoramic environment viewed across an unseen road. Background architecture/landscape should extend to the BOTTOM edge of EACH strip. At most a hairline pavement lip, NO blank foreground ground plane and NO foreground road. Keep enough detailed architecture in the lower half for visibility behind gameplay. Exquisite roof tiles, boards, brickwork, stone, aged plaster, balcony railings, gutters, tiny detailed shopfronts or relevant landscape details. Strong silhouette design and layered depth, never crude abstract rectangular placeholder shapes. Finely drawn environmental storytelling, deliberately varied materials. Small contextual Japanese sign marks acceptable; no large words. NO large foreground people, vehicles, cars, UI, text overlays, watermarks, or season labels.\n\nDISTRICT COMPOSITION:\nSUNPLAZA MUSIC PLAZA, stylized historic Nakano cultural scene: The iconic pale trapezoidal wedge-shaped music venue occupies the RIGHT third, with diagonal flanks and stacked horizontal blue window bands; its warmly illuminated glass base opens onto landscaped terraces. In the LEFT foreground environment layer a low two-storey record cafe with many tiny music posters and glowing display windows, terraced stone seating stepping inward, curved raised flowerbeds and a distinctive dark circular record-shaped shallow fountain around the middle. Small festival banners and metal railings, lights built into stepped stonework. An open-air music-plaza character, lots of architectural landscaping, NOT a row of standard shop blocks and NOT a road. Bushy deciduous trees behind the cafe and plaza change with season. Full artwork extends to bottom using planters, step risers and fountain stone edge. No crowds, no performers, no huge empty plaza plane.\n\nFinal check: exactly FOUR aligned season strips, each has the SAME district geometry, no season labels, summer trees green, architecture and landscape reach each panel’s bottom edge.",
+      "referenceImages": [
+        "assets/cities/nakano.png"
+      ],
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "nakano-sunplaza-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            349
+          ],
+          "sha256": "363d0f30fe5340fe25698c5619337c959b1455c8a6aa4d8bd46472a8c64d9517"
+        },
+        {
+          "season": "summer",
+          "file": "nakano-sunplaza-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            351,
+            1122,
+            348
+          ],
+          "sha256": "f0c19514b191d02cd426aa9e1ed803b5a52708e9b57a665f7d130ef4b074b6ec"
+        },
+        {
+          "season": "autumn",
+          "file": "nakano-sunplaza-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            702,
+            1122,
+            348
+          ],
+          "sha256": "f048b498415254b6862f4bde30dc3efc5cd4df8d039ab84ae6a2dea78015af84"
+        },
+        {
+          "season": "winter",
+          "file": "nakano-sunplaza-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1052,
+            1122,
+            350
+          ],
+          "sha256": "f950255e22b4461b4abd085acd99cdb3eae09c96c0df821279a5864749e3797c"
+        }
+      ]
+    },
+    {
+      "id": "nakano-numabukuro",
+      "title": "Numabukuro railway crossing",
+      "master": {
+        "file": "nakano-numabukuro-four-seasons-master.png",
+        "width": 1536,
+        "height": 1024,
+        "sha256": "85d47f89b85b8ab78a7cf8b33fc8ca8126cf907c6f5619ba3396a0ab3b90e394"
+      },
+      "prompt": "Use case: stylized-concept. Create an ORIGINAL richly illustrated pixel-art district background atlas for a polished Japanese driving game. Reference image 1 is STYLE REFERENCE ONLY: use its intricate pixel clusters, sophisticated violet shadows and luminous windows, densely shaded architectural materials and warm lived-in atmosphere. Create completely new architecture and composition as described below, NOT a rearrangement of the reference skyline.\n\nATLAS REQUIREMENTS: exactly FOUR separate full-width panoramic images stacked vertically in ONE canvas. Preferred canvas 1536 x 1920, each strip 1536 x 480. Panels fill every pixel, absolutely no gaps, borders, headings or season labels. Horizontal boundaries at EXACTLY 25%, 50% and 75% of canvas height. The four panoramas depict EXACTLY THE SAME district, identical camera position, identical building shapes, structural geometry, windows and object locations. Architecture MUST keep precisely the same scale and alignment in each season. Top to bottom: SPRING / SUMMER / AUTUMN / WINTER.\n\nSEASONS: first row has pink cherry blossoms, fresh pale-green foliage and soft rosy-golden sky; second has ALL broadleaf foliage fully lush GREEN with NO pink, orange or red trees, sky clear cyan-blue, hydrangeas and warm sunlight; third has golden-orange and vermilion autumn leaves, warm amber sky; fourth has bare deciduous branches, delicate snow on roofs, walls and planting beds, cool pale-lavender sky, warm window light. Seasonal changes must be integrated into every relevant plant and surface, not a global color filter. EVERGREENS remain green. No snow in spring/summer/autumn.\n\nGAME COMPOSITION: shallow frontal side-on panoramic environment viewed across an unseen road. Background architecture/landscape should extend to the BOTTOM edge of EACH strip. At most a hairline pavement lip, NO blank foreground ground plane and NO foreground road. Keep enough detailed architecture in the lower half for visibility behind gameplay. Exquisite roof tiles, boards, brickwork, stone, aged plaster, balcony railings, gutters, tiny detailed shopfronts or relevant landscape details. Strong silhouette design and layered depth, never crude abstract rectangular placeholder shapes. Finely drawn environmental storytelling, deliberately varied materials. Small contextual Japanese sign marks acceptable; no large words. NO large foreground people, vehicles, cars, UI, text overlays, watermarks, or season labels.\n\nDISTRICT COMPOSITION:\nNUMABUKURO LOCAL RAIL CROSSING: a distinctly railway-dominated horizontal scene, a broad low station platform and dark corrugated canopy occupies the CENTER and RIGHT, raised behind a stone retaining wall. A modest cream-and-green local passenger TRAIN is seen in side elevation in the MIDGROUND behind black-and-yellow crossing equipment and a low rail fence, not as a foreground vehicle. Rails run horizontally across the composition at lower midground, no road going into the distance. On the LEFT is an old three-story cream apartment with exterior zigzag stairs above an open tiny bakery; right edge has a narrow wooden family restaurant with a tiled roof and stacked orange crates. Dense overhead catenary, steel poles, platform benches, small station clock and amber-lit platform booth. Low green shrubs and two cherry trees behind platform provide strong seasonal markers. Same train and crossing positions in all seasons. Rich mechanical rivets, track sleepers, wires and architectural detail. No giant station terminal, no tall skyline.\n\nFinal check: exactly FOUR aligned season strips, each has the SAME district geometry, no season labels, summer trees green, architecture and landscape reach each panel’s bottom edge.",
+      "referenceImages": [
+        "assets/cities/nakano.png"
+      ],
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "nakano-numabukuro-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1536,
+            250
+          ],
+          "sha256": "7c0ba4797d27a62a1177cbcd725173649aa6a6f64cadcd894d6561f07d32f555"
+        },
+        {
+          "season": "summer",
+          "file": "nakano-numabukuro-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            256,
+            1536,
+            250
+          ],
+          "sha256": "21acc1f6a04b31fce6e09fd2e408a56c1449b8ff77aef769849c397eb133df95"
+        },
+        {
+          "season": "autumn",
+          "file": "nakano-numabukuro-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            512,
+            1536,
+            250
+          ],
+          "sha256": "05bcbf71f84c07ed9f2a7357a6947204206ddb61f4675c6bc18f528a9aee785b"
+        },
+        {
+          "season": "winter",
+          "file": "nakano-numabukuro-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            768,
+            1536,
+            250
+          ],
+          "sha256": "bd161e4d06f752e2ed3593e92138bc4cb32251e3d260f4ef1e4733342b4ba8d9"
+        }
+      ]
+    },
+    {
+      "id": "nakano-nogata",
+      "title": "Nogata shopping street",
+      "master": {
+        "file": "nakano-nogata-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "7cdac2d4835131b6d63cdad7e2e28e749c572ef39b7cf45e109ff9836a774851"
+      },
+      "prompt": "Use case: stylized-concept. Create an ORIGINAL richly illustrated pixel-art district background atlas for a polished Japanese driving game. Reference image 1 is STYLE REFERENCE ONLY: use its intricate pixel clusters, sophisticated violet shadows and luminous windows, densely shaded architectural materials and warm lived-in atmosphere. Create completely new architecture and composition as described below, NOT a rearrangement of the reference skyline.\n\nATLAS REQUIREMENTS: exactly FOUR separate full-width panoramic images stacked vertically in ONE canvas. Preferred canvas 1536 x 1920, each strip 1536 x 480. Panels fill every pixel, absolutely no gaps, borders, headings or season labels. Horizontal boundaries at EXACTLY 25%, 50% and 75% of canvas height. The four panoramas depict EXACTLY THE SAME district, identical camera position, identical building shapes, structural geometry, windows and object locations. Architecture MUST keep precisely the same scale and alignment in each season. Top to bottom: SPRING / SUMMER / AUTUMN / WINTER.\n\nSEASONS: first row has pink cherry blossoms, fresh pale-green foliage and soft rosy-golden sky; second has ALL broadleaf foliage fully lush GREEN with NO pink, orange or red trees, sky clear cyan-blue, hydrangeas and warm sunlight; third has golden-orange and vermilion autumn leaves, warm amber sky; fourth has bare deciduous branches, delicate snow on roofs, walls and planting beds, cool pale-lavender sky, warm window light. Seasonal changes must be integrated into every relevant plant and surface, not a global color filter. EVERGREENS remain green. No snow in spring/summer/autumn.\n\nGAME COMPOSITION: shallow frontal side-on panoramic environment viewed across an unseen road. Background architecture/landscape should extend to the BOTTOM edge of EACH strip. At most a hairline pavement lip, NO blank foreground ground plane and NO foreground road. Keep enough detailed architecture in the lower half for visibility behind gameplay. Exquisite roof tiles, boards, brickwork, stone, aged plaster, balcony railings, gutters, tiny detailed shopfronts or relevant landscape details. Strong silhouette design and layered depth, never crude abstract rectangular placeholder shapes. Finely drawn environmental storytelling, deliberately varied materials. Small contextual Japanese sign marks acceptable; no large words. NO large foreground people, vehicles, cars, UI, text overlays, watermarks, or season labels.\n\nDISTRICT COMPOSITION:\nNOGATA FOOD MARKET AND BATHHOUSE: A charming low-rise neighborhood food street seen frontally. LEFT: a wide old produce market under two slanted striped blue-white awnings, overflowing ordered crates and baskets, deep wooden shelving and warm pendant lights. CENTER: an elaborate traditional tiled-roof Japanese bathhouse entrance with a decorative curved gable, painted noren curtain and a very tall slender weathered brick chimney rising behind it, roof tiles shaded individually. RIGHT: two compact izakaya and a narrow glass-front bakery under orange fabric awnings with recessed upstairs apartments. Tiny pots, rolling shutters, menu plaques, drainpipes, lanterns and bins give rich detail. Asymmetric roofline, only two or three stories, no skyscrapers, no temple gate. Deciduous roadside trees and planters frame both ends; all foliage changes season appropriately. No foreground roadway or vehicles; shop walls and stalls reach bottom.\n\nFinal check: exactly FOUR aligned season strips, each has the SAME district geometry, no season labels, summer trees green, architecture and landscape reach each panel’s bottom edge.",
+      "referenceImages": [
+        "assets/cities/nakano.png"
+      ],
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "nakano-nogata-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            329
+          ],
+          "sha256": "8b25e312d3839bf43f790d164b1b4bd468b13f5793883e2953d333fa65225d07"
+        },
+        {
+          "season": "summer",
+          "file": "nakano-nogata-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            334,
+            1122,
+            332
+          ],
+          "sha256": "e4ae5240869c7090e49bc893f8f28af987a533d890a41671e4191be66cd988b0"
+        },
+        {
+          "season": "autumn",
+          "file": "nakano-nogata-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            671,
+            1122,
+            333
+          ],
+          "sha256": "e0efdcec547362bf42d13ce3f5e7c01f30e35ad8c67a4e06ab414f6cc2b1cca2"
+        },
+        {
+          "season": "winter",
+          "file": "nakano-nogata-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1009,
+            1122,
+            329
+          ],
+          "sha256": "57162a288134e14f15a28fd79e52982f0913ee8b2527ec251da170a3b45efb74"
+        }
+      ]
+    },
+    {
+      "id": "nakano-yamato",
+      "title": "Yamato back lanes",
+      "master": {
+        "file": "nakano-yamato-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "342f2b464e02803caaff7f07b96668024f42f7a135d1b56a505211f6aeaa12ea"
+      },
+      "prompt": "Use case: stylized-concept. Create an ORIGINAL richly illustrated pixel-art district background atlas for a polished Japanese driving game. Reference image 1 is STYLE REFERENCE ONLY: use its intricate pixel clusters, sophisticated violet shadows and luminous windows, densely shaded architectural materials and warm lived-in atmosphere. Create completely new architecture and composition as described below, NOT a rearrangement of the reference skyline.\n\nATLAS REQUIREMENTS: exactly FOUR separate full-width panoramic images stacked vertically in ONE canvas. Preferred canvas 1536 x 1920, each strip 1536 x 480. Panels fill every pixel, absolutely no gaps, borders, headings or season labels. Horizontal boundaries at EXACTLY 25%, 50% and 75% of canvas height. The four panoramas depict EXACTLY THE SAME district, identical camera position, identical building shapes, structural geometry, windows and object locations. Architecture MUST keep precisely the same scale and alignment in each season. Top to bottom: SPRING / SUMMER / AUTUMN / WINTER.\n\nSEASONS: first row has pink cherry blossoms, fresh pale-green foliage and soft rosy-golden sky; second has ALL broadleaf foliage fully lush GREEN with NO pink, orange or red trees, sky clear cyan-blue, hydrangeas and warm sunlight; third has golden-orange and vermilion autumn leaves, warm amber sky; fourth has bare deciduous branches, delicate snow on roofs, walls and planting beds, cool pale-lavender sky, warm window light. Seasonal changes must be integrated into every relevant plant and surface, not a global color filter. EVERGREENS remain green. No snow in spring/summer/autumn.\n\nGAME COMPOSITION: shallow frontal side-on panoramic environment viewed across an unseen road. Background architecture/landscape should extend to the BOTTOM edge of EACH strip. At most a hairline pavement lip, NO blank foreground ground plane and NO foreground road. Keep enough detailed architecture in the lower half for visibility behind gameplay. Exquisite roof tiles, boards, brickwork, stone, aged plaster, balcony railings, gutters, tiny detailed shopfronts or relevant landscape details. Strong silhouette design and layered depth, never crude abstract rectangular placeholder shapes. Finely drawn environmental storytelling, deliberately varied materials. Small contextual Japanese sign marks acceptable; no large words. NO large foreground people, vehicles, cars, UI, text overlays, watermarks, or season labels.\n\nDISTRICT COMPOSITION:\nYAMATO QUIET RESIDENTIAL BACK LANES: a genuinely residential composition with ZERO prominent commercial signs or arcade. Large detailed three-storey rose-gray apartment occupies LEFT, metal exterior staircase zigzags along its exposed side, dozens of individual balcony plants and laundry railings. CENTER dips into a narrow residential passage behind offset mossy garden walls, old compact timber houses with pitched blue ceramic tile roofs and a raised courtyard garden accessed by short stone steps. RIGHT has an older pale four-storey apartment with a grid of deep balconies and a tiny tucked-in convenience kiosk, then a narrow one-storey wooden house. Staggered garden walls and changes of elevation form a layered lower edge. Electrical meters, air conditioners, small gates, bushes, flowerpots, antennas and a few thick overhead cables. Large deciduous garden tree in center. Rich domestic texture, calm lived-in evening atmosphere, no repeated arcade architecture.\n\nFinal check: exactly FOUR aligned season strips, each has the SAME district geometry, no season labels, summer trees green, architecture and landscape reach each panel’s bottom edge.\nOUTPUT SHAPE: portrait canvas, width-to-height ratio 4:5. Follow image 2 ONLY for four-row portrait atlas layout and panel aspect ratio. Do NOT copy any image-2 buildings. Each row is approximately 3.2 times as wide as tall. Do not output a wide landscape canvas.",
+      "referenceImages": [
+        "assets/cities/nakano.png",
+        "arai-yakushi-four-seasons-master.png (atlas-layout reference only)"
+      ],
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "nakano-yamato-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            348
+          ],
+          "sha256": "f3370f9813c15afc93872b0560dfb94786cc50a7e9b6e332d23a2ce7d4be798a"
+        },
+        {
+          "season": "summer",
+          "file": "nakano-yamato-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            351,
+            1122,
+            343
+          ],
+          "sha256": "c218e004ecd9d3403a664434c7e2c35e16978b42ee2a5b55a5d4b8c97bd15166"
+        },
+        {
+          "season": "autumn",
+          "file": "nakano-yamato-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            702,
+            1122,
+            348
+          ],
+          "sha256": "f8ae2778f1f7dea67850cded400c7eff2325bac9d4cc846b82217059b6fca7d3"
+        },
+        {
+          "season": "winter",
+          "file": "nakano-yamato-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1052,
+            1122,
+            350
+          ],
+          "sha256": "f3750992f91777d31be240a7dfe1c2b569eba8c860c3a2cd979199313b71abbe"
+        }
+      ]
+    },
+    {
+      "id": "nakano-wakamiya",
+      "title": "Wakamiya pocket park",
+      "master": {
+        "file": "nakano-wakamiya-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "1ba97837227dd8a6d79e5cd26bc8ec7f0e75084fbb57b33e1766d3b1b0b07cf1"
+      },
+      "prompt": "Use case: stylized-concept. Create an ORIGINAL richly illustrated pixel-art district background atlas for a polished Japanese driving game. Reference image 1 is STYLE REFERENCE ONLY: use its intricate pixel clusters, sophisticated violet shadows and luminous windows, densely shaded architectural materials and warm lived-in atmosphere. Create completely new architecture and composition as described below, NOT a rearrangement of the reference skyline.\n\nATLAS REQUIREMENTS: exactly FOUR separate full-width panoramic images stacked vertically in ONE canvas. Preferred canvas 1536 x 1920, each strip 1536 x 480. Panels fill every pixel, absolutely no gaps, borders, headings or season labels. Horizontal boundaries at EXACTLY 25%, 50% and 75% of canvas height. The four panoramas depict EXACTLY THE SAME district, identical camera position, identical building shapes, structural geometry, windows and object locations. Architecture MUST keep precisely the same scale and alignment in each season. Top to bottom: SPRING / SUMMER / AUTUMN / WINTER.\n\nSEASONS: first row has pink cherry blossoms, fresh pale-green foliage and soft rosy-golden sky; second has ALL broadleaf foliage fully lush GREEN with NO pink, orange or red trees, sky clear cyan-blue, hydrangeas and warm sunlight; third has golden-orange and vermilion autumn leaves, warm amber sky; fourth has bare deciduous branches, delicate snow on roofs, walls and planting beds, cool pale-lavender sky, warm window light. Seasonal changes must be integrated into every relevant plant and surface, not a global color filter. EVERGREENS remain green. No snow in spring/summer/autumn.\n\nGAME COMPOSITION: shallow frontal side-on panoramic environment viewed across an unseen road. Background architecture/landscape should extend to the BOTTOM edge of EACH strip. At most a hairline pavement lip, NO blank foreground ground plane and NO foreground road. Keep enough detailed architecture in the lower half for visibility behind gameplay. Exquisite roof tiles, boards, brickwork, stone, aged plaster, balcony railings, gutters, tiny detailed shopfronts or relevant landscape details. Strong silhouette design and layered depth, never crude abstract rectangular placeholder shapes. Finely drawn environmental storytelling, deliberately varied materials. Small contextual Japanese sign marks acceptable; no large words. NO large foreground people, vehicles, cars, UI, text overlays, watermarks, or season labels.\n\nDISTRICT COMPOSITION:\nWAKAMIYA POCKET PARK: compact neighborhood park viewed SIDE-ON, not a shopping street. LEFT: a small mesh-fenced ball court in front of low tiled-roof houses with balconies; tall chain-link fence has fine pixel detail. CENTER: bright orange and teal vintage climbing slide structure with ladders, a small sandpit and curved low border, beneath a large spreading deciduous cherry tree. RIGHT: a carefully detailed flower-bordered path, wooden benches, drinking fountain, low mosaic planter wall, behind which sits a pale four-storey apartment and a tiny corner cafe. Trees and play equipment must dominate the silhouette, domestic buildings secondary. Foreground is a continuous richly detailed park wall and flower bed at the bottom rather than empty ground. No people, no cars, no floating equipment. Seasonal flowering shrubs and tree canopy reflect all four seasons.\n\nFinal check: exactly FOUR aligned season strips, each has the SAME district geometry, no season labels, summer trees green, architecture and landscape reach each panel’s bottom edge.\nOUTPUT SHAPE: portrait canvas, width-to-height ratio 4:5. Follow image 2 ONLY for four-row portrait atlas layout and panel aspect ratio. Do NOT copy any image-2 buildings. Each row is approximately 3.2 times as wide as tall. Do not output a wide landscape canvas.",
+      "referenceImages": [
+        "assets/cities/nakano.png",
+        "arai-yakushi-four-seasons-master.png (atlas-layout reference only)"
+      ],
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "nakano-wakamiya-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            348
+          ],
+          "sha256": "0ffcd760dc3d77302b77066a78def33350b40fc741787f006dd7ecb3c56cd436"
+        },
+        {
+          "season": "summer",
+          "file": "nakano-wakamiya-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            351,
+            1122,
+            343
+          ],
+          "sha256": "baa50b08dfb2a5af63fcdb5c54ed1292e66a61aab6c61fa5cb19d9307391ea71"
+        },
+        {
+          "season": "autumn",
+          "file": "nakano-wakamiya-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            702,
+            1122,
+            348
+          ],
+          "sha256": "1a431fa61031b0f01ca53958d41fee7ae094190e10a61254baf4c6483e7c149c"
+        },
+        {
+          "season": "winter",
+          "file": "nakano-wakamiya-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1052,
+            1122,
+            350
+          ],
+          "sha256": "4cd5a055ff0ba34eb70de92bc5878a4686c9563e40ace36929c5338ebe08661f"
+        }
+      ]
+    },
+    {
+      "id": "nakano-toritsu",
+      "title": "Toritsu Kasei station",
+      "master": {
+        "file": "nakano-toritsu-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "83559b3f09525d650a3c16902c181c837c5becdad1f9c6e845eb40145d5efac9"
+      },
+      "prompt": "Use case: stylized-concept. Create an ORIGINAL richly illustrated pixel-art district background atlas for a polished Japanese driving game. Reference image 1 is STYLE REFERENCE ONLY: use its intricate pixel clusters, sophisticated violet shadows and luminous windows, densely shaded architectural materials and warm lived-in atmosphere. Create completely new architecture and composition as described below, NOT a rearrangement of the reference skyline.\n\nATLAS REQUIREMENTS: exactly FOUR separate full-width panoramic images stacked vertically in ONE canvas. Preferred canvas 1536 x 1920, each strip 1536 x 480. Panels fill every pixel, absolutely no gaps, borders, headings or season labels. Horizontal boundaries at EXACTLY 25%, 50% and 75% of canvas height. The four panoramas depict EXACTLY THE SAME district, identical camera position, identical building shapes, structural geometry, windows and object locations. Architecture MUST keep precisely the same scale and alignment in each season. Top to bottom: SPRING / SUMMER / AUTUMN / WINTER.\n\nSEASONS: first row has pink cherry blossoms, fresh pale-green foliage and soft rosy-golden sky; second has ALL broadleaf foliage fully lush GREEN with NO pink, orange or red trees, sky clear cyan-blue, hydrangeas and warm sunlight; third has golden-orange and vermilion autumn leaves, warm amber sky; fourth has bare deciduous branches, delicate snow on roofs, walls and planting beds, cool pale-lavender sky, warm window light. Seasonal changes must be integrated into every relevant plant and surface, not a global color filter. EVERGREENS remain green. No snow in spring/summer/autumn.\n\nGAME COMPOSITION: shallow frontal side-on panoramic environment viewed across an unseen road. Background architecture/landscape should extend to the BOTTOM edge of EACH strip. At most a hairline pavement lip, NO blank foreground ground plane and NO foreground road. Keep enough detailed architecture in the lower half for visibility behind gameplay. Exquisite roof tiles, boards, brickwork, stone, aged plaster, balcony railings, gutters, tiny detailed shopfronts or relevant landscape details. Strong silhouette design and layered depth, never crude abstract rectangular placeholder shapes. Finely drawn environmental storytelling, deliberately varied materials. Small contextual Japanese sign marks acceptable; no large words. NO large foreground people, vehicles, cars, UI, text overlays, watermarks, or season labels.\n\nDISTRICT COMPOSITION:\nTORITSU KASEI SMALL LOCAL STATION: LEFT half dominated by a charming low single-story railway station entrance with broad dark green pitched canopy, external round analog clock, vending machines, ticket gates glowing inside and brick bases. A small platform roof is visible behind but NO TRAIN. CENTER: a covered bicycle-parking ramp represented by railings and a simple glazed roof, an ascending pedestrian stair and thick flower planters, no individual foreground bicycles. RIGHT: a distinctive warm bakery cafe with a cream pitched roof, large curved display window and elevated timber terrace with chairs, backed by a modest five-storey blue-gray apartment block. Low urban skyline, not a large terminal or arcade. Tall narrow deciduous trees, station banners, tactile paving at a thin edge, beautifully textured windows, pipes and signs. Buildings touch bottom, no road.\n\nFinal check: exactly FOUR aligned season strips, each has the SAME district geometry, no season labels, summer trees green, architecture and landscape reach each panel’s bottom edge.\nOUTPUT SHAPE: portrait canvas, width-to-height ratio 4:5. Follow image 2 ONLY for four-row portrait atlas layout and panel aspect ratio. Do NOT copy any image-2 buildings. Each row is approximately 3.2 times as wide as tall. Do not output a wide landscape canvas.",
+      "referenceImages": [
+        "assets/cities/nakano.png",
+        "arai-yakushi-four-seasons-master.png (atlas-layout reference only)"
+      ],
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "nakano-toritsu-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            348
+          ],
+          "sha256": "941ab2e315d273df028246c914494324d038ad81a99c15676b33234a34533804"
+        },
+        {
+          "season": "summer",
+          "file": "nakano-toritsu-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            351,
+            1122,
+            343
+          ],
+          "sha256": "bb1d1944c135ee610555d50a599029e09c3562131ba354dcf824341dfaa8e80e"
+        },
+        {
+          "season": "autumn",
+          "file": "nakano-toritsu-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            702,
+            1122,
+            348
+          ],
+          "sha256": "044c242838108d6cfb4c987328ba7e1890966dc05f5ebfccd8d26654008531c7"
+        },
+        {
+          "season": "winter",
+          "file": "nakano-toritsu-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1052,
+            1122,
+            350
+          ],
+          "sha256": "95d08ff04e174429517b7f33255be0d18874fb5e7636df5aebbdddc267330e2e"
+        }
+      ]
+    },
+    {
+      "id": "nakano-saginomiya",
+      "title": "Saginomiya waterway",
+      "master": {
+        "file": "nakano-saginomiya-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "f13452d99b2ea7faf662222413663a2873abf7295b3e36eaeb265e4e3d34cf20"
+      },
+      "prompt": "Use case: stylized-concept. Create an ORIGINAL richly illustrated pixel-art district background atlas for a polished Japanese driving game. Reference image 1 is STYLE REFERENCE ONLY: use its intricate pixel clusters, sophisticated violet shadows and luminous windows, densely shaded architectural materials and warm lived-in atmosphere. Create completely new architecture and composition as described below, NOT a rearrangement of the reference skyline.\n\nATLAS REQUIREMENTS: exactly FOUR separate full-width panoramic images stacked vertically in ONE canvas. Preferred canvas 1536 x 1920, each strip 1536 x 480. Panels fill every pixel, absolutely no gaps, borders, headings or season labels. Horizontal boundaries at EXACTLY 25%, 50% and 75% of canvas height. The four panoramas depict EXACTLY THE SAME district, identical camera position, identical building shapes, structural geometry, windows and object locations. Architecture MUST keep precisely the same scale and alignment in each season. Top to bottom: SPRING / SUMMER / AUTUMN / WINTER.\n\nSEASONS: first row has pink cherry blossoms, fresh pale-green foliage and soft rosy-golden sky; second has ALL broadleaf foliage fully lush GREEN with NO pink, orange or red trees, sky clear cyan-blue, hydrangeas and warm sunlight; third has golden-orange and vermilion autumn leaves, warm amber sky; fourth has bare deciduous branches, delicate snow on roofs, walls and planting beds, cool pale-lavender sky, warm window light. Seasonal changes must be integrated into every relevant plant and surface, not a global color filter. EVERGREENS remain green. No snow in spring/summer/autumn.\n\nGAME COMPOSITION: shallow frontal side-on panoramic environment viewed across an unseen road. Background architecture/landscape should extend to the BOTTOM edge of EACH strip. At most a hairline pavement lip, NO blank foreground ground plane and NO foreground road. Keep enough detailed architecture in the lower half for visibility behind gameplay. Exquisite roof tiles, boards, brickwork, stone, aged plaster, balcony railings, gutters, tiny detailed shopfronts or relevant landscape details. Strong silhouette design and layered depth, never crude abstract rectangular placeholder shapes. Finely drawn environmental storytelling, deliberately varied materials. Small contextual Japanese sign marks acceptable; no large words. NO large foreground people, vehicles, cars, UI, text overlays, watermarks, or season labels.\n\nDISTRICT COMPOSITION:\nSAGINOMIYA WATERWAY: a compact urban canal runs horizontally across the LOWER part of the background, seen mostly side-on; finely painted dark teal water reflections are contained by stone and concrete banks. LEFT: old timber houses and leafy gardens on raised retaining walls; a small LOW red-painted footbridge crosses the narrow waterway near the left third. RIGHT third: a second noticeably TALLER steel pedestrian footbridge with angular stair flights, behind it a light blue six-storey apartment and tiny waterside grocery. The two unequal bridges are the main asymmetric silhouettes. Narrow parapet and flowering planters form the very bottom edge, no foreground road or boats. Lots of domestic balcony detail, drain outlets and moss, canal railings, utility wires. Deciduous riverside trees change strongly by season; winter has fine snow on bridge rails and banks.\n\nFinal check: exactly FOUR aligned season strips, each has the SAME district geometry, no season labels, summer trees green, architecture and landscape reach each panel’s bottom edge.\nOUTPUT SHAPE: portrait canvas, width-to-height ratio 4:5. Follow image 2 ONLY for four-row portrait atlas layout and panel aspect ratio. Do NOT copy any image-2 buildings. Each row is approximately 3.2 times as wide as tall. Do not output a wide landscape canvas.",
+      "referenceImages": [
+        "assets/cities/nakano.png",
+        "arai-yakushi-four-seasons-master.png (atlas-layout reference only)"
+      ],
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "nakano-saginomiya-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            348
+          ],
+          "sha256": "1953d3f243e63517abef433dd405d7a9b92a946f8391dba3f0f54eb051ffe849"
+        },
+        {
+          "season": "summer",
+          "file": "nakano-saginomiya-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            351,
+            1122,
+            343
+          ],
+          "sha256": "4d23ec32037347beca43c413fa95a398d523e6a5a0b1f8becd9897b2277526b7"
+        },
+        {
+          "season": "autumn",
+          "file": "nakano-saginomiya-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            702,
+            1122,
+            348
+          ],
+          "sha256": "4d1b0ff97cad63c59623e4eee1049d507eb328f7a472989d21d62454d7d59bf7"
+        },
+        {
+          "season": "winter",
+          "file": "nakano-saginomiya-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1052,
+            1122,
+            350
+          ],
+          "sha256": "355f5e1a0ed29e66f6d5873e387a371e505359317eb2707e5d803513d990436b"
+        }
+      ]
+    },
+    {
+      "id": "nakano-shirasagi",
+      "title": "Shirasagi flower walk",
+      "master": {
+        "file": "nakano-shirasagi-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "6546a6bfb112963c87f10f9d24dae154aee493a0065cb2698f1d20557e5aa4db"
+      },
+      "prompt": "Use case: stylized-concept. Create an ORIGINAL richly illustrated pixel-art district background atlas for a polished Japanese driving game. Reference image 1 is STYLE REFERENCE ONLY: use its intricate pixel clusters, sophisticated violet shadows and luminous windows, densely shaded architectural materials and warm lived-in atmosphere. Create completely new architecture and composition as described below, NOT a rearrangement of the reference skyline.\n\nATLAS REQUIREMENTS: exactly FOUR separate full-width panoramic images stacked vertically in ONE canvas. Preferred canvas 1536 x 1920, each strip 1536 x 480. Panels fill every pixel, absolutely no gaps, borders, headings or season labels. Horizontal boundaries at EXACTLY 25%, 50% and 75% of canvas height. The four panoramas depict EXACTLY THE SAME district, identical camera position, identical building shapes, structural geometry, windows and object locations. Architecture MUST keep precisely the same scale and alignment in each season. Top to bottom: SPRING / SUMMER / AUTUMN / WINTER.\n\nSEASONS: first row has pink cherry blossoms, fresh pale-green foliage and soft rosy-golden sky; second has ALL broadleaf foliage fully lush GREEN with NO pink, orange or red trees, sky clear cyan-blue, hydrangeas and warm sunlight; third has golden-orange and vermilion autumn leaves, warm amber sky; fourth has bare deciduous branches, delicate snow on roofs, walls and planting beds, cool pale-lavender sky, warm window light. Seasonal changes must be integrated into every relevant plant and surface, not a global color filter. EVERGREENS remain green. No snow in spring/summer/autumn.\n\nGAME COMPOSITION: shallow frontal side-on panoramic environment viewed across an unseen road. Background architecture/landscape should extend to the BOTTOM edge of EACH strip. At most a hairline pavement lip, NO blank foreground ground plane and NO foreground road. Keep enough detailed architecture in the lower half for visibility behind gameplay. Exquisite roof tiles, boards, brickwork, stone, aged plaster, balcony railings, gutters, tiny detailed shopfronts or relevant landscape details. Strong silhouette design and layered depth, never crude abstract rectangular placeholder shapes. Finely drawn environmental storytelling, deliberately varied materials. Small contextual Japanese sign marks acceptable; no large words. NO large foreground people, vehicles, cars, UI, text overlays, watermarks, or season labels.\n\nDISTRICT COMPOSITION:\nSHIRASAGI FLOWER WALK AND PLANT NURSERY: lush gardening neighborhood panorama. LEFT: a broad intricate Victorian-like utilitarian Japanese glass nursery greenhouse with slanted multi-pane roof, fine metal ribs and warm seedlings visible through glass, stacked terracotta pots beside its open door. CENTER: several raised stepped flower beds and a leafy pedestrian garden with a small wooden pergola and trellis, full of meticulously painted seasonal flowers and shrubs. RIGHT: a compact cream-and-wood garden cafe with an ivy-covered porch and old small tiled-roof house behind it. This is a low garden-dominated silhouette, no tall blocks. A huge spreading deciduous tree behind central pergola; azaleas in spring, green leaves and hydrangeas in summer, gold chrysanthemums in autumn, bare roses and snow in winter. Flowers must not be identical across seasons. The bottom edge is a detailed stone garden wall and overflowing plants.\n\nFinal check: exactly FOUR aligned season strips, each has the SAME district geometry, no season labels, summer trees green, architecture and landscape reach each panel’s bottom edge.\nOUTPUT SHAPE: portrait canvas, width-to-height ratio 4:5. Follow image 2 ONLY for four-row portrait atlas layout and panel aspect ratio. Do NOT copy any image-2 buildings. Each row is approximately 3.2 times as wide as tall. Do not output a wide landscape canvas.",
+      "referenceImages": [
+        "assets/cities/nakano.png",
+        "arai-yakushi-four-seasons-master.png (atlas-layout reference only)"
+      ],
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "nakano-shirasagi-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            348
+          ],
+          "sha256": "cbdd4c125394e6fc2e68a39781fb6ab4b8214e67c80a00e81d0308958792e75c"
+        },
+        {
+          "season": "summer",
+          "file": "nakano-shirasagi-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            351,
+            1122,
+            343
+          ],
+          "sha256": "c654305512cef3c0f6524bc9f41dafff068ce23cd3abdc2f0c5809a87e49cf04"
+        },
+        {
+          "season": "autumn",
+          "file": "nakano-shirasagi-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            702,
+            1122,
+            348
+          ],
+          "sha256": "20860600a5d08a44e8e6b051a34f22d4c17ff644c11793216ec85d38093a72d9"
+        },
+        {
+          "season": "winter",
+          "file": "nakano-shirasagi-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1052,
+            1122,
+            350
+          ],
+          "sha256": "5b673d528408aadddd201da481a4b7752990a76ed8d75c8e8745e5909667ce5c"
+        }
+      ]
+    },
+    {
+      "id": "nakano-ekoda",
+      "title": "Egota forest edge",
+      "master": {
+        "file": "nakano-ekoda-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "004104803ecadfbf7d5b0a66d2f3735ab9cd74b39c3da1428bb2e418f932e6bd"
+      },
+      "prompt": "Use case: stylized-concept. Create an ORIGINAL richly illustrated pixel-art district background atlas for a polished Japanese driving game. Reference image 1 is STYLE REFERENCE ONLY: use its intricate pixel clusters, sophisticated violet shadows and luminous windows, densely shaded architectural materials and warm lived-in atmosphere. Create completely new architecture and composition as described below, NOT a rearrangement of the reference skyline.\n\nATLAS REQUIREMENTS: exactly FOUR separate full-width panoramic images stacked vertically in ONE canvas. Preferred canvas 1536 x 1920, each strip 1536 x 480. Panels fill every pixel, absolutely no gaps, borders, headings or season labels. Horizontal boundaries at EXACTLY 25%, 50% and 75% of canvas height. The four panoramas depict EXACTLY THE SAME district, identical camera position, identical building shapes, structural geometry, windows and object locations. Architecture MUST keep precisely the same scale and alignment in each season. Top to bottom: SPRING / SUMMER / AUTUMN / WINTER.\n\nSEASONS: first row has pink cherry blossoms, fresh pale-green foliage and soft rosy-golden sky; second has ALL broadleaf foliage fully lush GREEN with NO pink, orange or red trees, sky clear cyan-blue, hydrangeas and warm sunlight; third has golden-orange and vermilion autumn leaves, warm amber sky; fourth has bare deciduous branches, delicate snow on roofs, walls and planting beds, cool pale-lavender sky, warm window light. Seasonal changes must be integrated into every relevant plant and surface, not a global color filter. EVERGREENS remain green. No snow in spring/summer/autumn.\n\nGAME COMPOSITION: shallow frontal side-on panoramic environment viewed across an unseen road. Background architecture/landscape should extend to the BOTTOM edge of EACH strip. At most a hairline pavement lip, NO blank foreground ground plane and NO foreground road. Keep enough detailed architecture in the lower half for visibility behind gameplay. Exquisite roof tiles, boards, brickwork, stone, aged plaster, balcony railings, gutters, tiny detailed shopfronts or relevant landscape details. Strong silhouette design and layered depth, never crude abstract rectangular placeholder shapes. Finely drawn environmental storytelling, deliberately varied materials. Small contextual Japanese sign marks acceptable; no large words. NO large foreground people, vehicles, cars, UI, text overlays, watermarks, or season labels.\n\nDISTRICT COMPOSITION:\nEGOTA FOREST EDGE: almost entirely a deep urban woodland park environment, NO shopping street and NO large buildings. Multiple layers of tall natural trees frame an intimate hexagonal wooden picnic shelter slightly LEFT of center, with a weathered green-gray roof and carved posts. Behind it a small winding path disappears into dense forest; to RIGHT a compact wooden adventure-play structure with ropes, log steps and a low climbing bridge, partly screened by ferns and shrubs. Big rough stones, leaf litter, clipped hedges and a rustic wooden bench. Bottom edge is a low mossy retaining wall and dense planted understory, no empty road or ground. Rich canopy texture and dappled sunlight, nuanced pixel-art botanical detail, picturesque asymmetry. Spring trees bloom softly, summer is DEEP ALL-GREEN forest, autumn vibrant mixed gold/red canopy, winter bare deciduous branches with remaining evergreen cedars and snow.\n\nFinal check: exactly FOUR aligned season strips, each has the SAME district geometry, no season labels, summer trees green, architecture and landscape reach each panel’s bottom edge.\nOUTPUT SHAPE: portrait canvas, width-to-height ratio 4:5. Follow image 2 ONLY for four-row portrait atlas layout and panel aspect ratio. Do NOT copy any image-2 buildings. Each row is approximately 3.2 times as wide as tall. Do not output a wide landscape canvas.",
+      "referenceImages": [
+        "assets/cities/nakano.png",
+        "arai-yakushi-four-seasons-master.png (atlas-layout reference only)"
+      ],
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "nakano-ekoda-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            348
+          ],
+          "sha256": "900902238268312c73115b5b5132bc66f565d301ae46a69c7ce480be5e43f5a3"
+        },
+        {
+          "season": "summer",
+          "file": "nakano-ekoda-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            351,
+            1122,
+            343
+          ],
+          "sha256": "77c57dc6bbc3acd8da6c4c04d27b3530656490177317c6282000d755f67ceb18"
+        },
+        {
+          "season": "autumn",
+          "file": "nakano-ekoda-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            702,
+            1122,
+            348
+          ],
+          "sha256": "7a6408ee3083310fe3a34a1d57bc155edbb53140be354f4ceadf9f45d184b12d"
+        },
+        {
+          "season": "winter",
+          "file": "nakano-ekoda-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1052,
+            1122,
+            350
+          ],
+          "sha256": "dfef62451098d316832f656e1ba149b8bed0314d347457dedc4cea72797198c2"
+        }
+      ]
+    },
+    {
+      "id": "nakano-higashi",
+      "title": "Higashi Nakano viaduct",
+      "master": {
+        "file": "nakano-higashi-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "d7ffd1eea5dbd24e6677726aeca7c31e215c9f84d07aa8bd7c57696480883727"
+      },
+      "prompt": "Use case: stylized-concept. Create an ORIGINAL richly illustrated pixel-art district background atlas for a polished Japanese driving game. Reference image 1 is STYLE REFERENCE ONLY: use its intricate pixel clusters, sophisticated violet shadows and luminous windows, densely shaded architectural materials and warm lived-in atmosphere. Create completely new architecture and composition as described below, NOT a rearrangement of the reference skyline.\n\nATLAS REQUIREMENTS: exactly FOUR separate full-width panoramic images stacked vertically in ONE canvas. Preferred canvas 1536 x 1920, each strip 1536 x 480. Panels fill every pixel, absolutely no gaps, borders, headings or season labels. Horizontal boundaries at EXACTLY 25%, 50% and 75% of canvas height. The four panoramas depict EXACTLY THE SAME district, identical camera position, identical building shapes, structural geometry, windows and object locations. Architecture MUST keep precisely the same scale and alignment in each season. Top to bottom: SPRING / SUMMER / AUTUMN / WINTER.\n\nSEASONS: first row has pink cherry blossoms, fresh pale-green foliage and soft rosy-golden sky; second has ALL broadleaf foliage fully lush GREEN with NO pink, orange or red trees, sky clear cyan-blue, hydrangeas and warm sunlight; third has golden-orange and vermilion autumn leaves, warm amber sky; fourth has bare deciduous branches, delicate snow on roofs, walls and planting beds, cool pale-lavender sky, warm window light. Seasonal changes must be integrated into every relevant plant and surface, not a global color filter. EVERGREENS remain green. No snow in spring/summer/autumn.\n\nGAME COMPOSITION: shallow frontal side-on panoramic environment viewed across an unseen road. Background architecture/landscape should extend to the BOTTOM edge of EACH strip. At most a hairline pavement lip, NO blank foreground ground plane and NO foreground road. Keep enough detailed architecture in the lower half for visibility behind gameplay. Exquisite roof tiles, boards, brickwork, stone, aged plaster, balcony railings, gutters, tiny detailed shopfronts or relevant landscape details. Strong silhouette design and layered depth, never crude abstract rectangular placeholder shapes. Finely drawn environmental storytelling, deliberately varied materials. Small contextual Japanese sign marks acceptable; no large words. NO large foreground people, vehicles, cars, UI, text overlays, watermarks, or season labels.\n\nDISTRICT COMPOSITION:\nHIGASHI NAKANO VIADUCT: huge riveted dark steel elevated railway spans horizontally from the LEFT edge across TWO THIRDS of the panorama, with stout brick-and-concrete supporting arches and an angular steel cross-braced deck high above tiny illuminated businesses. Under its LEFT arches: a narrow jazz record shop and two tiny bars, glass display windows and warm lanterns; CENTER: a conspicuous exposed metal staircase climbs diagonally to a small station entrance suspended beside the railway. RIGHT: an uneven cluster of weathered narrow apartments with fire escape rails and a small flower shop. No train in foreground, no giant skyline. Dense electrical utility hardware, rail ballast, pipes, chipped arch stones, warm light pools and rich material texture. One tall deciduous tree beyond right blocks plus seasonal planters under arches. Strong steel industrial horizontal silhouette distinctly different from ordinary buildings.\n\nFinal check: exactly FOUR aligned season strips, each has the SAME district geometry, no season labels, summer trees green, architecture and landscape reach each panel’s bottom edge.\nOUTPUT SHAPE: portrait canvas, width-to-height ratio 4:5. Follow image 2 ONLY for four-row portrait atlas layout and panel aspect ratio. Do NOT copy any image-2 buildings. Each row is approximately 3.2 times as wide as tall. Do not output a wide landscape canvas.",
+      "referenceImages": [
+        "assets/cities/nakano.png",
+        "arai-yakushi-four-seasons-master.png (atlas-layout reference only)"
+      ],
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "nakano-higashi-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            348
+          ],
+          "sha256": "b111fd7815b10d7ddf951d243574bfef1b2b45bee1b64d443c4be5c6efd9d639"
+        },
+        {
+          "season": "summer",
+          "file": "nakano-higashi-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            351,
+            1122,
+            343
+          ],
+          "sha256": "427ec65e23e73bb055ad86414bb1dc2d9d5f02c4077f248807868d0b9fe0bb3c"
+        },
+        {
+          "season": "autumn",
+          "file": "nakano-higashi-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            702,
+            1122,
+            348
+          ],
+          "sha256": "3e75850f0042002729f0d65eee996bd2a3b55f8d95ba13b904993e89aaddd720"
+        },
+        {
+          "season": "winter",
+          "file": "nakano-higashi-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1052,
+            1122,
+            350
+          ],
+          "sha256": "ede89366358e1029b22e89fc9094daf69b26f66e0de2c82e524e8f56162461e9"
+        }
+      ]
+    },
+    {
+      "id": "nakano-ochiai",
+      "title": "Ochiai stream walk",
+      "master": {
+        "file": "nakano-ochiai-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "74c916baf64379349ab1abf6803285618df184556b41dbda71ea900fcf0869b6"
+      },
+      "prompt": "Use case: stylized-concept. Create an ORIGINAL richly illustrated pixel-art district background atlas for a polished Japanese driving game. Reference image 1 is STYLE REFERENCE ONLY: use its intricate pixel clusters, sophisticated violet shadows and luminous windows, densely shaded architectural materials and warm lived-in atmosphere. Create completely new architecture and composition as described below, NOT a rearrangement of the reference skyline.\n\nATLAS REQUIREMENTS: exactly FOUR separate full-width panoramic images stacked vertically in ONE canvas. Preferred canvas 1536 x 1920, each strip 1536 x 480. Panels fill every pixel, absolutely no gaps, borders, headings or season labels. Horizontal boundaries at EXACTLY 25%, 50% and 75% of canvas height. The four panoramas depict EXACTLY THE SAME district, identical camera position, identical building shapes, structural geometry, windows and object locations. Architecture MUST keep precisely the same scale and alignment in each season. Top to bottom: SPRING / SUMMER / AUTUMN / WINTER.\n\nSEASONS: first row has pink cherry blossoms, fresh pale-green foliage and soft rosy-golden sky; second has ALL broadleaf foliage fully lush GREEN with NO pink, orange or red trees, sky clear cyan-blue, hydrangeas and warm sunlight; third has golden-orange and vermilion autumn leaves, warm amber sky; fourth has bare deciduous branches, delicate snow on roofs, walls and planting beds, cool pale-lavender sky, warm window light. Seasonal changes must be integrated into every relevant plant and surface, not a global color filter. EVERGREENS remain green. No snow in spring/summer/autumn.\n\nGAME COMPOSITION: shallow frontal side-on panoramic environment viewed across an unseen road. Background architecture/landscape should extend to the BOTTOM edge of EACH strip. At most a hairline pavement lip, NO blank foreground ground plane and NO foreground road. Keep enough detailed architecture in the lower half for visibility behind gameplay. Exquisite roof tiles, boards, brickwork, stone, aged plaster, balcony railings, gutters, tiny detailed shopfronts or relevant landscape details. Strong silhouette design and layered depth, never crude abstract rectangular placeholder shapes. Finely drawn environmental storytelling, deliberately varied materials. Small contextual Japanese sign marks acceptable; no large words. NO large foreground people, vehicles, cars, UI, text overlays, watermarks, or season labels.\n\nDISTRICT COMPOSITION:\nOCHIAI STREAM WALK: naturalistic stone-edged narrow stream behind a low foreground garden railing, cutting horizontally through a leafy residential park. LEFT: a huge graceful leaning deciduous tree stretching diagonal branches above water, with two old wooden benches and mossy boulders; near CENTER a small softly arched stone footbridge with thick rounded masonry crosses the stream. RIGHT: a compact pair of traditional tiled-roof houses on slightly higher ground, trailing vines over their old garden walls, with a narrow light wooden footbridge at the far right. Water occupies only a slim strip and reflects leaves; foreground lower edge is stones, ferns and railings, no roadway. Softer organic canopy and stonework, NO large modern apartment block and NO tall angular steel footbridge. Richly detailed plants and subtle surface reflections. Blooming spring, all-green summer, golden/red autumn, bare snow-traced winter.\n\nFinal check: exactly FOUR aligned season strips, each has the SAME district geometry, no season labels, summer trees green, architecture and landscape reach each panel’s bottom edge.\nOUTPUT SHAPE: portrait canvas, width-to-height ratio 4:5. Follow image 2 ONLY for four-row portrait atlas layout and panel aspect ratio. Do NOT copy any image-2 buildings. Each row is approximately 3.2 times as wide as tall. Do not output a wide landscape canvas.",
+      "referenceImages": [
+        "assets/cities/nakano.png",
+        "arai-yakushi-four-seasons-master.png (atlas-layout reference only)"
+      ],
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "nakano-ochiai-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            348
+          ],
+          "sha256": "5088aa2ce32b81db50bcf7b88f14b9ef98be3dcc6880ed51248a53bf56c332e3"
+        },
+        {
+          "season": "summer",
+          "file": "nakano-ochiai-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            351,
+            1122,
+            343
+          ],
+          "sha256": "54ff40c3ffb7c20ed4d3a0353e9af1568bf93907d6a859e7ea11f68cad5adca8"
+        },
+        {
+          "season": "autumn",
+          "file": "nakano-ochiai-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            702,
+            1122,
+            348
+          ],
+          "sha256": "ed57db5ba75e90540ba6f4398e1b1e3e38f2e3e4767a7ca4aa379801c32256b5"
+        },
+        {
+          "season": "winter",
+          "file": "nakano-ochiai-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1052,
+            1122,
+            350
+          ],
+          "sha256": "bb7f254754d90e8ccd729b8723c6b48f6709373584e03245bade9bfb0c8cb95c"
+        }
+      ]
+    },
+    {
+      "id": "nakano-kamitakada",
+      "title": "Kamitakada temple quarter",
+      "master": {
+        "file": "nakano-kamitakada-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "8c938e6360799bec114945a501d7111523892a96ccf0de4b10b71444a49657e0"
+      },
+      "prompt": "Use case: stylized-concept. Create an ORIGINAL richly illustrated pixel-art district background atlas for a polished Japanese driving game. Reference image 1 is STYLE REFERENCE ONLY: use its intricate pixel clusters, sophisticated violet shadows and luminous windows, densely shaded architectural materials and warm lived-in atmosphere. Create completely new architecture and composition as described below, NOT a rearrangement of the reference skyline.\n\nATLAS REQUIREMENTS: exactly FOUR separate full-width panoramic images stacked vertically in ONE canvas. Preferred canvas 1536 x 1920, each strip 1536 x 480. Panels fill every pixel, absolutely no gaps, borders, headings or season labels. Horizontal boundaries at EXACTLY 25%, 50% and 75% of canvas height. The four panoramas depict EXACTLY THE SAME district, identical camera position, identical building shapes, structural geometry, windows and object locations. Architecture MUST keep precisely the same scale and alignment in each season. Top to bottom: SPRING / SUMMER / AUTUMN / WINTER.\n\nSEASONS: first row has pink cherry blossoms, fresh pale-green foliage and soft rosy-golden sky; second has ALL broadleaf foliage fully lush GREEN with NO pink, orange or red trees, sky clear cyan-blue, hydrangeas and warm sunlight; third has golden-orange and vermilion autumn leaves, warm amber sky; fourth has bare deciduous branches, delicate snow on roofs, walls and planting beds, cool pale-lavender sky, warm window light. Seasonal changes must be integrated into every relevant plant and surface, not a global color filter. EVERGREENS remain green. No snow in spring/summer/autumn.\n\nGAME COMPOSITION: shallow frontal side-on panoramic environment viewed across an unseen road. Background architecture/landscape should extend to the BOTTOM edge of EACH strip. At most a hairline pavement lip, NO blank foreground ground plane and NO foreground road. Keep enough detailed architecture in the lower half for visibility behind gameplay. Exquisite roof tiles, boards, brickwork, stone, aged plaster, balcony railings, gutters, tiny detailed shopfronts or relevant landscape details. Strong silhouette design and layered depth, never crude abstract rectangular placeholder shapes. Finely drawn environmental storytelling, deliberately varied materials. Small contextual Japanese sign marks acceptable; no large words. NO large foreground people, vehicles, cars, UI, text overlays, watermarks, or season labels.\n\nDISTRICT COMPOSITION:\nKAMITAKADA TEMPLE QUARTER: broad solemn panorama of MULTIPLE historic Buddhist temple structures, no shopping-lane entrance as the main subject. LEFT: a large full temple hall facade with heavy layered dark tiled roof, open timber veranda, carved brackets and lit paper windows. CENTER behind a low detailed stone garden wall: meticulously clipped sculptural pine trees and a small three-tier wooden PAGODA rising above them, offset right of center. RIGHT: a second smaller shrine-like wooden hall with a copper-green pitched roof and a long white plaster boundary wall capped in dark tile, then an old wooden residence. Uneven roof heights and garden courtyards create depth. Stone lanterns, moss, worn steps, incense burner, small wooden gates, carved wood and stone fine detail. Cherry and maple deciduous trees behind evergreen pines change season; winter snow clearly traces roofs. No cars, people, foreground road, giant modern skyline.\n\nFinal check: exactly FOUR aligned season strips, each has the SAME district geometry, no season labels, summer trees green, architecture and landscape reach each panel’s bottom edge.\nOUTPUT SHAPE: portrait canvas, width-to-height ratio 4:5. Follow image 2 ONLY for four-row portrait atlas layout and panel aspect ratio. Do NOT copy any image-2 buildings. Each row is approximately 3.2 times as wide as tall. Do not output a wide landscape canvas. Keep all summer foliage green; no scattered orange autumn leaves in summer.",
+      "referenceImages": [
+        "assets/cities/nakano.png",
+        "arai-yakushi-four-seasons-master.png (atlas-layout reference only)"
+      ],
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "nakano-kamitakada-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            348
+          ],
+          "sha256": "e9a3db95b6323d47e653a3a296e569bdc3b4d83ecc018a6e551b2440761d791c"
+        },
+        {
+          "season": "summer",
+          "file": "nakano-kamitakada-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            351,
+            1122,
+            343
+          ],
+          "sha256": "b145dc95e31d5c44692259811365715ea79dabea89c78f0f865230b517339775"
+        },
+        {
+          "season": "autumn",
+          "file": "nakano-kamitakada-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            702,
+            1122,
+            348
+          ],
+          "sha256": "9fa8f472ba51a4ef771ebfa036d0dc5c770b6cb57fc63be8c58f815eb065f916"
+        },
+        {
+          "season": "winter",
+          "file": "nakano-kamitakada-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1052,
+            1122,
+            350
+          ],
+          "sha256": "a3acc906af794d49bb10df527986f7f2f00eb996c26bb524e1bbbcddb48d4993"
+        }
+      ]
+    },
+    {
+      "id": "nakano-shinnakano",
+      "title": "Shin Nakano arcade",
+      "master": {
+        "file": "nakano-shinnakano-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "a7627c65f37de677c39d22938f7d0ccae7d6ac3455e05e3fdb0d83c57d592b34"
+      },
+      "prompt": "Use case: stylized-concept. Create an ORIGINAL richly illustrated pixel-art district background atlas for a polished Japanese driving game. Reference image 1 is STYLE REFERENCE ONLY: use its intricate pixel clusters, sophisticated violet shadows and luminous windows, densely shaded architectural materials and warm lived-in atmosphere. Create completely new architecture and composition as described below, NOT a rearrangement of the reference skyline.\n\nATLAS REQUIREMENTS: exactly FOUR separate full-width panoramic images stacked vertically in ONE canvas. Preferred canvas 1536 x 1920, each strip 1536 x 480. Panels fill every pixel, absolutely no gaps, borders, headings or season labels. Horizontal boundaries at EXACTLY 25%, 50% and 75% of canvas height. The four panoramas depict EXACTLY THE SAME district, identical camera position, identical building shapes, structural geometry, windows and object locations. Architecture MUST keep precisely the same scale and alignment in each season. Top to bottom: SPRING / SUMMER / AUTUMN / WINTER.\n\nSEASONS: first row has pink cherry blossoms, fresh pale-green foliage and soft rosy-golden sky; second has ALL broadleaf foliage fully lush GREEN with NO pink, orange or red trees, sky clear cyan-blue, hydrangeas and warm sunlight; third has golden-orange and vermilion autumn leaves, warm amber sky; fourth has bare deciduous branches, delicate snow on roofs, walls and planting beds, cool pale-lavender sky, warm window light. Seasonal changes must be integrated into every relevant plant and surface, not a global color filter. EVERGREENS remain green. No snow in spring/summer/autumn.\n\nGAME COMPOSITION: shallow frontal side-on panoramic environment viewed across an unseen road. Background architecture/landscape should extend to the BOTTOM edge of EACH strip. At most a hairline pavement lip, NO blank foreground ground plane and NO foreground road. Keep enough detailed architecture in the lower half for visibility behind gameplay. Exquisite roof tiles, boards, brickwork, stone, aged plaster, balcony railings, gutters, tiny detailed shopfronts or relevant landscape details. Strong silhouette design and layered depth, never crude abstract rectangular placeholder shapes. Finely drawn environmental storytelling, deliberately varied materials. Small contextual Japanese sign marks acceptable; no large words. NO large foreground people, vehicles, cars, UI, text overlays, watermarks, or season labels.\n\nDISTRICT COMPOSITION:\nSHIN NAKANO METRO SHOPPING: LEFT a chunky light concrete neighborhood commercial block with a short barrel-vaulted MARKET HALL entry, translucent pale turquoise roof ribs and orange canvas awnings over tiny fish and fruit stalls; CENTER a broad visible SUBWAY STAIRWELL drops behind a glass-and-steel balustrade, distinguished by clean metal handrails, a modest round metro marker and tiled stair side walls; RIGHT a very narrow modern twelve-storey office tower rises above an old two-storey cafe and a stationery shop. Extremely asymmetric skyline with a single thin office tower, no red Broadway block and no pink Sun Mall arch. Square sidewalk planters, tiny clipped deciduous trees, cables, vending machines, shutters and luminous window displays. Busy dense urban material details but no foreground cars or people. Architecture extends to bottom, stairwell lip at bottom center. Seasonal foliage all correctly changed.\n\nFinal check: exactly FOUR aligned season strips, each has the SAME district geometry, no season labels, summer trees green, architecture and landscape reach each panel’s bottom edge.\nOUTPUT SHAPE: portrait canvas, width-to-height ratio 4:5. Follow image 2 ONLY for four-row portrait atlas layout and panel aspect ratio. Do NOT copy any image-2 buildings. Each row is approximately 3.2 times as wide as tall. Do not output a wide landscape canvas. Keep all summer foliage green; no scattered orange autumn leaves in summer.",
+      "referenceImages": [
+        "assets/cities/nakano.png",
+        "arai-yakushi-four-seasons-master.png (atlas-layout reference only)"
+      ],
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "nakano-shinnakano-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            334
+          ],
+          "sha256": "1dc21c304f8efd0b27dbc07082a43212c5284f566e7afb4b48deb4ad4ed954d2"
+        },
+        {
+          "season": "summer",
+          "file": "nakano-shinnakano-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            351,
+            1122,
+            334
+          ],
+          "sha256": "f99ea9c6808ff47a82f69119cd612a73828acfe0482f1d27bd9d21249edafd73"
+        },
+        {
+          "season": "autumn",
+          "file": "nakano-shinnakano-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            702,
+            1122,
+            334
+          ],
+          "sha256": "a36270ff1e254ccfb0fd1bb5ca273d20a9c17c9b7460a65f5dd315162b821c7c"
+        },
+        {
+          "season": "winter",
+          "file": "nakano-shinnakano-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1052,
+            1122,
+            334
+          ],
+          "sha256": "3438cd3b5960ef07637e23de2a88d302c4a18fac65f99daa1728781bed15eb44"
+        }
+      ]
+    },
+    {
+      "id": "nakano-honcho",
+      "title": "Honcho workshops",
+      "master": {
+        "file": "nakano-honcho-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "222fe57b121c7428d8bb65e857aa9f9a05ff7129cf73e9c8903961185bf4f24a"
+      },
+      "prompt": "Use case: stylized-concept. Create an ORIGINAL richly illustrated pixel-art district background atlas for a polished Japanese driving game. Reference image 1 is STYLE REFERENCE ONLY: use its intricate pixel clusters, sophisticated violet shadows and luminous windows, densely shaded architectural materials and warm lived-in atmosphere. Create completely new architecture and composition as described below, NOT a rearrangement of the reference skyline.\n\nATLAS REQUIREMENTS: exactly FOUR separate full-width panoramic images stacked vertically in ONE canvas. Preferred canvas 1536 x 1920, each strip 1536 x 480. Panels fill every pixel, absolutely no gaps, borders, headings or season labels. Horizontal boundaries at EXACTLY 25%, 50% and 75% of canvas height. The four panoramas depict EXACTLY THE SAME district, identical camera position, identical building shapes, structural geometry, windows and object locations. Architecture MUST keep precisely the same scale and alignment in each season. Top to bottom: SPRING / SUMMER / AUTUMN / WINTER.\n\nSEASONS: first row has pink cherry blossoms, fresh pale-green foliage and soft rosy-golden sky; second has ALL broadleaf foliage fully lush GREEN with NO pink, orange or red trees, sky clear cyan-blue, hydrangeas and warm sunlight; third has golden-orange and vermilion autumn leaves, warm amber sky; fourth has bare deciduous branches, delicate snow on roofs, walls and planting beds, cool pale-lavender sky, warm window light. Seasonal changes must be integrated into every relevant plant and surface, not a global color filter. EVERGREENS remain green. No snow in spring/summer/autumn.\n\nGAME COMPOSITION: shallow frontal side-on panoramic environment viewed across an unseen road. Background architecture/landscape should extend to the BOTTOM edge of EACH strip. At most a hairline pavement lip, NO blank foreground ground plane and NO foreground road. Keep enough detailed architecture in the lower half for visibility behind gameplay. Exquisite roof tiles, boards, brickwork, stone, aged plaster, balcony railings, gutters, tiny detailed shopfronts or relevant landscape details. Strong silhouette design and layered depth, never crude abstract rectangular placeholder shapes. Finely drawn environmental storytelling, deliberately varied materials. Small contextual Japanese sign marks acceptable; no large words. NO large foreground people, vehicles, cars, UI, text overlays, watermarks, or season labels.\n\nDISTRICT COMPOSITION:\nHONCHO CRAFT WORKSHOPS: low-rise light-industrial artisanal street. LEFT a broad old brick-and-stucco workshop with three distinctive SAWTOOTH ROOF peaks and high north-light glass windows, double wooden loading doors opening onto visible racks of timber and hand-crafted furniture. CENTER a narrow indigo-fronted bookbinding studio with paper stacks, books and tiny glowing display window, next to a pipe-lined metalworking shed with corrugated roof and small cylindrical exhausts. RIGHT a pale weathered apartment with enclosed balconies above a small artist pottery studio, clay pots in open shelves. No shopping arcade, no temple, no railway, no giant factory. Exceptional textures of brick, metal seams, exposed pipes, rough timber, skylight glass and handwritten small shop plaques. Tiny pocket garden breaks buildings center-right with a mature deciduous tree, seasonal shrubs in pots. Bottom edge has doors, crates, textured low planter wall, not empty road.\n\nFinal check: exactly FOUR aligned season strips, each has the SAME district geometry, no season labels, summer trees green, architecture and landscape reach each panel’s bottom edge.\nOUTPUT SHAPE: portrait canvas, width-to-height ratio 4:5. Follow image 2 ONLY for four-row portrait atlas layout and panel aspect ratio. Do NOT copy any image-2 buildings. Each row is approximately 3.2 times as wide as tall. Do not output a wide landscape canvas. Keep all summer foliage green; no scattered orange autumn leaves in summer.",
+      "referenceImages": [
+        "assets/cities/nakano.png",
+        "arai-yakushi-four-seasons-master.png (atlas-layout reference only)"
+      ],
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "nakano-honcho-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            348
+          ],
+          "sha256": "af67a7b3df7223b0d2e147a18d0998dc34ee519de63642a1be377c73fc250366"
+        },
+        {
+          "season": "summer",
+          "file": "nakano-honcho-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            351,
+            1122,
+            343
+          ],
+          "sha256": "d53b501a929d246a4fd54fed1d804e7ae703833ab3306cb2cb9b0688f0126a89"
+        },
+        {
+          "season": "autumn",
+          "file": "nakano-honcho-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            702,
+            1122,
+            348
+          ],
+          "sha256": "642b538ff163898683d4a9decaf3b491194c0f9ead3aeb81cc9e5d91bea55f39"
+        },
+        {
+          "season": "winter",
+          "file": "nakano-honcho-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1052,
+            1122,
+            350
+          ],
+          "sha256": "b9837c27273227e8ae7ca06ef107e10e648d79b6c1e4f55f24b2fc1f5c62a305"
+        }
+      ]
+    },
+    {
+      "id": "nakano-yayoi",
+      "title": "Yayoi terraced lane",
+      "master": {
+        "file": "nakano-yayoi-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "ad27f5464481be000c5528656a78a93b4b1a75ca99f178960b2965345d5be394"
+      },
+      "prompt": "Use case: stylized-concept. Create an ORIGINAL richly illustrated pixel-art district background atlas for a polished Japanese driving game. Reference image 1 is STYLE REFERENCE ONLY: use its intricate pixel clusters, sophisticated violet shadows and luminous windows, densely shaded architectural materials and warm lived-in atmosphere. Create completely new architecture and composition as described below, NOT a rearrangement of the reference skyline.\n\nATLAS REQUIREMENTS: exactly FOUR separate full-width panoramic images stacked vertically in ONE canvas. Preferred canvas 1536 x 1920, each strip 1536 x 480. Panels fill every pixel, absolutely no gaps, borders, headings or season labels. Horizontal boundaries at EXACTLY 25%, 50% and 75% of canvas height. The four panoramas depict EXACTLY THE SAME district, identical camera position, identical building shapes, structural geometry, windows and object locations. Architecture MUST keep precisely the same scale and alignment in each season. Top to bottom: SPRING / SUMMER / AUTUMN / WINTER.\n\nSEASONS: first row has pink cherry blossoms, fresh pale-green foliage and soft rosy-golden sky; second has ALL broadleaf foliage fully lush GREEN with NO pink, orange or red trees, sky clear cyan-blue, hydrangeas and warm sunlight; third has golden-orange and vermilion autumn leaves, warm amber sky; fourth has bare deciduous branches, delicate snow on roofs, walls and planting beds, cool pale-lavender sky, warm window light. Seasonal changes must be integrated into every relevant plant and surface, not a global color filter. EVERGREENS remain green. No snow in spring/summer/autumn.\n\nGAME COMPOSITION: shallow frontal side-on panoramic environment viewed across an unseen road. Background architecture/landscape should extend to the BOTTOM edge of EACH strip. At most a hairline pavement lip, NO blank foreground ground plane and NO foreground road. Keep enough detailed architecture in the lower half for visibility behind gameplay. Exquisite roof tiles, boards, brickwork, stone, aged plaster, balcony railings, gutters, tiny detailed shopfronts or relevant landscape details. Strong silhouette design and layered depth, never crude abstract rectangular placeholder shapes. Finely drawn environmental storytelling, deliberately varied materials. Small contextual Japanese sign marks acceptable; no large words. NO large foreground people, vehicles, cars, UI, text overlays, watermarks, or season labels.\n\nDISTRICT COMPOSITION:\nYAYOI TERRACED RESIDENTIAL LANE: the entire composition has strong CHANGING ELEVATION, not a flat shopping street. LEFT: tall retaining wall of dark irregular stone supports a blue-gray four-storey apartment and an exterior staircase winding down to a tiny ground-level atelier. CENTER: an elevated old timber house with a pitched tile roof surrounded by a lush private garden atop a higher mossy wall, reached by TWO separate flights of worn stone steps that run diagonally in opposite directions. RIGHT: the terrain descends into a small bakery below a taller rose-stucco apartment with many balconies. Split-level gates, concrete support columns, intricate metal rails, pipes, flowerpots on stair landings, utility wires, leaf shadows and warm interior windows. One large deciduous tree rises behind the elevated center garden; additional plants carefully change season. Bottom edge is filled by retaining walls and stair risers, no sloping foreground road, no vehicles.\n\nFinal check: exactly FOUR aligned season strips, each has the SAME district geometry, no season labels, summer trees green, architecture and landscape reach each panel’s bottom edge.\nOUTPUT SHAPE: portrait canvas, width-to-height ratio 4:5. Follow image 2 ONLY for four-row portrait atlas layout and panel aspect ratio. Do NOT copy any image-2 buildings. Each row is approximately 3.2 times as wide as tall. Do not output a wide landscape canvas. Keep all summer foliage green; no scattered orange autumn leaves in summer.",
+      "referenceImages": [
+        "assets/cities/nakano.png",
+        "arai-yakushi-four-seasons-master.png (atlas-layout reference only)"
+      ],
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "nakano-yayoi-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            336
+          ],
+          "sha256": "dc0237e31c397c30405839ffc33c9d316b953762d20059ebf9ab2f355dc41e67"
+        },
+        {
+          "season": "summer",
+          "file": "nakano-yayoi-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            350,
+            1122,
+            340
+          ],
+          "sha256": "03b6e48b8e7798fa38d1946b96db4b9bad68aeaabb02213fc91f88f965b9797e"
+        },
+        {
+          "season": "autumn",
+          "file": "nakano-yayoi-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            701,
+            1122,
+            338
+          ],
+          "sha256": "aba13db3851e66856084815c9a0faf08c671858008b7c0f65054a1fd0c4294cd"
+        },
+        {
+          "season": "winter",
+          "file": "nakano-yayoi-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1052,
+            1122,
+            342
+          ],
+          "sha256": "e68708cb0bc7e66e4ad1b7d7d5a7bc6c19b8e69fcb69d5ae787430dead249118"
+        }
+      ]
+    },
+    {
+      "id": "nakano-minamidai",
+      "title": "Minamidai housing courtyard",
+      "master": {
+        "file": "nakano-minamidai-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "5b0c65d30c04de6013a3a001da722bcdc21080a702eb30f530aa3bd23154759f"
+      },
+      "prompt": "Use case: stylized-concept. Create an ORIGINAL richly illustrated pixel-art district background atlas for a polished Japanese driving game. Reference image 1 is STYLE REFERENCE ONLY: use its intricate pixel clusters, sophisticated violet shadows and luminous windows, densely shaded architectural materials and warm lived-in atmosphere. Create completely new architecture and composition as described below, NOT a rearrangement of the reference skyline.\n\nATLAS REQUIREMENTS: exactly FOUR separate full-width panoramic images stacked vertically in ONE canvas. Preferred canvas 1536 x 1920, each strip 1536 x 480. Panels fill every pixel, absolutely no gaps, borders, headings or season labels. Horizontal boundaries at EXACTLY 25%, 50% and 75% of canvas height. The four panoramas depict EXACTLY THE SAME district, identical camera position, identical building shapes, structural geometry, windows and object locations. Architecture MUST keep precisely the same scale and alignment in each season. Top to bottom: SPRING / SUMMER / AUTUMN / WINTER.\n\nSEASONS: first row has pink cherry blossoms, fresh pale-green foliage and soft rosy-golden sky; second has ALL broadleaf foliage fully lush GREEN with NO pink, orange or red trees, sky clear cyan-blue, hydrangeas and warm sunlight; third has golden-orange and vermilion autumn leaves, warm amber sky; fourth has bare deciduous branches, delicate snow on roofs, walls and planting beds, cool pale-lavender sky, warm window light. Seasonal changes must be integrated into every relevant plant and surface, not a global color filter. EVERGREENS remain green. No snow in spring/summer/autumn.\n\nGAME COMPOSITION: shallow frontal side-on panoramic environment viewed across an unseen road. Background architecture/landscape should extend to the BOTTOM edge of EACH strip. At most a hairline pavement lip, NO blank foreground ground plane and NO foreground road. Keep enough detailed architecture in the lower half for visibility behind gameplay. Exquisite roof tiles, boards, brickwork, stone, aged plaster, balcony railings, gutters, tiny detailed shopfronts or relevant landscape details. Strong silhouette design and layered depth, never crude abstract rectangular placeholder shapes. Finely drawn environmental storytelling, deliberately varied materials. Small contextual Japanese sign marks acceptable; no large words. NO large foreground people, vehicles, cars, UI, text overlays, watermarks, or season labels.\n\nDISTRICT COMPOSITION:\nMINAMIDAI HOUSING COURTYARD: a spacious mid-century Japanese apartment-estate environment. Two large but richly textured pale cream residential blocks frame LEFT and RIGHT with individual deep balconies, stair towers, air conditioners, washing poles and varied glowing windows. CENTER foreground environment: a ROUND shallow tiled splash pool with a low rim, water jets gently visible, surrounded by detailed flower planters; to left of pool a vintage small play structure with a painted rocket-shaped climbing frame and low yellow slide. Behind pool a long low school/community building with a horizontal row of large windows and a green roof. Mature leafy trees between all buildings, round benches and painted mosaic planter edges. No commercial signage, no arcade, no temple, no railway. Bottom edge is raised garden bed and pool rim, no vast empty ground plane or foreground road. Spring flowers and blossoms; summer green trees, water active; autumn gold/red leaves; winter bare trees, pool still and snow on rims.\n\nFinal check: exactly FOUR aligned season strips, each has the SAME district geometry, no season labels, summer trees green, architecture and landscape reach each panel’s bottom edge.\nOUTPUT SHAPE: portrait canvas, width-to-height ratio 4:5. Follow image 2 ONLY for four-row portrait atlas layout and panel aspect ratio. Do NOT copy any image-2 buildings. Each row is approximately 3.2 times as wide as tall. Do not output a wide landscape canvas. Keep all summer foliage green; no scattered orange autumn leaves in summer.",
+      "referenceImages": [
+        "assets/cities/nakano.png",
+        "arai-yakushi-four-seasons-master.png (atlas-layout reference only)"
+      ],
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "nakano-minamidai-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            348
+          ],
+          "sha256": "01da3f283959a67ebabca347ec11b9d6389476d3756f837c97dcb3bd18c21bd9"
+        },
+        {
+          "season": "summer",
+          "file": "nakano-minamidai-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            351,
+            1122,
+            343
+          ],
+          "sha256": "f4380b86a9c945691517bfa23e9e63e9cc3f8b497c995b52f39c8e61b4fb42da"
+        },
+        {
+          "season": "autumn",
+          "file": "nakano-minamidai-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            702,
+            1122,
+            348
+          ],
+          "sha256": "6c98417f5b6652330e3e9eb322991b1d97a5569f1fba62a6bc0cdbcdf8b24209"
+        },
+        {
+          "season": "winter",
+          "file": "nakano-minamidai-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1052,
+            1122,
+            350
+          ],
+          "sha256": "e389794f3850e718e2c5df0a2314c6e37cc8956cd42214d4b7f58c527cc5b6c9"
+        }
+      ]
+    },
+    {
+      "id": "nakano-centralpark",
+      "title": "Shiki no Mori park",
+      "master": {
+        "file": "nakano-centralpark-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "3f51b6d29a31ec36f11244a653500e93e3882b28c1dd4b5c84eafbbc17392891"
+      },
+      "prompt": "Use case: stylized-concept. Create an ORIGINAL richly illustrated pixel-art district background atlas for a polished Japanese driving game. Reference image 1 is STYLE REFERENCE ONLY: use its intricate pixel clusters, sophisticated violet shadows and luminous windows, densely shaded architectural materials and warm lived-in atmosphere. Create completely new architecture and composition as described below, NOT a rearrangement of the reference skyline.\n\nATLAS REQUIREMENTS: exactly FOUR separate full-width panoramic images stacked vertically in ONE canvas. Preferred canvas 1536 x 1920, each strip 1536 x 480. Panels fill every pixel, absolutely no gaps, borders, headings or season labels. Horizontal boundaries at EXACTLY 25%, 50% and 75% of canvas height. The four panoramas depict EXACTLY THE SAME district, identical camera position, identical building shapes, structural geometry, windows and object locations. Architecture MUST keep precisely the same scale and alignment in each season. Top to bottom: SPRING / SUMMER / AUTUMN / WINTER.\n\nSEASONS: first row has pink cherry blossoms, fresh pale-green foliage and soft rosy-golden sky; second has ALL broadleaf foliage fully lush GREEN with NO pink, orange or red trees, sky clear cyan-blue, hydrangeas and warm sunlight; third has golden-orange and vermilion autumn leaves, warm amber sky; fourth has bare deciduous branches, delicate snow on roofs, walls and planting beds, cool pale-lavender sky, warm window light. Seasonal changes must be integrated into every relevant plant and surface, not a global color filter. EVERGREENS remain green. No snow in spring/summer/autumn.\n\nGAME COMPOSITION: shallow frontal side-on panoramic environment viewed across an unseen road. Background architecture/landscape should extend to the BOTTOM edge of EACH strip. At most a hairline pavement lip, NO blank foreground ground plane and NO foreground road. Keep enough detailed architecture in the lower half for visibility behind gameplay. Exquisite roof tiles, boards, brickwork, stone, aged plaster, balcony railings, gutters, tiny detailed shopfronts or relevant landscape details. Strong silhouette design and layered depth, never crude abstract rectangular placeholder shapes. Finely drawn environmental storytelling, deliberately varied materials. Small contextual Japanese sign marks acceptable; no large words. NO large foreground people, vehicles, cars, UI, text overlays, watermarks, or season labels.\n\nDISTRICT COMPOSITION:\nSHIKI NO MORI URBAN GREEN: modern Nakano office-park panorama. LEFT: a tall distinctive clean glass-and-silver office slab with a slanted roof corner and finely reflective turquoise window grid, its base includes a warm wood cafe with a broad floor-to-ceiling glass wall. CENTER: abundant manicured deciduous trees, bright clipped planting beds and a low STEPPED CASCADE WATER FEATURE with three shallow stone terraces and fine reflections, rather than a circular fountain. RIGHT: a long low modern timber cafe deck with pergola slats, empty chairs, folded cafe umbrellas and a narrow glass pavilion backed by distant modern offices. Broad carefully layered landscaping, polished stone, tiny handrails, neat leaf textures and warm indoors. Trees and architectural terraces dominate foreground, no old timber shops, no arcade, no temple. Bottom edge is richly planted low wall and cascade basin, no foreground road. All seasonal trees fully pink spring / GREEN summer / red-gold autumn / bare snowy winter.\n\nFinal check: exactly FOUR aligned season strips, each has the SAME district geometry, no season labels, summer trees green, architecture and landscape reach each panel’s bottom edge.\nOUTPUT SHAPE: portrait canvas, width-to-height ratio 4:5. Follow image 2 ONLY for four-row portrait atlas layout and panel aspect ratio. Do NOT copy any image-2 buildings. Each row is approximately 3.2 times as wide as tall. Do not output a wide landscape canvas. Keep all summer foliage green; no scattered orange autumn leaves in summer.",
+      "referenceImages": [
+        "assets/cities/nakano.png",
+        "arai-yakushi-four-seasons-master.png (atlas-layout reference only)"
+      ],
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "nakano-centralpark-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            348
+          ],
+          "sha256": "8abaf9badfe9876d1a729ea51fa15516da0280ffabf79b586fe87dc76d8f1ca0"
+        },
+        {
+          "season": "summer",
+          "file": "nakano-centralpark-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            351,
+            1122,
+            343
+          ],
+          "sha256": "7d6f1ab5f10d76d132866d34c9c9cddf796ba2dc9523860e2b4899fa404eb5a1"
+        },
+        {
+          "season": "autumn",
+          "file": "nakano-centralpark-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            702,
+            1122,
+            348
+          ],
+          "sha256": "f44b1e1db56f16b49151212d69c91b3882bcb4e2be9b81d171327c7926364678"
+        },
+        {
+          "season": "winter",
+          "file": "nakano-centralpark-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1052,
+            1122,
+            350
+          ],
+          "sha256": "daed9d21ca087c97783964c463477738e59649c2d565e87fd93e0919e5e7a46f"
+        }
+      ]
+    }
+  ]
+}

@@ -42,8 +42,8 @@ for (const path of publicPaths) {
     )
       continue;
     assert.ok(
-      !href.includes('/shop-test/'),
-      `${path}: hidden shop must stay undiscoverable`,
+      !href.includes('/shop-test/') && !href.includes('/game-test/'),
+      `${path}: hidden test pages must stay undiscoverable`,
     );
     if (getLocale(path) === 'en' && !href.startsWith('/en/')) {
       assert.equal(
@@ -93,3 +93,10 @@ assert.ok(
 console.log(
   `PASS canonical URLs, Open Graph, sitemap, robots and ${publicPaths.length} public pages; sandbox/returns remain noindex`,
 );
+
+assert.match(
+  await read('game-test/index.html'),
+  /name="robots" content="noindex, nofollow, noarchive"/,
+);
+assert.doesNotMatch(sitemap, /game-test/);
+assert.match(await read('robots.txt'), /Disallow: \/game-test\//);

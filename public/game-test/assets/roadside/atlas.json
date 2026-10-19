@@ -1,0 +1,143 @@
+{
+  "width": 408,
+  "height": 216,
+  "source": "Built-in image_gen, 2026-10-19",
+  "frames": [
+    {
+      "type": "ev",
+      "sourceSize": [
+        1374,
+        1145
+      ],
+      "sourceAlphaThreshold": 8,
+      "sourceAlphaBounds": [
+        66,
+        145,
+        1324,
+        978
+      ],
+      "crop": [
+        64,
+        143,
+        1262,
+        837
+      ],
+      "sourceTransparentPixels": 1067730,
+      "sourceNontransparentPixels": 505500,
+      "runtimeSize": [
+        120,
+        100
+      ],
+      "atlasCrop": [
+        4,
+        4,
+        240,
+        200
+      ],
+      "runtimeNontransparentPixels": 5706,
+      "runtimeTransparentPixels": 6294
+    },
+    {
+      "type": "barrier",
+      "sourceSize": [
+        1327,
+        1185
+      ],
+      "sourceAlphaThreshold": 8,
+      "sourceAlphaBounds": [
+        47,
+        88,
+        1300,
+        1064
+      ],
+      "crop": [
+        45,
+        86,
+        1257,
+        980
+      ],
+      "sourceTransparentPixels": 935997,
+      "sourceNontransparentPixels": 636498,
+      "runtimeSize": [
+        45,
+        40
+      ],
+      "atlasCrop": [
+        252,
+        4,
+        90,
+        80
+      ],
+      "runtimeNontransparentPixels": 948,
+      "runtimeTransparentPixels": 852
+    },
+    {
+      "type": "cone",
+      "sourceSize": [
+        1086,
+        1448
+      ],
+      "sourceAlphaThreshold": 8,
+      "sourceAlphaBounds": [
+        188,
+        101,
+        900,
+        1346
+      ],
+      "crop": [
+        186,
+        99,
+        716,
+        1249
+      ],
+      "sourceTransparentPixels": 1109866,
+      "sourceNontransparentPixels": 462662,
+      "runtimeSize": [
+        24,
+        32
+      ],
+      "atlasCrop": [
+        352,
+        4,
+        48,
+        64
+      ],
+      "runtimeNontransparentPixels": 397,
+      "runtimeTransparentPixels": 371
+    },
+    {
+      "type": "pothole",
+      "sourceSize": [
+        1844,
+        853
+      ],
+      "sourceAlphaThreshold": 8,
+      "sourceAlphaBounds": [
+        61,
+        309,
+        1784,
+        543
+      ],
+      "crop": [
+        59,
+        307,
+        1727,
+        238
+      ],
+      "sourceTransparentPixels": 1296551,
+      "sourceNontransparentPixels": 276381,
+      "runtimeSize": [
+        65,
+        12
+      ],
+      "atlasCrop": [
+        252,
+        96,
+        130,
+        24
+      ],
+      "runtimeNontransparentPixels": 529,
+      "runtimeTransparentPixels": 251
+    }
+  ]
+}

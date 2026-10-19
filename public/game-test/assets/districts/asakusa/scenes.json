@@ -1,0 +1,222 @@
+[
+  {
+    "id": "asakusa-kaminarimon",
+    "name": "雷門の大提灯",
+    "english": "KAMINARIMON APPROACH",
+    "files": {
+      "spring": "asakusa-kaminarimon-spring.png",
+      "summer": "asakusa-kaminarimon-summer.png",
+      "autumn": "asakusa-kaminarimon-autumn.png",
+      "winter": "asakusa-kaminarimon-winter.png"
+    }
+  },
+  {
+    "id": "asakusa-nakamise",
+    "name": "仲見世の屋根並み",
+    "english": "NAKAMISE ROOFLINE",
+    "files": {
+      "spring": "asakusa-nakamise-spring.png",
+      "summer": "asakusa-nakamise-summer.png",
+      "autumn": "asakusa-nakamise-autumn.png",
+      "winter": "asakusa-nakamise-winter.png"
+    }
+  },
+  {
+    "id": "asakusa-sensoji",
+    "name": "浅草寺の境内",
+    "english": "SENSOJI PRECINCT",
+    "files": {
+      "spring": "asakusa-sensoji-spring.png",
+      "summer": "asakusa-sensoji-summer.png",
+      "autumn": "asakusa-sensoji-autumn.png",
+      "winter": "asakusa-sensoji-winter.png"
+    }
+  },
+  {
+    "id": "asakusa-sumida",
+    "name": "隅田川の桜堤",
+    "english": "SUMIDA CHERRY BANK",
+    "files": {
+      "spring": "asakusa-sumida-spring.png",
+      "summer": "asakusa-sumida-summer.png",
+      "autumn": "asakusa-sumida-autumn.png",
+      "winter": "asakusa-sumida-winter.png"
+    }
+  },
+  {
+    "id": "asakusa-azuma",
+    "name": "吾妻橋のたもと",
+    "english": "AZUMABASHI EMBANKMENT",
+    "files": {
+      "spring": "asakusa-azuma-spring.png",
+      "summer": "asakusa-azuma-summer.png",
+      "autumn": "asakusa-azuma-autumn.png",
+      "winter": "asakusa-azuma-winter.png"
+    }
+  },
+  {
+    "id": "asakusa-denboin",
+    "name": "伝法院通り",
+    "english": "DENBOIN CRAFT LANE",
+    "files": {
+      "spring": "asakusa-denboin-spring.png",
+      "summer": "asakusa-denboin-summer.png",
+      "autumn": "asakusa-denboin-autumn.png",
+      "winter": "asakusa-denboin-winter.png"
+    }
+  },
+  {
+    "id": "asakusa-hanayashiki",
+    "name": "花やしき遊園地前",
+    "english": "HANAYASHIKI FUN FAIR",
+    "files": {
+      "spring": "asakusa-hanayashiki-spring.png",
+      "summer": "asakusa-hanayashiki-summer.png",
+      "autumn": "asakusa-hanayashiki-autumn.png",
+      "winter": "asakusa-hanayashiki-winter.png"
+    }
+  },
+  {
+    "id": "asakusa-rokku",
+    "name": "浅草六区の劇場",
+    "english": "ROKKU THEATER STREET",
+    "files": {
+      "spring": "asakusa-rokku-spring.png",
+      "summer": "asakusa-rokku-summer.png",
+      "autumn": "asakusa-rokku-autumn.png",
+      "winter": "asakusa-rokku-winter.png"
+    }
+  },
+  {
+    "id": "asakusa-hoppy",
+    "name": "ホッピー通り",
+    "english": "HOPPY STREET",
+    "files": {
+      "spring": "asakusa-hoppy-spring.png",
+      "summer": "asakusa-hoppy-summer.png",
+      "autumn": "asakusa-hoppy-autumn.png",
+      "winter": "asakusa-hoppy-winter.png"
+    }
+  },
+  {
+    "id": "asakusa-imado",
+    "name": "今戸の招き猫路地",
+    "english": "IMADO LUCKY CAT LANE",
+    "files": {
+      "spring": "asakusa-imado-spring.png",
+      "summer": "asakusa-imado-summer.png",
+      "autumn": "asakusa-imado-autumn.png",
+      "winter": "asakusa-imado-winter.png"
+    }
+  },
+  {
+    "id": "asakusa-matsuchi",
+    "name": "待乳山の石段",
+    "english": "MATSUTCHIYAMA STEPS",
+    "files": {
+      "spring": "asakusa-matsuchi-spring.png",
+      "summer": "asakusa-matsuchi-summer.png",
+      "autumn": "asakusa-matsuchi-autumn.png",
+      "winter": "asakusa-matsuchi-winter.png"
+    }
+  },
+  {
+    "id": "asakusa-mukojima",
+    "name": "向島の花街",
+    "english": "MUKOJIMA RIVER LANES",
+    "files": {
+      "spring": "asakusa-mukojima-spring.png",
+      "summer": "asakusa-mukojima-summer.png",
+      "autumn": "asakusa-mukojima-autumn.png",
+      "winter": "asakusa-mukojima-winter.png"
+    }
+  },
+  {
+    "id": "asakusa-tawara",
+    "name": "田原町の仏具通り",
+    "english": "TAWARAMACHI CRAFT ROW",
+    "files": {
+      "spring": "asakusa-tawara-spring.png",
+      "summer": "asakusa-tawara-summer.png",
+      "autumn": "asakusa-tawara-autumn.png",
+      "winter": "asakusa-tawara-winter.png"
+    }
+  },
+  {
+    "id": "asakusa-kuramae",
+    "name": "蔵前の倉庫カフェ",
+    "english": "KURAMAE WAREHOUSE CAFES",
+    "files": {
+      "spring": "asakusa-kuramae-spring.png",
+      "summer": "asakusa-kuramae-summer.png",
+      "autumn": "asakusa-kuramae-autumn.png",
+      "winter": "asakusa-kuramae-winter.png"
+    }
+  },
+  {
+    "id": "asakusa-okachimachi",
+    "name": "御徒町ガード市場",
+    "english": "OKACHIMACHI RAIL MARKET",
+    "files": {
+      "spring": "asakusa-okachimachi-spring.png",
+      "summer": "asakusa-okachimachi-summer.png",
+      "autumn": "asakusa-okachimachi-autumn.png",
+      "winter": "asakusa-okachimachi-winter.png"
+    }
+  },
+  {
+    "id": "asakusa-kappabashi",
+    "name": "かっぱ橋道具街",
+    "english": "KAPPABASHI KITCHEN ROW",
+    "files": {
+      "spring": "asakusa-kappabashi-spring.png",
+      "summer": "asakusa-kappabashi-summer.png",
+      "autumn": "asakusa-kappabashi-autumn.png",
+      "winter": "asakusa-kappabashi-winter.png"
+    }
+  },
+  {
+    "id": "asakusa-uenoedge",
+    "name": "上野の不忍みち",
+    "english": "UENO POND EDGE",
+    "files": {
+      "spring": "asakusa-uenoedge-spring.png",
+      "summer": "asakusa-uenoedge-summer.png",
+      "autumn": "asakusa-uenoedge-autumn.png",
+      "winter": "asakusa-uenoedge-winter.png"
+    }
+  },
+  {
+    "id": "asakusa-yanaka",
+    "name": "谷中の夕やけ段々",
+    "english": "YANAKA SUNSET STEPS",
+    "files": {
+      "spring": "asakusa-yanaka-spring.png",
+      "summer": "asakusa-yanaka-summer.png",
+      "autumn": "asakusa-yanaka-autumn.png",
+      "winter": "asakusa-yanaka-winter.png"
+    }
+  },
+  {
+    "id": "asakusa-yoshiwara",
+    "name": "吉原の柳並木",
+    "english": "YOSHIWARA WILLOW WALK",
+    "files": {
+      "spring": "asakusa-yoshiwara-spring.png",
+      "summer": "asakusa-yoshiwara-summer.png",
+      "autumn": "asakusa-yoshiwara-autumn.png",
+      "winter": "asakusa-yoshiwara-winter.png"
+    }
+  },
+  {
+    "id": "asakusa-festivaldock",
+    "name": "隅田の祭り船着場",
+    "english": "SUMIDA FESTIVAL PIER",
+    "files": {
+      "spring": "asakusa-festivaldock-spring.png",
+      "summer": "asakusa-festivaldock-summer.png",
+      "autumn": "asakusa-festivaldock-autumn.png",
+      "winter": "asakusa-festivaldock-winter.png"
+    }
+  }
+]

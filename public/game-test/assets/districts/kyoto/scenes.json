@@ -1,0 +1,222 @@
+[
+  {
+    "id": "kyoto-gion",
+    "name": "祇園の格子通り",
+    "english": "GION LATTICE LANE",
+    "files": {
+      "spring": "kyoto-gion-spring.png",
+      "summer": "kyoto-gion-summer.png",
+      "autumn": "kyoto-gion-autumn.png",
+      "winter": "kyoto-gion-winter.png"
+    }
+  },
+  {
+    "id": "kyoto-yasaka",
+    "name": "八坂の塔への坂",
+    "english": "YASAKA PAGODA LANE",
+    "files": {
+      "spring": "kyoto-yasaka-spring.png",
+      "summer": "kyoto-yasaka-summer.png",
+      "autumn": "kyoto-yasaka-autumn.png",
+      "winter": "kyoto-yasaka-winter.png"
+    }
+  },
+  {
+    "id": "kyoto-ninenzaka",
+    "name": "二年坂の石段",
+    "english": "NINENZAKA STONE STEPS",
+    "files": {
+      "spring": "kyoto-ninenzaka-spring.png",
+      "summer": "kyoto-ninenzaka-summer.png",
+      "autumn": "kyoto-ninenzaka-autumn.png",
+      "winter": "kyoto-ninenzaka-winter.png"
+    }
+  },
+  {
+    "id": "kyoto-sannenzaka",
+    "name": "三年坂の茶店",
+    "english": "SANNENZAKA TEA SHOPS",
+    "files": {
+      "spring": "kyoto-sannenzaka-spring.png",
+      "summer": "kyoto-sannenzaka-summer.png",
+      "autumn": "kyoto-sannenzaka-autumn.png",
+      "winter": "kyoto-sannenzaka-winter.png"
+    }
+  },
+  {
+    "id": "kyoto-kiyomizu",
+    "name": "清水の山門道",
+    "english": "KIYOMIZU HILLSIDE",
+    "files": {
+      "spring": "kyoto-kiyomizu-spring.png",
+      "summer": "kyoto-kiyomizu-summer.png",
+      "autumn": "kyoto-kiyomizu-autumn.png",
+      "winter": "kyoto-kiyomizu-winter.png"
+    }
+  },
+  {
+    "id": "kyoto-kamo",
+    "name": "鴨川の飛び石",
+    "english": "KAMOGAWA STEPPING STONES",
+    "files": {
+      "spring": "kyoto-kamo-spring.png",
+      "summer": "kyoto-kamo-summer.png",
+      "autumn": "kyoto-kamo-autumn.png",
+      "winter": "kyoto-kamo-winter.png"
+    }
+  },
+  {
+    "id": "kyoto-pontocho",
+    "name": "先斗町の川床",
+    "english": "PONTOCHO RIVER TERRACES",
+    "files": {
+      "spring": "kyoto-pontocho-spring.png",
+      "summer": "kyoto-pontocho-summer.png",
+      "autumn": "kyoto-pontocho-autumn.png",
+      "winter": "kyoto-pontocho-winter.png"
+    }
+  },
+  {
+    "id": "kyoto-shirakawa",
+    "name": "白川の柳と石橋",
+    "english": "SHIRAKAWA STONE BRIDGE",
+    "files": {
+      "spring": "kyoto-shirakawa-spring.png",
+      "summer": "kyoto-shirakawa-summer.png",
+      "autumn": "kyoto-shirakawa-autumn.png",
+      "winter": "kyoto-shirakawa-winter.png"
+    }
+  },
+  {
+    "id": "kyoto-nishiki",
+    "name": "錦市場の天井",
+    "english": "NISHIKI MARKET ROOFS",
+    "files": {
+      "spring": "kyoto-nishiki-spring.png",
+      "summer": "kyoto-nishiki-summer.png",
+      "autumn": "kyoto-nishiki-autumn.png",
+      "winter": "kyoto-nishiki-winter.png"
+    }
+  },
+  {
+    "id": "kyoto-teramachi",
+    "name": "寺町の古書店",
+    "english": "TERAMACHI BOOK ARCADE",
+    "files": {
+      "spring": "kyoto-teramachi-spring.png",
+      "summer": "kyoto-teramachi-summer.png",
+      "autumn": "kyoto-teramachi-autumn.png",
+      "winter": "kyoto-teramachi-winter.png"
+    }
+  },
+  {
+    "id": "kyoto-fushimi",
+    "name": "伏見稲荷の鳥居道",
+    "english": "FUSHIMI TORII APPROACH",
+    "files": {
+      "spring": "kyoto-fushimi-spring.png",
+      "summer": "kyoto-fushimi-summer.png",
+      "autumn": "kyoto-fushimi-autumn.png",
+      "winter": "kyoto-fushimi-winter.png"
+    }
+  },
+  {
+    "id": "kyoto-sake",
+    "name": "伏見の酒蔵運河",
+    "english": "FUSHIMI SAKE CANAL",
+    "files": {
+      "spring": "kyoto-sake-spring.png",
+      "summer": "kyoto-sake-summer.png",
+      "autumn": "kyoto-sake-autumn.png",
+      "winter": "kyoto-sake-winter.png"
+    }
+  },
+  {
+    "id": "kyoto-bamboo",
+    "name": "嵯峨野の竹林",
+    "english": "SAGANO BAMBOO PATH",
+    "files": {
+      "spring": "kyoto-bamboo-spring.png",
+      "summer": "kyoto-bamboo-summer.png",
+      "autumn": "kyoto-bamboo-autumn.png",
+      "winter": "kyoto-bamboo-winter.png"
+    }
+  },
+  {
+    "id": "kyoto-philosopher",
+    "name": "哲学の道の水路",
+    "english": "PHILOSOPHERS CANAL",
+    "files": {
+      "spring": "kyoto-philosopher-spring.png",
+      "summer": "kyoto-philosopher-summer.png",
+      "autumn": "kyoto-philosopher-autumn.png",
+      "winter": "kyoto-philosopher-winter.png"
+    }
+  },
+  {
+    "id": "kyoto-nanzenji",
+    "name": "南禅寺の水路閣",
+    "english": "NANZENJI AQUEDUCT",
+    "files": {
+      "spring": "kyoto-nanzenji-spring.png",
+      "summer": "kyoto-nanzenji-summer.png",
+      "autumn": "kyoto-nanzenji-autumn.png",
+      "winter": "kyoto-nanzenji-winter.png"
+    }
+  },
+  {
+    "id": "kyoto-nijo",
+    "name": "二条の城壁道",
+    "english": "NIJO CASTLE WALLS",
+    "files": {
+      "spring": "kyoto-nijo-spring.png",
+      "summer": "kyoto-nijo-summer.png",
+      "autumn": "kyoto-nijo-autumn.png",
+      "winter": "kyoto-nijo-winter.png"
+    }
+  },
+  {
+    "id": "kyoto-demachi",
+    "name": "出町柳の合流点",
+    "english": "DEMACHI RIVER FORK",
+    "files": {
+      "spring": "kyoto-demachi-spring.png",
+      "summer": "kyoto-demachi-summer.png",
+      "autumn": "kyoto-demachi-autumn.png",
+      "winter": "kyoto-demachi-winter.png"
+    }
+  },
+  {
+    "id": "kyoto-ohara",
+    "name": "大原の里みち",
+    "english": "OHARA COUNTRY LANE",
+    "files": {
+      "spring": "kyoto-ohara-spring.png",
+      "summer": "kyoto-ohara-summer.png",
+      "autumn": "kyoto-ohara-autumn.png",
+      "winter": "kyoto-ohara-winter.png"
+    }
+  },
+  {
+    "id": "kyoto-arashiyama",
+    "name": "嵐山の渡月橋",
+    "english": "ARASHIYAMA RIVER BRIDGE",
+    "files": {
+      "spring": "kyoto-arashiyama-spring.png",
+      "summer": "kyoto-arashiyama-summer.png",
+      "autumn": "kyoto-arashiyama-autumn.png",
+      "winter": "kyoto-arashiyama-winter.png"
+    }
+  },
+  {
+    "id": "kyoto-nishijin",
+    "name": "西陣の織物工房",
+    "english": "NISHIJIN WEAVING LANES",
+    "files": {
+      "spring": "kyoto-nishijin-spring.png",
+      "summer": "kyoto-nishijin-summer.png",
+      "autumn": "kyoto-nishijin-autumn.png",
+      "winter": "kyoto-nishijin-winter.png"
+    }
+  }
+]

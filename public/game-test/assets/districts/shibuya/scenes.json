@@ -1,0 +1,222 @@
+[
+  {
+    "id": "scramble",
+    "name": "スクランブル交差点",
+    "english": "SCRAMBLE CROSSING",
+    "files": {
+      "spring": "scramble-spring.png",
+      "summer": "scramble-summer.png",
+      "autumn": "scramble-autumn.png",
+      "winter": "scramble-winter.png"
+    }
+  },
+  {
+    "id": "center",
+    "name": "センター街",
+    "english": "CENTER STREET",
+    "files": {
+      "spring": "center-spring.png",
+      "summer": "center-summer.png",
+      "autumn": "center-autumn.png",
+      "winter": "center-winter.png"
+    }
+  },
+  {
+    "id": "dogenzaka",
+    "name": "道玄坂のクラブ街",
+    "english": "DOGENZAKA CLUB HILL",
+    "files": {
+      "spring": "dogenzaka-spring.png",
+      "summer": "dogenzaka-summer.png",
+      "autumn": "dogenzaka-autumn.png",
+      "winter": "dogenzaka-winter.png"
+    }
+  },
+  {
+    "id": "bunkamura",
+    "name": "文化村通り",
+    "english": "BUNKAMURA ART WALK",
+    "files": {
+      "spring": "bunkamura-spring.png",
+      "summer": "bunkamura-summer.png",
+      "autumn": "bunkamura-autumn.png",
+      "winter": "bunkamura-winter.png"
+    }
+  },
+  {
+    "id": "spain",
+    "name": "スペイン坂",
+    "english": "SPAIN HILL STEPS",
+    "files": {
+      "spring": "spain-spring.png",
+      "summer": "spain-summer.png",
+      "autumn": "spain-autumn.png",
+      "winter": "spain-winter.png"
+    }
+  },
+  {
+    "id": "catstreet",
+    "name": "キャットストリート",
+    "english": "CAT STREET BOUTIQUES",
+    "files": {
+      "spring": "catstreet-spring.png",
+      "summer": "catstreet-summer.png",
+      "autumn": "catstreet-autumn.png",
+      "winter": "catstreet-winter.png"
+    }
+  },
+  {
+    "id": "takeshita",
+    "name": "竹下通り",
+    "english": "TAKESHITA POP STREET",
+    "files": {
+      "spring": "takeshita-spring.png",
+      "summer": "takeshita-summer.png",
+      "autumn": "takeshita-autumn.png",
+      "winter": "takeshita-winter.png"
+    }
+  },
+  {
+    "id": "omotesando",
+    "name": "表参道の並木",
+    "english": "OMOTESANDO TREE ROW",
+    "files": {
+      "spring": "omotesando-spring.png",
+      "summer": "omotesando-summer.png",
+      "autumn": "omotesando-autumn.png",
+      "winter": "omotesando-winter.png"
+    }
+  },
+  {
+    "id": "yoyogipark",
+    "name": "代々木公園入口",
+    "english": "YOYOGI PARK GATE",
+    "files": {
+      "spring": "yoyogipark-spring.png",
+      "summer": "yoyogipark-summer.png",
+      "autumn": "yoyogipark-autumn.png",
+      "winter": "yoyogipark-winter.png"
+    }
+  },
+  {
+    "id": "harajuku",
+    "name": "原宿の駅ホーム",
+    "english": "HARAJUKU PLATFORM",
+    "files": {
+      "spring": "harajuku-spring.png",
+      "summer": "harajuku-summer.png",
+      "autumn": "harajuku-autumn.png",
+      "winter": "harajuku-winter.png"
+    }
+  },
+  {
+    "id": "shinsen",
+    "name": "神泉トンネル",
+    "english": "SHINSEN RAIL TUNNEL",
+    "files": {
+      "spring": "shinsen-spring.png",
+      "summer": "shinsen-summer.png",
+      "autumn": "shinsen-autumn.png",
+      "winter": "shinsen-winter.png"
+    }
+  },
+  {
+    "id": "ebisu",
+    "name": "恵比寿レンガ広場",
+    "english": "EBISU BRICK SQUARE",
+    "files": {
+      "spring": "ebisu-spring.png",
+      "summer": "ebisu-summer.png",
+      "autumn": "ebisu-autumn.png",
+      "winter": "ebisu-winter.png"
+    }
+  },
+  {
+    "id": "daikanyama",
+    "name": "代官山のテラス",
+    "english": "DAIKANYAMA TERRACES",
+    "files": {
+      "spring": "daikanyama-spring.png",
+      "summer": "daikanyama-summer.png",
+      "autumn": "daikanyama-autumn.png",
+      "winter": "daikanyama-winter.png"
+    }
+  },
+  {
+    "id": "hiroo",
+    "name": "広尾の散歩道",
+    "english": "HIROO GARDEN LANE",
+    "files": {
+      "spring": "hiroo-spring.png",
+      "summer": "hiroo-summer.png",
+      "autumn": "hiroo-autumn.png",
+      "winter": "hiroo-winter.png"
+    }
+  },
+  {
+    "id": "sendagaya",
+    "name": "千駄ヶ谷の競技場道",
+    "english": "SENDAGAYA SPORTS WALK",
+    "files": {
+      "spring": "sendagaya-spring.png",
+      "summer": "sendagaya-summer.png",
+      "autumn": "sendagaya-autumn.png",
+      "winter": "sendagaya-winter.png"
+    }
+  },
+  {
+    "id": "sasazuka",
+    "name": "笹塚ガード商店街",
+    "english": "SASAZUKA UNDERTRACK",
+    "files": {
+      "spring": "sasazuka-spring.png",
+      "summer": "sasazuka-summer.png",
+      "autumn": "sasazuka-autumn.png",
+      "winter": "sasazuka-winter.png"
+    }
+  },
+  {
+    "id": "hatagaya",
+    "name": "幡ヶ谷六号通り",
+    "english": "HATAGAYA SIXTH STREET",
+    "files": {
+      "spring": "hatagaya-spring.png",
+      "summer": "hatagaya-summer.png",
+      "autumn": "hatagaya-autumn.png",
+      "winter": "hatagaya-winter.png"
+    }
+  },
+  {
+    "id": "uehara",
+    "name": "代々木上原の坂",
+    "english": "YOYOGI UEHARA HILL",
+    "files": {
+      "spring": "uehara-spring.png",
+      "summer": "uehara-summer.png",
+      "autumn": "uehara-autumn.png",
+      "winter": "uehara-winter.png"
+    }
+  },
+  {
+    "id": "miyashita",
+    "name": "宮下の高架公園",
+    "english": "MIYASHITA PARK DECK",
+    "files": {
+      "spring": "miyashita-spring.png",
+      "summer": "miyashita-summer.png",
+      "autumn": "miyashita-autumn.png",
+      "winter": "miyashita-winter.png"
+    }
+  },
+  {
+    "id": "riverdeck",
+    "name": "渋谷川の遊歩道",
+    "english": "SHIBUYA RIVER WALK",
+    "files": {
+      "spring": "riverdeck-spring.png",
+      "summer": "riverdeck-summer.png",
+      "autumn": "riverdeck-autumn.png",
+      "winter": "riverdeck-winter.png"
+    }
+  }
+]

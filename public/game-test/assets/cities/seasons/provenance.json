@@ -1,0 +1,60 @@
+{
+  "sourceSize": {
+    "width": 1254,
+    "height": 1254
+  },
+  "runtimeSize": {
+    "width": 528,
+    "height": 495
+  },
+  "rows": [
+    "summer",
+    "autumn",
+    "winter"
+  ],
+  "sampling": "Native Canvas2D drawImage; imageSmoothingEnabled=false; per-row 1254×418 to 528×165",
+  "atlases": [
+    {
+      "city": "nakano",
+      "sourceBytes": 3512752,
+      "runtimeBytes": 719993,
+      "sourceSHA256": "10ef9daeb412e129833e29901de30c9a3257133396b8b5da5519409193a975d0",
+      "runtimeSHA256": "3e5bd28f3372cfaf1694f66e2f55e501093caf30cab663812807f0a5d8c98d4f"
+    },
+    {
+      "city": "shinjuku",
+      "sourceBytes": 3587742,
+      "runtimeBytes": 730768,
+      "sourceSHA256": "73a83adcef2a05efed9c74d61503ad327fd1fbd691905007ff957946d9600dbc",
+      "runtimeSHA256": "4b6602df38b621c4bf172aa86e15963a162f88828b0b1719b13d8205d90978a3"
+    },
+    {
+      "city": "shibuya",
+      "sourceBytes": 3668315,
+      "runtimeBytes": 745345,
+      "sourceSHA256": "626efd6b38f7c8b671a418b45a092b8bf4962524801dafe001eb71c8ee72707b",
+      "runtimeSHA256": "d7b2d1eaf4a583017723ffbeb4f62267d3e09cc0609263477a165b2775f9defc"
+    },
+    {
+      "city": "asakusa",
+      "sourceBytes": 3748491,
+      "runtimeBytes": 745276,
+      "sourceSHA256": "732874ac970fae1ec0cf9b7f0406599a58cfa23af43fe6420ea398ee76903f1f",
+      "runtimeSHA256": "c151dfeb761c4c86b8b6d8fb71f5348a4148701919a4ffb4837932a42ba68869"
+    },
+    {
+      "city": "osaka",
+      "sourceBytes": 3570143,
+      "runtimeBytes": 733481,
+      "sourceSHA256": "45a0f70dd3c218a1d98a6c6cdff5c99e510e0c9f1473bc4ffc97733a641fe0d2",
+      "runtimeSHA256": "09c0e178ce4d32b8ee457d3e7198c3eb0f9dfc4c4f0431c5926c86c1669351e6"
+    },
+    {
+      "city": "kyoto",
+      "sourceBytes": 3644808,
+      "runtimeBytes": 723014,
+      "sourceSHA256": "e43647d1813d7a74b09a09c6b37a3f6895e4d9ee445ae23f7bdeba2f68b05a8c",
+      "runtimeSHA256": "0120320f49829832e34557b965f28da5534bf70019ba5b25c635a3412f858041"
+    }
+  ]
+}

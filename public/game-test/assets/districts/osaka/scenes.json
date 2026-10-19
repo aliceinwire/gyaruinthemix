@@ -1,0 +1,222 @@
+[
+  {
+    "id": "osaka-dotonbori",
+    "name": "道頓堀のネオン水辺",
+    "english": "DOTONBORI CANALSIDE",
+    "files": {
+      "spring": "osaka-dotonbori-spring.png",
+      "summer": "osaka-dotonbori-summer.png",
+      "autumn": "osaka-dotonbori-autumn.png",
+      "winter": "osaka-dotonbori-winter.png"
+    }
+  },
+  {
+    "id": "osaka-ebisu",
+    "name": "戎橋の広場",
+    "english": "EBISUBASHI PLAZA",
+    "files": {
+      "spring": "osaka-ebisu-spring.png",
+      "summer": "osaka-ebisu-summer.png",
+      "autumn": "osaka-ebisu-autumn.png",
+      "winter": "osaka-ebisu-winter.png"
+    }
+  },
+  {
+    "id": "osaka-shinsaibashi",
+    "name": "心斎橋筋アーケード",
+    "english": "SHINSAIBASHI ARCADE",
+    "files": {
+      "spring": "osaka-shinsaibashi-spring.png",
+      "summer": "osaka-shinsaibashi-summer.png",
+      "autumn": "osaka-shinsaibashi-autumn.png",
+      "winter": "osaka-shinsaibashi-winter.png"
+    }
+  },
+  {
+    "id": "osaka-amerikamura",
+    "name": "アメリカ村の広場",
+    "english": "AMERIKAMURA TRIANGLE",
+    "files": {
+      "spring": "osaka-amerikamura-spring.png",
+      "summer": "osaka-amerikamura-summer.png",
+      "autumn": "osaka-amerikamura-autumn.png",
+      "winter": "osaka-amerikamura-winter.png"
+    }
+  },
+  {
+    "id": "osaka-namba",
+    "name": "なんば駅の高架",
+    "english": "NAMBA RAIL DECK",
+    "files": {
+      "spring": "osaka-namba-spring.png",
+      "summer": "osaka-namba-summer.png",
+      "autumn": "osaka-namba-autumn.png",
+      "winter": "osaka-namba-winter.png"
+    }
+  },
+  {
+    "id": "osaka-kuromon",
+    "name": "黒門市場",
+    "english": "KUROMON MARKET",
+    "files": {
+      "spring": "osaka-kuromon-spring.png",
+      "summer": "osaka-kuromon-summer.png",
+      "autumn": "osaka-kuromon-autumn.png",
+      "winter": "osaka-kuromon-winter.png"
+    }
+  },
+  {
+    "id": "osaka-nipponbashi",
+    "name": "日本橋でんでん街",
+    "english": "NIPPONBASHI ELECTRIC ROW",
+    "files": {
+      "spring": "osaka-nipponbashi-spring.png",
+      "summer": "osaka-nipponbashi-summer.png",
+      "autumn": "osaka-nipponbashi-autumn.png",
+      "winter": "osaka-nipponbashi-winter.png"
+    }
+  },
+  {
+    "id": "osaka-shinsekai",
+    "name": "新世界の串カツ街",
+    "english": "SHINSEKAI RETRO ROW",
+    "files": {
+      "spring": "osaka-shinsekai-spring.png",
+      "summer": "osaka-shinsekai-summer.png",
+      "autumn": "osaka-shinsekai-autumn.png",
+      "winter": "osaka-shinsekai-winter.png"
+    }
+  },
+  {
+    "id": "osaka-tennoji",
+    "name": "天王寺公園の芝生",
+    "english": "TENNOJI PARK LAWNS",
+    "files": {
+      "spring": "osaka-tennoji-spring.png",
+      "summer": "osaka-tennoji-summer.png",
+      "autumn": "osaka-tennoji-autumn.png",
+      "winter": "osaka-tennoji-winter.png"
+    }
+  },
+  {
+    "id": "osaka-abeno",
+    "name": "阿倍野の路面電車",
+    "english": "ABENO TRAM STOP",
+    "files": {
+      "spring": "osaka-abeno-spring.png",
+      "summer": "osaka-abeno-summer.png",
+      "autumn": "osaka-abeno-autumn.png",
+      "winter": "osaka-abeno-winter.png"
+    }
+  },
+  {
+    "id": "osaka-umeda",
+    "name": "梅田の連絡橋",
+    "english": "UMEDA SKY DECK",
+    "files": {
+      "spring": "osaka-umeda-spring.png",
+      "summer": "osaka-umeda-summer.png",
+      "autumn": "osaka-umeda-autumn.png",
+      "winter": "osaka-umeda-winter.png"
+    }
+  },
+  {
+    "id": "osaka-nakazakicho",
+    "name": "中崎町の古い街角",
+    "english": "NAKAZAKICHO BACKSTREETS",
+    "files": {
+      "spring": "osaka-nakazakicho-spring.png",
+      "summer": "osaka-nakazakicho-summer.png",
+      "autumn": "osaka-nakazakicho-autumn.png",
+      "winter": "osaka-nakazakicho-winter.png"
+    }
+  },
+  {
+    "id": "osaka-tenma",
+    "name": "天満ガード横丁",
+    "english": "TENMA RAIL TAVERN LANE",
+    "files": {
+      "spring": "osaka-tenma-spring.png",
+      "summer": "osaka-tenma-summer.png",
+      "autumn": "osaka-tenma-autumn.png",
+      "winter": "osaka-tenma-winter.png"
+    }
+  },
+  {
+    "id": "osaka-tenjin",
+    "name": "天神橋筋の屋根",
+    "english": "TENJINBASHISUJI ROOFS",
+    "files": {
+      "spring": "osaka-tenjin-spring.png",
+      "summer": "osaka-tenjin-summer.png",
+      "autumn": "osaka-tenjin-autumn.png",
+      "winter": "osaka-tenjin-winter.png"
+    }
+  },
+  {
+    "id": "osaka-nakanoshima",
+    "name": "中之島の中州",
+    "english": "NAKANOSHIMA ISLAND",
+    "files": {
+      "spring": "osaka-nakanoshima-spring.png",
+      "summer": "osaka-nakanoshima-summer.png",
+      "autumn": "osaka-nakanoshima-autumn.png",
+      "winter": "osaka-nakanoshima-winter.png"
+    }
+  },
+  {
+    "id": "osaka-kitahama",
+    "name": "北浜リバーサイド",
+    "english": "KITAHAMA RIVER CAFES",
+    "files": {
+      "spring": "osaka-kitahama-spring.png",
+      "summer": "osaka-kitahama-summer.png",
+      "autumn": "osaka-kitahama-autumn.png",
+      "winter": "osaka-kitahama-winter.png"
+    }
+  },
+  {
+    "id": "osaka-osakacastle",
+    "name": "大阪城の石垣",
+    "english": "OSAKA CASTLE MOAT",
+    "files": {
+      "spring": "osaka-osakacastle-spring.png",
+      "summer": "osaka-osakacastle-summer.png",
+      "autumn": "osaka-osakacastle-autumn.png",
+      "winter": "osaka-osakacastle-winter.png"
+    }
+  },
+  {
+    "id": "osaka-tempozan",
+    "name": "天保山の船着場",
+    "english": "TEMPOZAN HARBOR PIER",
+    "files": {
+      "spring": "osaka-tempozan-spring.png",
+      "summer": "osaka-tempozan-summer.png",
+      "autumn": "osaka-tempozan-autumn.png",
+      "winter": "osaka-tempozan-winter.png"
+    }
+  },
+  {
+    "id": "osaka-taisho",
+    "name": "大正の運河工場",
+    "english": "TAISHO INDUSTRIAL CANAL",
+    "files": {
+      "spring": "osaka-taisho-spring.png",
+      "summer": "osaka-taisho-summer.png",
+      "autumn": "osaka-taisho-autumn.png",
+      "winter": "osaka-taisho-winter.png"
+    }
+  },
+  {
+    "id": "osaka-sumiyoshi",
+    "name": "住吉の太鼓橋",
+    "english": "SUMIYOSHI DRUM BRIDGE",
+    "files": {
+      "spring": "osaka-sumiyoshi-spring.png",
+      "summer": "osaka-sumiyoshi-summer.png",
+      "autumn": "osaka-sumiyoshi-autumn.png",
+      "winter": "osaka-sumiyoshi-winter.png"
+    }
+  }
+]

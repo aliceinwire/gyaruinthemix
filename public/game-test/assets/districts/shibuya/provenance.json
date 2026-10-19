@@ -1,0 +1,1335 @@
+{
+  "generatedAt": "2026-10-19T17:58:00Z",
+  "generator": "image_gen__imagegen (built-in)",
+  "reference": "assets/cities/shibuya.png; approved Nakano two-scene contact inspected for quality and style.",
+  "export": {
+    "method": "@napi-rs/canvas crop and nearest-neighbor resampling; imageSmoothingEnabled=false",
+    "runtimeSize": [
+      528,
+      165
+    ],
+    "note": "Four original seasonal paintings in each atlas; architecture closely consistent but not pixel-identical. Crops remove separator lines and excess pavement."
+  },
+  "scenes": [
+    {
+      "id": "scramble",
+      "name": "スクランブル交差点",
+      "english": "SCRAMBLE CROSSING",
+      "master": {
+        "file": "scramble-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "c5107c190ed3ddf5532d0c5f1eaa45cf8215777d696f6c1c5de0c161e2aef7d4"
+      },
+      "prompt": "Use case: stylized-concept. Create an ORIGINAL richly detailed 16-bit pixel-art environment atlas for a Japanese driving game, commercial-quality intricate hand-painted pixel architecture, nuanced material texture, individual windows and shop interiors, vibrant Tokyo twilight atmosphere, crisp clustered pixels. Image layout: exactly FOUR equal-height full-width panoramic strips stacked vertically, no borders, no margins, no captions. Preferred canvas 1536 x 1920, each strip 1536 x 480. Top to bottom: SPRING, SUMMER, AUTUMN, WINTER. All four rows depict exactly the same district camera, architecture, building widths, roof silhouettes, window positions, signs and spatial composition. Only seasonal foliage, snow and light change. Panoramic mostly frontal view across an unseen road, rich low-to-tall varied architectural layering. Buildings reach the very bottom of EACH strip, with only a very thin sidewalk edge. No foreground road or large paving area. No cars, vehicles, people, UI, captions, watermarks, giant untextured geometry, montage or collage. District composition must be genuinely original, richly place-specific with tiny details: window grids, awnings, railings, HVAC units, antennas, weathered facades, shop shelves, tree branches, utility wires. Spring pink cherry blossoms, rosy peach-violet evening sky. Summer lush green foliage, luminous blue-cyan late-afternoon sky. Autumn crimson and golden leaves, amber-pink evening sky. Winter bare trees and delicately integrated snow on ledges, roofs, planters, lavender-blue sky and warm windows. Every row remains a complete coherent panorama.\n\nDistrict: Shibuya Scramble Crossing frontage, Tokyo. Composition anchored left-of-center by recognizable tall white cylindrical SHIBUYA 109 fashion building, with '109' large red numerals only on the tower. Far left tall charcoal glass retail building with many amber shop windows; at center a gap reveals dense lavender distant skyscrapers; center-right broad curved blue glass media facade with colorful illuminated LED panels and layered storefronts; far right stacked glowing retail frontages and a small clock at station edge. A low stone Hachiko dog statue partly framed by planters near the bottom, tiny urban cherry trees. Camera faces the buildings across the unseen crossing, do NOT draw the crossing roadway. Deep electrical-pink signage, narrow alley mouths, orange interiors, glossy glass, concrete seams. Unique broad skyline with visual anchor 109 and billboards, no big flat blank areas.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "scramble-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            346
+          ],
+          "sha256": "0d99e686a5dfc008738e29eff5156507382a8ccdef679ef880392a06bd6c86c3"
+        },
+        {
+          "season": "summer",
+          "file": "scramble-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            350,
+            1122,
+            346
+          ],
+          "sha256": "f8ba2a8fe89b472b789fc09a89a923bb13b2e9b687d9e6512939243b9ddd84eb"
+        },
+        {
+          "season": "autumn",
+          "file": "scramble-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            700,
+            1122,
+            346
+          ],
+          "sha256": "f824ca18124eec95d93f5acf23563a9c6fd50262cf5bb8ecb75d440cce1036c6"
+        },
+        {
+          "season": "winter",
+          "file": "scramble-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1051,
+            1122,
+            350
+          ],
+          "sha256": "c7789dd2db04617c9005a0dc34a79c20c36b3dec96a00519b6cce556819dd245"
+        }
+      ]
+    },
+    {
+      "id": "center",
+      "name": "センター街",
+      "english": "CENTER STREET",
+      "master": {
+        "file": "center-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "5a7d4e950f9940621bbefee38fb994a45062fe711be11af9a2e611399fccf365"
+      },
+      "prompt": "Use case: stylized-concept. Create an ORIGINAL richly detailed 16-bit pixel-art environment atlas for a Japanese driving game, commercial-quality intricate hand-painted pixel architecture, nuanced material texture, individual windows and shop interiors, vibrant Tokyo twilight atmosphere, crisp clustered pixels. Image layout: exactly FOUR equal-height full-width panoramic strips stacked vertically, no borders, no margins, no captions. Preferred canvas 1536 x 1920, each strip 1536 x 480. Top to bottom: SPRING, SUMMER, AUTUMN, WINTER. All four rows depict exactly the same district camera, architecture, building widths, roof silhouettes, window positions, signs and spatial composition. Only seasonal foliage, snow and light change. Panoramic mostly frontal view across an unseen road, rich low-to-tall varied architectural layering. Buildings reach the very bottom of EACH strip, with only a very thin sidewalk edge. No foreground road or large paving area. No cars, vehicles, people, UI, captions, watermarks, giant untextured geometry, montage or collage. District composition must be genuinely original, richly place-specific with tiny details: window grids, awnings, railings, HVAC units, antennas, weathered facades, shop shelves, tree branches, utility wires. Spring pink cherry blossoms, rosy peach-violet evening sky. Summer lush green foliage, luminous blue-cyan late-afternoon sky. Autumn crimson and golden leaves, amber-pink evening sky. Winter bare trees and delicately integrated snow on ledges, roofs, planters, lavender-blue sky and warm windows. Every row remains a complete coherent panorama.\n\nDistrict: Shibuya Center Gai shopping street, Tokyo. Intimate dense neon fashion lane frontage with an asymmetrical red-and-white steel pedestrian gateway arch spanning the central lane mouth, its short modest sign 'センター街'. Far left four-story record shop packed with album-window displays and small blue neon trim; adjoining narrow pink concrete karaoke building covered with layered small vertical signs. Right of gateway a narrow ochre ramen shop with fabric noren and lanterns, then a curved glass corner sneaker boutique; far right a charcoal five-story live-music club with detailed facade vents and an amber marquee. Roof cables and air conditioners, intimate glimpses deep into lane, tiny trees in planters between frontages. Emphasize compact individualized five-story facades rather than monumental skyscrapers. No SHIBUYA 109 tower in this scene. No foreground lane expansion; buildings occupy bottom edge.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "center-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            337
+          ],
+          "sha256": "1a051060781f5e2a0c432edf1c2b7261f2b66ec1249cf656fe9ecc1e78638cf0"
+        },
+        {
+          "season": "summer",
+          "file": "center-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            347,
+            1122,
+            343
+          ],
+          "sha256": "013657197188b2afca8b9ff5690d4d8f31a366852f19c7df605ead43c3c3106c"
+        },
+        {
+          "season": "autumn",
+          "file": "center-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            700,
+            1122,
+            342
+          ],
+          "sha256": "2fa9eaf914f6bf76165b1e445f06f7750808454048f6e8581f4d115a7a662976"
+        },
+        {
+          "season": "winter",
+          "file": "center-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1052,
+            1122,
+            345
+          ],
+          "sha256": "7312c04f3e29961bd60e0570fc972aae9395fef4df7dbd58cd003173bc938362"
+        }
+      ]
+    },
+    {
+      "id": "dogenzaka",
+      "name": "道玄坂のクラブ街",
+      "english": "DOGENZAKA CLUB HILL",
+      "master": {
+        "file": "dogenzaka-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "536c70497bee815c0d59995ec1b5004b9039f87d40774f81cb7712e935bc82a9"
+      },
+      "prompt": "MANDATORY CANVAS: a TALL PORTRAIT image, width:height = 4:5 (1122 × 1402 pixels). It contains FOUR panoramas stacked top to bottom, each panorama approximately 1122 × 350 pixels, approximately 3.2:1. The overall sheet MUST be portrait, NOT landscape. Do not squeeze four scenes into a wide landscape sheet.\n\nUse case: stylized-concept. Create an ORIGINAL richly detailed 16-bit pixel-art environment atlas for a Japanese driving game, commercial-quality intricate hand-painted pixel architecture, nuanced material texture, individual windows and shop interiors, vibrant Tokyo twilight atmosphere, crisp clustered pixels. Image layout: exactly FOUR equal-height full-width panoramic strips stacked vertically, no borders, no margins, no captions. Preferred canvas 1536 x 1920, each strip 1536 x 480. Top to bottom: SPRING, SUMMER, AUTUMN, WINTER. All four rows depict exactly the same district camera, architecture, building widths, roof silhouettes, window positions, signs and spatial composition. Only seasonal foliage, snow and light change. Panoramic mostly frontal view across an unseen road, rich low-to-tall varied architectural layering. Buildings reach the very bottom of EACH strip, with only a very thin sidewalk edge. No foreground road or large paving area. No cars, vehicles, people, UI, captions, watermarks, giant untextured geometry, montage or collage. District composition must be genuinely original, richly place-specific with tiny details: window grids, awnings, railings, HVAC units, antennas, weathered facades, shop shelves, tree branches, utility wires. Spring pink cherry blossoms, rosy peach-violet evening sky. Summer lush green foliage, luminous blue-cyan late-afternoon sky. Autumn crimson and golden leaves, amber-pink evening sky. Winter bare trees and delicately integrated snow on ledges, roofs, planters, lavender-blue sky and warm windows. Every row remains a complete coherent panorama.\n\nDistrict: Dogenzaka club hill, Tokyo. Distinct asymmetrical composition of staggered buildings stepping UP from left to right behind a level thin bottom boundary. Far left a broad black brick concert hall with a huge circular speaker-like metal entrance canopy, recessed orange foyer and detailed concert posters; next a steep narrow external concrete stair climbs to a cobalt-blue record shop with round windows on second floor. Central short weathered cream restaurant sits lower than the crimson steel live-house behind it. Far right a tall narrow nightclub, black glass with magenta vertical tubes and an exposed switchback fire escape. Layered hill retaining walls, warm lantern bars at the foot, rooftop neon and winding power lines, clusters of ornamental maple trees. NOT a symmetrical shopping gateway; no 109 tower. Make the varied elevations and sloping architecture unmistakable, small sections of ascending steps only, no large foreground roadway.\n\nFINAL LAYOUT CHECK: the full canvas is taller than it is wide. Four equal tall-enough rows. Overall portrait 4:5 format. All buildings must retain natural proportions within each 3.2:1 panorama.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "dogenzaka-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            323
+          ],
+          "sha256": "23db965946b3baaa9965fa634014e25637ba10ea9fe51c3d5ea2cf3c47bc5acd"
+        },
+        {
+          "season": "summer",
+          "file": "dogenzaka-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            329,
+            1122,
+            331
+          ],
+          "sha256": "b52a1c261af80f0ac73bedf617658d6a21f9032600c25783d9d9f2adf061cfcb"
+        },
+        {
+          "season": "autumn",
+          "file": "dogenzaka-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            667,
+            1122,
+            332
+          ],
+          "sha256": "f7b9feef6a8ac8e2c986c8821492ffc6766c90d0c1b34ec0d95b82f1d30ae599"
+        },
+        {
+          "season": "winter",
+          "file": "dogenzaka-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1006,
+            1122,
+            341
+          ],
+          "sha256": "03fcebe4aafb696f5714f95deb75f037bf728d67e8fa0dd393858f8ddcfc8948"
+        }
+      ]
+    },
+    {
+      "id": "bunkamura",
+      "name": "文化村通り",
+      "english": "BUNKAMURA ART WALK",
+      "master": {
+        "file": "bunkamura-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "136f083884f96b094740139eea251825f960ed85b29fc051513938e2f2f867a6"
+      },
+      "prompt": "MANDATORY CANVAS: a TALL PORTRAIT image, width:height = 4:5 (1122 × 1402 pixels). It contains FOUR panoramas stacked top to bottom, each panorama approximately 1122 × 350 pixels, approximately 3.2:1. The overall sheet MUST be portrait, NOT landscape. Do not squeeze four scenes into a wide landscape sheet.\n\nUse case: stylized-concept. Create an ORIGINAL richly detailed 16-bit pixel-art environment atlas for a Japanese driving game, commercial-quality intricate hand-painted pixel architecture, nuanced material texture, individual windows and shop interiors, vibrant Tokyo twilight atmosphere, crisp clustered pixels. Image layout: exactly FOUR equal-height full-width panoramic strips stacked vertically, no borders, no margins, no captions. Preferred canvas 1536 x 1920, each strip 1536 x 480. Top to bottom: SPRING, SUMMER, AUTUMN, WINTER. All four rows depict exactly the same district camera, architecture, building widths, roof silhouettes, window positions, signs and spatial composition. Only seasonal foliage, snow and light change. Panoramic mostly frontal view across an unseen road, rich low-to-tall varied architectural layering. Buildings reach the very bottom of EACH strip, with only a very thin sidewalk edge. No foreground road or large paving area. No cars, vehicles, people, UI, captions, watermarks, giant untextured geometry, montage or collage. District composition must be genuinely original, richly place-specific with tiny details: window grids, awnings, railings, HVAC units, antennas, weathered facades, shop shelves, tree branches, utility wires. Spring pink cherry blossoms, rosy peach-violet evening sky. Summer lush green foliage, luminous blue-cyan late-afternoon sky. Autumn crimson and golden leaves, amber-pink evening sky. Winter bare trees and delicately integrated snow on ledges, roofs, planters, lavender-blue sky and warm windows. Every row remains a complete coherent panorama.\n\nDistrict: Bunkamura art and theatre walk in Tokyo, cultured architectural ensemble. Left: wide deep terra-cotta museum facade with inset geometric stone panels, enormous softly lit picture window showing framed art, broad short museum stair and bronze abstract sculpture outside. Center: low green-roof bookshop and tiny timber cafe under climbing foliage, separated by a layered sculpture garden. Right: imposing contemporary concert theatre facade with patterned warm stone, deep cantilevered cobalt canopy over golden glass lobby, detailed art posters and columns, adjacent slim art-book shop with arched glazed storefront. Distant city towers behind; generous but richly detailed calm composition, museum steps only a shallow frontage strip, not a giant empty plaza. No neon shopping gate, no 109. Hand-made varied materials and tiny visible gallery fittings.\n\nFINAL LAYOUT CHECK: the full canvas is taller than it is wide. Four equal tall-enough rows. Overall portrait 4:5 format. All buildings must retain natural proportions within each 3.2:1 panorama.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "bunkamura-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            344
+          ],
+          "sha256": "f29fdb9e772aa7a148b225dd9e9693a16e70093448d36b4fac6d0a185d38faee"
+        },
+        {
+          "season": "summer",
+          "file": "bunkamura-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            351,
+            1122,
+            342
+          ],
+          "sha256": "ce8c96a2a45d8b29db84d777cac6a9843e88ca18fe17dbf4e3b0c559c5d0e1da"
+        },
+        {
+          "season": "autumn",
+          "file": "bunkamura-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            701,
+            1122,
+            346
+          ],
+          "sha256": "f02b1f8fc87b78b9f9a0f09d87f808d94c83d7a476d66cf1bbc5f588dc302dc4"
+        },
+        {
+          "season": "winter",
+          "file": "bunkamura-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1053,
+            1122,
+            346
+          ],
+          "sha256": "59df6069ea0e2c9ed341e3d28a12f72bd88c787537a880e81245d5490c9e1b4f"
+        }
+      ]
+    },
+    {
+      "id": "spain",
+      "name": "スペイン坂",
+      "english": "SPAIN HILL STEPS",
+      "master": {
+        "file": "spain-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "25f952999fb4aa018dd81e72595d61a1d0c447ebb62ad19bc3b84005586a515d"
+      },
+      "prompt": "Use case: stylized-concept. Create an ORIGINAL richly detailed 16-bit pixel-art environment atlas for a Japanese driving game, commercial-quality intricate hand-painted pixel architecture, nuanced material texture, individual windows and shop interiors, vibrant Tokyo twilight atmosphere, crisp clustered pixels. Image layout: exactly FOUR equal-height full-width panoramic strips stacked vertically, no borders, no margins, no captions. Preferred canvas 1536 x 1920, each strip 1536 x 480. Top to bottom: SPRING, SUMMER, AUTUMN, WINTER. All four rows depict exactly the same district camera, architecture, building widths, roof silhouettes, window positions, signs and spatial composition. Only seasonal foliage, snow and light change. Panoramic mostly frontal view across an unseen road, rich low-to-tall varied architectural layering. Buildings reach the very bottom of EACH strip, with only a very thin sidewalk edge. No foreground road or large paving area. No cars, vehicles, people, UI, captions, watermarks, giant untextured geometry, montage or collage. District composition must be genuinely original, richly place-specific with tiny details: window grids, awnings, railings, HVAC units, antennas, weathered facades, shop shelves, tree branches, utility wires. Spring pink cherry blossoms, rosy peach-violet evening sky. Summer lush green foliage, luminous blue-cyan late-afternoon sky. Autumn crimson and golden leaves, amber-pink evening sky. Winter bare trees and delicately integrated snow on ledges, roofs, planters, lavender-blue sky and warm windows. Every row remains a complete coherent panorama.\n\nDistrict: Spain Hill boutique steps in Shibuya: unusually intimate stepped hillside elevation inspired by winding Spanish-style lane. A zigzag narrow flight of mosaic-tiled steps climbs through the middle from bottom center toward upper left, lined with cobalt painted railings, terracotta planters, ivy, flowering pots. Left pale cream stucco cafe with curved balcony, terracotta roof tiles and amber windows; mid-high small narrow burgundy boutique with ornate display mannequins; right cream and ochre compact three-story shops terraced on retaining walls, small gallery with arched wood door, a pale-blue apartment balcony above. Vary building heights and shapes, shallow alleys and split stair landings. Rich flower arrangements and a tall seasonal tree on right. Architectural forms feel dense, quaint and vertical, no broad streets, no high-rise office tower and no Center Gai gateway.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "spain-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            345
+          ],
+          "sha256": "0a5bc044718c226c9c093a32ce2f012359ca9ccc9f283b188142142cf277f41d"
+        },
+        {
+          "season": "summer",
+          "file": "spain-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            350,
+            1122,
+            343
+          ],
+          "sha256": "c0f104bec48276087905892944f5e4876bfcb65e0929a2e815314fd0f5fca1bb"
+        },
+        {
+          "season": "autumn",
+          "file": "spain-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            701,
+            1122,
+            345
+          ],
+          "sha256": "6236fe17a076ddfe3e648556cadccb5734a809c3b05485e0d99004f837a06b09"
+        },
+        {
+          "season": "winter",
+          "file": "spain-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1053,
+            1122,
+            345
+          ],
+          "sha256": "861dbd3c70653ceb7f2b5e567f18bb05dc1f388da8e6a79b58cf019347dd1a7b"
+        }
+      ]
+    },
+    {
+      "id": "catstreet",
+      "name": "キャットストリート",
+      "english": "CAT STREET BOUTIQUES",
+      "master": {
+        "file": "catstreet-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "85d5c78c39a6d6878b0a407fb9d3f6d2271122268dabba044da487c0495f8ea1"
+      },
+      "prompt": "Use case: stylized-concept. Create an ORIGINAL richly detailed 16-bit pixel-art environment atlas for a Japanese driving game, commercial-quality intricate hand-painted pixel architecture, nuanced material texture, individual windows and shop interiors, vibrant Tokyo twilight atmosphere, crisp clustered pixels. Image layout: exactly FOUR equal-height full-width panoramic strips stacked vertically, no borders, no margins, no captions. Preferred canvas 1536 x 1920, each strip 1536 x 480. Top to bottom: SPRING, SUMMER, AUTUMN, WINTER. All four rows depict exactly the same district camera, architecture, building widths, roof silhouettes, window positions, signs and spatial composition. Only seasonal foliage, snow and light change. Panoramic mostly frontal view across an unseen road, rich low-to-tall varied architectural layering. Buildings reach the very bottom of EACH strip, with only a very thin sidewalk edge. No foreground road or large paving area. No cars, vehicles, people, UI, captions, watermarks, giant untextured geometry, montage or collage. District composition must be genuinely original, richly place-specific with tiny details: window grids, awnings, railings, HVAC units, antennas, weathered facades, shop shelves, tree branches, utility wires. Spring pink cherry blossoms, rosy peach-violet evening sky. Summer lush green foliage, luminous blue-cyan late-afternoon sky. Autumn crimson and golden leaves, amber-pink evening sky. Winter bare trees and delicately integrated snow on ledges, roofs, planters, lavender-blue sky and warm windows. Every row remains a complete coherent panorama.\n\nDistrict: Cat Street in Harajuku/Shibuya: low horizontal fashion-studio lane, all bespoke two- and three-story buildings. Far left weathered indigo timber denim store with detailed folded clothes behind warm glass; next white minimalist sculptural boutique with one diagonal roof and angular recessed window. Mid-center small brick coffee shop with open timber window and outdoor stools beneath a broad low tree, then a weathered record store and tiny ivy-covered gap. Right an elegant cast-iron and glass vintage shop, upper-floor balcony garden, and low wood-front skate-fashion studio. Tiny planter clusters, fire-hydrant details, shop lamps, roof vents and overhead cables. Mostly side-on full-width frontage, a relaxed human-scale low-rise skyline with no tall towers, no gateway arch, no large road. Delicate glass reflections and carefully detailed window merchandise.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "catstreet-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            331
+          ],
+          "sha256": "ead396571aad6beefefd90b1c7a28d5992797b89f04d928830fa07903abb228d"
+        },
+        {
+          "season": "summer",
+          "file": "catstreet-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            339,
+            1122,
+            340
+          ],
+          "sha256": "0d26e706803a2a21202a7b047ad946499a255a4b86d5284d3b6f6aebb790d979"
+        },
+        {
+          "season": "autumn",
+          "file": "catstreet-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            687,
+            1122,
+            341
+          ],
+          "sha256": "fd5b45ce8958aa6ff4f30e50beade949b0977b4b7a5f6e90a6dc7c9807891fbb"
+        },
+        {
+          "season": "winter",
+          "file": "catstreet-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1038,
+            1122,
+            354
+          ],
+          "sha256": "28d9c0493312c31dc64e03a3d18d8ffd96dba4bf6b086bd360cc66540018b0ff"
+        }
+      ]
+    },
+    {
+      "id": "takeshita",
+      "name": "竹下通り",
+      "english": "TAKESHITA POP STREET",
+      "master": {
+        "file": "takeshita-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "9b33b1ff5394c9afa98bb64cf4f242ee6bb61367d36c6d2047fdb8cfb2ddff5a"
+      },
+      "prompt": "MANDATORY CANVAS: a TALL PORTRAIT image, width:height = 4:5 (1122 × 1402 pixels). It contains FOUR panoramas stacked top to bottom, each panorama approximately 1122 × 350 pixels, approximately 3.2:1. The overall sheet MUST be portrait, NOT landscape. Do not squeeze four scenes into a wide landscape sheet.\n\nUse case: stylized-concept. Create an ORIGINAL richly detailed 16-bit pixel-art environment atlas for a Japanese driving game, commercial-quality intricate hand-painted pixel architecture, nuanced material texture, individual windows and shop interiors, vibrant Tokyo twilight atmosphere, crisp clustered pixels. Image layout: exactly FOUR equal-height full-width panoramic strips stacked vertically, no borders, no margins, no captions. Preferred canvas 1536 x 1920, each strip 1536 x 480. Top to bottom: SPRING, SUMMER, AUTUMN, WINTER. All four rows depict exactly the same district camera, architecture, building widths, roof silhouettes, window positions, signs and spatial composition. Only seasonal foliage, snow and light change. Panoramic mostly frontal view across an unseen road, rich low-to-tall varied architectural layering. Buildings reach the very bottom of EACH strip, with only a very thin sidewalk edge. No foreground road or large paving area. No cars, vehicles, people, UI, captions, watermarks, giant untextured geometry, montage or collage. District composition must be genuinely original, richly place-specific with tiny details: window grids, awnings, railings, HVAC units, antennas, weathered facades, shop shelves, tree branches, utility wires. Spring pink cherry blossoms, rosy peach-violet evening sky. Summer lush green foliage, luminous blue-cyan late-afternoon sky. Autumn crimson and golden leaves, amber-pink evening sky. Winter bare trees and delicately integrated snow on ledges, roofs, planters, lavender-blue sky and warm windows. Every row remains a complete coherent panorama.\n\nDistrict: Takeshita Street Harajuku pop-fashion district: playful richly detailed pastel pedestrian gateway positioned at the far LEFT opening into a narrow distant retail lane; across remaining panorama an alternating series of compact pink, lavender, turquoise and cream eccentric boutiques, a tiny crepe stall under striped awning with detailed cone display, an accessory shop with miniature jewelry-window patterns, colorful gashapon capsule-toy cabinets, a two-story rounded corner sweets store with a curved glass facade, and a narrow black-and-pink fashion building on far right. Gateway has small text '竹下通り' integrated into its structure, not an image caption. Avoid giant cartoon mascots and extra words. Delicate iron balcony rails, tiny neon hearts, detailed hair-accessory shelves, planters and small seasonal trees. Distinct lively pastel low-rise rhythm, no 109 tower, no plain generic blocks.\n\nFINAL LAYOUT CHECK: the full canvas is taller than it is wide. Four equal tall-enough rows. Overall portrait 4:5 format. All buildings must retain natural proportions within each 3.2:1 panorama.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "takeshita-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            323
+          ],
+          "sha256": "8070f4a597eeb9241109a41a71b40ec61e941164fb0593ade5a4f367f7b598cc"
+        },
+        {
+          "season": "summer",
+          "file": "takeshita-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            330,
+            1122,
+            330
+          ],
+          "sha256": "b21abd1a7caba0dafd00e7204f2020784392c0d242e11b7768e56322791bc553"
+        },
+        {
+          "season": "autumn",
+          "file": "takeshita-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            668,
+            1122,
+            331
+          ],
+          "sha256": "fdfee2b1bb99585243100807bf5036d06b37d9798b5f7fb3ccc3498a237faef3"
+        },
+        {
+          "season": "winter",
+          "file": "takeshita-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1008,
+            1122,
+            340
+          ],
+          "sha256": "aa79286ff4ba08f285748505ffb7e8c69cb4112ace861c6288a97e856c15bdbc"
+        }
+      ]
+    },
+    {
+      "id": "omotesando",
+      "name": "表参道の並木",
+      "english": "OMOTESANDO TREE ROW",
+      "master": {
+        "file": "omotesando-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "0ba1b79c3f3a24e24c217a8fd9e064cee7003adb69fe857794ba634bfe271f28"
+      },
+      "prompt": "MANDATORY CANVAS: a TALL PORTRAIT image, width:height = 4:5 (1122 × 1402 pixels). It contains FOUR panoramas stacked top to bottom, each panorama approximately 1122 × 350 pixels, approximately 3.2:1. The overall sheet MUST be portrait, NOT landscape. Do not squeeze four scenes into a wide landscape sheet.\n\nUse case: stylized-concept. Create an ORIGINAL richly detailed 16-bit pixel-art environment atlas for a Japanese driving game, commercial-quality intricate hand-painted pixel architecture, nuanced material texture, individual windows and shop interiors, vibrant Tokyo twilight atmosphere, crisp clustered pixels. Image layout: exactly FOUR equal-height full-width panoramic strips stacked vertically, no borders, no margins, no captions. Preferred canvas 1536 x 1920, each strip 1536 x 480. Top to bottom: SPRING, SUMMER, AUTUMN, WINTER. All four rows depict exactly the same district camera, architecture, building widths, roof silhouettes, window positions, signs and spatial composition. Only seasonal foliage, snow and light change. Panoramic mostly frontal view across an unseen road, rich low-to-tall varied architectural layering. Buildings reach the very bottom of EACH strip, with only a very thin sidewalk edge. No foreground road or large paving area. No cars, vehicles, people, UI, captions, watermarks, giant untextured geometry, montage or collage. District composition must be genuinely original, richly place-specific with tiny details: window grids, awnings, railings, HVAC units, antennas, weathered facades, shop shelves, tree branches, utility wires. Spring pink cherry blossoms, rosy peach-violet evening sky. Summer lush green foliage, luminous blue-cyan late-afternoon sky. Autumn crimson and golden leaves, amber-pink evening sky. Winter bare trees and delicately integrated snow on ledges, roofs, planters, lavender-blue sky and warm windows. Every row remains a complete coherent panorama.\n\nDistrict: Omotesando tree-lined luxury architecture in Tokyo. Broad clean side-on panorama with a row of tall zelkova trees rhythmically framing individually designed buildings: far left six-story diamond-lattice blue glass fashion facade, center-left a low minimalist pale-stone luxury pavilion with long amber display windows; middle a recessed contemporary art building with perforated terracotta wall and small sunken entrance courtyard; right wide undulating glass-front flagship store with brass mullions and a narrow stacked timber cafe. Trees are large and arching but leave architecture readable. Spring fresh small leaves plus modest pink blossom planters, summer deep green zelkova canopy, autumn brilliant golden leaf canopy, winter bare branching trees and snow at store edges. Glass reflections and tiny elegant shop displays, branches, joints, benches, sculpture, all intricate. No wide road and no large foreground paving.\n\nFINAL LAYOUT CHECK: the full canvas is taller than it is wide. Four equal tall-enough rows. Overall portrait 4:5 format. All buildings must retain natural proportions within each 3.2:1 panorama.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "omotesando-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            343
+          ],
+          "sha256": "183bbace32b38a23cab654ca3ab8f33d82603dc7e2c57bfc69fcf8c29521d0f1"
+        },
+        {
+          "season": "summer",
+          "file": "omotesando-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            351,
+            1122,
+            343
+          ],
+          "sha256": "33f4d34a474c7326410dcb49bec93f795d7f550e0083912376323ec6a43458bf"
+        },
+        {
+          "season": "autumn",
+          "file": "omotesando-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            701,
+            1122,
+            346
+          ],
+          "sha256": "b86dd4f1489bb96284344a5603f5ddcaa7d1f78099da3f518114341a19a20c19"
+        },
+        {
+          "season": "winter",
+          "file": "omotesando-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1053,
+            1122,
+            346
+          ],
+          "sha256": "0617e6d68b494a42bf90d682e1ecab2107d570aa27c481e04bdc8cb36a0775e3"
+        }
+      ]
+    },
+    {
+      "id": "yoyogipark",
+      "name": "代々木公園入口",
+      "english": "YOYOGI PARK GATE",
+      "master": {
+        "file": "yoyogipark-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "beef97e8333712cd388350faef9b372ec8b9a4070a54ee437bb017a2e4111c33"
+      },
+      "prompt": "MANDATORY CANVAS: a TALL PORTRAIT image, width:height = 4:5 (1122 × 1402 pixels). It contains FOUR panoramas stacked top to bottom, each panorama approximately 1122 × 350 pixels, approximately 3.2:1. The overall sheet MUST be portrait, NOT landscape. Do not squeeze four scenes into a wide landscape sheet.\n\nUse case: stylized-concept. Create an ORIGINAL richly detailed 16-bit pixel-art environment atlas for a Japanese driving game, commercial-quality intricate hand-painted pixel architecture, nuanced material texture, individual windows and shop interiors, vibrant Tokyo twilight atmosphere, crisp clustered pixels. Image layout: exactly FOUR equal-height full-width panoramic strips stacked vertically, no borders, no margins, no captions. Preferred canvas 1536 x 1920, each strip 1536 x 480. Top to bottom: SPRING, SUMMER, AUTUMN, WINTER. All four rows depict exactly the same district camera, architecture, building widths, roof silhouettes, window positions, signs and spatial composition. Only seasonal foliage, snow and light change. Panoramic mostly frontal view across an unseen road, rich low-to-tall varied architectural layering. Buildings reach the very bottom of EACH strip, with only a very thin sidewalk edge. No foreground road or large paving area. No cars, vehicles, people, UI, captions, watermarks, giant untextured geometry, montage or collage. District composition must be genuinely original, richly place-specific with tiny details: window grids, awnings, railings, HVAC units, antennas, weathered facades, shop shelves, tree branches, utility wires. Spring pink cherry blossoms, rosy peach-violet evening sky. Summer lush green foliage, luminous blue-cyan late-afternoon sky. Autumn crimson and golden leaves, amber-pink evening sky. Winter bare trees and delicately integrated snow on ledges, roofs, planters, lavender-blue sky and warm windows. Every row remains a complete coherent panorama.\n\nDistrict: Yoyogi Park entrance at the forest edge, Tokyo: a broad and heavily wooded layered park scene with little city architecture. Far left a rustic stone park wall and wrought-iron gate opening, beyond it deep receding woodland path; center-left a wide old pavilion under dark green roof with intricate timber supports, benches and a small illuminated kiosk. Mid-center flowering garden beds and a small shallow reflective pond partly visible behind low bamboo railings. Right a wooden weekend craft stall with colorful ceramics and a striped canvas awning adjacent to a broad thick-trunked tree, with tiny distant city rooftops peeking beyond the treeline. Strong asymmetrical forest canopy across top, varied individual trunks, layered shrubs, leaf dapple texture, flowers and stonework. Park path only occupies a narrow bottom edge, no road, no vehicles or people, no major urban tower or gigantic torii.\n\nFINAL LAYOUT CHECK: the full canvas is taller than it is wide. Four equal tall-enough rows. Overall portrait 4:5 format. All buildings must retain natural proportions within each 3.2:1 panorama.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "yoyogipark-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            345
+          ],
+          "sha256": "e40123f4767f0274de9f77c80f5aa1a149fe1e50471a1c97274832bdb63df19f"
+        },
+        {
+          "season": "summer",
+          "file": "yoyogipark-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            350,
+            1122,
+            345
+          ],
+          "sha256": "188ff0ce8950b9c99f4316b9059878e87a072196d4058e2ce20212f04a98ec77"
+        },
+        {
+          "season": "autumn",
+          "file": "yoyogipark-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            703,
+            1122,
+            345
+          ],
+          "sha256": "2707698b1c60990fb03f0377f469af8b2a97e9368c8227a8610a2e785a68c99f"
+        },
+        {
+          "season": "winter",
+          "file": "yoyogipark-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1056,
+            1122,
+            344
+          ],
+          "sha256": "8d427b9f069fb28075f21d4c1e0320c24d6d756216fc7431455afa1b92269d58"
+        }
+      ]
+    },
+    {
+      "id": "harajuku",
+      "name": "原宿の駅ホーム",
+      "english": "HARAJUKU PLATFORM",
+      "master": {
+        "file": "harajuku-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "ab865f964c85b81d98ec02ca4473000eb6628b32112278e0d0141b590eadcd4a"
+      },
+      "prompt": "MANDATORY CANVAS: a TALL PORTRAIT image, width:height = 4:5 (1122 × 1402 pixels). It contains FOUR panoramas stacked top to bottom, each panorama approximately 1122 × 350 pixels, approximately 3.2:1. The overall sheet MUST be portrait, NOT landscape. Do not squeeze four scenes into a wide landscape sheet.\n\nUse case: stylized-concept. Create an ORIGINAL richly detailed 16-bit pixel-art environment atlas for a Japanese driving game, commercial-quality intricate hand-painted pixel architecture, nuanced material texture, individual windows and shop interiors, vibrant Tokyo twilight atmosphere, crisp clustered pixels. Image layout: exactly FOUR equal-height full-width panoramic strips stacked vertically, no borders, no margins, no captions. Preferred canvas 1536 x 1920, each strip 1536 x 480. Top to bottom: SPRING, SUMMER, AUTUMN, WINTER. All four rows depict exactly the same district camera, architecture, building widths, roof silhouettes, window positions, signs and spatial composition. Only seasonal foliage, snow and light change. Panoramic mostly frontal view across an unseen road, rich low-to-tall varied architectural layering. Buildings reach the very bottom of EACH strip, with only a very thin sidewalk edge. No foreground road or large paving area. No cars, vehicles, people, UI, captions, watermarks, giant untextured geometry, montage or collage. District composition must be genuinely original, richly place-specific with tiny details: window grids, awnings, railings, HVAC units, antennas, weathered facades, shop shelves, tree branches, utility wires. Spring pink cherry blossoms, rosy peach-violet evening sky. Summer lush green foliage, luminous blue-cyan late-afternoon sky. Autumn crimson and golden leaves, amber-pink evening sky. Winter bare trees and delicately integrated snow on ledges, roofs, planters, lavender-blue sky and warm windows. Every row remains a complete coherent panorama.\n\nDistrict: Harajuku railway station and woodland edge, Tokyo. Far left a charming historic-style half-timbered station building with steep pointed gable roof, cream plaster, dark brown beams, dormer windows and amber glass entry; center long sheltered railway platform with exquisitely fine steel posts and canopy girders, no train; center-right enclosed pedestrian footbridge crosses above the platform with a clear glass stair descending toward small shops; far right a tiny cream crepe cafe and old station kiosk with detailed awnings. Deep wooded Meiji forest behind platforms, tall branching trees and only a few distant city buildings. Frontal broadside composition with station facade and detailed platform architecture meeting bottom edge, almost no visible rails/ground. Seasonal changes richly integrated into woodland and roof snow. No roadway, cars, trains, crowds or large station-name captions.\n\nFINAL LAYOUT CHECK: the full canvas is taller than it is wide. Four equal tall-enough rows. Overall portrait 4:5 format. All buildings must retain natural proportions within each 3.2:1 panorama.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "harajuku-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            346
+          ],
+          "sha256": "85bb67101b596142398652489e5de2af6ec839bcf92155acf3a995a6f3628452"
+        },
+        {
+          "season": "summer",
+          "file": "harajuku-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            350,
+            1122,
+            346
+          ],
+          "sha256": "affd6fb88566599d75eca46b4036ed720c41176bf014b6d64c65bb00b68fbf7e"
+        },
+        {
+          "season": "autumn",
+          "file": "harajuku-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            701,
+            1122,
+            347
+          ],
+          "sha256": "08fa0eb110e23412b3ec4b4895cb88de64c06d8df061835e9d4226bb3464c1fc"
+        },
+        {
+          "season": "winter",
+          "file": "harajuku-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1054,
+            1122,
+            347
+          ],
+          "sha256": "ecf9105cd387a88b0ecce4ad4b676e5425473cfa84ff87e5bb228e019c228331"
+        }
+      ]
+    },
+    {
+      "id": "shinsen",
+      "name": "神泉トンネル",
+      "english": "SHINSEN RAIL TUNNEL",
+      "master": {
+        "file": "shinsen-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "2bfcb2b0d6753442290cdf9ae5e4ffbde328ed9156af8a5f4b8dd76df38a9d85"
+      },
+      "prompt": "MANDATORY CANVAS: a TALL PORTRAIT image, width:height = 4:5 (1122 × 1402 pixels). It contains FOUR panoramas stacked top to bottom, each panorama approximately 1122 × 350 pixels, approximately 3.2:1. The overall sheet MUST be portrait, NOT landscape. Do not squeeze four scenes into a wide landscape sheet.\n\nUse case: stylized-concept. Create an ORIGINAL richly detailed 16-bit pixel-art environment atlas for a Japanese driving game, commercial-quality intricate hand-painted pixel architecture, nuanced material texture, individual windows and shop interiors, vibrant Tokyo twilight atmosphere, crisp clustered pixels. Image layout: exactly FOUR equal-height full-width panoramic strips stacked vertically, no borders, no margins, no captions. Preferred canvas 1536 x 1920, each strip 1536 x 480. Top to bottom: SPRING, SUMMER, AUTUMN, WINTER. All four rows depict exactly the same district camera, architecture, building widths, roof silhouettes, window positions, signs and spatial composition. Only seasonal foliage, snow and light change. Panoramic mostly frontal view across an unseen road, rich low-to-tall varied architectural layering. Buildings reach the very bottom of EACH strip, with only a very thin sidewalk edge. No foreground road or large paving area. No cars, vehicles, people, UI, captions, watermarks, giant untextured geometry, montage or collage. District composition must be genuinely original, richly place-specific with tiny details: window grids, awnings, railings, HVAC units, antennas, weathered facades, shop shelves, tree branches, utility wires. Spring pink cherry blossoms, rosy peach-violet evening sky. Summer lush green foliage, luminous blue-cyan late-afternoon sky. Autumn crimson and golden leaves, amber-pink evening sky. Winter bare trees and delicately integrated snow on ledges, roofs, planters, lavender-blue sky and warm windows. Every row remains a complete coherent panorama.\n\nDistrict: Shinsen small rail tunnel and hillside homes, Tokyo. The uniquely defining anchor is an old rounded brick railway tunnel portal embedded in an ivy-covered retaining wall LEFT OF CENTER, with a dim golden interior and fine brick voussoir details. Directly above it clustered low hillside houses, a wooden home with pale tiled roof, balcony laundry poles but no clothing figures, a cream apartment with rooftop tanks. Right half narrow rail cutting runs sideways behind a low retaining wall, flanked by steep concrete stairs rising to a tiny amber-lit bakery and a compact pale pink four-story apartment. Far left old wooden izakaya beneath a tree. Include thin railway signal and overhead catenary, dense ivy, tiny moss and ferns. The tunnel stays prominent with no train present; track only a narrow bottom sliver, no game road, no people. Twilight violet sky with intimate hillslope layering.\n\nFINAL LAYOUT CHECK: the full canvas is taller than it is wide. Four equal tall-enough rows. Overall portrait 4:5 format. All buildings must retain natural proportions within each 3.2:1 panorama.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "shinsen-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            334
+          ],
+          "sha256": "3e04d56fc2f825e2305e2aae593942217df83e35e6a3b9b777f35cdb742dab96"
+        },
+        {
+          "season": "summer",
+          "file": "shinsen-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            340,
+            1122,
+            344
+          ],
+          "sha256": "349351ddb19bed5a03f4ef21d71eb772deb75c8996ba046729724fedde1881d1"
+        },
+        {
+          "season": "autumn",
+          "file": "shinsen-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            692,
+            1122,
+            345
+          ],
+          "sha256": "e63e7abe0dbad1f4701322b131f48f57f99098245e05cd2698df6d43653d9859"
+        },
+        {
+          "season": "winter",
+          "file": "shinsen-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1043,
+            1122,
+            357
+          ],
+          "sha256": "ae0d420c341f3ef89af7532216ac72c3d8183edc86ddd42f72cf95c3ed499b06"
+        }
+      ]
+    },
+    {
+      "id": "ebisu",
+      "name": "恵比寿レンガ広場",
+      "english": "EBISU BRICK SQUARE",
+      "master": {
+        "file": "ebisu-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "81eaefbbd4b3405e97999fcbed6dfc69d8eb8d30c877822873e874f2b58adc35"
+      },
+      "prompt": "MANDATORY CANVAS: a TALL PORTRAIT image, width:height = 4:5 (1122 × 1402 pixels). It contains FOUR panoramas stacked top to bottom, each panorama approximately 1122 × 350 pixels, approximately 3.2:1. The overall sheet MUST be portrait, NOT landscape. Do not squeeze four scenes into a wide landscape sheet.\n\nUse case: stylized-concept. Create an ORIGINAL richly detailed 16-bit pixel-art environment atlas for a Japanese driving game, commercial-quality intricate hand-painted pixel architecture, nuanced material texture, individual windows and shop interiors, vibrant Tokyo twilight atmosphere, crisp clustered pixels. Image layout: exactly FOUR equal-height full-width panoramic strips stacked vertically, no borders, no margins, no captions. Preferred canvas 1536 x 1920, each strip 1536 x 480. Top to bottom: SPRING, SUMMER, AUTUMN, WINTER. All four rows depict exactly the same district camera, architecture, building widths, roof silhouettes, window positions, signs and spatial composition. Only seasonal foliage, snow and light change. Panoramic mostly frontal view across an unseen road, rich low-to-tall varied architectural layering. Buildings reach the very bottom of EACH strip, with only a very thin sidewalk edge. No foreground road or large paving area. No cars, vehicles, people, UI, captions, watermarks, giant untextured geometry, montage or collage. District composition must be genuinely original, richly place-specific with tiny details: window grids, awnings, railings, HVAC units, antennas, weathered facades, shop shelves, tree branches, utility wires. Spring pink cherry blossoms, rosy peach-violet evening sky. Summer lush green foliage, luminous blue-cyan late-afternoon sky. Autumn crimson and golden leaves, amber-pink evening sky. Winter bare trees and delicately integrated snow on ledges, roofs, planters, lavender-blue sky and warm windows. Every row remains a complete coherent panorama.\n\nDistrict: Ebisu red-brick garden square, Tokyo. A distinct European-influenced brick ensemble: left wide historic red-brick brewery hall with tall arched windows, segmented masonry arches, crenellated roof details and a narrow copper chimney; center a small finely detailed tiered stone fountain seen in front elevation, water catching warm light, flanked by clipped garden hedges. Behind fountain a long open colonnade and amber lit cafe terrace with striped parasols and neatly placed empty tables. Right tall red-brick and cream concert hall with round rose window, broad arched glazed portal and copper-green roof corners; distant restrained modern office tower behind. Seasonal trees at both sides and roofline. Architecture plus garden/fountain fill entire shallow panorama, no extensive foreground square, no roads or people. Dense brickwork, iron balcony railings, window reflections and lamps.\n\nFINAL LAYOUT CHECK: the full canvas is taller than it is wide. Four equal tall-enough rows. Overall portrait 4:5 format. All buildings must retain natural proportions within each 3.2:1 panorama.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "ebisu-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            344
+          ],
+          "sha256": "aadfa2a27b3c30d313128ac7f12b1c1379e2143704950b3042cd9bb601025e8d"
+        },
+        {
+          "season": "summer",
+          "file": "ebisu-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            350,
+            1122,
+            345
+          ],
+          "sha256": "e5549563caffc603fe9f29c5ebc31e0a5d45618e12571c362965fa98a6425642"
+        },
+        {
+          "season": "autumn",
+          "file": "ebisu-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            701,
+            1122,
+            346
+          ],
+          "sha256": "39d2583b58ddb56b8d4e659fc1cf5b58fa83befa54375f7764a2dd75f5f69043"
+        },
+        {
+          "season": "winter",
+          "file": "ebisu-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1053,
+            1122,
+            348
+          ],
+          "sha256": "06796a686aca2ca3f0c9edc6b4d4266a2ee29536e215892cf5486680e8bb4ca0"
+        }
+      ]
+    },
+    {
+      "id": "daikanyama",
+      "name": "代官山のテラス",
+      "english": "DAIKANYAMA TERRACES",
+      "master": {
+        "file": "daikanyama-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "edf9ce285382b5542f6272c0915da966dcf453d32595a1207b04771d47b7c140"
+      },
+      "prompt": "MANDATORY CANVAS: a TALL PORTRAIT image, width:height = 4:5 (1122 × 1402 pixels). It contains FOUR panoramas stacked top to bottom, each panorama approximately 1122 × 350 pixels, approximately 3.2:1. The overall sheet MUST be portrait, NOT landscape. Do not squeeze four scenes into a wide landscape sheet.\n\nUse case: stylized-concept. Create an ORIGINAL richly detailed 16-bit pixel-art environment atlas for a Japanese driving game, commercial-quality intricate hand-painted pixel architecture, nuanced material texture, individual windows and shop interiors, vibrant Tokyo twilight atmosphere, crisp clustered pixels. Image layout: exactly FOUR equal-height full-width panoramic strips stacked vertically, no borders, no margins, no captions. Preferred canvas 1536 x 1920, each strip 1536 x 480. Top to bottom: SPRING, SUMMER, AUTUMN, WINTER. All four rows depict exactly the same district camera, architecture, building widths, roof silhouettes, window positions, signs and spatial composition. Only seasonal foliage, snow and light change. Panoramic mostly frontal view across an unseen road, rich low-to-tall varied architectural layering. Buildings reach the very bottom of EACH strip, with only a very thin sidewalk edge. No foreground road or large paving area. No cars, vehicles, people, UI, captions, watermarks, giant untextured geometry, montage or collage. District composition must be genuinely original, richly place-specific with tiny details: window grids, awnings, railings, HVAC units, antennas, weathered facades, shop shelves, tree branches, utility wires. Spring pink cherry blossoms, rosy peach-violet evening sky. Summer lush green foliage, luminous blue-cyan late-afternoon sky. Autumn crimson and golden leaves, amber-pink evening sky. Winter bare trees and delicately integrated snow on ledges, roofs, planters, lavender-blue sky and warm windows. Every row remains a complete coherent panorama.\n\nDistrict: Daikanyama terraced bookshops and garden cafes, Tokyo: calm modern low-rise landscape. Left wide low white perforated-lattice book pavilion with warm floor-to-ceiling shelves visible through long glass facade, angular roof. Center two stacked cantilevered timber decks with fine slatted railings and a dark-wood cafe under dense vines; a narrow planted stair curls between terraces. Right a low cream boutique with an asymmetric sloped roof, one intimate brick wine shop, and layered garden retaining walls with carefully planted shrubs. A few large elegant trees frame varied heights, scattered tiny warm lanterns and detailed pot plants. Frontal horizontal terraces, no tall towers, no huge gateway, no generic symmetrical street. Building and planted retaining wall meet bottom edge with only a narrow sidewalk lip. Highlight books, wood joinery, warm interiors, glass and delicate foliage.\n\nFINAL LAYOUT CHECK: the full canvas is taller than it is wide. Four equal tall-enough rows. Overall portrait 4:5 format. All buildings must retain natural proportions within each 3.2:1 panorama.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "daikanyama-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            323
+          ],
+          "sha256": "2acf6db5ba7816c7158f6c7a49a270eee3bc7fe14bdc517666e837bd9725de50"
+        },
+        {
+          "season": "summer",
+          "file": "daikanyama-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            333,
+            1122,
+            347
+          ],
+          "sha256": "9678271c73848e5dcd78a6f3be9c7416ed4b4ff405a571e87dc226d8174cc312"
+        },
+        {
+          "season": "autumn",
+          "file": "daikanyama-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            689,
+            1122,
+            350
+          ],
+          "sha256": "e5eb33133ba9d8b10915c818be647c1a96db27129cb44a96207234d742aca005"
+        },
+        {
+          "season": "winter",
+          "file": "daikanyama-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1049,
+            1122,
+            350
+          ],
+          "sha256": "98fd8ef99dc63a7019e7ef662154c388d2a1d57e8c9cae4600d5126d24222572"
+        }
+      ]
+    },
+    {
+      "id": "hiroo",
+      "name": "広尾の散歩道",
+      "english": "HIROO GARDEN LANE",
+      "master": {
+        "file": "hiroo-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "9794c09fa24436af960ab303ad17dc74d32273626f4166b88864eba05b9e5fde"
+      },
+      "prompt": "MANDATORY CANVAS: a TALL PORTRAIT image, width:height = 4:5 (1122 × 1402 pixels). It contains FOUR panoramas stacked top to bottom, each panorama approximately 1122 × 350 pixels, approximately 3.2:1. The overall sheet MUST be portrait, NOT landscape. Do not squeeze four scenes into a wide landscape sheet.\n\nUse case: stylized-concept. Create an ORIGINAL richly detailed 16-bit pixel-art environment atlas for a Japanese driving game, commercial-quality intricate hand-painted pixel architecture, nuanced material texture, individual windows and shop interiors, vibrant Tokyo twilight atmosphere, crisp clustered pixels. Image layout: exactly FOUR equal-height full-width panoramic strips stacked vertically, no borders, no margins, no captions. Preferred canvas 1536 x 1920, each strip 1536 x 480. Top to bottom: SPRING, SUMMER, AUTUMN, WINTER. All four rows depict exactly the same district camera, architecture, building widths, roof silhouettes, window positions, signs and spatial composition. Only seasonal foliage, snow and light change. Panoramic mostly frontal view across an unseen road, rich low-to-tall varied architectural layering. Buildings reach the very bottom of EACH strip, with only a very thin sidewalk edge. No foreground road or large paving area. No cars, vehicles, people, UI, captions, watermarks, giant untextured geometry, montage or collage. District composition must be genuinely original, richly place-specific with tiny details: window grids, awnings, railings, HVAC units, antennas, weathered facades, shop shelves, tree branches, utility wires. Spring pink cherry blossoms, rosy peach-violet evening sky. Summer lush green foliage, luminous blue-cyan late-afternoon sky. Autumn crimson and golden leaves, amber-pink evening sky. Winter bare trees and delicately integrated snow on ledges, roofs, planters, lavender-blue sky and warm windows. Every row remains a complete coherent panorama.\n\nDistrict: Hiroo quiet garden lane, Tokyo: left a delightful small wrought-iron-and-glass greenhouse florist with curved roof, meticulously detailed buckets of flowers, terracotta pots and warmly lit potting bench. Next a narrow pale stucco delicatessen with deep sage-green awning. Central wide opening through a tall old stone garden wall leads into a lush garden of layered shrubs, rustic stone steps and a half-hidden traditional pavilion amid large arching trees. Right a warm timber cafe with verandah and creeping ivy beside a subdued elegant cream apartment with deep balconies. Distinct calm mix of greenhouse, garden wall and residential architecture, very low skyline and only one medium apartment. Flowers and trees express each season, winter snow rests on glasshouse framework and garden stonework. No urban neon core, no giant buildings, no road or people.\n\nFINAL LAYOUT CHECK: the full canvas is taller than it is wide. Four equal tall-enough rows. Overall portrait 4:5 format. All buildings must retain natural proportions within each 3.2:1 panorama.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "hiroo-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            336
+          ],
+          "sha256": "026ba6d8ddf912d1c6f0c373da4b2e6d585b5c4015ad6511ea428b2501dfe273"
+        },
+        {
+          "season": "summer",
+          "file": "hiroo-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            350,
+            1122,
+            342
+          ],
+          "sha256": "9e32f5a3eaf17e568e8be9c6cfe1cc8ceca460b33bb9342ec46869e042d97f7c"
+        },
+        {
+          "season": "autumn",
+          "file": "hiroo-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            703,
+            1122,
+            336
+          ],
+          "sha256": "88fd986667f2ee5262eecfe097c253151509bfb916195745388c0196f924d78c"
+        },
+        {
+          "season": "winter",
+          "file": "hiroo-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1053,
+            1122,
+            346
+          ],
+          "sha256": "382630584fafb86f70ca1533ec6af87392174977fbae7f33515908d2b5d44352"
+        }
+      ]
+    },
+    {
+      "id": "sendagaya",
+      "name": "千駄ヶ谷の競技場道",
+      "english": "SENDAGAYA SPORTS WALK",
+      "master": {
+        "file": "sendagaya-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "5b63e7e241fa42d37a8befcb965b70ec7133515cf3f9b1b3bf461ba9b3638759"
+      },
+      "prompt": "MANDATORY CANVAS: a TALL PORTRAIT image, width:height = 4:5 (1122 × 1402 pixels). It contains FOUR panoramas stacked top to bottom, each panorama approximately 1122 × 350 pixels, approximately 3.2:1. The overall sheet MUST be portrait, NOT landscape. Do not squeeze four scenes into a wide landscape sheet.\n\nUse case: stylized-concept. Create an ORIGINAL richly detailed 16-bit pixel-art environment atlas for a Japanese driving game, commercial-quality intricate hand-painted pixel architecture, nuanced material texture, individual windows and shop interiors, vibrant Tokyo twilight atmosphere, crisp clustered pixels. Image layout: exactly FOUR equal-height full-width panoramic strips stacked vertically, no borders, no margins, no captions. Preferred canvas 1536 x 1920, each strip 1536 x 480. Top to bottom: SPRING, SUMMER, AUTUMN, WINTER. All four rows depict exactly the same district camera, architecture, building widths, roof silhouettes, window positions, signs and spatial composition. Only seasonal foliage, snow and light change. Panoramic mostly frontal view across an unseen road, rich low-to-tall varied architectural layering. Buildings reach the very bottom of EACH strip, with only a very thin sidewalk edge. No foreground road or large paving area. No cars, vehicles, people, UI, captions, watermarks, giant untextured geometry, montage or collage. District composition must be genuinely original, richly place-specific with tiny details: window grids, awnings, railings, HVAC units, antennas, weathered facades, shop shelves, tree branches, utility wires. Spring pink cherry blossoms, rosy peach-violet evening sky. Summer lush green foliage, luminous blue-cyan late-afternoon sky. Autumn crimson and golden leaves, amber-pink evening sky. Winter bare trees and delicately integrated snow on ledges, roofs, planters, lavender-blue sky and warm windows. Every row remains a complete coherent panorama.\n\nDistrict: Sendagaya sports walk by a Tokyo stadium: entirely distinct civic-and-sports composition. Right two thirds anchored by the curved layered edge of a large modern stadium, with horizontal timber louvers, planted terrace bands, finely repeated thin columns and luminous openings below, seen mostly at pedestrian eye level. A broad but shallow flight of spectator steps and detailed mesh sports fencing sit at the base. Left a compact red-brick school gym with high arched windows and a small teal sports shop/cafe; left-mid small open tennis practice court behind fine wire fence, empty of people, trimmed trees in planters. Tall mature tree branches cross the skyline, flagpoles carry small solid banners with no text. Seasonal trees and integrated snow on stadium ledges. Dense realistic structural textures, no huge empty pitch or foreground roadway.\n\nFINAL LAYOUT CHECK: the full canvas is taller than it is wide. Four equal tall-enough rows. Overall portrait 4:5 format. All buildings must retain natural proportions within each 3.2:1 panorama.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "sendagaya-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            344
+          ],
+          "sha256": "82a1aefa8d31668e932dc1a25d3a60cc6b91850e1410946ae71e00cdd6d466ea"
+        },
+        {
+          "season": "summer",
+          "file": "sendagaya-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            350,
+            1122,
+            344
+          ],
+          "sha256": "a6dcf3a1da210f719230b5092b32a95f2761768d30532eb017dd72718f4b35a5"
+        },
+        {
+          "season": "autumn",
+          "file": "sendagaya-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            700,
+            1122,
+            346
+          ],
+          "sha256": "94cecb0c9a7c9de6b80aafc94f2a25a7b6bd03df55c7eb451f1bbbf61b154c96"
+        },
+        {
+          "season": "winter",
+          "file": "sendagaya-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1053,
+            1122,
+            346
+          ],
+          "sha256": "fb64b0868fe969ab129f8455e202e6a960d7da51e4c8b5c720015c056934bcab"
+        }
+      ]
+    },
+    {
+      "id": "sasazuka",
+      "name": "笹塚ガード商店街",
+      "english": "SASAZUKA UNDERTRACK",
+      "master": {
+        "file": "sasazuka-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "58e3795a9acb9ff4f42dd69bc1953ecfaa21899db80b534657431420ae24f0e2"
+      },
+      "prompt": "MANDATORY CANVAS: a TALL PORTRAIT image, width:height = 4:5 (1122 × 1402 pixels). It contains FOUR panoramas stacked top to bottom, each panorama approximately 1122 × 350 pixels, approximately 3.2:1. The overall sheet MUST be portrait, NOT landscape. Do not squeeze four scenes into a wide landscape sheet.\n\nUse case: stylized-concept. Create an ORIGINAL richly detailed 16-bit pixel-art environment atlas for a Japanese driving game, commercial-quality intricate hand-painted pixel architecture, nuanced material texture, individual windows and shop interiors, vibrant Tokyo twilight atmosphere, crisp clustered pixels. Image layout: exactly FOUR equal-height full-width panoramic strips stacked vertically, no borders, no margins, no captions. Preferred canvas 1536 x 1920, each strip 1536 x 480. Top to bottom: SPRING, SUMMER, AUTUMN, WINTER. All four rows depict exactly the same district camera, architecture, building widths, roof silhouettes, window positions, signs and spatial composition. Only seasonal foliage, snow and light change. Panoramic mostly frontal view across an unseen road, rich low-to-tall varied architectural layering. Buildings reach the very bottom of EACH strip, with only a very thin sidewalk edge. No foreground road or large paving area. No cars, vehicles, people, UI, captions, watermarks, giant untextured geometry, montage or collage. District composition must be genuinely original, richly place-specific with tiny details: window grids, awnings, railings, HVAC units, antennas, weathered facades, shop shelves, tree branches, utility wires. Spring pink cherry blossoms, rosy peach-violet evening sky. Summer lush green foliage, luminous blue-cyan late-afternoon sky. Autumn crimson and golden leaves, amber-pink evening sky. Winter bare trees and delicately integrated snow on ledges, roofs, planters, lavender-blue sky and warm windows. Every row remains a complete coherent panorama.\n\nDistrict: Sasazuka railway-undertrack shopping district, Tokyo: left half dominated by a dark sage-green riveted steel railway viaduct crossing horizontally above intimately detailed small shops built into brick and concrete arches, warm lantern noodle bar, produce store with crates, a tiny watch repair kiosk; no train on the bridge. Mid-right a small station entry with angular glass awning and a silver stair ascending, behind it modest apartments with balconies and laundry poles. Right edge a narrow clear stream runs through deep stone-lined channel, a delicate short red footbridge crosses it side-on near flowering trees and a low cream bakery. Keep the viaduct underside, contrasting golden shops and little waterway as unmistakable anchors. Thin overhead catenary, steel bolts, drainpipes, posters and window grilles richly defined. No road, cars, people, broad water foreground.\n\nFINAL LAYOUT CHECK: the full canvas is taller than it is wide. Four equal tall-enough rows. Overall portrait 4:5 format. All buildings must retain natural proportions within each 3.2:1 panorama.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "sasazuka-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            344
+          ],
+          "sha256": "f8453c69ddb38b065bf705857f815d328a3dad6a853b35a5eae42dd7c24efd19"
+        },
+        {
+          "season": "summer",
+          "file": "sasazuka-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            350,
+            1122,
+            345
+          ],
+          "sha256": "a6bcfd2975868dfaeb4b9d89f833e98e7fea0ba0bd1d05fd33e42a93e876b934"
+        },
+        {
+          "season": "autumn",
+          "file": "sasazuka-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            701,
+            1122,
+            347
+          ],
+          "sha256": "3286615d50333d5bf71d61049ff414709558b798059b6bb9af89d62c5acac126"
+        },
+        {
+          "season": "winter",
+          "file": "sasazuka-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1054,
+            1122,
+            346
+          ],
+          "sha256": "95577b299328750c0771f176684947977132de80cf59c7ed1573dcd7dc62d42e"
+        }
+      ]
+    },
+    {
+      "id": "hatagaya",
+      "name": "幡ヶ谷六号通り",
+      "english": "HATAGAYA SIXTH STREET",
+      "master": {
+        "file": "hatagaya-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "d3a5ab6daeca9540a1723739e7d94edd63c759c8b94c8be805cb76a262b844dd"
+      },
+      "prompt": "MANDATORY CANVAS: a TALL PORTRAIT image, width:height = 4:5 (1122 × 1402 pixels). It contains FOUR panoramas stacked top to bottom, each panorama approximately 1122 × 350 pixels, approximately 3.2:1. The overall sheet MUST be portrait, NOT landscape. Do not squeeze four scenes into a wide landscape sheet.\n\nUse case: stylized-concept. Create an ORIGINAL richly detailed 16-bit pixel-art environment atlas for a Japanese driving game, commercial-quality intricate hand-painted pixel architecture, nuanced material texture, individual windows and shop interiors, vibrant Tokyo twilight atmosphere, crisp clustered pixels. Image layout: exactly FOUR equal-height full-width panoramic strips stacked vertically, no borders, no margins, no captions. Preferred canvas 1536 x 1920, each strip 1536 x 480. Top to bottom: SPRING, SUMMER, AUTUMN, WINTER. All four rows depict exactly the same district camera, architecture, building widths, roof silhouettes, window positions, signs and spatial composition. Only seasonal foliage, snow and light change. Panoramic mostly frontal view across an unseen road, rich low-to-tall varied architectural layering. Buildings reach the very bottom of EACH strip, with only a very thin sidewalk edge. No foreground road or large paving area. No cars, vehicles, people, UI, captions, watermarks, giant untextured geometry, montage or collage. District composition must be genuinely original, richly place-specific with tiny details: window grids, awnings, railings, HVAC units, antennas, weathered facades, shop shelves, tree branches, utility wires. Spring pink cherry blossoms, rosy peach-violet evening sky. Summer lush green foliage, luminous blue-cyan late-afternoon sky. Autumn crimson and golden leaves, amber-pink evening sky. Winter bare trees and delicately integrated snow on ledges, roofs, planters, lavender-blue sky and warm windows. Every row remains a complete coherent panorama.\n\nDistrict: Hatagaya Sixth Street old Tokyo neighborhood shops: far left an aged turquoise metal shopping-arcade portal with frosted glass canopy and modest small integrated Japanese sign; immediately adjacent two-story old butcher and grocery shops with detailed trays and produce crates. Center-left an old neighborhood bathhouse with blue glazed tile facade, patterned noren at its entrance and a tall cream brick chimney rising behind its low curved tiled roof. Center-right a faded coral four-story apartment with tiny balconies over a broad vegetable stand under striped green awning. Far right a small dark wooden record store with warm album displays and a compact bakery beside it. Dense utility wires, old antennas, varied old concrete texture, small planters and seasonal street trees. Human-scale weathered authentic architecture, no 109 tower or large neon high-rise. Narrow sidewalk edge only, no people or vehicles.\n\nFINAL LAYOUT CHECK: the full canvas is taller than it is wide. Four equal tall-enough rows. Overall portrait 4:5 format. All buildings must retain natural proportions within each 3.2:1 panorama.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "hatagaya-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            319
+          ],
+          "sha256": "c42f45b76fb162d4cb00c25cf45076f7d8f1ff34ef9a3acb441925f9035a0450"
+        },
+        {
+          "season": "summer",
+          "file": "hatagaya-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            328,
+            1122,
+            326
+          ],
+          "sha256": "fcab87ebed1d4901251b90f33129eb288468226e43ee2dd16a8de4de839def00"
+        },
+        {
+          "season": "autumn",
+          "file": "hatagaya-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            664,
+            1122,
+            327
+          ],
+          "sha256": "cdf23a9b736c2e2090059241a11ad3844396099e52d39ada03cfb830f7ef2a2e"
+        },
+        {
+          "season": "winter",
+          "file": "hatagaya-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1000,
+            1122,
+            346
+          ],
+          "sha256": "195f173a150168cd673f67f07c8b04296032ea63bd2dce9e05832446fc26ee61"
+        }
+      ]
+    },
+    {
+      "id": "uehara",
+      "name": "代々木上原の坂",
+      "english": "YOYOGI UEHARA HILL",
+      "master": {
+        "file": "uehara-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "aedf9661abd05a6429a396366a6474b4d035b6fcbcca2a14688dcedc5e2f5b8c"
+      },
+      "prompt": "MANDATORY CANVAS: a TALL PORTRAIT image, width:height = 4:5 (1122 × 1402 pixels). It contains FOUR panoramas stacked top to bottom, each panorama approximately 1122 × 350 pixels, approximately 3.2:1. The overall sheet MUST be portrait, NOT landscape. Do not squeeze four scenes into a wide landscape sheet.\n\nUse case: stylized-concept. Create an ORIGINAL richly detailed 16-bit pixel-art environment atlas for a Japanese driving game, commercial-quality intricate hand-painted pixel architecture, nuanced material texture, individual windows and shop interiors, vibrant Tokyo twilight atmosphere, crisp clustered pixels. Image layout: exactly FOUR equal-height full-width panoramic strips stacked vertically, no borders, no margins, no captions. Preferred canvas 1536 x 1920, each strip 1536 x 480. Top to bottom: SPRING, SUMMER, AUTUMN, WINTER. All four rows depict exactly the same district camera, architecture, building widths, roof silhouettes, window positions, signs and spatial composition. Only seasonal foliage, snow and light change. Panoramic mostly frontal view across an unseen road, rich low-to-tall varied architectural layering. Buildings reach the very bottom of EACH strip, with only a very thin sidewalk edge. No foreground road or large paving area. No cars, vehicles, people, UI, captions, watermarks, giant untextured geometry, montage or collage. District composition must be genuinely original, richly place-specific with tiny details: window grids, awnings, railings, HVAC units, antennas, weathered facades, shop shelves, tree branches, utility wires. Spring pink cherry blossoms, rosy peach-violet evening sky. Summer lush green foliage, luminous blue-cyan late-afternoon sky. Autumn crimson and golden leaves, amber-pink evening sky. Winter bare trees and delicately integrated snow on ledges, roofs, planters, lavender-blue sky and warm windows. Every row remains a complete coherent panorama.\n\nDistrict: Yoyogi Uehara residential hill, Tokyo: layered green residential terraces stepping up LEFT, with a steep narrow concrete stair passage climbing among stone retaining walls. Far left tall cream mid-century apartment elevated above mossy wall and garden, deep balconies and small roof tank. Center-left an old dark wooden villa behind layered flowering shrubs; center a warm amber-lit tiny bakery perched on a stone terrace, white awning and intricately rendered bread baskets. Right a restrained brick school facade with tall rectangular windows, then modest pale-blue two-story houses and an intimate garden entrance. Broad mature maple tree at center-right, utility poles and wires track hillside heights. Highly varied textured stone retaining walls and railings, garden stairs supply vertical drama; keep bottom edge near building bases, no large descending roadway. No people, cars or generic shopping gate.\n\nFINAL LAYOUT CHECK: the full canvas is taller than it is wide. Four equal tall-enough rows. Overall portrait 4:5 format. All buildings must retain natural proportions within each 3.2:1 panorama.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "uehara-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            345
+          ],
+          "sha256": "11de7873452dd3e54a748d6a097a4f4aeb305c80449b7ab998623a2df1dd7b56"
+        },
+        {
+          "season": "summer",
+          "file": "uehara-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            351,
+            1122,
+            345
+          ],
+          "sha256": "73ef6f620b1ffaf38d78daef900ea415b1d11ebb3577d24532e7420f9abb6261"
+        },
+        {
+          "season": "autumn",
+          "file": "uehara-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            702,
+            1122,
+            345
+          ],
+          "sha256": "d2ba68e0059f5dc76becbab55c2fe6bb67ee5ccd00079d6277866a5bd0caad24"
+        },
+        {
+          "season": "winter",
+          "file": "uehara-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1054,
+            1122,
+            346
+          ],
+          "sha256": "2ab6b021ce571873264064392474b188780f12960c384ae6893133646177b7a1"
+        }
+      ]
+    },
+    {
+      "id": "miyashita",
+      "name": "宮下の高架公園",
+      "english": "MIYASHITA PARK DECK",
+      "master": {
+        "file": "miyashita-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "e0fd71b569fc053845eaa94349a0848a130564452fed5206acbbd340b56634d1"
+      },
+      "prompt": "MANDATORY CANVAS: a TALL PORTRAIT image, width:height = 4:5 (1122 × 1402 pixels). It contains FOUR panoramas stacked top to bottom, each panorama approximately 1122 × 350 pixels, approximately 3.2:1. The overall sheet MUST be portrait, NOT landscape. Do not squeeze four scenes into a wide landscape sheet.\n\nUse case: stylized-concept. Create an ORIGINAL richly detailed 16-bit pixel-art environment atlas for a Japanese driving game, commercial-quality intricate hand-painted pixel architecture, nuanced material texture, individual windows and shop interiors, vibrant Tokyo twilight atmosphere, crisp clustered pixels. Image layout: exactly FOUR equal-height full-width panoramic strips stacked vertically, no borders, no margins, no captions. Preferred canvas 1536 x 1920, each strip 1536 x 480. Top to bottom: SPRING, SUMMER, AUTUMN, WINTER. All four rows depict exactly the same district camera, architecture, building widths, roof silhouettes, window positions, signs and spatial composition. Only seasonal foliage, snow and light change. Panoramic mostly frontal view across an unseen road, rich low-to-tall varied architectural layering. Buildings reach the very bottom of EACH strip, with only a very thin sidewalk edge. No foreground road or large paving area. No cars, vehicles, people, UI, captions, watermarks, giant untextured geometry, montage or collage. District composition must be genuinely original, richly place-specific with tiny details: window grids, awnings, railings, HVAC units, antennas, weathered facades, shop shelves, tree branches, utility wires. Spring pink cherry blossoms, rosy peach-violet evening sky. Summer lush green foliage, luminous blue-cyan late-afternoon sky. Autumn crimson and golden leaves, amber-pink evening sky. Winter bare trees and delicately integrated snow on ledges, roofs, planters, lavender-blue sky and warm windows. Every row remains a complete coherent panorama.\n\nDistrict: Miyashita elevated rooftop park and urban retail deck in Tokyo: a distinctly horizontal modern multilevel composition. Left and center long pale concrete-and-steel retail podium with illuminated small shop windows under a large raised park lawn, planters and delicate curving lattice canopy above. On the roof a small empty skate bowl behind transparent safety mesh and a line of slender trees. Left-mid a broad diagonal outdoor stair rises visibly from bottom toward the green rooftop, intricate railings and lit step edges; right an open outdoor terrace joins a tall slim glass hotel tower partly cropped by top edge, and a low cafe under stacked terraced balconies. Rich structural trusses, retail interiors, trees, garden grasses and warm lighting make this lived-in. Same structure all seasons, changing rooftop foliage and snow. No cars in parking areas, no skaters or people, no road foreground.\n\nFINAL LAYOUT CHECK: the full canvas is taller than it is wide. Four equal tall-enough rows. Overall portrait 4:5 format. All buildings must retain natural proportions within each 3.2:1 panorama.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "miyashita-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            329
+          ],
+          "sha256": "efb09bbecd1ff5be61594649bd98e2cdfded58235bbab07da5f2d85095af74b5"
+        },
+        {
+          "season": "summer",
+          "file": "miyashita-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            338,
+            1122,
+            339
+          ],
+          "sha256": "cff9d520e78d5179e55d8c595b8d727463f2709a6ec893c26493b9a8063982f7"
+        },
+        {
+          "season": "autumn",
+          "file": "miyashita-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            688,
+            1122,
+            340
+          ],
+          "sha256": "79e8ca9bdc7c2fcca8144627b6cb4f518dc15fb61ac0cdfef9011cc2ddf7d289"
+        },
+        {
+          "season": "winter",
+          "file": "miyashita-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1038,
+            1122,
+            348
+          ],
+          "sha256": "307c545c4a98cd37b28ed4658ca94ce05039005a74d85ac23830f5d7f0bbbb21"
+        }
+      ]
+    },
+    {
+      "id": "riverdeck",
+      "name": "渋谷川の遊歩道",
+      "english": "SHIBUYA RIVER WALK",
+      "master": {
+        "file": "riverdeck-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "7e24de6913fe9f0181949a71a8770656eb498775e951a6b0b49caff81057c0f1"
+      },
+      "prompt": "MANDATORY CANVAS: a TALL PORTRAIT image, width:height = 4:5 (1122 × 1402 pixels). It contains FOUR panoramas stacked top to bottom, each panorama approximately 1122 × 350 pixels, approximately 3.2:1. The overall sheet MUST be portrait, NOT landscape. Do not squeeze four scenes into a wide landscape sheet.\n\nUse case: stylized-concept. Create an ORIGINAL richly detailed 16-bit pixel-art environment atlas for a Japanese driving game, commercial-quality intricate hand-painted pixel architecture, nuanced material texture, individual windows and shop interiors, vibrant Tokyo twilight atmosphere, crisp clustered pixels. Image layout: exactly FOUR equal-height full-width panoramic strips stacked vertically, no borders, no margins, no captions. Preferred canvas 1536 x 1920, each strip 1536 x 480. Top to bottom: SPRING, SUMMER, AUTUMN, WINTER. All four rows depict exactly the same district camera, architecture, building widths, roof silhouettes, window positions, signs and spatial composition. Only seasonal foliage, snow and light change. Panoramic mostly frontal view across an unseen road, rich low-to-tall varied architectural layering. Buildings reach the very bottom of EACH strip, with only a very thin sidewalk edge. No foreground road or large paving area. No cars, vehicles, people, UI, captions, watermarks, giant untextured geometry, montage or collage. District composition must be genuinely original, richly place-specific with tiny details: window grids, awnings, railings, HVAC units, antennas, weathered facades, shop shelves, tree branches, utility wires. Spring pink cherry blossoms, rosy peach-violet evening sky. Summer lush green foliage, luminous blue-cyan late-afternoon sky. Autumn crimson and golden leaves, amber-pink evening sky. Winter bare trees and delicately integrated snow on ledges, roofs, planters, lavender-blue sky and warm windows. Every row remains a complete coherent panorama.\n\nDistrict: Shibuya River Walk, Tokyo, a dense urban waterfront composition. Thin river occupies only the bottom tenth with finely drawn concrete channel wall and faint luminous water reflections, no broad empty water area. Left tall angular blue-glass office tower rises behind a small steel pedestrian bridge. Center a layered two-level warm timber-and-glass cafe deck built along the channel wall, detailed empty tables and pale umbrellas, planter trees and illuminated stair. Right an elegant white angular pedestrian bridge with triangulated railings crosses diagonally above the channel toward a small brick restaurant, backed by dense contemporary mid-rise buildings with balconies, pipes and rooftop details. Long elevated planter strip follows waterline. Distinct engineered riverbanks, bridges and cafe terrace, no conventional street or shopping gateway. Blossom/green/autumn/bare seasonal trees, snow integrated on deck railings and bridge top, intricate pixel lighting.\n\nFINAL LAYOUT CHECK: the full canvas is taller than it is wide. Four equal tall-enough rows. Overall portrait 4:5 format. All buildings must retain natural proportions within each 3.2:1 panorama.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "riverdeck-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            348
+          ],
+          "sha256": "d37574d5e01f429ed060f7ef67354d27d6d358e938b9bb95f8706e7cafbf589e"
+        },
+        {
+          "season": "summer",
+          "file": "riverdeck-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            351,
+            1122,
+            346
+          ],
+          "sha256": "1df8082b6ac7b5699b5a1e28ddad4137493d27e392d38e2bc61303746ccbdccc"
+        },
+        {
+          "season": "autumn",
+          "file": "riverdeck-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            702,
+            1122,
+            345
+          ],
+          "sha256": "a50c66797ae33fc78463028dabf0e706a2581cec1636442d0068e41399f793c2"
+        },
+        {
+          "season": "winter",
+          "file": "riverdeck-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1054,
+            1122,
+            347
+          ],
+          "sha256": "655d4e9e1c14870b608d30b67b38e15172bfe4ecec0a8fc11f5ff88aa1e1296a"
+        }
+      ]
+    }
+  ]
+}
