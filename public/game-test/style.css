@@ -1,0 +1,1296 @@
+/* Scene-based app shell. All sizing starts with a touch screen and a 960×540 world. */
+:root {
+  color-scheme: dark;
+  --bg: #13121e;
+  --panel: #211e30;
+  --line: #51425f;
+  --ink: #fff3f2;
+  --muted: #c4b7cb;
+  --pink: #ff86c6;
+  --cyan: #8fe8dc;
+  --gold: #ffda91;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  font-family:
+    system-ui,
+    -apple-system,
+    "Hiragino Kaku Gothic ProN",
+    "Yu Gothic",
+    sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background:
+    radial-gradient(ellipse at 50% 0, #35213b 0, transparent 60%), var(--bg);
+}
+[hidden] {
+  display: none !important;
+}
+button,
+select {
+  font: inherit;
+  color: inherit;
+}
+button,
+a,
+select {
+  -webkit-tap-highlight-color: transparent;
+}
+button {
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #31283f;
+  padding: 10px 16px;
+  font-weight: 700;
+  cursor: pointer;
+  line-height: 1.4;
+  touch-action: manipulation;
+}
+button:hover:not(:disabled) {
+  border-color: var(--pink);
+  background: #46324d;
+}
+button:focus-visible,
+a:focus-visible,
+select:focus-visible,
+summary:focus-visible,
+canvas:focus-visible {
+  outline: 3px solid var(--cyan);
+  outline-offset: 3px;
+}
+button:disabled {
+  opacity: 0.42;
+  cursor: default;
+}
+button.primary {
+  background: var(--pink);
+  color: #28172e;
+  border-color: var(--pink);
+}
+button.primary:hover:not(:disabled) {
+  background: #ffb2da;
+}
+a {
+  color: var(--cyan);
+}
+p {
+  line-height: 1.6;
+}
+h1,
+h2,
+h3,
+p {
+  margin-top: 0;
+}
+h2 {
+  font-size: clamp(20px, 3vw, 30px);
+  line-height: 1.35;
+}
+h3 {
+  font-size: 17px;
+}
+small {
+  color: var(--muted);
+  line-height: 1.5;
+}
+.shell {
+  max-width: 1440px;
+  margin: auto;
+  padding: 0 max(12px, env(safe-area-inset-left)) max(20px, var(--safe-bottom))
+    max(12px, env(safe-area-inset-right));
+}
+.masthead {
+  height: 72px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  flex: none;
+}
+.brand img {
+  display: block;
+  width: 180px;
+  height: 60px;
+  object-fit: contain;
+}
+.app-caption {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0;
+}
+.settings {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+.settings button {
+  font-size: 12px;
+  background: #221c30;
+  padding: 8px 12px;
+}
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+}
+.cabinet {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  overflow: hidden;
+  background: #171329;
+  box-shadow: 0 16px 50px #08071066;
+}
+.topline {
+  height: 46px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  background: #211a2c;
+}
+.topline b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.topline span {
+  margin-left: auto;
+  white-space: nowrap;
+  color: var(--muted);
+}
+.topline button {
+  min-height: 44px;
+  font-size: 11px;
+  padding: 6px 10px;
+  border-radius: 8px;
+}
+.viewport {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16/9;
+  overflow: hidden;
+  background: #171329;
+}
+#game {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  touch-action: manipulation;
+}
+.dashboard {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 150px 85px;
+  gap: 20px;
+  padding: 12px 16px;
+  background: #241d32;
+  border-top: 2px solid #ff86c6;
+}
+.objective > div:first-child,
+.objective-bottom {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+}
+.objective > div:first-child span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.objective strong {
+  color: var(--cyan);
+  white-space: nowrap;
+}
+.objective-bottom {
+  font-size: 11px;
+  color: var(--muted);
+}
+.route-track,
+.meter,
+.speed-meter {
+  height: 5px;
+  background: #4b3d56;
+  overflow: hidden;
+  border-radius: 4px;
+}
+.route-track {
+  margin: 10px 0;
+}
+.route-track i,
+.meter i,
+.speed-meter i {
+  display: block;
+  height: 100%;
+  width: 100%;
+  background: var(--pink);
+}
+.route-track i {
+  width: 0;
+  background: var(--cyan);
+}
+.condition {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 4px;
+}
+.condition label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--muted);
+}
+.meter i {
+  background: var(--cyan);
+}
+.meter.energy i {
+  background: #e9a5f3;
+}
+.wallet {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  font-size: 10px;
+  color: var(--muted);
+}
+.wallet strong {
+  font-size: 26px;
+  line-height: 1;
+  color: var(--gold);
+}
+.speed-meter {
+  height: 3px;
+}
+.speed-meter i {
+  width: 0;
+  background: var(--gold);
+}
+.below-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(330px, 0.8fr);
+  align-items: center;
+  gap: 20px;
+}
+.crew {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+.crew-portraits {
+  width: 180px;
+  flex: none;
+}
+#crew-actions {
+  display: block;
+  width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+}
+.dialogue span {
+  font-size: 11px;
+  color: var(--pink);
+}
+.dialogue p {
+  font-size: 13px;
+  margin: 6px 0;
+  line-height: 1.5;
+}
+.controls {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+.controls button {
+  min-height: 76px;
+  padding: 12px 6px;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  font-size: 14px;
+}
+.controls small {
+  display: block;
+  font-size: 10px;
+  margin-top: 6px;
+  font-weight: 400;
+}
+.controls .boost {
+  border-color: #78d9cd;
+  background: #203e43;
+}
+.controls .hearts {
+  border-color: #fa85bd;
+  background: #542843;
+}
+.controls .charge {
+  border-color: #e2bc70;
+  background: #453922;
+}
+.controls button.active {
+  background: #fff0f8;
+  color: #28172e;
+  box-shadow: 0 0 0 3px #ff8dcc66 inset;
+}
+.controls button.active small {
+  color: #50344e;
+}
+/* Distinct interlude screens. Map and garage never share a scrolling stack. */
+.tour-guide {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #211b2d;
+  padding: 20px;
+}
+.map-tabs {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 14px;
+  margin-bottom: 18px;
+}
+.map-tabs button {
+  flex: 1;
+}
+.map-tabs button[aria-pressed="true"] {
+  background: #65415c;
+  border-color: var(--pink);
+}
+.guide-title h2 {
+  margin-bottom: 6px;
+}
+.guide-title p {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+.eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.09em;
+  color: var(--pink);
+  font-weight: 800;
+}
+.road-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.road-option {
+  text-align: left;
+  min-height: 100px;
+  background: #2b2639;
+}
+.road-option strong {
+  display: block;
+  font-size: 16px;
+}
+.road-option small {
+  display: block;
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 400;
+}
+.road-option.selected {
+  border: 2px solid var(--cyan);
+  background: #263a3d;
+}
+.departure {
+  width: 100%;
+  margin-top: 16px;
+  min-height: 52px;
+}
+#climate-summary {
+  font-size: 12px;
+  color: var(--gold);
+  line-height: 1.7;
+}
+.route-atlas {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  margin-top: 14px;
+  padding: 0 12px;
+}
+.route-atlas summary {
+  cursor: pointer;
+  padding: 12px 0;
+  font-size: 13px;
+  min-height: 44px;
+}
+.route-atlas label {
+  display: block;
+  font-size: 12px;
+  margin: 6px 0;
+}
+.route-atlas select,
+fieldset select {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  background: #1c1829;
+  border-radius: 8px;
+  padding: 8px;
+}
+.route-atlas canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+  margin-top: 12px;
+  border-radius: 6px;
+}
+#atlas-caption {
+  font-size: 11px;
+  color: var(--muted);
+  margin: 8px 0;
+}
+.shop-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 20px;
+}
+.shop-heading h2 {
+  margin-bottom: 8px;
+}
+.shop-heading span {
+  color: var(--muted);
+  font-size: 12px;
+}
+#garage-wallet {
+  color: var(--gold);
+  font-size: 14px;
+}
+.car-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(215px, 1fr));
+  gap: 14px;
+  margin: 18px 0;
+}
+.car-card {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #272136;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.car-card.equipped {
+  border: 2px solid var(--pink);
+}
+.car-card canvas {
+  width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+  border-radius: 8px;
+  background: #181824;
+}
+.car-card h3,
+.car-card p {
+  margin: 0;
+}
+.car-card h3 {
+  color: var(--pink);
+}
+.car-card p,
+.car-stats {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.car-card button {
+  margin-top: auto;
+  font-size: 12px;
+}
+.car-customization {
+  margin: 20px 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.car-customization legend {
+  padding: 0 8px;
+  color: var(--pink);
+}
+.car-customization label {
+  font-size: 12px;
+  color: var(--muted);
+}
+.car-customization select {
+  display: block;
+  margin-top: 8px;
+}
+.shop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
+}
+.shop-item {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px;
+  background: #282137;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.shop-item h3,
+.shop-item p {
+  margin: 0;
+}
+.shop-item p {
+  font-size: 12px;
+  color: var(--muted);
+}
+.shop-item button {
+  margin-top: auto;
+  font-size: 12px;
+}
+.shop-item small {
+  font-size: 11px;
+}
+#shop-status {
+  font-size: 12px;
+  color: var(--cyan);
+  margin: 12px 0;
+}
+#garage-done {
+  width: 100%;
+  margin-top: 12px;
+}
+.toast {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  max-width: 90%;
+  padding: 10px 16px;
+  border: 1px solid var(--pink);
+  border-radius: 10px;
+  background: #231c32ed;
+  color: var(--ink);
+  font-size: 13px;
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+  z-index: 8;
+}
+.toast.on {
+  opacity: 1;
+}
+/* Menus and questions are readable panels, separate from driving controls. */
+.screen-menu {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 5%;
+  background: linear-gradient(
+    90deg,
+    #151023f2 0,
+    #151023c9 48%,
+    #15102316 100%
+  );
+}
+h1 {
+  font-size: clamp(28px, 6vw, 72px);
+  line-height: 1.05;
+  margin: 12px 0;
+  letter-spacing: -0.04em;
+}
+h1 span {
+  display: block;
+  color: var(--pink);
+}
+h1 sup {
+  display: none;
+}
+.tagline {
+  font-size: clamp(12px, 2vw, 18px);
+  color: var(--gold);
+  margin-bottom: 10px;
+}
+.menu-copy {
+  font-size: 13px;
+  max-width: 370px;
+  color: var(--muted);
+}
+.menu-actions {
+  margin: 6px 0;
+}
+.screen-menu #resume-tour {
+  margin-top: 6px;
+  background: #241c32d9;
+}
+.loading {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 12px;
+}
+.result,
+.pause-overlay,
+.quiz-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  padding: 20px;
+  background: #13101edb;
+  overflow: auto;
+}
+.result-card,
+.quiz-card {
+  width: min(100%, 540px);
+  padding: 24px;
+  background: #282032;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+.result-card p {
+  font-size: 14px;
+}
+.result-card button,
+.pause-overlay > button {
+  margin: 8px 8px 0 0;
+}
+.pause-overlay h2 {
+  margin-bottom: 10px;
+}
+.pause-overlay p {
+  color: var(--muted);
+}
+#result-stats {
+  color: var(--gold);
+  font-size: 13px;
+  margin: 16px 0;
+}
+.quiz-card h2 {
+  font-size: 22px;
+  margin: 12px 0;
+}
+.quiz-tip {
+  font-size: 12px;
+  color: var(--muted);
+}
+#quiz-choices {
+  display: grid;
+  gap: 10px;
+}
+#quiz-choices button {
+  text-align: left;
+  padding: 12px 16px;
+  min-height: 50px;
+  font-size: 14px;
+}
+#quiz-choices button.correct {
+  background: #284c42;
+  border-color: var(--cyan);
+  opacity: 1;
+}
+#quiz-feedback {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--gold);
+  margin: 14px 0;
+}
+#quiz-source {
+  font-size: 11px;
+  display: block;
+  margin-bottom: 12px;
+}
+#quiz-continue {
+  width: 100%;
+  font-size: 13px;
+}
+footer {
+  text-align: center;
+  color: #a99ab6;
+  font-size: 11px;
+  margin-top: 24px;
+  line-height: 1.7;
+}
+body:not([data-screen="playing"]) .controls,
+body[data-screen="map"] .below-stage,
+body[data-screen="map"] .dashboard,
+body[data-screen="menu"] .dashboard,
+body[data-screen="result"] .dashboard,
+body[data-screen="finale"] .dashboard {
+  display: none;
+}
+body[data-screen="map"] .workspace {
+  grid-template-columns: minmax(0, 1.25fr) minmax(320px, 1fr);
+  align-items: start;
+}
+body[data-screen="map"] .topline button {
+  display: none;
+}
+body[data-screen="map"][data-map-panel="garage"] .workspace {
+  grid-template-columns: 1fr;
+}
+body[data-screen="map"][data-map-panel="garage"] .cabinet {
+  display: none;
+}
+body[data-screen="map"][data-map-panel="garage"] .tour-guide {
+  max-width: 1180px;
+  width: 100%;
+  margin: auto;
+}
+body[data-screen="quiz"] .below-stage {
+  display: none;
+}
+@media (max-width: 800px) {
+  .shell {
+    padding-left: max(10px, env(safe-area-inset-left));
+    padding-right: max(10px, env(safe-area-inset-right));
+  }
+  .masthead {
+    height: 58px;
+    gap: 10px;
+  }
+  .brand img {
+    width: 135px;
+    height: 48px;
+  }
+  .app-caption {
+    display: none;
+  }
+  .settings {
+    gap: 6px;
+  }
+  .settings button {
+    font-size: 10px;
+    padding: 8px;
+    min-height: 44px;
+  }
+  .below-stage {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .crew-portraits {
+    width: 140px;
+  }
+  .dialogue p {
+    font-size: 12px;
+  }
+  .controls button {
+    min-height: 72px;
+  }
+  .dashboard {
+    grid-template-columns: minmax(0, 1fr) 120px 55px;
+    gap: 12px;
+    padding: 10px;
+  }
+  .wallet strong {
+    font-size: 22px;
+  }
+  .objective > div:first-child,
+  .objective-bottom {
+    font-size: 10px;
+  }
+  .objective-bottom #combo {
+    max-width: 50%;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .condition label {
+    font-size: 9px;
+  }
+  .topline {
+    height: 46px;
+    padding: 0 10px;
+    font-size: 11px;
+  }
+  .topline span {
+    font-size: 10px;
+  }
+  .topline button {
+    min-height: 44px;
+  }
+  .tour-guide {
+    padding: 16px;
+  }
+  body[data-screen="map"] .workspace {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  body[data-screen="map"] .cabinet {
+    max-width: 560px;
+    width: 100%;
+    margin: auto;
+  }
+  .map-tabs {
+    margin-bottom: 14px;
+  }
+  .guide-title h2 {
+    font-size: 22px;
+  }
+  .shop-heading {
+    display: block;
+  }
+  .shop-heading span {
+    display: block;
+    margin-bottom: 12px;
+  }
+  .car-customization {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .screen-menu {
+    padding: 5%;
+  }
+  .menu-copy {
+    font-size: 11px;
+    margin-bottom: 6px;
+  }
+  .screen-menu .eyebrow {
+    font-size: 9px;
+  }
+  .screen-menu button {
+    font-size: 12px;
+    padding: 9px 12px;
+  }
+  .loading {
+    font-size: 9px;
+  }
+  .tagline {
+    margin-bottom: 6px;
+  }
+  footer {
+    font-size: 10px;
+  }
+}
+@media (max-width: 480px) {
+  .workspace {
+    gap: 10px;
+  }
+  .cabinet {
+    border-radius: 12px;
+  }
+  .topline span {
+    display: none;
+  }
+  .topline button {
+    margin-left: auto;
+  }
+  .dashboard {
+    grid-template-columns: minmax(0, 1fr) 90px 45px;
+    gap: 10px;
+  }
+  .objective-bottom #combo {
+    display: none;
+  }
+  .wallet strong {
+    font-size: 19px;
+  }
+  .crew-portraits {
+    width: 128px;
+  }
+  .dialogue span {
+    font-size: 10px;
+  }
+  .dialogue p {
+    font-size: 11px;
+  }
+  .controls {
+    gap: 8px;
+  }
+  .controls button {
+    font-size: 12px;
+    min-height: 72px;
+  }
+  .controls small {
+    font-size: 9px;
+  }
+  .road-options {
+    gap: 8px;
+  }
+  .road-option {
+    padding: 12px 10px;
+  }
+  .road-option strong {
+    font-size: 14px;
+  }
+  .road-option small {
+    font-size: 11px;
+  }
+  .car-grid {
+    grid-template-columns: 1fr;
+  }
+  .car-card {
+    display: grid;
+    grid-template-columns: 130px minmax(0, 1fr);
+    gap: 8px 12px;
+  }
+  .car-card canvas {
+    grid-row: span 3;
+    align-self: center;
+  }
+  .car-card .car-stats,
+  .car-card button {
+    grid-column: 1/-1;
+  }
+  .shop-grid {
+    grid-template-columns: 1fr;
+  }
+  .screen-menu {
+    background: linear-gradient(90deg, #151023f2, #1510238a);
+    padding: 4%;
+  }
+  h1 {
+    font-size: 28px;
+    margin: 6px 0;
+  }
+  .screen-menu .menu-copy {
+    display: none;
+  }
+  .screen-menu .tagline {
+    font-size: 11px;
+  }
+  .screen-menu .menu-actions {
+    margin: 4px 0;
+  }
+  .screen-menu button {
+    min-height: 44px;
+  }
+  .screen-menu .loading {
+    margin-top: 5px;
+    font-size: 8px;
+  }
+  .quiz-overlay,
+  .result,
+  .pause-overlay {
+    position: fixed;
+    padding: max(12px, env(safe-area-inset-top)) 14px
+      max(12px, var(--safe-bottom));
+    z-index: 30;
+  }
+  .quiz-card,
+  .result-card {
+    padding: 18px;
+  }
+  .quiz-card h2 {
+    font-size: 20px;
+  }
+  .quiz-overlay {
+    justify-content: safe center;
+  }
+}
+/* Landscape play uses the available screen, with dedicated thumb rails. */
+@media (orientation: landscape) and (max-height: 600px) {
+  body[data-screen="playing"],
+  body[data-screen="quiz"] {
+    overflow: hidden;
+  }
+  .masthead {
+    height: 48px;
+  }
+  .brand img {
+    height: 40px;
+    width: 120px;
+  }
+  .settings button {
+    min-height: 44px;
+  }
+  .app-caption {
+    display: none;
+  }
+  body[data-screen="playing"] .shell {
+    height: 100dvh;
+    padding-bottom: var(--safe-bottom);
+  }
+  body[data-screen="playing"] .workspace {
+    height: calc(100dvh - 48px - var(--safe-bottom));
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+    padding: 0 104px 0 78px;
+  }
+  body[data-screen="playing"] .cabinet {
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    display: grid;
+    grid-template-rows: 44px minmax(0, 1fr) 54px;
+    border-radius: 10px;
+  }
+  body[data-screen="playing"] .topline {
+    height: 44px;
+    font-size: 10px;
+  }
+  body[data-screen="playing"] .topline button {
+    min-height: 44px;
+    padding: 4px 8px;
+  }
+  body[data-screen="playing"] .viewport {
+    aspect-ratio: auto;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  body[data-screen="playing"] #game {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  body[data-screen="playing"] .dashboard {
+    padding: 6px 10px;
+    gap: 10px;
+    grid-template-columns: minmax(0, 1fr) 100px 45px;
+  }
+  body[data-screen="playing"] .route-track {
+    margin: 6px 0;
+  }
+  body[data-screen="playing"] .objective-bottom {
+    font-size: 9px;
+  }
+  body[data-screen="playing"] .condition {
+    gap: 2px;
+  }
+  body[data-screen="playing"] .wallet strong {
+    font-size: 19px;
+  }
+  body[data-screen="playing"] .below-stage {
+    display: contents;
+  }
+  body[data-screen="playing"] .crew {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 72px;
+    display: block;
+  }
+  body[data-screen="playing"] .crew-portraits {
+    width: 72px;
+  }
+  body[data-screen="playing"] .dialogue {
+    display: none;
+  }
+  body[data-screen="playing"] .controls {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 96px;
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(4, 1fr);
+    gap: 8px;
+    padding-bottom: 4px;
+  }
+  body[data-screen="playing"] .controls button {
+    min-height: 44px;
+    padding: 6px;
+    font-size: 12px;
+  }
+  body[data-screen="playing"] .controls small {
+    font-size: 8px;
+    margin-top: 4px;
+  }
+  body[data-screen="playing"] footer,
+  body[data-screen="quiz"] footer {
+    display: none;
+  }
+  .quiz-overlay,
+  .result,
+  .pause-overlay {
+    position: fixed;
+    z-index: 30;
+    padding: 12px;
+    justify-content: flex-start;
+  }
+  .quiz-card {
+    max-width: 680px;
+    padding: 16px;
+    margin: auto;
+  }
+  .quiz-card h2 {
+    font-size: 19px;
+    margin: 8px 0;
+  }
+  .quiz-tip {
+    margin-bottom: 8px;
+  }
+  #quiz-choices {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  #quiz-choices button {
+    font-size: 12px;
+    padding: 10px;
+    min-height: 48px;
+  }
+  #quiz-feedback {
+    font-size: 12px;
+    margin: 8px 0;
+  }
+  body[data-screen="map"] .workspace {
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 0.9fr);
+    align-items: start;
+  }
+  body[data-screen="map"] .cabinet {
+    width: 100%;
+    max-width: none;
+  }
+  .tour-guide {
+    padding: 14px;
+  }
+  .guide-title h2 {
+    font-size: 19px;
+  }
+  .guide-title p {
+    font-size: 11px;
+  }
+  .map-tabs {
+    padding-bottom: 10px;
+    margin-bottom: 12px;
+  }
+  .road-option {
+    min-height: 80px;
+    padding: 10px;
+  }
+  .road-option strong {
+    font-size: 13px;
+  }
+  .road-option small {
+    font-size: 10px;
+  }
+  .departure {
+    min-height: 46px;
+    margin-top: 12px;
+  }
+  .screen-menu h1 {
+    font-size: 34px;
+  }
+  .menu-copy {
+    display: none;
+  }
+  .loading {
+    font-size: 9px;
+  }
+  .screen-menu button {
+    min-height: 44px;
+  }
+  body[data-screen="map"][data-map-panel="garage"] .workspace {
+    grid-template-columns: 1fr;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scroll-behavior: auto !important;
+  }
+  .toast {
+    transition: none;
+  }
+}
+
+/* Title content scrolls inside its own panel on small landscape/portrait screens. */
+.screen-menu {
+  overflow: auto;
+}
+@media (max-width: 480px) {
+  .screen-menu h1 {
+    font-size: 24px;
+    line-height: 1;
+  }
+  .screen-menu .tagline {
+    display: none;
+  }
+  .screen-menu .eyebrow {
+    font-size: 8px;
+  }
+}
+/* Modal content uses the whole viewport at every size, including portrait tablets.
+   Auto block margins center short cards; tall cards start at the scroll origin. */
+.result,
+.pause-overlay,
+.quiz-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  justify-content: flex-start;
+  padding: max(16px, env(safe-area-inset-top))
+    max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom))
+    max(16px, env(safe-area-inset-left));
+}
+.result-card,
+.quiz-card {
+  flex-shrink: 0;
+  margin-block: auto;
+}
+.pause-overlay {
+  justify-content: safe center;
+}
+.screen-menu {
+  justify-content: flex-start;
+  justify-content: safe center;
+}
+.screen-menu > * {
+  flex-shrink: 0;
+}
+
+.controls .rush { border-color: #f4bb6e; background: #3e2639; }
+.car-mystery { min-height: 150px; display: grid; place-items: center; color: #e9bbde; font-size: 60px; background: #181327; border-radius: 12px; }
+
+.new-car-picker { max-width: 1100px; margin: 0 auto; padding: 20px; }
+.new-car-picker > p { color: #c7b5d3; line-height: 1.7; }
+.new-car-picker #cars-ready { margin-top: 20px; min-height: 48px; }
+body[data-screen="cars"] .workspace { display: none; }
+
+.music-panel { max-width: 1100px; margin: 16px auto; padding: 12px 18px; border: 1px solid #58405f; border-radius: 12px; background: #181326; }
+.music-panel summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-weight: 800; }
+.music-panel iframe { display: block; width: 100%; border: 0; border-radius: 8px; }
+.music-panel p, .music-panel a { font-size: 13px; line-height: 1.7; color: #d9c6e2; }
+
+/* The same official iframe stays mounted; a fixed dialog makes it reachable
+   when landscape driving intentionally prevents page scrolling. */
+#music-open { min-width: 44px; padding-inline: 10px; }
+body[data-music-open="true"] { overflow: hidden; }
+body[data-music-open="true"] .music-panel {
+  position: fixed; inset: 0; z-index: 50; margin: 0;
+  max-width: none; overflow: auto; overscroll-behavior: contain;
+  border-radius: 0; padding: max(12px, env(safe-area-inset-top))
+    max(16px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom))
+    max(16px, env(safe-area-inset-left));
+}
+body[data-music-open="true"] .music-panel summary { cursor: default; }
+#music-close { margin-right: 8px; }
+@media (max-width: 380px) {
+  .brand img { width: 84px; }
+  .masthead { gap: 6px; }
+  .settings button { font-size: 9px; padding-inline: 6px; }
+}
+
+#starting-customization { margin-block: 24px; }
+#starting-customization p, #customization-preview, #customization-apply { grid-column: 1 / -1; }
+#customization-preview { width: min(100%,420px); height:auto; justify-self:center; image-rendering:pixelated; }
+#customization-apply { min-height:48px; }
+
+#destination-choices { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+.destination-option { overflow:hidden; text-align:left; min-width:0; }
+.destination-option img { width:100%; aspect-ratio:3.2; object-fit:cover; image-rendering:pixelated; border-radius:6px; margin-bottom:10px; }
+.destination-option strong,.destination-option small { display:block; }
+.route-note { color:var(--muted); font-size:12px; line-height:1.7; }
+@media(max-width:600px) { #destination-choices { grid-template-columns:1fr; } .destination-option { display:grid; grid-template-columns:100px 1fr; gap:6px 12px; } .destination-option img { grid-row:1 / 3; margin:0; align-self:center; } }

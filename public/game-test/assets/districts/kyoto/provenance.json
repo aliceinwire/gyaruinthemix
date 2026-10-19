@@ -1,0 +1,1342 @@
+{
+  "generator": "image_gen__imagegen (built-in)",
+  "export": {
+    "method": "Inspected exact crop and nearest-neighbor resizing",
+    "runtimeSize": [
+      528,
+      165
+    ],
+    "note": "Inspected scene-specific boundaries; five winter panels regenerated separately to preserve complete ground-level framing. No synthesized geometry or palette-only seasons."
+  },
+  "scenes": [
+    {
+      "id": "kyoto-gion",
+      "master": {
+        "file": "kyoto-gion-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "b7613cdfbc3aae01f51e90188cf60d885ed1671c3b9d958a6595172633364839"
+      },
+      "prompt": "Use case: stylized-concept. Original intricate 16-bit pixel illustrated game panorama atlas, rich colorful tiny pixel clusters, dense individually drawn architecture, textured materials, luminous interiors, exquisite roof tiles, no vector shapes. Match the rich pixel detail of the supplied reference, but all architecture/composition must be original Kyoto imagery.\nExactly FOUR full-width horizontal landscape strips vertically stacked, equal height, no gutters, no borders, no captions. Preferred canvas 1536 x 1920, each 1536 x 480 panorama. SAME architecture and camera in four strips. Top to bottom spring, summer, autumn, winter. Each panorama must be wide and compact, with buildings filling height and ending at a narrow sidewalk lip at bottom, NO foreground road or broad pavement.\nSUBJECT: Gion lattice teahouse lane: left an ornate ochre three-storey teahouse with densely spaced timber lattice, hanging red lanterns, textile noren and recessed entrances, center a little alley angling away between projecting tiled eaves, right a low cream plaster tea merchant with shop cabinets, parasol and stone shrine wall. Several flowering deciduous trees rise between eaves. Deep intricate timber joinery, tiled ridges, lantern strings and layered roofs. No pagoda.\nSpring: actual dense pink cherry blossoms and fresh flowers, rosy violet sunset. Summer: same trees fully lush green leaves, blue sky, bright warm shop windows. Autumn: same deciduous trees rich amber crimson foliage, orange dusk. Winter: same trees bare branching silhouettes, snow naturally on tiled roofs and vegetation, pale lavender sky and golden windows. Keep every building silhouette/window/landmark in identical positions across seasons, only seasonal foliage and snow and light change. No vehicles, no prominent people, no UI, no labels or headings, no fake foreground geometry, no empty bland blocks. Beautiful coherent handcrafted pixel art with closely layered objects, atmospheric depth and very little empty sky.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "kyoto-gion-spring.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            0,
+            1122,
+            348
+          ],
+          "sha256": "472a2b368a844e35e171d814686949186b9ef224035165f533b5aa66c8778afa"
+        },
+        {
+          "season": "summer",
+          "file": "kyoto-gion-summer.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            350,
+            1122,
+            697
+          ],
+          "sha256": "7fe9f844ce561011f44c30328f945473c261b38a07d77a7362c9721ff6dd5bb1"
+        },
+        {
+          "season": "autumn",
+          "file": "kyoto-gion-autumn.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            700,
+            1122,
+            1048
+          ],
+          "sha256": "4a313a9b9cb8a877a97df48925ad1d8141c24cd14f73c6502799a3082c6c8ec0"
+        },
+        {
+          "season": "winter",
+          "file": "kyoto-gion-winter.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            1050,
+            1122,
+            1402
+          ],
+          "sha256": "a0d5ba4a7ec634a7a9c0a8dadb986d54a95b06c56fd0440bc53ac39c48d43ecd"
+        }
+      ]
+    },
+    {
+      "id": "kyoto-yasaka",
+      "master": {
+        "file": "kyoto-yasaka-four-seasons-master.png",
+        "width": 1024,
+        "height": 1536,
+        "sha256": "d0e8917257cdf926af11fa7c2edf06742ad8bf65460150bc258f25b076675fd8"
+      },
+      "prompt": "Use case: stylized-concept. Original intricate 16-bit pixel illustrated game panorama atlas, rich colorful tiny pixel clusters, dense individually drawn architecture, textured materials, luminous interiors, exquisite roof tiles, no vector shapes. Match the rich pixel detail of the supplied reference, but all architecture/composition must be original Kyoto imagery.\nExactly FOUR full-width horizontal landscape strips vertically stacked, equal height, no gutters, no borders, no captions. Preferred canvas 1536 x 1920, each 1536 x 480 panorama. SAME architecture and camera in four strips. Top to bottom spring, summer, autumn, winter. Each panorama must be wide and compact, with buildings filling height and ending at a narrow sidewalk lip at bottom, NO foreground road or broad pavement.\nSUBJECT: Yasaka pagoda lane: dramatic five-tier dark timber pagoda rising left of center above sloping cobbled alley stairs, left foreground a pottery merchant with glazed bowls, right a tiered row of asymmetrical old machiya with layered blue tile roofs and golden window lattices. A mossy stone wall and small gardens frame distant eastern Kyoto hills. Pagoda must be fully visible, tightly framed yet uncut. Side-on frontage, only shallow stair alley recession.\nSpring: actual dense pink cherry blossoms and fresh flowers, rosy violet sunset. Summer: same trees fully lush green leaves, blue sky, bright warm shop windows. Autumn: same deciduous trees rich amber crimson foliage, orange dusk. Winter: same trees bare branching silhouettes, snow naturally on tiled roofs and vegetation, pale lavender sky and golden windows. Keep every building silhouette/window/landmark in identical positions across seasons, only seasonal foliage and snow and light change. No vehicles, no prominent people, no UI, no labels or headings, no fake foreground geometry, no empty bland blocks. Beautiful coherent handcrafted pixel art with closely layered objects, atmospheric depth and very little empty sky.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "kyoto-yasaka-spring.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            0,
+            1024,
+            382
+          ],
+          "sha256": "cd7416692d5e8458938b033e9bb438a5800f5cec13423f434410e3eb38c6fb3b"
+        },
+        {
+          "season": "summer",
+          "file": "kyoto-yasaka-summer.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            384,
+            1024,
+            766
+          ],
+          "sha256": "79fe7fb51f914cc4f54229f7f8f8739579664825f65bafff795c8d181cd60186"
+        },
+        {
+          "season": "autumn",
+          "file": "kyoto-yasaka-autumn.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            768,
+            1024,
+            1150
+          ],
+          "sha256": "981d8832ee17a120424c5e7f8098d701029e3b989f48bcaaa93ab1a8333c968c"
+        },
+        {
+          "season": "winter",
+          "file": "kyoto-yasaka-winter.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            1152,
+            1024,
+            1536
+          ],
+          "sha256": "1232cf89eafe0ff9953593e20420610ceb4013481fda8dce5ca5552eeb6b79a9"
+        }
+      ]
+    },
+    {
+      "id": "kyoto-ninenzaka",
+      "master": {
+        "file": "kyoto-ninenzaka-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "27562b834a3b51015eae856a900dfa5a3cc709b75fe8274da2d2daaa96bf0313"
+      },
+      "prompt": "Use case: stylized-concept. Original intricate 16-bit pixel illustrated game panorama atlas, rich colorful tiny pixel clusters, dense individually drawn architecture, textured materials, luminous interiors, exquisite roof tiles, no vector shapes. Match the rich pixel detail of the supplied reference, but all architecture/composition must be original Kyoto imagery.\nExactly FOUR full-width horizontal landscape strips vertically stacked, equal height, no gutters, no borders, no captions. Preferred canvas 1536 x 1920, each 1536 x 480 panorama. SAME architecture and camera in four strips. Top to bottom spring, summer, autumn, winter. Each panorama must be wide and compact, with buildings filling height and ending at a narrow sidewalk lip at bottom, NO foreground road or broad pavement.\nSUBJECT: Ninenzaka stone steps: two unequal shallow stair runs climbing sideways from left to right, pottery shop landings and mossy garden wall. Far left a rustic ochre ceramics shop whose open shelves are filled with bowls, center steep narrow stone stairway between weathered timber houses, right a pale plaster souvenir shop with distinct blue indigo noren, potted trees. No pagoda. Make stairs shallow background features, buildings touch bottom.\nSpring: actual dense pink cherry blossoms and fresh flowers, rosy violet sunset. Summer: same trees fully lush green leaves, blue sky, bright warm shop windows. Autumn: same deciduous trees rich amber crimson foliage, orange dusk. Winter: same trees bare branching silhouettes, snow naturally on tiled roofs and vegetation, pale lavender sky and golden windows. Keep every building silhouette/window/landmark in identical positions across seasons, only seasonal foliage and snow and light change. No vehicles, no prominent people, no UI, no labels or headings, no fake foreground geometry, no empty bland blocks. Beautiful coherent handcrafted pixel art with closely layered objects, atmospheric depth and very little empty sky.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "kyoto-ninenzaka-spring.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            0,
+            1122,
+            369
+          ],
+          "sha256": "751c5f351eb47af8e25193b908529131bd916ace52a0773b95e6f9f75c32b45e"
+        },
+        {
+          "season": "summer",
+          "file": "kyoto-ninenzaka-summer.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            369,
+            1122,
+            736
+          ],
+          "sha256": "05df5feba4c9241a1d6d008ebe481bffd4233832fbfd8b6e883720a919de1308"
+        },
+        {
+          "season": "autumn",
+          "file": "kyoto-ninenzaka-autumn.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            736,
+            1122,
+            1100
+          ],
+          "sha256": "393f0831dbbd6e92466240904516f8f03d716825583f27498be544275d590dd1"
+        },
+        {
+          "season": "winter",
+          "file": "kyoto-ninenzaka-winter.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            0,
+            2172,
+            724
+          ],
+          "sha256": "8c29847d80af1c17247a95421def4e4fc17da3f04a0eab82792ffd3ab0a891b9",
+          "source": "kyoto-ninenzaka-winter-repair.png"
+        }
+      ],
+      "winterRepair": {
+        "file": "kyoto-ninenzaka-winter-repair.png",
+        "width": 2172,
+        "height": 724,
+        "sha256": "af695bc211efda89908fe4aba7f5ea53602ae716461cbd390b9a467ebe1041bd",
+        "prompt": "Use case: lighting-weather. Reference is an original four-season Kyoto pixel art atlas. The bottom winter panel is accidentally cut off. Generate ONLY ONE complete WINTER panorama of exactly the SAME scene as the reference top spring panel. Match its full architecture, camera, composition, roof details, every landmark and shoreline/shopfront, but bare deciduous branches and snow covered roofs and vegetation, lavender sky and warm windows. One single wide horizontal panoramic image, preferred 1536x480, NO stacked panels. Exquisite dense pixel art identical style. Preserve the entire full scene including bottom riverbank/boats if river scene, and complete ground-floor storefronts if shop scene. Narrow ground lip, no added foreground road, no UI, no title, no margins. Show ALL the content of first reference row transformed to winter, not the clipped framing of reference last row.",
+        "reference": "kyoto-ninenzaka-four-seasons-master.png"
+      }
+    },
+    {
+      "id": "kyoto-sannenzaka",
+      "master": {
+        "file": "kyoto-sannenzaka-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "cf1aceb8ac49f087684b8fb5b30875adc52b0e44af6b313aad54b3e0f6dcd986"
+      },
+      "prompt": "Use case: stylized-concept. Original intricate 16-bit pixel illustrated game panorama atlas, rich colorful tiny pixel clusters, dense individually drawn architecture, textured materials, luminous interiors, exquisite roof tiles, no vector shapes. Match the rich pixel detail of the supplied reference, but all architecture/composition must be original Kyoto imagery.\nExactly FOUR full-width horizontal landscape strips vertically stacked, equal height, no gutters, no borders, no captions. Preferred canvas 1536 x 1920, each 1536 x 480 panorama. SAME architecture and camera in four strips. Top to bottom spring, summer, autumn, winter. Each panorama must be wide and compact, with buildings filling height and ending at a narrow sidewalk lip at bottom, NO foreground road or broad pavement.\nSUBJECT: Sannenzaka tea shop terraces: wide low tea house at left with deep roof eaves and red paper parasol over benches, center long broad historic stone stair ascent to recessed temple gates, right three narrow two-storey machiya tea shops with distinct green noren and overflowing tiny product displays. Elevated temple roof behind center. No pagoda. Several deciduous trees integrated between shops.\nSpring: actual dense pink cherry blossoms and fresh flowers, rosy violet sunset. Summer: same trees fully lush green leaves, blue sky, bright warm shop windows. Autumn: same deciduous trees rich amber crimson foliage, orange dusk. Winter: same trees bare branching silhouettes, snow naturally on tiled roofs and vegetation, pale lavender sky and golden windows. Keep every building silhouette/window/landmark in identical positions across seasons, only seasonal foliage and snow and light change. No vehicles, no prominent people, no UI, no labels or headings, no fake foreground geometry, no empty bland blocks. Beautiful coherent handcrafted pixel art with closely layered objects, atmospheric depth and very little empty sky.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "kyoto-sannenzaka-spring.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            0,
+            1122,
+            364
+          ],
+          "sha256": "9c4517b87b463c2c4c7952b7826ccf29379e66d54d1c5c63c71dbbf2bef5ba7c"
+        },
+        {
+          "season": "summer",
+          "file": "kyoto-sannenzaka-summer.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            364,
+            1122,
+            727
+          ],
+          "sha256": "695e3002f51e851d5e77cb6a7e8d2ef8e92d31d35d3f7eef24dabaa0e2a10e36"
+        },
+        {
+          "season": "autumn",
+          "file": "kyoto-sannenzaka-autumn.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            727,
+            1122,
+            1082
+          ],
+          "sha256": "01fe34eb2881e9d0dc63b39ade35206a5642ce6dd42c2f1dc11a040d826e8e29"
+        },
+        {
+          "season": "winter",
+          "file": "kyoto-sannenzaka-winter.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            0,
+            2172,
+            724
+          ],
+          "sha256": "1a1a10873b72cb818d97a56a5f28df1eb5c155919562994dd90da68bca3b73f0",
+          "source": "kyoto-sannenzaka-winter-repair.png"
+        }
+      ],
+      "winterRepair": {
+        "file": "kyoto-sannenzaka-winter-repair.png",
+        "width": 2172,
+        "height": 724,
+        "sha256": "e2d155d5bc4928ea59cb4fdec638d83aa207a2c49ff4ae9fa9c23e1efcf3852b",
+        "prompt": "Use case: lighting-weather. Reference is an original four-season Kyoto pixel art atlas. The bottom winter panel is accidentally cut off. Generate ONLY ONE complete WINTER panorama of exactly the SAME scene as the reference top spring panel. Match its full architecture, camera, composition, roof details, every landmark and shoreline/shopfront, but bare deciduous branches and snow covered roofs and vegetation, lavender sky and warm windows. One single wide horizontal panoramic image, preferred 1536x480, NO stacked panels. Exquisite dense pixel art identical style. Preserve the entire full scene including bottom riverbank/boats if river scene, and complete ground-floor storefronts if shop scene. Narrow ground lip, no added foreground road, no UI, no title, no margins. Show ALL the content of first reference row transformed to winter, not the clipped framing of reference last row.",
+        "reference": "kyoto-sannenzaka-four-seasons-master.png"
+      }
+    },
+    {
+      "id": "kyoto-kiyomizu",
+      "master": {
+        "file": "kyoto-kiyomizu-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "dcae137efb476866a69266cb44750df617cce7b030a1e842190076aba16ea426"
+      },
+      "prompt": "Use case: stylized-concept. Original intricate 16-bit pixel illustrated game panorama atlas, rich colorful tiny pixel clusters, dense individually drawn architecture, textured materials, luminous interiors, exquisite roof tiles, no vector shapes. Match the rich pixel detail of the supplied reference, but all architecture/composition must be original Kyoto imagery.\nExactly FOUR full-width horizontal landscape strips vertically stacked, equal height, no gutters, no borders, no captions. Preferred canvas 1536 x 1920, each 1536 x 480 panorama. SAME architecture and camera in four strips. Top to bottom spring, summer, autumn, winter. Each panorama must be wide and compact, with buildings filling height and ending at a narrow sidewalk lip at bottom, NO foreground road or broad pavement.\nSUBJECT: Kiyomizu hillside temple veranda: huge timber temple on complex criss-cross stilt foundations at right, expansive sweeping dark roof and warm interior, center vermilion ceremonial gateway atop ceremonial steps, left souvenir stalls and old stone staircase against wooded hills. Side elevation, miniature detailed structural supports, mossy rocks, cherry and maple trees. Temple dominates distinctly.\nSpring: actual dense pink cherry blossoms and fresh flowers, rosy violet sunset. Summer: same trees fully lush green leaves, blue sky, bright warm shop windows. Autumn: same deciduous trees rich amber crimson foliage, orange dusk. Winter: same trees bare branching silhouettes, snow naturally on tiled roofs and vegetation, pale lavender sky and golden windows. Keep every building silhouette/window/landmark in identical positions across seasons, only seasonal foliage and snow and light change. No vehicles, no prominent people, no UI, no labels or headings, no fake foreground geometry, no empty bland blocks. Beautiful coherent handcrafted pixel art with closely layered objects, atmospheric depth and very little empty sky.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "kyoto-kiyomizu-spring.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            0,
+            1122,
+            350
+          ],
+          "sha256": "268ef57e1b1bbcadd06b03921acb905bb95c439b06536a6c7d26bd9ba46efae4"
+        },
+        {
+          "season": "summer",
+          "file": "kyoto-kiyomizu-summer.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            350,
+            1122,
+            700
+          ],
+          "sha256": "39e27af73761c4830f0c246768e489aab0fba8ae55f53aebf0a4873d0c6ff3b2"
+        },
+        {
+          "season": "autumn",
+          "file": "kyoto-kiyomizu-autumn.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            700,
+            1122,
+            1051
+          ],
+          "sha256": "d6976e6c3779c5092c4f8703a0f6c1c5deb483da1ff494569319432ce18b8bb6"
+        },
+        {
+          "season": "winter",
+          "file": "kyoto-kiyomizu-winter.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            1051,
+            1122,
+            1402
+          ],
+          "sha256": "c4d326da3f944b70cbfc28ea7c636acdb6430bda77f3a4f0f1342864fcd93520"
+        }
+      ]
+    },
+    {
+      "id": "kyoto-kamo",
+      "master": {
+        "file": "kyoto-kamo-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "d3d597a9225f1460ed5f57d2dd83c2d6ccfef3017083b97aca4a91de04a6609b"
+      },
+      "prompt": "Use case: stylized-concept. Original intricate 16-bit pixel illustrated game panorama atlas, rich colorful tiny pixel clusters, dense individually drawn architecture, textured materials, luminous interiors, exquisite roof tiles, no vector shapes. Match the rich pixel detail of the supplied reference, but all architecture/composition must be original Kyoto imagery.\nExactly FOUR full-width horizontal landscape strips vertically stacked, equal height, no gutters, no borders, no captions. Preferred canvas 1536 x 1920, each 1536 x 480 panorama. SAME architecture and camera in four strips. Top to bottom spring, summer, autumn, winter. Each panorama must be wide and compact, with buildings filling height and ending at a narrow sidewalk lip at bottom, NO foreground road or broad pavement.\nSUBJECT: Kamogawa stepping-stone river bank: wide shallow luminous river behind narrow foreground grass embankment, low turtle-shaped stepping stones across center, long stone bridge distant left, layered Kyoto roofs and forested hills behind, right two elegant open timber riverside pavilions. Clear water ripples, reeds, pebbles, tiny benches, deciduous riverbank trees. No road, narrow foreground grass lip.\nSpring: actual dense pink cherry blossoms and fresh flowers, rosy violet sunset. Summer: same trees fully lush green leaves, blue sky, bright warm shop windows. Autumn: same deciduous trees rich amber crimson foliage, orange dusk. Winter: same trees bare branching silhouettes, snow naturally on tiled roofs and vegetation, pale lavender sky and golden windows. Keep every building silhouette/window/landmark in identical positions across seasons, only seasonal foliage and snow and light change. No vehicles, no prominent people, no UI, no labels or headings, no fake foreground geometry, no empty bland blocks. Beautiful coherent handcrafted pixel art with closely layered objects, atmospheric depth and very little empty sky.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "kyoto-kamo-spring.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            0,
+            1122,
+            350
+          ],
+          "sha256": "8f485bbc3fdf18e4ff24b5a92085fb0d4f12b9a098d90a3126e80da480f084a0"
+        },
+        {
+          "season": "summer",
+          "file": "kyoto-kamo-summer.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            350,
+            1122,
+            701
+          ],
+          "sha256": "2ffefd37ca98166649bb4358d2474826c095d2731a46e7c2ebe19239b265df1a"
+        },
+        {
+          "season": "autumn",
+          "file": "kyoto-kamo-autumn.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            701,
+            1122,
+            1051
+          ],
+          "sha256": "355099e3778fea96e466a2abc51f71dcc53f3dfcb658ca09ef62858a1fd56b22"
+        },
+        {
+          "season": "winter",
+          "file": "kyoto-kamo-winter.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            1051,
+            1122,
+            1402
+          ],
+          "sha256": "274cb2258c54f507fa01c11558ab67f0cf13edacc5c3d73944c793abbe1dcc5c"
+        }
+      ]
+    },
+    {
+      "id": "kyoto-pontocho",
+      "master": {
+        "file": "kyoto-pontocho-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "b03d1b0e4982b1b39e43f85499921ec2b8037d3f8e60bbf3f912899765145c03"
+      },
+      "prompt": "Use case: stylized-concept. Original intricate 16-bit pixel illustrated game panorama atlas, rich colorful tiny pixel clusters, dense individually drawn architecture, textured materials, luminous interiors, exquisite roof tiles, no vector shapes. Match the rich pixel detail of the supplied reference, but all architecture/composition must be original Kyoto imagery.\nExactly FOUR full-width horizontal landscape strips vertically stacked, equal height, no gutters, no borders, no captions. Preferred canvas 1536 x 1920, each 1536 x 480 panorama. SAME architecture and camera in four strips. Top to bottom spring, summer, autumn, winter. Each panorama must be wide and compact, with buildings filling height and ending at a narrow sidewalk lip at bottom, NO foreground road or broad pavement.\nSUBJECT: Pontocho river terraces: long complex dining decks on slender timber stilts over a narrow blue river, tightly packed tall teahouses and restaurants along rear bank, glowing rectangular paper screens, dozens of little lanterns, hanging noren, open dining pavilions and red parasols. A small curved pedestrian bridge near left, distant layered roof skyline. Deciduous trees emerge between houses. River only low strip, sidewalk lip at bottom.\nSpring: actual dense pink cherry blossoms and fresh flowers, rosy violet sunset. Summer: same trees fully lush green leaves, blue sky, bright warm shop windows. Autumn: same deciduous trees rich amber crimson foliage, orange dusk. Winter: same trees bare branching silhouettes, snow naturally on tiled roofs and vegetation, pale lavender sky and golden windows. Keep every building silhouette/window/landmark in identical positions across seasons, only seasonal foliage and snow and light change. No vehicles, no prominent people, no UI, no labels or headings, no fake foreground geometry, no empty bland blocks. Beautiful coherent handcrafted pixel art with closely layered objects, atmospheric depth and very little empty sky.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "kyoto-pontocho-spring.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            0,
+            1122,
+            350
+          ],
+          "sha256": "fff19271933019632eca9e0973bcfc03d590b6cf6c63460062f0b125311e75ac"
+        },
+        {
+          "season": "summer",
+          "file": "kyoto-pontocho-summer.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            350,
+            1122,
+            701
+          ],
+          "sha256": "d256b47c8f3a3756e311bdb10971e2caf6f4e851a0849fa87090d90ec9d4024c"
+        },
+        {
+          "season": "autumn",
+          "file": "kyoto-pontocho-autumn.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            701,
+            1122,
+            1052
+          ],
+          "sha256": "2016242ca500361c4f3038a3f53fdc7700221aa344cd3177e825d7882824687e"
+        },
+        {
+          "season": "winter",
+          "file": "kyoto-pontocho-winter.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            1052,
+            1122,
+            1402
+          ],
+          "sha256": "9d805320a5be36f25c67d52017bf7dae8363d19e1466561152e63d3a3273b27e"
+        }
+      ]
+    },
+    {
+      "id": "kyoto-shirakawa",
+      "master": {
+        "file": "kyoto-shirakawa-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "a04a64d1fb0e821219e8d3b05b2303113bcc5a89019ccf5df596dcaae8cdf9ed"
+      },
+      "prompt": "Use case: stylized-concept. Original intricate 16-bit pixel illustrated game panorama atlas, rich colorful tiny pixel clusters, dense individually drawn architecture, textured materials, luminous interiors, exquisite roof tiles, no vector shapes. Match the rich pixel detail of the supplied reference, but all architecture/composition must be original Kyoto imagery.\nExactly FOUR full-width horizontal landscape strips vertically stacked, equal height, no gutters, no borders, no captions. Preferred canvas 1536 x 1920, each 1536 x 480 panorama. SAME architecture and camera in four strips. Top to bottom spring, summer, autumn, winter. Each panorama must be wide and compact, with buildings filling height and ending at a narrow sidewalk lip at bottom, NO foreground road or broad pavement.\nSUBJECT: Shirakawa willow canal: shallow narrow canal with two unequal bridges, a low flat stone slab bridge left of center and a slender timber arched footbridge at right. Behind canal two-storey cream-and-timber teahouses on left, tiny vermilion shrine in center with gray stone lanterns and rounded wall, long low timber tea merchant at right. Elegant cascading willow plus cherry trees integrated with buildings. Water only narrow low band.\nSpring: actual dense pink cherry blossoms and fresh flowers, rosy violet sunset. Summer: same trees fully lush green leaves, blue sky, bright warm shop windows. Autumn: same deciduous trees rich amber crimson foliage, orange dusk. Winter: same trees bare branching silhouettes, snow naturally on tiled roofs and vegetation, pale lavender sky and golden windows. Keep every building silhouette/window/landmark in identical positions across seasons, only seasonal foliage and snow and light change. No vehicles, no prominent people, no UI, no labels or headings, no fake foreground geometry, no empty bland blocks. Beautiful coherent handcrafted pixel art with closely layered objects, atmospheric depth and very little empty sky.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "kyoto-shirakawa-spring.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            0,
+            1122,
+            361
+          ],
+          "sha256": "3f4ca0fca218cd27eb1fb2ad86019f6ede932aa951034ff9f1a7b94f1b67ede5"
+        },
+        {
+          "season": "summer",
+          "file": "kyoto-shirakawa-summer.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            361,
+            1122,
+            723
+          ],
+          "sha256": "397e271a754b7078a4922b01ae20a4aa98fa65aabd77ad9357a5afa3b55d6cf1"
+        },
+        {
+          "season": "autumn",
+          "file": "kyoto-shirakawa-autumn.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            723,
+            1122,
+            1087
+          ],
+          "sha256": "47d764ff201fd697871bb1229c12f16cbdfd8aaf6211348739bb083394eb60bb"
+        },
+        {
+          "season": "winter",
+          "file": "kyoto-shirakawa-winter.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            0,
+            2089,
+            753
+          ],
+          "sha256": "084d11941639d0024180001536f300fb93486b866636011a6402da3a0ba0c1d7",
+          "source": "kyoto-shirakawa-winter-repair.png"
+        }
+      ],
+      "winterRepair": {
+        "file": "kyoto-shirakawa-winter-repair.png",
+        "width": 2089,
+        "height": 753,
+        "sha256": "2340d863d592e3ec250e2751c1214fe74a09ebdaca8ddbed909eea12693a0839",
+        "prompt": "Use case: lighting-weather. Reference is an original four-season Kyoto pixel art atlas. The bottom winter panel is accidentally cut off. Generate ONLY ONE complete WINTER panorama of exactly the SAME scene as the reference top spring panel. Match its full architecture, camera, composition, roof details, every landmark and shoreline/shopfront, but bare deciduous branches and snow covered roofs and vegetation, lavender sky and warm windows. One single wide horizontal panoramic image, preferred 1536x480, NO stacked panels. Exquisite dense pixel art identical style. Preserve the entire full scene including bottom riverbank/boats if river scene, and complete ground-floor storefronts if shop scene. Narrow ground lip, no added foreground road, no UI, no title, no margins. Show ALL the content of first reference row transformed to winter, not the clipped framing of reference last row.",
+        "reference": "kyoto-shirakawa-four-seasons-master.png"
+      }
+    },
+    {
+      "id": "kyoto-nishiki",
+      "master": {
+        "file": "kyoto-nishiki-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "a659745c9441d122dff32617c43e8f805b5dca39b78307f003816802736ae5bc"
+      },
+      "prompt": "Use case: stylized-concept. Original intricate 16-bit pixel illustrated game panorama atlas, rich colorful tiny pixel clusters, dense individually drawn architecture, textured materials, luminous interiors, exquisite roof tiles, no vector shapes. Match the rich pixel detail of the supplied reference, but all architecture/composition must be original Kyoto imagery.\nExactly FOUR full-width horizontal landscape strips vertically stacked, equal height, no gutters, no borders, no captions. Preferred canvas 1536 x 1920, each 1536 x 480 panorama. SAME architecture and camera in four strips. Top to bottom spring, summer, autumn, winter. Each panorama must be wide and compact, with buildings filling height and ending at a narrow sidewalk lip at bottom, NO foreground road or broad pavement.\nSUBJECT: Nishiki market roof frontage: side-on dense market stalls beneath a bold red yellow green colored-panel arcade roof, one ornate tile roof corner at left, open pickle vendors with wooden barrels, fish stall with blue display trays, vegetable stands, confectionery cabinets, tiny hanging signs and cloth noren. Central grand entry into glowing roofed arcade. Trees at both exterior margins and rooftop garden planters make seasons clear. Never corridor-only composition.\nSpring: actual dense pink cherry blossoms and fresh flowers, rosy violet sunset. Summer: same trees fully lush green leaves, blue sky, bright warm shop windows. Autumn: same deciduous trees rich amber crimson foliage, orange dusk. Winter: same trees bare branching silhouettes, snow naturally on tiled roofs and vegetation, pale lavender sky and golden windows. Keep every building silhouette/window/landmark in identical positions across seasons, only seasonal foliage and snow and light change. No vehicles, no prominent people, no UI, no labels or headings, no fake foreground geometry, no empty bland blocks. Beautiful coherent handcrafted pixel art with closely layered objects, atmospheric depth and very little empty sky.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "kyoto-nishiki-spring.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            0,
+            1122,
+            347
+          ],
+          "sha256": "16b8605e9b64f2506209788486b9a7046f0b98689474609df7c9e3800bc8dbc6"
+        },
+        {
+          "season": "summer",
+          "file": "kyoto-nishiki-summer.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            347,
+            1122,
+            697
+          ],
+          "sha256": "8e7e2e36db8882300d2978dff1fe4c8f27b67021f98873bd0e6c942124b9d6d1"
+        },
+        {
+          "season": "autumn",
+          "file": "kyoto-nishiki-autumn.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            697,
+            1122,
+            1048
+          ],
+          "sha256": "1d8079c01626e7a9c05218b4efe85db5fa911cc4faf1dd48f52b071d7e729e2d"
+        },
+        {
+          "season": "winter",
+          "file": "kyoto-nishiki-winter.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            1048,
+            1122,
+            1402
+          ],
+          "sha256": "e30bda42170c2bb992bf288f1f835339fce9085338e43af993fe173a522a5364"
+        }
+      ]
+    },
+    {
+      "id": "kyoto-teramachi",
+      "master": {
+        "file": "kyoto-teramachi-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "01386dc9f613d904edcd0181a18d0f1cfc0adce086400b769236188da9226e59"
+      },
+      "prompt": "Use case: stylized-concept. Original intricate 16-bit pixel illustrated game panorama atlas, rich colorful tiny pixel clusters, dense individually drawn architecture, textured materials, luminous interiors, exquisite roof tiles, no vector shapes. Match the rich pixel detail of the supplied reference, but all architecture/composition must be original Kyoto imagery.\nExactly FOUR full-width horizontal landscape strips vertically stacked, equal height, no gutters, no borders, no captions. Preferred canvas 1536 x 1920, each 1536 x 480 panorama. SAME architecture and camera in four strips. Top to bottom spring, summer, autumn, winter. Each panorama must be wide and compact, with buildings filling height and ending at a narrow sidewalk lip at bottom, NO foreground road or broad pavement.\nSUBJECT: Teramachi bookstore arcade: left tall antique bookstore facade with open oak bookshelves, wheeled book tables and amber windows; center ornate covered arcade entry with patterned glass clerestory; right a small red shrine squeezed between shopfronts, stone lanterns, and another narrow bookshop with striped awning. Varied tile roof heights, hanging calligraphy scrolls, bicycles and paper lanterns. Deciduous trees in planted gaps.\nSpring: actual dense pink cherry blossoms and fresh flowers, rosy violet sunset. Summer: same trees fully lush green leaves, blue sky, bright warm shop windows. Autumn: same deciduous trees rich amber crimson foliage, orange dusk. Winter: same trees bare branching silhouettes, snow naturally on tiled roofs and vegetation, pale lavender sky and golden windows. Keep every building silhouette/window/landmark in identical positions across seasons, only seasonal foliage and snow and light change. No vehicles, no prominent people, no UI, no labels or headings, no fake foreground geometry, no empty bland blocks. Beautiful coherent handcrafted pixel art with closely layered objects, atmospheric depth and very little empty sky.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "kyoto-teramachi-spring.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            0,
+            1122,
+            350
+          ],
+          "sha256": "ad2d2283b4eb816f605e2e29c3de295f588c8f5cdf33ad102b6036d7580096d9"
+        },
+        {
+          "season": "summer",
+          "file": "kyoto-teramachi-summer.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            350,
+            1122,
+            699
+          ],
+          "sha256": "aae3fa84ee189d0d2034cdcad7a743c079a90945331ff833a7705fea7fc3b3d0"
+        },
+        {
+          "season": "autumn",
+          "file": "kyoto-teramachi-autumn.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            699,
+            1122,
+            1052
+          ],
+          "sha256": "198e743f1d4edc53c21d39ea119231ee5ea24eb67c4cc5afe31a23a2800eb90b"
+        },
+        {
+          "season": "winter",
+          "file": "kyoto-teramachi-winter.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            1052,
+            1122,
+            1402
+          ],
+          "sha256": "d11049fe41ef7a89f70cf402627f64a2a36ab660908b6410289027dbe4ab1699"
+        }
+      ]
+    },
+    {
+      "id": "kyoto-fushimi",
+      "master": {
+        "file": "kyoto-fushimi-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "92209e16f8e12263a384175e237c312c7b0ee4441337d0516314ca8cfaf42f6f"
+      },
+      "prompt": "Use case: stylized-concept. Original intricate 16-bit pixel illustrated game panorama atlas, rich colorful tiny pixel clusters, dense individually drawn architecture, textured materials, luminous interiors, exquisite roof tiles, no vector shapes. Match the rich pixel detail of the supplied reference, but all architecture/composition must be original Kyoto imagery.\nExactly FOUR full-width horizontal landscape strips vertically stacked, equal height, no gutters, no borders, no captions. Preferred canvas 1536 x 1920, each 1536 x 480 panorama. SAME architecture and camera in four strips. Top to bottom spring, summer, autumn, winter. Each panorama must be wide and compact, with buildings filling height and ending at a narrow sidewalk lip at bottom, NO foreground road or broad pavement.\nSUBJECT: Fushimi Inari torii approach: asymmetrical side-on composition of several large vermilion torii gates diminishing along diagonal stairway into lush wooded hill, fox statues on detailed stone pedestals, left an ornate vermilion shrine with gold trim and jade tiled roof, right old wooden gift stalls with small ceramic fox displays and lanterns. Dense visible timber crossbeams, stone lanterns and decorative ropes. Deciduous cherry and maples among evergreen cedar trunks.\nSpring: actual dense pink cherry blossoms and fresh flowers, rosy violet sunset. Summer: same trees fully lush green leaves, blue sky, bright warm shop windows. Autumn: same deciduous trees rich amber crimson foliage, orange dusk. Winter: same trees bare branching silhouettes, snow naturally on tiled roofs and vegetation, pale lavender sky and golden windows. Keep every building silhouette/window/landmark in identical positions across seasons, only seasonal foliage and snow and light change. No vehicles, no prominent people, no UI, no labels or headings, no fake foreground geometry, no empty bland blocks. Beautiful coherent handcrafted pixel art with closely layered objects, atmospheric depth and very little empty sky.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "kyoto-fushimi-spring.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            0,
+            1122,
+            350
+          ],
+          "sha256": "620234aaa3e7153b10e3fbd3c94ca800d57a6cafe488bcb5896303d5d728731b"
+        },
+        {
+          "season": "summer",
+          "file": "kyoto-fushimi-summer.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            350,
+            1122,
+            701
+          ],
+          "sha256": "c7299bf629479c0bc6b178bc792852d52ffd8c07eee2808e4e006f833574bf93"
+        },
+        {
+          "season": "autumn",
+          "file": "kyoto-fushimi-autumn.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            701,
+            1122,
+            1050
+          ],
+          "sha256": "0c45b69e6c7dfe0b1835c2ea3ede7ba2b932d91dd2ec0cbbd7226e01dbe53154"
+        },
+        {
+          "season": "winter",
+          "file": "kyoto-fushimi-winter.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            1050,
+            1122,
+            1402
+          ],
+          "sha256": "2c891cedc0a2e4b668f95b90154b94defc86181fd6ea1befd6ad859ee56f3154"
+        }
+      ]
+    },
+    {
+      "id": "kyoto-sake",
+      "master": {
+        "file": "kyoto-sake-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "67674b85753cfaa59fa93cd2b09f37301f09626cc7cb0e1ee38c066c188e449f"
+      },
+      "prompt": "Use case: stylized-concept. Original intricate 16-bit pixel illustrated game panorama atlas, rich colorful tiny pixel clusters, dense individually drawn architecture, textured materials, luminous interiors, exquisite roof tiles, no vector shapes. Match the rich pixel detail of the supplied reference, but all architecture/composition must be original Kyoto imagery.\nExactly FOUR full-width horizontal landscape strips vertically stacked, equal height, no gutters, no borders, no captions. Preferred canvas 1536 x 1920, each 1536 x 480 panorama. SAME architecture and camera in four strips. Top to bottom spring, summer, autumn, winter. Each panorama must be wide and compact, with buildings filling height and ending at a narrow sidewalk lip at bottom, NO foreground road or broad pavement.\nSUBJECT: Fushimi sake brewery canal: grand long white plaster brewery warehouses with black timber bases and broad tiled roofs occupy left and far right, small raised timber boat dock and stacked round sake barrels center, a low arched bridge, moored traditional wooden passenger boat in narrow calm canal. Willow/cherry trees along water edge, tiny brewery signboards, warm small windows, ivy and aged timber texture. Avoid torii/pagoda.\nSpring: actual dense pink cherry blossoms and fresh flowers, rosy violet sunset. Summer: same trees fully lush green leaves, blue sky, bright warm shop windows. Autumn: same deciduous trees rich amber crimson foliage, orange dusk. Winter: same trees bare branching silhouettes, snow naturally on tiled roofs and vegetation, pale lavender sky and golden windows. Keep every building silhouette/window/landmark in identical positions across seasons, only seasonal foliage and snow and light change. No vehicles, no prominent people, no UI, no labels or headings, no fake foreground geometry, no empty bland blocks. Beautiful coherent handcrafted pixel art with closely layered objects, atmospheric depth and very little empty sky.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "kyoto-sake-spring.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            0,
+            1122,
+            350
+          ],
+          "sha256": "bad113c881eaa21c9a9c4c555dacffcb08368a0ea14e95f082dc1957d50a5d97"
+        },
+        {
+          "season": "summer",
+          "file": "kyoto-sake-summer.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            350,
+            1122,
+            701
+          ],
+          "sha256": "6ab2abfcc843ed2f8d3f62ee8614ff9c3976f5b97bd51892a376acbe6f5f2828"
+        },
+        {
+          "season": "autumn",
+          "file": "kyoto-sake-autumn.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            701,
+            1122,
+            1051
+          ],
+          "sha256": "53476175c33fbe4323cf426fdca6948fe34d5c2c886a76edfe649d14f2c7af53"
+        },
+        {
+          "season": "winter",
+          "file": "kyoto-sake-winter.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            1051,
+            1122,
+            1402
+          ],
+          "sha256": "ced5e2451044adcda2d1fdb5221a01b6217fad289e430d0fb05d1e5305b77fb5"
+        }
+      ]
+    },
+    {
+      "id": "kyoto-bamboo",
+      "master": {
+        "file": "kyoto-bamboo-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "546b1fd7a4e4972a963f30a36fca383588983ad85271fab553d967f866d0d8e8"
+      },
+      "prompt": "Use case: stylized-concept. Original intricate 16-bit pixel illustrated game panorama atlas, rich colorful tiny pixel clusters, dense individually drawn architecture, textured materials, luminous interiors, exquisite roof tiles, no vector shapes. Match the rich pixel detail of the supplied reference, but all architecture/composition must be original Kyoto imagery.\nExactly FOUR full-width horizontal landscape strips vertically stacked, equal height, no gutters, no borders, no captions. Preferred canvas 1536 x 1920, each 1536 x 480 panorama. SAME architecture and camera in four strips. Top to bottom spring, summer, autumn, winter. Each panorama must be wide and compact, with buildings filling height and ending at a narrow sidewalk lip at bottom, NO foreground road or broad pavement.\nSUBJECT: Sagano bamboo path: lush dense immense vertically jointed bamboo trunks and layered leaf canopy, intricate woven low brown fences, center narrow rustic temple gate with thatched roof, right open-sided timber rest pavilion with stone lantern and mossy garden. Small cherry and maple trees near gate provide explicit blossom/green/amber/bare winter cycle; bamboo remains evergreen with winter snow. Narrow footpath only, no road. Composition rich and forested, original delicate pixelwork.\nSpring: actual dense pink cherry blossoms and fresh flowers, rosy violet sunset. Summer: same trees fully lush green leaves, blue sky, bright warm shop windows. Autumn: same deciduous trees rich amber crimson foliage, orange dusk. Winter: same trees bare branching silhouettes, snow naturally on tiled roofs and vegetation, pale lavender sky and golden windows. Keep every building silhouette/window/landmark in identical positions across seasons, only seasonal foliage and snow and light change. No vehicles, no prominent people, no UI, no labels or headings, no fake foreground geometry, no empty bland blocks. Beautiful coherent handcrafted pixel art with closely layered objects, atmospheric depth and very little empty sky.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "kyoto-bamboo-spring.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            0,
+            1122,
+            350
+          ],
+          "sha256": "8c25eb604675ba90595e11e2927faa35ba3a162b2277c86c6811310d362b6f07"
+        },
+        {
+          "season": "summer",
+          "file": "kyoto-bamboo-summer.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            350,
+            1122,
+            701
+          ],
+          "sha256": "9efd50e03d2db540cb6bb5d8d99948442d5e60404aaf4948bb6ab1ea85196c78"
+        },
+        {
+          "season": "autumn",
+          "file": "kyoto-bamboo-autumn.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            701,
+            1122,
+            1051
+          ],
+          "sha256": "9cf5d39a1dd717671f5a3fcc5d2f710aa55fa64225c6b26b66a92d151be55fa4"
+        },
+        {
+          "season": "winter",
+          "file": "kyoto-bamboo-winter.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            1051,
+            1122,
+            1402
+          ],
+          "sha256": "1a2e237381c08b71764ebbf0ed356b69bb76f7ee9b8239399a7528d2215f411d"
+        }
+      ]
+    },
+    {
+      "id": "kyoto-philosopher",
+      "master": {
+        "file": "kyoto-philosopher-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "f8efc81bc1190c50cbbd7bbadf7cd46c375f46316905fce2d3b4f96c2508013a"
+      },
+      "prompt": "Use case: stylized-concept. Original intricate 16-bit pixel illustrated game panorama atlas, rich colorful tiny pixel clusters, dense individually drawn architecture, textured materials, luminous interiors, exquisite roof tiles, no vector shapes. Match the rich pixel detail of the supplied reference, but all architecture/composition must be original Kyoto imagery.\nExactly FOUR full-width horizontal landscape strips vertically stacked, equal height, no gutters, no borders, no captions. Preferred canvas 1536 x 1920, each 1536 x 480 panorama. SAME architecture and camera in four strips. Top to bottom spring, summer, autumn, winter. Each panorama must be wide and compact, with buildings filling height and ending at a narrow sidewalk lip at bottom, NO foreground road or broad pavement.\nSUBJECT: Philosophers canal path: long narrow stone-edged canal crossing scene, two miniature arched stone footbridges, overhanging cherry branches, mossy retaining walls, right charming tea kiosk with emerald cloth awning and pottery cups, left a little tiled temple gate and small white houses half-hidden in foliage. Minute water reflections, stepping stones, benches and garden flowers. Side-on panorama, canal narrow, buildings and vegetation densely fill frame.\nSpring: actual dense pink cherry blossoms and fresh flowers, rosy violet sunset. Summer: same trees fully lush green leaves, blue sky, bright warm shop windows. Autumn: same deciduous trees rich amber crimson foliage, orange dusk. Winter: same trees bare branching silhouettes, snow naturally on tiled roofs and vegetation, pale lavender sky and golden windows. Keep every building silhouette/window/landmark in identical positions across seasons, only seasonal foliage and snow and light change. No vehicles, no prominent people, no UI, no labels or headings, no fake foreground geometry, no empty bland blocks. Beautiful coherent handcrafted pixel art with closely layered objects, atmospheric depth and very little empty sky.\nCRITICAL: The winter bottom row must have EXACTLY SAME HEIGHT and full framing as other three rows. Do not crop off bottom of winter scene. All four strips exactly 25% of overall canvas.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "kyoto-philosopher-spring.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            0,
+            1122,
+            349
+          ],
+          "sha256": "7fc118adf7969d1e2165c7201c33b2251107b450e2c1584ad2edfc2c487c1fb1"
+        },
+        {
+          "season": "summer",
+          "file": "kyoto-philosopher-summer.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            349,
+            1122,
+            701
+          ],
+          "sha256": "a12c42834875ddadafd7f4ee47631239ed7d0955c6ba275f1a5c8dbdbc3c5d10"
+        },
+        {
+          "season": "autumn",
+          "file": "kyoto-philosopher-autumn.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            701,
+            1122,
+            1050
+          ],
+          "sha256": "b131ba0f0f487b055c83f2544022e262decfe260137a56661a0693ef8cb91c9f"
+        },
+        {
+          "season": "winter",
+          "file": "kyoto-philosopher-winter.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            1050,
+            1122,
+            1402
+          ],
+          "sha256": "250a7475694fe248a016a246f1ccbd68293d770a56b0841041df909320310be3"
+        }
+      ]
+    },
+    {
+      "id": "kyoto-nanzenji",
+      "master": {
+        "file": "kyoto-nanzenji-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "d889b1269fb707d40a1cf9fa613f0311e1a21a98b52450e73868aeb02a380222"
+      },
+      "prompt": "Use case: stylized-concept. Original intricate 16-bit pixel illustrated game panorama atlas, rich colorful tiny pixel clusters, dense individually drawn architecture, textured materials, luminous interiors, exquisite roof tiles, no vector shapes. Match the rich pixel detail of the supplied reference, but all architecture/composition must be original Kyoto imagery.\nExactly FOUR full-width horizontal landscape strips vertically stacked, equal height, no gutters, no borders, no captions. Preferred canvas 1536 x 1920, each 1536 x 480 panorama. SAME architecture and camera in four strips. Top to bottom spring, summer, autumn, winter. Each panorama must be wide and compact, with buildings filling height and ending at a narrow sidewalk lip at bottom, NO foreground road or broad pavement.\nSUBJECT: Nanzenji brick aqueduct: massive detailed reddish-brown brick aqueduct with six tall semicircular arches spanning center and right, moss-covered brick piers and intricate masonry courses, left grand old timber Zen temple gate under deep blue-black layered tile roof. Garden underneath arches with ferns, pebbles and stone lanterns, maple and cherry trees rise through composition. Aqueduct is unique dominant silhouette. A very narrow garden path at bottom.\nSpring: actual dense pink cherry blossoms and fresh flowers, rosy violet sunset. Summer: same trees fully lush green leaves, blue sky, bright warm shop windows. Autumn: same deciduous trees rich amber crimson foliage, orange dusk. Winter: same trees bare branching silhouettes, snow naturally on tiled roofs and vegetation, pale lavender sky and golden windows. Keep every building silhouette/window/landmark in identical positions across seasons, only seasonal foliage and snow and light change. No vehicles, no prominent people, no UI, no labels or headings, no fake foreground geometry, no empty bland blocks. Beautiful coherent handcrafted pixel art with closely layered objects, atmospheric depth and very little empty sky.\nCRITICAL: The winter bottom row must have EXACTLY SAME HEIGHT and full framing as other three rows. Do not crop off bottom of winter scene. All four strips exactly 25% of overall canvas.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "kyoto-nanzenji-spring.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            0,
+            1122,
+            350
+          ],
+          "sha256": "b0f37b379b626afda2cd5dab0c2bac55d0af3eb870192367d9a3f5399667bf38"
+        },
+        {
+          "season": "summer",
+          "file": "kyoto-nanzenji-summer.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            350,
+            1122,
+            701
+          ],
+          "sha256": "33be6b72d3c8258787e7fe2f26c0c1b1fa95308bca35b6cadfde9683753c38a5"
+        },
+        {
+          "season": "autumn",
+          "file": "kyoto-nanzenji-autumn.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            701,
+            1122,
+            1049
+          ],
+          "sha256": "1684c78339a8c3f892e8fe8cd9d5a6c92781e1124435d9610adeeda90f0813a4"
+        },
+        {
+          "season": "winter",
+          "file": "kyoto-nanzenji-winter.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            1049,
+            1122,
+            1402
+          ],
+          "sha256": "e35ccefc012e110917d9720c5f5895df3d7b4ec32a535dc1316e7bb907057004"
+        }
+      ]
+    },
+    {
+      "id": "kyoto-nijo",
+      "master": {
+        "file": "kyoto-nijo-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "c5ad93a7607250f446e4f2527eaacbcee8ceab44391630f964eef71b78ecbf75"
+      },
+      "prompt": "Use case: stylized-concept. Original intricate 16-bit pixel illustrated game panorama atlas, rich colorful tiny pixel clusters, dense individually drawn architecture, textured materials, luminous interiors, exquisite roof tiles, no vector shapes. Match the rich pixel detail of the supplied reference, but all architecture/composition must be original Kyoto imagery.\nExactly FOUR full-width horizontal landscape strips vertically stacked, equal height, no gutters, no borders, no captions. Preferred canvas 1536 x 1920, each 1536 x 480 panorama. SAME architecture and camera in four strips. Top to bottom spring, summer, autumn, winter. Each panorama must be wide and compact, with buildings filling height and ending at a narrow sidewalk lip at bottom, NO foreground road or broad pavement.\nSUBJECT: Nijo castle walls: thick white plaster walls with dark tiled tops on tall sloping stone foundations, center ornate black and gold karamon gate with elaborately curved roof and carved colorful relief, far right large low palace roof behind wall, left clipped pine and deciduous cherry garden. Richly textured irregular stone masonry, gold hardware, tiny stone lanterns. No pagoda, no teahouse shopping lane.\nSpring: actual dense pink cherry blossoms and fresh flowers, rosy violet sunset. Summer: same trees fully lush green leaves, blue sky, bright warm shop windows. Autumn: same deciduous trees rich amber crimson foliage, orange dusk. Winter: same trees bare branching silhouettes, snow naturally on tiled roofs and vegetation, pale lavender sky and golden windows. Keep every building silhouette/window/landmark in identical positions across seasons, only seasonal foliage and snow and light change. No vehicles, no prominent people, no UI, no labels or headings, no fake foreground geometry, no empty bland blocks. Beautiful coherent handcrafted pixel art with closely layered objects, atmospheric depth and very little empty sky.\nCRITICAL: The winter bottom row must have EXACTLY SAME HEIGHT and full framing as other three rows. Do not crop off bottom of winter scene. All four strips exactly 25% of overall canvas.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "kyoto-nijo-spring.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            0,
+            1122,
+            346
+          ],
+          "sha256": "87e63364919d69ece29674c41f5c0fd6090c71ee2b6600b412572309541cdbcd"
+        },
+        {
+          "season": "summer",
+          "file": "kyoto-nijo-summer.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            346,
+            1122,
+            696
+          ],
+          "sha256": "e687dcbbabf6d5fe0250d108179ed2e61cf9eba0e4103fdba16623b59f70287e"
+        },
+        {
+          "season": "autumn",
+          "file": "kyoto-nijo-autumn.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            696,
+            1122,
+            1046
+          ],
+          "sha256": "4702245c74be0ddefe65992391abd2d92e16e980cd7e589c2358241e0fa108ad"
+        },
+        {
+          "season": "winter",
+          "file": "kyoto-nijo-winter.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            1046,
+            1122,
+            1402
+          ],
+          "sha256": "42457e687e6ebdf3787c9f46d2e3b262935dd47a9d509de2d6fc1e528840be95"
+        }
+      ]
+    },
+    {
+      "id": "kyoto-demachi",
+      "master": {
+        "file": "kyoto-demachi-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "3c6a4d7fd00ab97615a05967411b38a2c39a7f3022e8e19ccb9173af97cea344"
+      },
+      "prompt": "Use case: stylized-concept. Original intricate 16-bit pixel illustrated game panorama atlas, rich colorful tiny pixel clusters, dense individually drawn architecture, textured materials, luminous interiors, exquisite roof tiles, no vector shapes. Match the rich pixel detail of the supplied reference, but all architecture/composition must be original Kyoto imagery.\nExactly FOUR full-width horizontal landscape strips vertically stacked, equal height, no gutters, no borders, no captions. Preferred canvas 1536 x 1920, each 1536 x 480 panorama. SAME architecture and camera in four strips. Top to bottom spring, summer, autumn, winter. Each panorama must be wide and compact, with buildings filling height and ending at a narrow sidewalk lip at bottom, NO foreground road or broad pavement.\nSUBJECT: Demachi river fork: distinctive triangular grassy peninsula between two converging shallow river channels, two unequal timber-and-stone bridge spans crossing at angles, far left small cream-and-dark-green retro railway station with awning and warm windows, far right small riverside tea stand and wooded bank. Stepping stones, reeds, bench, distant layered Kyoto town skyline and mountain. Seasonal cherry/maple trees on island. Narrow grass lip, no road.\nSpring: actual dense pink cherry blossoms and fresh flowers, rosy violet sunset. Summer: same trees fully lush green leaves, blue sky, bright warm shop windows. Autumn: same deciduous trees rich amber crimson foliage, orange dusk. Winter: same trees bare branching silhouettes, snow naturally on tiled roofs and vegetation, pale lavender sky and golden windows. Keep every building silhouette/window/landmark in identical positions across seasons, only seasonal foliage and snow and light change. No vehicles, no prominent people, no UI, no labels or headings, no fake foreground geometry, no empty bland blocks. Beautiful coherent handcrafted pixel art with closely layered objects, atmospheric depth and very little empty sky.\nCRITICAL: The winter bottom row must have EXACTLY SAME HEIGHT and full framing as other three rows. Do not crop off bottom of winter scene. All four strips exactly 25% of overall canvas.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "kyoto-demachi-spring.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            0,
+            1122,
+            350
+          ],
+          "sha256": "245f4d961dd6de3edcefeb36906799be20ba9d52a4d80ca4942647dd4b7b86da"
+        },
+        {
+          "season": "summer",
+          "file": "kyoto-demachi-summer.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            350,
+            1122,
+            701
+          ],
+          "sha256": "cb03e0709a72fedae0e419590c4e0105de80dab8a2aabb64bc057593ba514a73"
+        },
+        {
+          "season": "autumn",
+          "file": "kyoto-demachi-autumn.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            701,
+            1122,
+            1051
+          ],
+          "sha256": "e077b9f4a46b95805830eeab53b26f5741839851f878c853ef5bb8936fd0afaf"
+        },
+        {
+          "season": "winter",
+          "file": "kyoto-demachi-winter.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            1051,
+            1122,
+            1402
+          ],
+          "sha256": "14922c836253d5ab4a4edd2f2c927690023f3fa2f99019347bcb5455a78a43b9"
+        }
+      ]
+    },
+    {
+      "id": "kyoto-ohara",
+      "master": {
+        "file": "kyoto-ohara-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "28c5922d631dfc9a7c8d9a18e3ab3d613ef1b868b5685b9dc9d0e7fe15cb13f5"
+      },
+      "prompt": "Use case: stylized-concept. Original intricate 16-bit pixel illustrated game panorama atlas, rich colorful tiny pixel clusters, dense individually drawn architecture, textured materials, luminous interiors, exquisite roof tiles, no vector shapes. Match the rich pixel detail of the supplied reference, but all architecture/composition must be original Kyoto imagery.\nExactly FOUR full-width horizontal landscape strips vertically stacked, equal height, no gutters, no borders, no captions. Preferred canvas 1536 x 1920, each 1536 x 480 panorama. SAME architecture and camera in four strips. Top to bottom spring, summer, autumn, winter. Each panorama must be wide and compact, with buildings filling height and ending at a narrow sidewalk lip at bottom, NO foreground road or broad pavement.\nSUBJECT: Ohara country temple lane: left thatched-roof farmhouse with timber walls, baskets and tiny vegetables; center terraced irrigated garden beds, miniature stone cascade and mossy water wheel; right beautiful mountain temple under layered slate roof with open gold-lit veranda, far right small glass greenhouse. Wooded mountain background, cherry and maple trees, garden stone lanterns and rough stone wall. Dense intricate rural composition, no city towers, no wide road.\nSpring: actual dense pink cherry blossoms and fresh flowers, rosy violet sunset. Summer: same trees fully lush green leaves, blue sky, bright warm shop windows. Autumn: same deciduous trees rich amber crimson foliage, orange dusk. Winter: same trees bare branching silhouettes, snow naturally on tiled roofs and vegetation, pale lavender sky and golden windows. Keep every building silhouette/window/landmark in identical positions across seasons, only seasonal foliage and snow and light change. No vehicles, no prominent people, no UI, no labels or headings, no fake foreground geometry, no empty bland blocks. Beautiful coherent handcrafted pixel art with closely layered objects, atmospheric depth and very little empty sky.\nCRITICAL: The winter bottom row must have EXACTLY SAME HEIGHT and full framing as other three rows. Do not crop off bottom of winter scene. All four strips exactly 25% of overall canvas.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "kyoto-ohara-spring.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            0,
+            1122,
+            350
+          ],
+          "sha256": "df71562ddde2450c0c8bc73952145e975c254d1541a4805167b0ea0e6d286775"
+        },
+        {
+          "season": "summer",
+          "file": "kyoto-ohara-summer.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            350,
+            1122,
+            700
+          ],
+          "sha256": "5ebbdc73cd446a902ad22225166983c830ec09febcdd5255f99fd043d9f247db"
+        },
+        {
+          "season": "autumn",
+          "file": "kyoto-ohara-autumn.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            700,
+            1122,
+            1050
+          ],
+          "sha256": "c645b9453b5d784f98a16d6f90343ea9598d0f85a308c687eb14716157649c13"
+        },
+        {
+          "season": "winter",
+          "file": "kyoto-ohara-winter.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            1050,
+            1122,
+            1402
+          ],
+          "sha256": "0c8cd062669e1db559922d6a78373ad1208ac6f19bc7e68597d6e2cd98e67d37"
+        }
+      ]
+    },
+    {
+      "id": "kyoto-arashiyama",
+      "master": {
+        "file": "kyoto-arashiyama-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "cb315576d0d820118919872a33ef1b5ee2c3d5b463aad0e3d070523d8d66168c"
+      },
+      "prompt": "Use case: stylized-concept. Original intricate 16-bit pixel illustrated game panorama atlas, rich colorful tiny pixel clusters, dense individually drawn architecture, textured materials, luminous interiors, exquisite roof tiles, no vector shapes. Match the rich pixel detail of the supplied reference, but all architecture/composition must be original Kyoto imagery.\nExactly FOUR full-width horizontal landscape strips vertically stacked, equal height, no gutters, no borders, no captions. Preferred canvas 1536 x 1920, each 1536 x 480 panorama. SAME architecture and camera in four strips. Top to bottom spring, summer, autumn, winter. Each panorama must be wide and compact, with buildings filling height and ending at a narrow sidewalk lip at bottom, NO foreground road or broad pavement.\nSUBJECT: Arashiyama Togetsukyo river bridge: wide detailed traditional timber bridge spanning low blue river left-to-center, wooded mountain hillside across entire skyline, right low temple with large elegant roof and small riverside tea house, foreground narrow grass riverbank and timber rowing-boat dock. Detailed bridge rail posts and beams, scattered rocks, tiny boats. Cherry and maple forest seasonal colors dominate with temple and bridge geometry unchanged.\nSpring: actual dense pink cherry blossoms and fresh flowers, rosy violet sunset. Summer: same trees fully lush green leaves, blue sky, bright warm shop windows. Autumn: same deciduous trees rich amber crimson foliage, orange dusk. Winter: same trees bare branching silhouettes, snow naturally on tiled roofs and vegetation, pale lavender sky and golden windows. Keep every building silhouette/window/landmark in identical positions across seasons, only seasonal foliage and snow and light change. No vehicles, no prominent people, no UI, no labels or headings, no fake foreground geometry, no empty bland blocks. Beautiful coherent handcrafted pixel art with closely layered objects, atmospheric depth and very little empty sky.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "kyoto-arashiyama-spring.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            0,
+            1122,
+            376
+          ],
+          "sha256": "e841f362228ace1fbf1b91b6fc714a01b2cd378cc5dd7bbad9b9dd113a28cbd5"
+        },
+        {
+          "season": "summer",
+          "file": "kyoto-arashiyama-summer.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            376,
+            1122,
+            752
+          ],
+          "sha256": "6787e3bc4a33b16770f8a44129f503e87816df02a55e0102fb77042bf24b416f"
+        },
+        {
+          "season": "autumn",
+          "file": "kyoto-arashiyama-autumn.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            752,
+            1122,
+            1129
+          ],
+          "sha256": "5312913303737a4bd1b100e5322e53fb2f7b7f4f928e5dd5d37931da5c069914"
+        },
+        {
+          "season": "winter",
+          "file": "kyoto-arashiyama-winter.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            0,
+            2172,
+            724
+          ],
+          "sha256": "0337a990d92c0d083638f4f83b41ec9e48805b1aa796587c17f7ca6cc403e989",
+          "source": "kyoto-arashiyama-winter-repair.png"
+        }
+      ],
+      "winterRepair": {
+        "file": "kyoto-arashiyama-winter-repair.png",
+        "width": 2172,
+        "height": 724,
+        "sha256": "9e3fc9807f8d4eb93b45d75e78d930c29565b140a90c2a73aef5b58183ab14f9",
+        "prompt": "Use case: lighting-weather. Reference is an original four-season Kyoto pixel art atlas. The bottom winter panel is accidentally cut off. Generate ONLY ONE complete WINTER panorama of exactly the SAME scene as the reference top spring panel. Match its full architecture, camera, composition, roof details, every landmark and shoreline/shopfront, but bare deciduous branches and snow covered roofs and vegetation, lavender sky and warm windows. One single wide horizontal panoramic image, preferred 1536x480, NO stacked panels. Exquisite dense pixel art identical style. Preserve the entire full scene including bottom riverbank/boats if river scene, and complete ground-floor storefronts if shop scene. Narrow ground lip, no added foreground road, no UI, no title, no margins. Show ALL the content of first reference row transformed to winter, not the clipped framing of reference last row.",
+        "reference": "kyoto-arashiyama-four-seasons-master.png"
+      }
+    },
+    {
+      "id": "kyoto-nishijin",
+      "master": {
+        "file": "kyoto-nishijin-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "2a5e90f9e3ca5f43b0b62e2ccb88dbca6b6218a67c37eb7859c7739dbe0d85bf"
+      },
+      "prompt": "Use case: stylized-concept. Original intricate 16-bit pixel illustrated game panorama atlas, rich colorful tiny pixel clusters, dense individually drawn architecture, textured materials, luminous interiors, exquisite roof tiles, no vector shapes. Match the rich pixel detail of the supplied reference, but all architecture/composition must be original Kyoto imagery.\nExactly FOUR full-width horizontal landscape strips vertically stacked, equal height, no gutters, no borders, no captions. Preferred canvas 1536 x 1920, each 1536 x 480 panorama. SAME architecture and camera in four strips. Top to bottom spring, summer, autumn, winter. Each panorama must be wide and compact, with buildings filling height and ending at a narrow sidewalk lip at bottom, NO foreground road or broad pavement.\nSUBJECT: Nishijin weaving workshop lane: left two-storey ochre timber weaving studio with looms visible through broad open windows, center distinctive sawtooth factory skylight roof behind low brick walls, right blue-black timber warehouse and shop displaying vertical bolts of patterned silk, purple indigo and gold hanging textiles, baskets of thread, patterned noren. Small maple/cherry courtyard breaks facades, tiny bicycle and crates. Side-on dense frontage.\nSpring: actual dense pink cherry blossoms and fresh flowers, rosy violet sunset. Summer: same trees fully lush green leaves, blue sky, bright warm shop windows. Autumn: same deciduous trees rich amber crimson foliage, orange dusk. Winter: same trees bare branching silhouettes, snow naturally on tiled roofs and vegetation, pale lavender sky and golden windows. Keep every building silhouette/window/landmark in identical positions across seasons, only seasonal foliage and snow and light change. No vehicles, no prominent people, no UI, no labels or headings, no fake foreground geometry, no empty bland blocks. Beautiful coherent handcrafted pixel art with closely layered objects, atmospheric depth and very little empty sky.\nCRITICAL: The winter bottom row must have EXACTLY SAME HEIGHT and full framing as other three rows. Do not crop off bottom of winter scene. All four strips exactly 25% of overall canvas.",
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "kyoto-nishijin-spring.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            0,
+            1122,
+            375
+          ],
+          "sha256": "33ddcb7844bda64259ba82c947ad43497381c93258d9c69767a643521b5570f4"
+        },
+        {
+          "season": "summer",
+          "file": "kyoto-nishijin-summer.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            379,
+            1122,
+            755
+          ],
+          "sha256": "a1ecebe191e86252ab753c5412eda8ef83c7bd7d29eee60d7d8bb44df458f1af"
+        },
+        {
+          "season": "autumn",
+          "file": "kyoto-nishijin-autumn.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            759,
+            1122,
+            1134
+          ],
+          "sha256": "5192d5188bbf9ac99eb179bba8d8018ef10294863defb11ce26a39ff2868c912"
+        },
+        {
+          "season": "winter",
+          "file": "kyoto-nishijin-winter.png",
+          "width": 528,
+          "height": 165,
+          "cropXYXY": [
+            0,
+            0,
+            2172,
+            724
+          ],
+          "sha256": "9704a90b16ef640a75fd045bff7c28b04f22361583a5e50f8584a58c0926d2ac",
+          "source": "kyoto-nishijin-winter-repair.png"
+        }
+      ],
+      "winterRepair": {
+        "file": "kyoto-nishijin-winter-repair.png",
+        "width": 2172,
+        "height": 724,
+        "sha256": "71d597d4b6e7f2e215a353944d8791c3122cb8071213758a34ddc2a0cbbac588",
+        "prompt": "Use case: lighting-weather. Reference is an original four-season Kyoto pixel art atlas. The bottom winter panel is accidentally cut off. Generate ONLY ONE complete WINTER panorama of exactly the SAME scene as the reference top spring panel. Match its full architecture, camera, composition, roof details, every landmark and shoreline/shopfront, but bare deciduous branches and snow covered roofs and vegetation, lavender sky and warm windows. One single wide horizontal panoramic image, preferred 1536x480, NO stacked panels. Exquisite dense pixel art identical style. Preserve the entire full scene including bottom riverbank/boats if river scene, and complete ground-floor storefronts if shop scene. Narrow ground lip, no added foreground road, no UI, no title, no margins. Show ALL the content of first reference row transformed to winter, not the clipped framing of reference last row.",
+        "reference": "kyoto-nishijin-four-seasons-master.png"
+      }
+    }
+  ],
+  "reference": {
+    "file": "kyoto-gion-four-seasons-master.png",
+    "usage": "Original generated master style reference, distinct district composition each call"
+  }
+}

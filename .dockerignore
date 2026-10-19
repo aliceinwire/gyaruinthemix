@@ -16,3 +16,5 @@
 !deploy/nginx-payment-links.conf
 !deploy/security-headers.conf
 !deploy/api-healthcheck.mjs
+!public/game-test/**
+!deploy/game-security-headers.conf

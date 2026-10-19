@@ -1,0 +1,1334 @@
+{
+  "generator": "image_gen__imagegen (built-in)",
+  "export": {
+    "runtimeSize": [
+      528,
+      165
+    ],
+    "method": "Native canvas row crop and nearest-neighbor resampling",
+    "note": "Original imagegen four-season atlases, individually drawn district compositions. Nearest-neighbor cropped runtime exports. Seasonal architecture closely consistent rather than pixel identical. Nakazakicho individually cropped to remove dark unused border."
+  },
+  "scenes": [
+    {
+      "id": "osaka-dotonbori",
+      "title": "Dotonbori Canalside",
+      "master": {
+        "file": "osaka-dotonbori-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "cbcbd65339c6f038c77e2a931a6ed6632cf1d79c8b22e1c2a2fcb3adb230709b"
+      },
+      "prompt": "Use case: stylized-concept. Create original extremely detailed hand-drawn 16-bit pixel-art Japanese game background. ONE atlas exactly FOUR full-width panorama strips stacked vertically, equally sized, no border, no captions. Canvas preferred 1536x1920. Each strip has wide 3.2:1 framing. SAME camera and EXACT SAME architecture in each row. Rows spring/summer/autumn/winter. Osaka Dotonbori canalside, distinctive theatrical canal skyline seen across water: densely layered neon restaurants, huge sculptural orange crab on left weathered restaurant, octopus restaurant sign, narrow colorful buildings with external metal stairs, central ornate theater with lanterns, glass balconies and packed shop windows to right, stone canal steps, thin waterfront promenade, tiny boat and railing. In background tall apartments and tangled rooftop infrastructure. Lush finely detailed original architectural pixel clusters, myriad individual windows, vents, roof machinery, signage, tiny shop merchandise. Atmosphere richly colorful warm windows against violet shadows, crisp pixels, luminous dusk. Spring has real pink flowering cherry trees on promenade and rose-blue sky; summer same trees leafy green, cyan-blue sky; autumn orange-red deciduous trees, golden sunset; winter SAME tree locations bare branching silhouettes with sparse snow on roof ledges and pale violet sky. Architecture must match across all four strips. Fill frame with buildings, mostly straight-on with subtle side-alley recession. Foreground water only very narrow thin band, buildings and sidewalk reach bottom edge of each strip. NO foreground road, no cars, no prominent people, no UI, no season labels, no broad empty pavement, no flat simplistic geometric blocks. Detailed original illustration, not reused game assets.",
+      "referenceImages": [],
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "osaka-dotonbori-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            350
+          ],
+          "sha256": "d3112cac30d7cf36ffc47c49973b912b059fcff53ba184cf75ca1fe3608e8199"
+        },
+        {
+          "season": "summer",
+          "file": "osaka-dotonbori-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            351,
+            1122,
+            350
+          ],
+          "sha256": "fae3dcfcaea28ac489363c779d5249851aad4ad1b17d4a0e85853142b7d4922d"
+        },
+        {
+          "season": "autumn",
+          "file": "osaka-dotonbori-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            701,
+            1122,
+            350
+          ],
+          "sha256": "41d5f0df6ae0c8ba2817bb3f3a771c11f924b5cc95d4bbfb443dabeee7c6a0d9"
+        },
+        {
+          "season": "winter",
+          "file": "osaka-dotonbori-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1052,
+            1122,
+            350
+          ],
+          "sha256": "68741e793d52681988c40908bede0fd42f88caf4a1d449b0d47650c0498025db"
+        }
+      ]
+    },
+    {
+      "id": "osaka-osakacastle",
+      "title": "Osaka Castle Moat",
+      "master": {
+        "file": "osaka-osakacastle-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "773e1180370fab1684b73bc8594998c7012ae170c3b42ea215b76662ef6fc6f6"
+      },
+      "prompt": "Use case: stylized-concept. Original polished highly detailed 16-bit pixel illustration game environment atlas. Exact four equal-width full-width panorama strips stacked vertically, no margin, no labels, no borders. Preferred1536x1920. Each strip 3.2:1 ratio and same architecture and camera. Osaka Castle moat and park: enormous carefully textured stone ramparts cross frame, spectacular white green-roofed five-tier Osaka castle tower at right-center with tiny gold ornamentation, traditional black gatehouse left, sloping tiled parapet wall, arched wooden moat bridge left-center, ancient sculptural pine trees, a pair of deciduous cherry trees and stone lanterns near right gateway. Refined background Osaka skyline distant and tiny. Complex interlocking roofs, eaves, tiled ridges, white plaster and gold details, layered thick stone foundations, water narrow reflecting band in lower middle, very narrow park promenade at bottom. No road, no cars, no blank foreground, no prominent people. Intricate textured pixel clusters, warm glowing windows, dramatic but readable violet shadows; match premium dense pixel landscape art. Top row spring: pink cherry blossoms and rosy dusk. Second summer: same deciduous trees green full leaf and cyan sky. Third autumn: same trees amber vermilion leaves, orange sunset. Fourth winter: same trees bare branches with thin actual snow on castle roofs stone walls pines and ground, cool lavender. All four strips same silhouettes, landmark and tree positions, no alternate landmarks. Do not use atmospheric tint as substitute for real seasonal foliage. Each panorama reaches sidewalk at bottom edge. Original art no UI no captions.",
+      "referenceImages": [],
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "osaka-osakacastle-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            350
+          ],
+          "sha256": "c79600f9200b7842a5d000218d12378b41df57896a2ea05e22703788c80839ad"
+        },
+        {
+          "season": "summer",
+          "file": "osaka-osakacastle-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            351,
+            1122,
+            350
+          ],
+          "sha256": "3eef26e7ef07a5fe2f5f4be3a8008b60c80e97daf7d0b0032a7248ff9426bd99"
+        },
+        {
+          "season": "autumn",
+          "file": "osaka-osakacastle-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            701,
+            1122,
+            350
+          ],
+          "sha256": "4496ec1829d61a3bdcd76059e7f026ee7de8d1fe81479aea9d39feaa85ae8bcd"
+        },
+        {
+          "season": "winter",
+          "file": "osaka-osakacastle-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1052,
+            1122,
+            350
+          ],
+          "sha256": "27ea7b7d38bb6469d0c4ca618e68cc91e767a8a9d391cb51e2aa69d27998ef9e"
+        }
+      ]
+    },
+    {
+      "id": "osaka-ebisu",
+      "title": "EBISUBASHI PLAZA",
+      "master": {
+        "file": "osaka-ebisu-four-seasons-master.png",
+        "width": 917,
+        "height": 1716,
+        "sha256": "cf1d9db82c2256d6bd53f78c2f18f30bd36b821ead75814970b85ee9206acbc5"
+      },
+      "prompt": "Use case: stylized-concept. Create ORIGINAL richly detailed premium 16-bit pixel-art Japanese game background atlas. Exactly FOUR equal-height full-width panoramic strips stacked vertically, no borders no margin no season labels. Preferred canvas1536x1920, each panorama3.2:1. Each strip EXACT SAME building architecture, camera and tree positions. District: EBISUBASHI PLAZA. Broad low pedestrian bridge spans horizontal canal in foreground; steep stone staircase on left, enormous illuminated billboard tower with original athletic silhouette, rows of packed warm windows on right, stepped restaurant terrace, distant urban layers. Keep water shallow narrow strip. Fine hand-drawn pixel clusters throughout, textured tiles bricks metal and concrete, individual window detail, warm luminous interiors, layered violet shadows. Mostly side-on building frontages with gentle depth, not aerial. Top strip SPRING: actual pink cherry blossom trees and rose-blue dusk; second SUMMER: same trees full green leaves cyan blue sky; third AUTUMN: same deciduous trees red amber leaves orange-gold dusk; fourth WINTER: same trees visibly bare branches, actual thin snow on roofs awnings ground and ledges, lavender sky. Tree species remain consistent. Evergreen pines stay green. All buildings and landmarks must repeat in same place across four rows. Fill every strip with substantial illustrated architecture and landscape. At bottom only narrow sidewalk lip, NO foreground road, NO cars, NO broad empty pavement, NO prominent people, NO UI, NO captions, NO collage, NO generic blank geometric placeholder blocks. Original game environment artwork.",
+      "referenceImages": [],
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "osaka-ebisu-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            917,
+            429
+          ],
+          "sha256": "cf9c61f918c9b6b004635ba9a576de1ced7d4d452b8c9a152d4078348163edb2"
+        },
+        {
+          "season": "summer",
+          "file": "osaka-ebisu-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            429,
+            917,
+            429
+          ],
+          "sha256": "ae4492fbe338286887438befa33a4a9654ca8f902260a30b4204662b9321ef49"
+        },
+        {
+          "season": "autumn",
+          "file": "osaka-ebisu-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            858,
+            917,
+            429
+          ],
+          "sha256": "27c41c774767a4b3dd709b1b889419380f8a2de240a00a2b1277f559d181f9af"
+        },
+        {
+          "season": "winter",
+          "file": "osaka-ebisu-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1287,
+            917,
+            429
+          ],
+          "sha256": "cb4fcc9e492beb7ffa9073ca688ae9eb20b7424507bb762ab0b579e501c28077"
+        }
+      ]
+    },
+    {
+      "id": "osaka-shinsaibashi",
+      "title": "SHINSAIBASHI ARCADE",
+      "master": {
+        "file": "osaka-shinsaibashi-four-seasons-master.png",
+        "width": 916,
+        "height": 1717,
+        "sha256": "8b95a855da284165ce78bb1869aa4604fde90f6acde9e8af2afec3b580f319eb"
+      },
+      "prompt": "Use case: stylized-concept. Create ORIGINAL richly detailed premium 16-bit pixel-art Japanese game background atlas. Exactly FOUR equal-height full-width panoramic strips stacked vertically, no borders no margin no season labels. Preferred canvas1536x1920, each panorama3.2:1. Each strip EXACT SAME building architecture, camera and tree positions. District: SHINSAIBASHI ARCADE. Magnificent arched glazed covered shopping arcade gateway left-center, intricate steel and brass roof ribs, ornate department store facade left, contemporary luxury storefronts right, geometric tiled entry, deep corridor of shops vanishing behind gateway, street trees and ornate lampposts. Fine hand-drawn pixel clusters throughout, textured tiles bricks metal and concrete, individual window detail, warm luminous interiors, layered violet shadows. Mostly side-on building frontages with gentle depth, not aerial. Top strip SPRING: actual pink cherry blossom trees and rose-blue dusk; second SUMMER: same trees full green leaves cyan blue sky; third AUTUMN: same deciduous trees red amber leaves orange-gold dusk; fourth WINTER: same trees visibly bare branches, actual thin snow on roofs awnings ground and ledges, lavender sky. Tree species remain consistent. Evergreen pines stay green. All buildings and landmarks must repeat in same place across four rows. Fill every strip with substantial illustrated architecture and landscape. At bottom only narrow sidewalk lip, NO foreground road, NO cars, NO broad empty pavement, NO prominent people, NO UI, NO captions, NO collage, NO generic blank geometric placeholder blocks. Original game environment artwork.",
+      "referenceImages": [],
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "osaka-shinsaibashi-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            916,
+            429
+          ],
+          "sha256": "67fe9c88307f135cd4a633daf81f64b038612198589538c1983fb5ff6977c1b1"
+        },
+        {
+          "season": "summer",
+          "file": "osaka-shinsaibashi-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            429,
+            916,
+            429
+          ],
+          "sha256": "0ff6a24c11908bdd31daa00010937fa4613173432d5482454028a5314055c9b5"
+        },
+        {
+          "season": "autumn",
+          "file": "osaka-shinsaibashi-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            859,
+            916,
+            429
+          ],
+          "sha256": "2b2b33018a4e63e6afa6af8b70a28b36f26533e99dc0ca91408fb70168173585"
+        },
+        {
+          "season": "winter",
+          "file": "osaka-shinsaibashi-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1288,
+            916,
+            429
+          ],
+          "sha256": "bb25e487570a7ced5a40616ae282186c779e89388eb6ce35bbcec836c105f6eb"
+        }
+      ]
+    },
+    {
+      "id": "osaka-amerikamura",
+      "title": "AMERIKAMURA TRIANGLE",
+      "master": {
+        "file": "osaka-amerikamura-four-seasons-master.png",
+        "width": 916,
+        "height": 1717,
+        "sha256": "ae36ca7336e6a48694ec54b314999f6e6ecf6caf3bccd7e4493321a17ec89afe"
+      },
+      "prompt": "Use case: stylized-concept. Create ORIGINAL richly detailed premium 16-bit pixel-art Japanese game background atlas. Exactly FOUR equal-height full-width panoramic strips stacked vertically, no borders no margin no season labels. Preferred canvas1536x1920, each panorama3.2:1. Each strip EXACT SAME building architecture, camera and tree positions. District: AMERIKAMURA TRIANGLE. Asymmetric triangular sunken meeting plaza with stepped concrete seating center, saturated original giant geometric mural on left vintage clothing store, record shop with display vinyls on right, tiny rooftop liberty-inspired sculpture in far background, funky irregular buildings and utility wires. Fine hand-drawn pixel clusters throughout, textured tiles bricks metal and concrete, individual window detail, warm luminous interiors, layered violet shadows. Mostly side-on building frontages with gentle depth, not aerial. Top strip SPRING: actual pink cherry blossom trees and rose-blue dusk; second SUMMER: same trees full green leaves cyan blue sky; third AUTUMN: same deciduous trees red amber leaves orange-gold dusk; fourth WINTER: same trees visibly bare branches, actual thin snow on roofs awnings ground and ledges, lavender sky. Tree species remain consistent. Evergreen pines stay green. All buildings and landmarks must repeat in same place across four rows. Fill every strip with substantial illustrated architecture and landscape. At bottom only narrow sidewalk lip, NO foreground road, NO cars, NO broad empty pavement, NO prominent people, NO UI, NO captions, NO collage, NO generic blank geometric placeholder blocks. Original game environment artwork.",
+      "referenceImages": [],
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "osaka-amerikamura-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            916,
+            429
+          ],
+          "sha256": "07e36eccca214b98b90a53b7d89ef37dfeeeb98b5b63698d61e49241b3a69d3c"
+        },
+        {
+          "season": "summer",
+          "file": "osaka-amerikamura-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            429,
+            916,
+            429
+          ],
+          "sha256": "e77e51417c51ae8460fe7281a52b4a4585e8cda1f4952a3da5443d8fdcc4329b"
+        },
+        {
+          "season": "autumn",
+          "file": "osaka-amerikamura-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            859,
+            916,
+            429
+          ],
+          "sha256": "daea72daf278349fe30f2598fd0b598bf8f4e80104bcd079e99d2e8d01c78308"
+        },
+        {
+          "season": "winter",
+          "file": "osaka-amerikamura-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1288,
+            916,
+            429
+          ],
+          "sha256": "5334370d287d27e9dd19fad9c620929185794eb926945079951bfc6c84d5b93b"
+        }
+      ]
+    },
+    {
+      "id": "osaka-namba",
+      "title": "NAMBA RAIL DECK",
+      "master": {
+        "file": "osaka-namba-four-seasons-master.png",
+        "width": 916,
+        "height": 1717,
+        "sha256": "daa02edc056a6a33e40fe3ab0be60e66ad5ab86dfa1c62b4791f415d2d978307"
+      },
+      "prompt": "Use case: stylized-concept. Create ORIGINAL richly detailed premium 16-bit pixel-art Japanese game background atlas. Exactly FOUR equal-height full-width panoramic strips stacked vertically, no borders no margin no season labels. Preferred canvas1536x1920, each panorama3.2:1. Each strip EXACT SAME building architecture, camera and tree positions. District: NAMBA RAIL DECK. Expansive old stone railway terminal left with clock and elaborate arch windows, riveted elevated iron railway bridge spans right above crowded little eateries, grand staircases, train platform canopy and layered modern commercial towers behind. Fine hand-drawn pixel clusters throughout, textured tiles bricks metal and concrete, individual window detail, warm luminous interiors, layered violet shadows. Mostly side-on building frontages with gentle depth, not aerial. Top strip SPRING: actual pink cherry blossom trees and rose-blue dusk; second SUMMER: same trees full green leaves cyan blue sky; third AUTUMN: same deciduous trees red amber leaves orange-gold dusk; fourth WINTER: same trees visibly bare branches, actual thin snow on roofs awnings ground and ledges, lavender sky. Tree species remain consistent. Evergreen pines stay green. All buildings and landmarks must repeat in same place across four rows. Fill every strip with substantial illustrated architecture and landscape. At bottom only narrow sidewalk lip, NO foreground road, NO cars, NO broad empty pavement, NO prominent people, NO UI, NO captions, NO collage, NO generic blank geometric placeholder blocks. Original game environment artwork.",
+      "referenceImages": [],
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "osaka-namba-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            916,
+            429
+          ],
+          "sha256": "0c8e625d7433fafe4701698fded76b4a89347ab311168443a2a240f856dea0c1"
+        },
+        {
+          "season": "summer",
+          "file": "osaka-namba-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            429,
+            916,
+            429
+          ],
+          "sha256": "6848546ed750632795b09ed2ed0c22494d3bbf1f4120d67d286668114f67e954"
+        },
+        {
+          "season": "autumn",
+          "file": "osaka-namba-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            859,
+            916,
+            429
+          ],
+          "sha256": "863f2fc850a4808653363e19931860c73baf405bc9f0119a92b954dbf027b799"
+        },
+        {
+          "season": "winter",
+          "file": "osaka-namba-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1288,
+            916,
+            429
+          ],
+          "sha256": "444cd2775b516892e6b35e2799a876ecb9786b00bfe47de97492196042e0690c"
+        }
+      ]
+    },
+    {
+      "id": "osaka-kuromon",
+      "title": "KUROMON MARKET",
+      "master": {
+        "file": "osaka-kuromon-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "02c7ad01095138b6d704d9aeb1ebf1daf67770a1f1f1124245986e252260e556"
+      },
+      "prompt": "Use case: stylized-concept. Create ORIGINAL richly detailed premium 16-bit pixel-art Japanese game background atlas. Exactly FOUR equal-height full-width panoramic strips stacked vertically, no borders no margin no season labels. Preferred canvas1536x1920, each panorama3.2:1. Each strip EXACT SAME building architecture, camera and tree positions. District: KUROMON MARKET. Covered food market entrance with large black tiled gate and suspended fish sculpture above it; close-packed seafood counters, ice boxes, baskets of vegetables, striped canvas market awnings, lantern strings, roof ventilators and old wooden produce shops. Fine hand-drawn pixel clusters throughout, textured tiles bricks metal and concrete, individual window detail, warm luminous interiors, layered violet shadows. Mostly side-on building frontages with gentle depth, not aerial. Top strip SPRING: actual pink cherry blossom trees and rose-blue dusk; second SUMMER: same trees full green leaves cyan blue sky; third AUTUMN: same deciduous trees red amber leaves orange-gold dusk; fourth WINTER: same trees visibly bare branches, actual thin snow on roofs awnings ground and ledges, lavender sky. Tree species remain consistent. Evergreen pines stay green. All buildings and landmarks must repeat in same place across four rows. Fill every strip with substantial illustrated architecture and landscape. At bottom only narrow sidewalk lip, NO foreground road, NO cars, NO broad empty pavement, NO prominent people, NO UI, NO captions, NO collage, NO generic blank geometric placeholder blocks. Original game environment artwork.",
+      "referenceImages": [],
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "osaka-kuromon-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            350
+          ],
+          "sha256": "1def4696b8b2d13f166524e212f5309288752bb5442e86dce9f777fcfd165cd9"
+        },
+        {
+          "season": "summer",
+          "file": "osaka-kuromon-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            351,
+            1122,
+            350
+          ],
+          "sha256": "c82d736a6d75410e96744792eb1fa389caca8b2cafd7254f771893c44ac4fa9c"
+        },
+        {
+          "season": "autumn",
+          "file": "osaka-kuromon-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            701,
+            1122,
+            350
+          ],
+          "sha256": "1745fe4cb34f310d421a7b7158f1eb167ecb900f61e2fd7eef248bab4f2e8fc7"
+        },
+        {
+          "season": "winter",
+          "file": "osaka-kuromon-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1052,
+            1122,
+            350
+          ],
+          "sha256": "bbc9eae3714abb72b51dc4af49f328fd59f8144db6bf6070b9b37f12ecc001a1"
+        }
+      ]
+    },
+    {
+      "id": "osaka-nipponbashi",
+      "title": "NIPPONBASHI ELECTRIC ROW",
+      "master": {
+        "file": "osaka-nipponbashi-four-seasons-master.png",
+        "width": 916,
+        "height": 1717,
+        "sha256": "d3454d13978af4656eb2c45377d5315581850149a97597301f309d143db9a22c"
+      },
+      "prompt": "Use case: stylized-concept. Create ORIGINAL richly detailed premium 16-bit pixel-art Japanese game background atlas. Exactly FOUR equal-height full-width panoramic strips stacked vertically, no borders no margin no season labels. Preferred canvas1536x1920, each panorama3.2:1. Each strip EXACT SAME building architecture, camera and tree positions. District: NIPPONBASHI ELECTRIC ROW. Dense electronics shopping street, stacked colorful shop towers with small glowing screen grids, vintage radios and computer display windows, toy shop cabinets, fine signboards and external stairs, narrow recessed alleys, wire poles, a few small deciduous trees. Fine hand-drawn pixel clusters throughout, textured tiles bricks metal and concrete, individual window detail, warm luminous interiors, layered violet shadows. Mostly side-on building frontages with gentle depth, not aerial. Top strip SPRING: actual pink cherry blossom trees and rose-blue dusk; second SUMMER: same trees full green leaves cyan blue sky; third AUTUMN: same deciduous trees red amber leaves orange-gold dusk; fourth WINTER: same trees visibly bare branches, actual thin snow on roofs awnings ground and ledges, lavender sky. Tree species remain consistent. Evergreen pines stay green. All buildings and landmarks must repeat in same place across four rows. Fill every strip with substantial illustrated architecture and landscape. At bottom only narrow sidewalk lip, NO foreground road, NO cars, NO broad empty pavement, NO prominent people, NO UI, NO captions, NO collage, NO generic blank geometric placeholder blocks. Original game environment artwork.",
+      "referenceImages": [],
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "osaka-nipponbashi-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            916,
+            429
+          ],
+          "sha256": "695d4534370680a19ddbb2262d556dbf280ce5cf890d0cba6930574da6c8c77f"
+        },
+        {
+          "season": "summer",
+          "file": "osaka-nipponbashi-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            429,
+            916,
+            429
+          ],
+          "sha256": "8b68117f7e7aa070b9b7a89f7e16e8709b775b268b0522cb3a2bcf0f0bc88e84"
+        },
+        {
+          "season": "autumn",
+          "file": "osaka-nipponbashi-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            859,
+            916,
+            429
+          ],
+          "sha256": "da4d4c8eef2547503656987c9da09f39db68f63229ef22c4c5866e509b3b5852"
+        },
+        {
+          "season": "winter",
+          "file": "osaka-nipponbashi-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1288,
+            916,
+            429
+          ],
+          "sha256": "745536f892b15a320e2c05abf48ea28f08b6ee63e36f176122a676a5c463fa44"
+        }
+      ]
+    },
+    {
+      "id": "osaka-shinsekai",
+      "title": "SHINSEKAI RETRO ROW",
+      "master": {
+        "file": "osaka-shinsekai-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "92e946cfe58b3b06465b80bf7134113b0dd188a4cfdd9476a743db3050c16d63"
+      },
+      "prompt": "Use case: stylized-concept. Create ORIGINAL richly detailed premium 16-bit pixel-art Japanese game background atlas. Exactly FOUR equal-height full-width panoramic strips stacked vertically, no borders no margin no season labels. Preferred canvas1536x1920, each panorama3.2:1. Each strip EXACT SAME building architecture, camera and tree positions. District: SHINSEKAI RETRO ROW. Retro entertainment street with unmistakable narrow latticed Tsutenkaku observation tower rising behind center, enormous round pufferfish restaurant lantern right, vertical neon signs and tiny kushikatsu food shops left, red lamps and vintage theater entrance. Fine hand-drawn pixel clusters throughout, textured tiles bricks metal and concrete, individual window detail, warm luminous interiors, layered violet shadows. Mostly side-on building frontages with gentle depth, not aerial. Top strip SPRING: actual pink cherry blossom trees and rose-blue dusk; second SUMMER: same trees full green leaves cyan blue sky; third AUTUMN: same deciduous trees red amber leaves orange-gold dusk; fourth WINTER: same trees visibly bare branches, actual thin snow on roofs awnings ground and ledges, lavender sky. Tree species remain consistent. Evergreen pines stay green. All buildings and landmarks must repeat in same place across four rows. Fill every strip with substantial illustrated architecture and landscape. At bottom only narrow sidewalk lip, NO foreground road, NO cars, NO broad empty pavement, NO prominent people, NO UI, NO captions, NO collage, NO generic blank geometric placeholder blocks. Original game environment artwork.",
+      "referenceImages": [],
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "osaka-shinsekai-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            350
+          ],
+          "sha256": "35b77caab4fea184ba6155b5a15b9b92fa10a84618d70c704790ff89ffd2982e"
+        },
+        {
+          "season": "summer",
+          "file": "osaka-shinsekai-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            351,
+            1122,
+            350
+          ],
+          "sha256": "dee79a8f6f38f55d62e170332cb95bb3eb5e06f20b58972cb013dae11383ece3"
+        },
+        {
+          "season": "autumn",
+          "file": "osaka-shinsekai-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            701,
+            1122,
+            350
+          ],
+          "sha256": "81bfe7fbe0e966326039a713f086718d72d650926afa43f5a2ead10a22f5ffc2"
+        },
+        {
+          "season": "winter",
+          "file": "osaka-shinsekai-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1052,
+            1122,
+            350
+          ],
+          "sha256": "cd707f4bcf28efc9f64e16af22f46eddeb581a57e363423e2fc6dda7e8290e27"
+        }
+      ]
+    },
+    {
+      "id": "osaka-tennoji",
+      "title": "TENNOJI PARK LAWNS",
+      "master": {
+        "file": "osaka-tennoji-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "625584bdbb3aefd2ab6ca3c54731f0cf5f9afb23cb75385b438791dd2670e54a"
+      },
+      "prompt": "Use case: stylized-concept. Create ORIGINAL richly detailed premium 16-bit pixel-art Japanese game background atlas. Exactly FOUR equal-height full-width panoramic strips stacked vertically, no borders no margin no season labels. Preferred canvas1536x1920, each panorama3.2:1. Each strip EXACT SAME building architecture, camera and tree positions. District: TENNOJI PARK LAWNS. Open carefully landscaped park, grand neoclassical museum left with detailed colonnade, warm timber picnic pavilion right, urban highrise skyline behind distant tree line, curving rose gardens and low hedges, lawn and benches, finely drawn seasonal deciduous canopy. Fine hand-drawn pixel clusters throughout, textured tiles bricks metal and concrete, individual window detail, warm luminous interiors, layered violet shadows. Mostly side-on building frontages with gentle depth, not aerial. Top strip SPRING: actual pink cherry blossom trees and rose-blue dusk; second SUMMER: same trees full green leaves cyan blue sky; third AUTUMN: same deciduous trees red amber leaves orange-gold dusk; fourth WINTER: same trees visibly bare branches, actual thin snow on roofs awnings ground and ledges, lavender sky. Tree species remain consistent. Evergreen pines stay green. All buildings and landmarks must repeat in same place across four rows. Fill every strip with substantial illustrated architecture and landscape. At bottom only narrow sidewalk lip, NO foreground road, NO cars, NO broad empty pavement, NO prominent people, NO UI, NO captions, NO collage, NO generic blank geometric placeholder blocks. Original game environment artwork.",
+      "referenceImages": [],
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "osaka-tennoji-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            350
+          ],
+          "sha256": "77cbca06d1a467ec502407147c78f2d499f27200ea8f1c1e9faead27ab40139e"
+        },
+        {
+          "season": "summer",
+          "file": "osaka-tennoji-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            351,
+            1122,
+            350
+          ],
+          "sha256": "a3abbf98ccebed92017e3b53a24c171453304b691b0cb47eb81033f2a24a2b85"
+        },
+        {
+          "season": "autumn",
+          "file": "osaka-tennoji-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            701,
+            1122,
+            350
+          ],
+          "sha256": "db96424cedd089d399ef5911a64da2430013f6f5dbad11b3b5e858849eba6b98"
+        },
+        {
+          "season": "winter",
+          "file": "osaka-tennoji-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1052,
+            1122,
+            350
+          ],
+          "sha256": "5cb44a56551abbb1212c9cb2e7595e89f7499b06928a9fc8f5225f8a7fcde992"
+        }
+      ]
+    },
+    {
+      "id": "osaka-abeno",
+      "title": "ABENO TRAM STOP",
+      "master": {
+        "file": "osaka-abeno-four-seasons-master.png",
+        "width": 916,
+        "height": 1717,
+        "sha256": "fe7414eef7e23b0bcf8cf1986e4a637c4b98e7dbf76133d3b3f22fc4ce24b6b7"
+      },
+      "prompt": "Use case: stylized-concept. Create ORIGINAL richly detailed premium 16-bit pixel-art Japanese game background atlas. Exactly FOUR equal-height full-width panoramic strips stacked vertically, no borders no margin no season labels. Preferred canvas1536x1920, each panorama3.2:1. Each strip EXACT SAME building architecture, camera and tree positions. District: ABENO TRAM STOP. Green vintage streetcar at low tram platform in middle ground, immense stepped glass Abeno skyscraper behind left, narrow retro retail buildings right, intricate overhead tram wires and decorative poles, flower planters and cherry trees; tracks stay in middle ground, no road. Fine hand-drawn pixel clusters throughout, textured tiles bricks metal and concrete, individual window detail, warm luminous interiors, layered violet shadows. Mostly side-on building frontages with gentle depth, not aerial. Top strip SPRING: actual pink cherry blossom trees and rose-blue dusk; second SUMMER: same trees full green leaves cyan blue sky; third AUTUMN: same deciduous trees red amber leaves orange-gold dusk; fourth WINTER: same trees visibly bare branches, actual thin snow on roofs awnings ground and ledges, lavender sky. Tree species remain consistent. Evergreen pines stay green. All buildings and landmarks must repeat in same place across four rows. Fill every strip with substantial illustrated architecture and landscape. At bottom only narrow sidewalk lip, NO foreground road, NO cars, NO broad empty pavement, NO prominent people, NO UI, NO captions, NO collage, NO generic blank geometric placeholder blocks. Original game environment artwork.",
+      "referenceImages": [],
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "osaka-abeno-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            916,
+            429
+          ],
+          "sha256": "38890062fb844838a54f34bd27fc3cd8bc233292a76d6dae4bf9ed18ff697de0"
+        },
+        {
+          "season": "summer",
+          "file": "osaka-abeno-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            429,
+            916,
+            429
+          ],
+          "sha256": "5eee0136c9bd64db85c10b99496a48f57d870f9e4f05fa40d76c22dc371b17f4"
+        },
+        {
+          "season": "autumn",
+          "file": "osaka-abeno-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            859,
+            916,
+            429
+          ],
+          "sha256": "bd9b9e27a2e8898f24aae96b4eb71e56220495bcea38d17dd809a3f5db9532bc"
+        },
+        {
+          "season": "winter",
+          "file": "osaka-abeno-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1288,
+            916,
+            429
+          ],
+          "sha256": "37a6f88e23ab4ea494a6ea10f358035a01783b86f8ec68efbd5420903cd27fe1"
+        }
+      ]
+    },
+    {
+      "id": "osaka-umeda",
+      "title": "UMEDA SKY DECK",
+      "master": {
+        "file": "osaka-umeda-four-seasons-master.png",
+        "width": 916,
+        "height": 1717,
+        "sha256": "35fd55e16e4fe0b73a567b8525623ef684e478aa1f49dfefa27be37f998ead37"
+      },
+      "prompt": "Use case: stylized-concept. Create ORIGINAL richly detailed premium 16-bit pixel-art Japanese game background atlas. Exactly FOUR equal-height full-width panoramic strips stacked vertically, no borders no margin no season labels. Preferred canvas1536x1920, each panorama3.2:1. Each strip EXACT SAME building architecture, camera and tree positions. District: UMEDA SKY DECK. Futuristic dense railway interchange with glazed pedestrian skybridge across center, steel multiple-flight exterior stairs, sweeping station roof right, tall glass towers and interconnected rooftop observation structure left-background, terrace cafes, intricate structural beams and warm window grids. Fine hand-drawn pixel clusters throughout, textured tiles bricks metal and concrete, individual window detail, warm luminous interiors, layered violet shadows. Mostly side-on building frontages with gentle depth, not aerial. Top strip SPRING: actual pink cherry blossom trees and rose-blue dusk; second SUMMER: same trees full green leaves cyan blue sky; third AUTUMN: same deciduous trees red amber leaves orange-gold dusk; fourth WINTER: same trees visibly bare branches, actual thin snow on roofs awnings ground and ledges, lavender sky. Tree species remain consistent. Evergreen pines stay green. All buildings and landmarks must repeat in same place across four rows. Fill every strip with substantial illustrated architecture and landscape. At bottom only narrow sidewalk lip, NO foreground road, NO cars, NO broad empty pavement, NO prominent people, NO UI, NO captions, NO collage, NO generic blank geometric placeholder blocks. Original game environment artwork.",
+      "referenceImages": [],
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "osaka-umeda-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            916,
+            429
+          ],
+          "sha256": "1b784cb7f1b927f5ae1cd41142c43b4ef7b36866e7e42a03b35048cac56dce47"
+        },
+        {
+          "season": "summer",
+          "file": "osaka-umeda-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            429,
+            916,
+            429
+          ],
+          "sha256": "511fc1cf2da7923e3f4ddf0bb92ce8d090772a5d455f30533ecb3fb5fc2ace96"
+        },
+        {
+          "season": "autumn",
+          "file": "osaka-umeda-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            859,
+            916,
+            429
+          ],
+          "sha256": "93682e6ce111ec77941a2aa788c114f57d20e1dcd10149e99e15c80ebcd50b61"
+        },
+        {
+          "season": "winter",
+          "file": "osaka-umeda-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1288,
+            916,
+            429
+          ],
+          "sha256": "9a06d3cdff64f707a3c4a62d822b3ed4d1edca3eb3fafc646b6a45c0cade0e9f"
+        }
+      ]
+    },
+    {
+      "id": "osaka-nakazakicho",
+      "title": "NAKAZAKICHO BACKSTREETS",
+      "master": {
+        "file": "osaka-nakazakicho-four-seasons-master.png",
+        "width": 916,
+        "height": 1717,
+        "sha256": "9cc10ad143ef2aa79a75b05dcdb7754c1367988b73234c1fefe175520371e012"
+      },
+      "prompt": "Use case: stylized-concept. Create ORIGINAL richly detailed premium 16-bit pixel-art Japanese game background atlas. Exactly FOUR equal-height full-width panoramic strips stacked vertically, no borders no margin no season labels. Preferred canvas1536x1920, each panorama3.2:1. Each strip EXACT SAME building architecture, camera and tree positions. District: NAKAZAKICHO BACKSTREETS. Intimate row of two-story weathered wooden old houses converted to cafes, little ceramic studio left, tiny vinyl shop center, crooked plaster walls and rusty tin awnings, uneven miniature pocket gardens, hanging plants and two deciduous trees, bicycles and electric wires. Fine hand-drawn pixel clusters throughout, textured tiles bricks metal and concrete, individual window detail, warm luminous interiors, layered violet shadows. Mostly side-on building frontages with gentle depth, not aerial. Top strip SPRING: actual pink cherry blossom trees and rose-blue dusk; second SUMMER: same trees full green leaves cyan blue sky; third AUTUMN: same deciduous trees red amber leaves orange-gold dusk; fourth WINTER: same trees visibly bare branches, actual thin snow on roofs awnings ground and ledges, lavender sky. Tree species remain consistent. Evergreen pines stay green. All buildings and landmarks must repeat in same place across four rows. Fill every strip with substantial illustrated architecture and landscape. At bottom only narrow sidewalk lip, NO foreground road, NO cars, NO broad empty pavement, NO prominent people, NO UI, NO captions, NO collage, NO generic blank geometric placeholder blocks. Original game environment artwork.",
+      "referenceImages": [],
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "osaka-nakazakicho-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            916,
+            387
+          ],
+          "sha256": "b6c4a1d641654afdb7f3797bec31a33cec81c69707e3542d51816f176fa9f4c7"
+        },
+        {
+          "season": "summer",
+          "file": "osaka-nakazakicho-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            388,
+            916,
+            407
+          ],
+          "sha256": "48a0c4be501eb600e3668078df0d54cc3601207e527c65039c20df14b901f0ea"
+        },
+        {
+          "season": "autumn",
+          "file": "osaka-nakazakicho-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            797,
+            916,
+            408
+          ],
+          "sha256": "5ecd0bcc3a29a997dd574f390263533848e52ec5bc40c017e0f302bfee4ae713"
+        },
+        {
+          "season": "winter",
+          "file": "osaka-nakazakicho-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1206,
+            916,
+            421
+          ],
+          "sha256": "101a28d58761934e795434a5ca32002753c4cdeb15f7194f2c0f1a1b48d21088"
+        }
+      ]
+    },
+    {
+      "id": "osaka-tenma",
+      "title": "TENMA RAIL TAVERN LANE",
+      "master": {
+        "file": "osaka-tenma-four-seasons-master.png",
+        "width": 916,
+        "height": 1717,
+        "sha256": "c60ac90a723fdf7db4354c0874c047eade112dbea074355343f67fe40baadc00"
+      },
+      "prompt": "Use case: stylized-concept. Create ORIGINAL richly detailed premium 16-bit pixel-art Japanese game background atlas. Exactly FOUR equal-height full-width panoramic strips stacked vertically, no borders no margin no season labels. Preferred canvas1536x1920, each panorama3.2:1. Each strip EXACT SAME building architecture, camera and tree positions. District: TENMA RAIL TAVERN LANE. Atmospheric food lane beneath dark riveted railway viaduct with brick arches, tiny grilled-food stalls and richly detailed red lanterns under arches, modest local station platform to right, multilevel old houses behind, thin tree pockets, beer crates and warm interiors. Fine hand-drawn pixel clusters throughout, textured tiles bricks metal and concrete, individual window detail, warm luminous interiors, layered violet shadows. Mostly side-on building frontages with gentle depth, not aerial. Top strip SPRING: actual pink cherry blossom trees and rose-blue dusk; second SUMMER: same trees full green leaves cyan blue sky; third AUTUMN: same deciduous trees red amber leaves orange-gold dusk; fourth WINTER: same trees visibly bare branches, actual thin snow on roofs awnings ground and ledges, lavender sky. Tree species remain consistent. Evergreen pines stay green. All buildings and landmarks must repeat in same place across four rows. Fill every strip with substantial illustrated architecture and landscape. At bottom only narrow sidewalk lip, NO foreground road, NO cars, NO broad empty pavement, NO prominent people, NO UI, NO captions, NO collage, NO generic blank geometric placeholder blocks. Original game environment artwork.",
+      "referenceImages": [],
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "osaka-tenma-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            916,
+            429
+          ],
+          "sha256": "d863eb36514c59c3e49c3d3c0028ed3973952e35790769e0f6c967efade0285e"
+        },
+        {
+          "season": "summer",
+          "file": "osaka-tenma-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            429,
+            916,
+            429
+          ],
+          "sha256": "55585a3576b63c33c3ad636d5fbd94d5463ba489c233c8061f42c090b8b2aa17"
+        },
+        {
+          "season": "autumn",
+          "file": "osaka-tenma-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            859,
+            916,
+            429
+          ],
+          "sha256": "0bf574cd0dc65f8239e3bf80545dd18d2df04b33fa89f361d6182ac6e2e3d95c"
+        },
+        {
+          "season": "winter",
+          "file": "osaka-tenma-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1288,
+            916,
+            429
+          ],
+          "sha256": "9d3bda93f2c4721e8af630e29f71e3888d0431c60bea0cfb19aa933ba57753ba"
+        }
+      ]
+    },
+    {
+      "id": "osaka-tenjin",
+      "title": "TENJINBASHISUJI ROOFS",
+      "master": {
+        "file": "osaka-tenjin-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "87de02abc8b80e2fc9936b088e3ffe05de6888829a15b0b21233cec9bc6fcb39"
+      },
+      "prompt": "Use case: stylized-concept. Create ORIGINAL richly detailed premium 16-bit pixel-art Japanese game background atlas. Exactly FOUR equal-height full-width panoramic strips stacked vertically, no borders no margin no season labels. Preferred canvas1536x1920, each panorama3.2:1. Each strip EXACT SAME building architecture, camera and tree positions. District: TENJINBASHISUJI ROOFS. Long shopping arcade roof seen obliquely across an open junction, repeating glazed barrel roofs with iron ribs, decorative gateway right, traditional daily-goods shops and produce market on left, layered overhead cables, flower pots and small street trees. Fine hand-drawn pixel clusters throughout, textured tiles bricks metal and concrete, individual window detail, warm luminous interiors, layered violet shadows. Mostly side-on building frontages with gentle depth, not aerial. Top strip SPRING: actual pink cherry blossom trees and rose-blue dusk; second SUMMER: same trees full green leaves cyan blue sky; third AUTUMN: same deciduous trees red amber leaves orange-gold dusk; fourth WINTER: same trees visibly bare branches, actual thin snow on roofs awnings ground and ledges, lavender sky. Tree species remain consistent. Evergreen pines stay green. All buildings and landmarks must repeat in same place across four rows. Fill every strip with substantial illustrated architecture and landscape. At bottom only narrow sidewalk lip, NO foreground road, NO cars, NO broad empty pavement, NO prominent people, NO UI, NO captions, NO collage, NO generic blank geometric placeholder blocks. Original game environment artwork.",
+      "referenceImages": [],
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "osaka-tenjin-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            350
+          ],
+          "sha256": "767285c618210a3483441145a8532a34d15028b66c89a9b19f3179f881936fa9"
+        },
+        {
+          "season": "summer",
+          "file": "osaka-tenjin-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            351,
+            1122,
+            350
+          ],
+          "sha256": "22f5ab790ec0d5aa345bc94d73186ef8fcaaa9c8c886fe72495efaa138d7bd6e"
+        },
+        {
+          "season": "autumn",
+          "file": "osaka-tenjin-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            701,
+            1122,
+            350
+          ],
+          "sha256": "2ead043fe6fb8fb93655689c3f77884a047eca524936c9f9f7cf6faf9f50654f"
+        },
+        {
+          "season": "winter",
+          "file": "osaka-tenjin-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1052,
+            1122,
+            350
+          ],
+          "sha256": "589a3eab923b02176c3b811f67effd3fe17c1618ae67bf9aa2cbb9a5075f5f3e"
+        }
+      ]
+    },
+    {
+      "id": "osaka-nakanoshima",
+      "title": "NAKANOSHIMA ISLAND",
+      "master": {
+        "file": "osaka-nakanoshima-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "e79d3fb5e8935d85f8446b6c914208d8e867dbdf1c72297bc035c115efe85cec"
+      },
+      "prompt": "Use case: stylized-concept. Create ORIGINAL richly detailed premium 16-bit pixel-art Japanese game background atlas. Exactly FOUR equal-height full-width panoramic strips stacked vertically, no borders no margin no season labels. Preferred canvas1536x1920, each panorama3.2:1. Each strip EXACT SAME building architecture, camera and tree positions. District: NAKANOSHIMA ISLAND. Grand red-brick civic hall with three green copper domes left, stone-arch bridge center, formal dense rose garden right, island river promenade with elegant balustrades and mature trees, modern skyline behind; water narrow strip, sidewalk bottom. Fine hand-drawn pixel clusters throughout, textured tiles bricks metal and concrete, individual window detail, warm luminous interiors, layered violet shadows. Mostly side-on building frontages with gentle depth, not aerial. Top strip SPRING: actual pink cherry blossom trees and rose-blue dusk; second SUMMER: same trees full green leaves cyan blue sky; third AUTUMN: same deciduous trees red amber leaves orange-gold dusk; fourth WINTER: same trees visibly bare branches, actual thin snow on roofs awnings ground and ledges, lavender sky. Tree species remain consistent. Evergreen pines stay green. All buildings and landmarks must repeat in same place across four rows. Fill every strip with substantial illustrated architecture and landscape. At bottom only narrow sidewalk lip, NO foreground road, NO cars, NO broad empty pavement, NO prominent people, NO UI, NO captions, NO collage, NO generic blank geometric placeholder blocks. Original game environment artwork.",
+      "referenceImages": [],
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "osaka-nakanoshima-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            350
+          ],
+          "sha256": "d3040d3243db1f62877328ffa8129266a981dff99be065e948afe425c55a29b2"
+        },
+        {
+          "season": "summer",
+          "file": "osaka-nakanoshima-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            351,
+            1122,
+            350
+          ],
+          "sha256": "7d2756e079a57e6d42f1666d43c634ce5e7d20379e474a4bafb268b0ecc50a27"
+        },
+        {
+          "season": "autumn",
+          "file": "osaka-nakanoshima-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            701,
+            1122,
+            350
+          ],
+          "sha256": "e385aa1430e464d86300245774d1bb6964f269ad97466328d487ea11289beb84"
+        },
+        {
+          "season": "winter",
+          "file": "osaka-nakanoshima-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1052,
+            1122,
+            350
+          ],
+          "sha256": "b044453edea272ac630f7374cfaf79e08ab710770e660b2220bb1d7639203038"
+        }
+      ]
+    },
+    {
+      "id": "osaka-kitahama",
+      "title": "KITAHAMA RIVER CAFES",
+      "master": {
+        "file": "osaka-kitahama-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "1b200ce7f7a3ccaacc6edba2a49f7126227a388e348ed931a94e963e2e062cca"
+      },
+      "prompt": "Use case: stylized-concept. Create ORIGINAL richly detailed premium 16-bit pixel-art Japanese game background atlas. Exactly FOUR equal-height full-width panoramic strips stacked vertically, no borders no margin no season labels. Preferred canvas1536x1920, each panorama3.2:1. Each strip EXACT SAME building architecture, camera and tree positions. District: KITAHAMA RIVER CAFES. Elegant waterfront cafes on raised wood decks with parasols left, slender historic stone bank building center, angular iron bridge to right, brick office warehouse and modern glass office tower behind, railing and planted deciduous trees, narrow river band behind foreground promenade. Fine hand-drawn pixel clusters throughout, textured tiles bricks metal and concrete, individual window detail, warm luminous interiors, layered violet shadows. Mostly side-on building frontages with gentle depth, not aerial. Top strip SPRING: actual pink cherry blossom trees and rose-blue dusk; second SUMMER: same trees full green leaves cyan blue sky; third AUTUMN: same deciduous trees red amber leaves orange-gold dusk; fourth WINTER: same trees visibly bare branches, actual thin snow on roofs awnings ground and ledges, lavender sky. Tree species remain consistent. Evergreen pines stay green. All buildings and landmarks must repeat in same place across four rows. Fill every strip with substantial illustrated architecture and landscape. At bottom only narrow sidewalk lip, NO foreground road, NO cars, NO broad empty pavement, NO prominent people, NO UI, NO captions, NO collage, NO generic blank geometric placeholder blocks. Original game environment artwork.",
+      "referenceImages": [],
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "osaka-kitahama-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            350
+          ],
+          "sha256": "76ba952a901ba61e018c253819d7367fbb58956ade2595367944698681190ab7"
+        },
+        {
+          "season": "summer",
+          "file": "osaka-kitahama-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            351,
+            1122,
+            350
+          ],
+          "sha256": "74ec3cf6e04e1fc1e8249ae02e5d5bf071a992d1a886fc7419f9ef24c7874c28"
+        },
+        {
+          "season": "autumn",
+          "file": "osaka-kitahama-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            701,
+            1122,
+            350
+          ],
+          "sha256": "37b17c625cb7e4b2ade57f017dfc4f4aa10c867973d51b4895b9c9137ba47a2b"
+        },
+        {
+          "season": "winter",
+          "file": "osaka-kitahama-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1052,
+            1122,
+            350
+          ],
+          "sha256": "021b3f16c2fc012bec966827b836b05ec0ddfa299df2e37f23fa1cd7301aa794"
+        }
+      ]
+    },
+    {
+      "id": "osaka-tempozan",
+      "title": "TEMPOZAN HARBOR PIER",
+      "master": {
+        "file": "osaka-tempozan-four-seasons-master.png",
+        "width": 916,
+        "height": 1717,
+        "sha256": "b0ba19fba8e1a6d4588fcdabd118ff0834330d2cda7425fa3719eef4cdf3e8e4"
+      },
+      "prompt": "Use case: stylized-concept. Create ORIGINAL richly detailed premium 16-bit pixel-art Japanese game background atlas. Exactly FOUR equal-height full-width panoramic strips stacked vertically, no borders no margin no season labels. Preferred canvas1536x1920, each panorama3.2:1. Each strip EXACT SAME building architecture, camera and tree positions. District: TEMPOZAN HARBOR PIER. Harbor passenger pier with elaborate dock canopy center, immense ferris wheel right behind a red warehouse, blue glass aquarium silhouette left, small moored passenger ship, cargo crane distant, tiny cafe terraces and deciduous waterfront trees, railing at bottom. Fine hand-drawn pixel clusters throughout, textured tiles bricks metal and concrete, individual window detail, warm luminous interiors, layered violet shadows. Mostly side-on building frontages with gentle depth, not aerial. Top strip SPRING: actual pink cherry blossom trees and rose-blue dusk; second SUMMER: same trees full green leaves cyan blue sky; third AUTUMN: same deciduous trees red amber leaves orange-gold dusk; fourth WINTER: same trees visibly bare branches, actual thin snow on roofs awnings ground and ledges, lavender sky. Tree species remain consistent. Evergreen pines stay green. All buildings and landmarks must repeat in same place across four rows. Fill every strip with substantial illustrated architecture and landscape. At bottom only narrow sidewalk lip, NO foreground road, NO cars, NO broad empty pavement, NO prominent people, NO UI, NO captions, NO collage, NO generic blank geometric placeholder blocks. Original game environment artwork.",
+      "referenceImages": [],
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "osaka-tempozan-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            916,
+            429
+          ],
+          "sha256": "2d786a66a8c3e7acb1750c8b149a827a10d985c07d79f48adea8da3b5935f7b9"
+        },
+        {
+          "season": "summer",
+          "file": "osaka-tempozan-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            429,
+            916,
+            429
+          ],
+          "sha256": "b59901e0b0a746fe3a471548de8f3cd1643edd85f42455982303ad80673a396f"
+        },
+        {
+          "season": "autumn",
+          "file": "osaka-tempozan-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            859,
+            916,
+            429
+          ],
+          "sha256": "9feb4552d66f8aa1945b7cc0ea67f0b4b72855076be3f8246f6091bf8044565a"
+        },
+        {
+          "season": "winter",
+          "file": "osaka-tempozan-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1288,
+            916,
+            429
+          ],
+          "sha256": "cf18d28b0b311ea7ab555fe89c12bbe8168673320501fa294c566dbfde9472bc"
+        }
+      ]
+    },
+    {
+      "id": "osaka-taisho",
+      "title": "TAISHO INDUSTRIAL CANAL",
+      "master": {
+        "file": "osaka-taisho-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "59239fb19cf2177373c74cd3d8841be23403f1ce098c81e8ff008c110124fe78"
+      },
+      "prompt": "Use case: stylized-concept. Create ORIGINAL richly detailed premium 16-bit pixel-art Japanese game background atlas. Exactly FOUR equal-height full-width panoramic strips stacked vertically, no borders no margin no season labels. Preferred canvas1536x1920, each panorama3.2:1. Each strip EXACT SAME building architecture, camera and tree positions. District: TAISHO INDUSTRIAL CANAL. Industrial working canal with detailed interlaced pipes and rusted factories left, massive green steel truss bridge central, old corrugated warehouse right with lit windows, moored working barge, cranes and cable poles, neglected deciduous trees in cracks and narrow dock sidewalk bottom. Fine hand-drawn pixel clusters throughout, textured tiles bricks metal and concrete, individual window detail, warm luminous interiors, layered violet shadows. Mostly side-on building frontages with gentle depth, not aerial. Top strip SPRING: actual pink cherry blossom trees and rose-blue dusk; second SUMMER: same trees full green leaves cyan blue sky; third AUTUMN: same deciduous trees red amber leaves orange-gold dusk; fourth WINTER: same trees visibly bare branches, actual thin snow on roofs awnings ground and ledges, lavender sky. Tree species remain consistent. Evergreen pines stay green. All buildings and landmarks must repeat in same place across four rows. Fill every strip with substantial illustrated architecture and landscape. At bottom only narrow sidewalk lip, NO foreground road, NO cars, NO broad empty pavement, NO prominent people, NO UI, NO captions, NO collage, NO generic blank geometric placeholder blocks. Original game environment artwork.",
+      "referenceImages": [],
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "osaka-taisho-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            350
+          ],
+          "sha256": "600222322e78b360406ff14331f61525891b518c4128d6520c66195d510691ff"
+        },
+        {
+          "season": "summer",
+          "file": "osaka-taisho-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            351,
+            1122,
+            350
+          ],
+          "sha256": "bbbda07b86e82e20c745e08094201e55a2d8f96cd3df74c680efa012232c2867"
+        },
+        {
+          "season": "autumn",
+          "file": "osaka-taisho-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            701,
+            1122,
+            350
+          ],
+          "sha256": "e3bdcec965af736b9a4adecabadccaa7ae55e0a34bf5300961cd1065f5c71798"
+        },
+        {
+          "season": "winter",
+          "file": "osaka-taisho-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1052,
+            1122,
+            350
+          ],
+          "sha256": "8393459f43c1e084f8e948bd6d0e6e239f22270a4abf0e06731e3f460af63d5a"
+        }
+      ]
+    },
+    {
+      "id": "osaka-sumiyoshi",
+      "title": "SUMIYOSHI DRUM BRIDGE",
+      "master": {
+        "file": "osaka-sumiyoshi-four-seasons-master.png",
+        "width": 1122,
+        "height": 1402,
+        "sha256": "f6555e8a17a2fe3e938e3324152f215a735aa0fbdb77bc8976919517643c885f"
+      },
+      "prompt": "Use case: stylized-concept. Create ORIGINAL richly detailed premium 16-bit pixel-art Japanese game background atlas. Exactly FOUR equal-height full-width panoramic strips stacked vertically, no borders no margin no season labels. Preferred canvas1536x1920, each panorama3.2:1. Each strip EXACT SAME building architecture, camera and tree positions. District: SUMIYOSHI DRUM BRIDGE. Distinctive high arched bright red drum bridge over shrine pond left, tall vermilion torii center, ornate low white-and-vermilion ancient shrine hall right with crossed roof finials, mature pines and deciduous cherry trees, stone lanterns and finely textured shrine path. Fine hand-drawn pixel clusters throughout, textured tiles bricks metal and concrete, individual window detail, warm luminous interiors, layered violet shadows. Mostly side-on building frontages with gentle depth, not aerial. Top strip SPRING: actual pink cherry blossom trees and rose-blue dusk; second SUMMER: same trees full green leaves cyan blue sky; third AUTUMN: same deciduous trees red amber leaves orange-gold dusk; fourth WINTER: same trees visibly bare branches, actual thin snow on roofs awnings ground and ledges, lavender sky. Tree species remain consistent. Evergreen pines stay green. All buildings and landmarks must repeat in same place across four rows. Fill every strip with substantial illustrated architecture and landscape. At bottom only narrow sidewalk lip, NO foreground road, NO cars, NO broad empty pavement, NO prominent people, NO UI, NO captions, NO collage, NO generic blank geometric placeholder blocks. Original game environment artwork.",
+      "referenceImages": [],
+      "outputs": [
+        {
+          "season": "spring",
+          "file": "osaka-sumiyoshi-spring.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            0,
+            1122,
+            350
+          ],
+          "sha256": "9f48fa8f270527f1ec59f74c7b0707de4393372c3e84faad54fd510b0924a73b"
+        },
+        {
+          "season": "summer",
+          "file": "osaka-sumiyoshi-summer.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            351,
+            1122,
+            350
+          ],
+          "sha256": "e1e953ebfdd95facdefbfcd019a923c60e0651baa8a18e5707ddf6c8a8e59d24"
+        },
+        {
+          "season": "autumn",
+          "file": "osaka-sumiyoshi-autumn.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            701,
+            1122,
+            350
+          ],
+          "sha256": "6d013800db35fe6932df2694eb509190af53005a310e79064c1342980e766785"
+        },
+        {
+          "season": "winter",
+          "file": "osaka-sumiyoshi-winter.png",
+          "width": 528,
+          "height": 165,
+          "crop": [
+            0,
+            1052,
+            1122,
+            350
+          ],
+          "sha256": "a9542d1450dcf48f6d0cd23bd91018bb8628f8549e9914c2fc6eee88ea4df89d"
+        }
+      ]
+    }
+  ],
+  "generatedAt": "2026-10-19T17:42:29.957Z"
+}

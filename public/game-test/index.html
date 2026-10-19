@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="robots" content="noindex, nofollow, noarchive" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#13121e" />
+    <meta
+      name="description"
+      content="DJありねぇとDJちゃな、街ごとギャルにしてクラブへ。"
+    />
+    <title>ギャルインザミックス / クラブまで行こ</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body data-screen="menu" data-map-panel="route">
+    <main class="shell">
+      <header class="masthead">
+        <a
+          class="brand"
+          href="https://gyaruinthemix.com/"
+          aria-label="ギャルインザミックス公式サイト"
+          ><img
+            src="./assets/brand/gyaruinthemix-logo.png"
+            alt="ギャルインザミックス"
+        /></a>
+        <p class="app-caption">クラブまで、うちらと。</p>
+        <div class="settings">
+          <button id="music-open" aria-label="公式音楽プレイヤーを開く" aria-controls="music-panel" aria-expanded="false" title="公式音楽プレイヤー">♫</button>
+          <button id="sound" aria-pressed="false" aria-label="効果音をオン">
+            音：おやすみ</button
+          >
+        </div>
+      </header>
+      <section id="car-select" class="new-car-picker" hidden aria-labelledby="car-select-heading">
+        <p class="eyebrow">新しい旅の出発前やで</p>
+        <h1 id="car-select-heading">今回のくるま、選ぼか</h1>
+        <p>くるまの解禁は完走でもらうギャルポイント。旅が始まったら乗り換えできへんで。</p>
+        <p id="car-select-wallet" aria-live="polite"></p>
+        <p id="car-save-warning" role="status" hidden></p>
+        <div id="car-garage" class="car-grid" aria-label="新しい旅のくるま選び"></div>
+        <fieldset id="starting-customization" class="car-customization">
+          <legend>出発前だけ、うちのくるま盛ろか</legend>
+          <p>色・ホイール・デカールはギャルポイントで解禁。解禁済みは無料で着替えられるで。旅の途中は変えられへんから、ここで決めよ。</p>
+          <canvas id="customization-preview" width="420" height="190" aria-label="選んだカスタムのくるま見本"></canvas>
+          <label>ボディの色<select id="custom-paint"></select></label>
+          <label>ホイール<select id="custom-wheels"></select></label>
+          <label>デカール<select id="custom-decal"></select></label>
+          <p id="customization-status" role="status"></p>
+          <button id="customization-apply">この盛りで決めよ</button>
+        </fieldset>
+        <button id="cars-ready" class="primary">このくるまで出発準備しよ →</button>
+      </section>
+      <div class="workspace">
+        <section class="cabinet" aria-label="クラブへ向かう旅">
+          <div class="topline">
+            <b id="location-label">中野、行くで</b
+            ><span id="mode-label">クラブ旅 1 / 12</span
+            ><button id="pause" disabled>ひと休み</button>
+          </div>
+          <div class="viewport">
+            <canvas
+              id="game"
+              width="960"
+              height="540"
+              tabindex="0"
+              aria-label="自動で進む車を浮上、ちゃなのハート、充電、テキーラ加速で操作するゲーム"
+            ></canvas>
+            <div id="menu" class="screen-menu">
+              <div class="eyebrow">ギャルインザミックスと行こ</div>
+              <h1>ハイパー<span>ドライブ</span><sup>♡</sup></h1>
+              <p class="tagline">盛って、飛ばして、フロアまで。</p>
+              <p class="menu-copy">
+                ハートで街をギャルに変えて、クラブへ。<br />ふたりのナイトツアー、どの道で行く？
+              </p>
+              <div class="menu-actions">
+                <button id="story" class="primary">
+                  はじめから行こ <span>→</span>
+                </button>
+              </div>
+              <button id="resume-tour" hidden>つづきから行こ →</button>
+              <button id="retry-art" hidden>もう一回読み込むで</button>
+              <div id="loading" class="loading">街の灯り、つけてるで…</div>
+            </div>
+            <div
+              id="result"
+              class="result"
+              hidden
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="result-title"
+            >
+              <div class="result-card">
+                <p id="result-eyebrow" class="eyebrow"></p>
+                <h2 id="result-title"></h2>
+                <p id="result-copy"></p>
+                <div id="result-stats"></div>
+                <button id="continue" class="primary">次のクラブ行こ →</button
+                ><button id="home">タイトル戻ろか</button>
+              </div>
+            </div>
+            <div
+              id="pause-overlay"
+              class="pause-overlay"
+              hidden
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="pause-title"
+            >
+              <h2 id="pause-title">ちょい休憩しよ。</h2>
+              <p>準備できたら、もう一度走ろ。</p>
+              <button id="resume" class="primary">ほな、行こ →</button
+              ><button id="quit">タイトル戻ろか</button>
+            </div>
+            <div
+              id="quiz"
+              class="quiz-overlay"
+              hidden
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="quiz-question"
+            >
+              <div class="quiz-card">
+                <div class="eyebrow">ちょい聞いて！ ギャルトーク</div>
+                <h2 id="quiz-question"></h2>
+                <p class="quiz-tip">
+                  正解したら、うちらのファンになってくれるで！
+                </p>
+                <div id="quiz-choices"></div>
+                <p id="quiz-feedback" aria-live="polite"></p>
+                <a
+                  id="quiz-source"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  hidden
+                  >答えの出典 ↗</a
+                ><button id="quiz-continue" class="primary" hidden>
+                  ほな、クラブ目指そ →
+                </button>
+              </div>
+            </div>
+
+            <div
+              id="toast"
+              class="toast"
+              role="status"
+              aria-live="polite"
+            ></div>
+          </div>
+          <div class="dashboard" aria-label="くるまの状態">
+            <div class="objective">
+              <div>
+                <span id="destination">次のクラブへ</span
+                ><strong id="remaining">0 m</strong>
+              </div>
+              <div class="route-track"><i id="progress"></i></div>
+              <div class="objective-bottom">
+                <span id="fans">ファン 0 人</span
+                ><span id="combo">ちゃなのハート、届けよ</span>
+              </div>
+            </div>
+            <div class="condition">
+              <label>くるま <b id="health-value">100</b></label>
+              <div class="meter"><i id="health-bar"></i></div>
+              <label>でんち <b id="energy-value">100</b></label>
+              <div class="meter energy"><i id="energy-bar"></i></div>
+            </div>
+            <div class="wallet">
+              <span>コイン</span><strong id="money">000</strong>
+              <div class="speed-meter"><i id="combo-bar"></i></div>
+            </div>
+          </div>
+        </section>
+        <section class="below-stage" aria-label="ふたりの会話と操作">
+          <div class="crew">
+            <div class="crew-portraits">
+              <canvas
+                id="crew-actions"
+                width="240"
+                height="128"
+                role="img"
+                aria-label="運転するDJありねぇとハートを送るDJちゃな"
+              ></canvas>
+            </div>
+            <div class="dialogue">
+              <span id="speaker">DJちゃな / ナビ担当</span>
+              <p id="dialogue">ありねぇ、運転頼むで！ハートはうちに任せて！</p>
+            </div>
+          </div>
+          <div class="controls" aria-label="運転中の４つの操作">
+            <button data-control="boost" class="boost">
+              飛ぶで<small>SPACE / ↑ 長押し</small></button
+            ><button data-control="shoot" class="hearts">
+              ちゃなのハート<small>Z / J 長押し</small></button
+            ><button data-control="charge" class="charge">
+              充電するで<small>E / C 充電所で</small>
+            </button><button data-control="rush" class="rush">テキーラ加速<small>X / SHIFT · 電池めっちゃ使うで</small></button>
+          </div>
+        </section>
+        <section
+          id="route-panel"
+          class="tour-guide"
+          hidden
+          aria-label="次の道とガレージ"
+        >
+          <nav class="map-tabs" aria-label="出発の準備">
+            <button id="route-tab" aria-pressed="true">次の道</button
+            ><button id="garage-tab" aria-pressed="false">ガレージ</button>
+          </nav>
+          <div id="route-content">
+            <div class="guide-title">
+              <span class="eyebrow">次のフロアへ</span>
+              <h2 id="map-heading">どの道で行こか？</h2>
+              <p id="map-subtitle">寄り道も、旅のうちや。</p>
+            </div>
+            <p id="climate-summary"></p>
+            <div id="destination-choices" class="road-options" aria-label="次に行く場所を選ぼ"></div>
+            <p class="route-note">地図の行き先を選んだら、その道の景色・充電所・出会いも決まるで。</p>
+            <button id="change-starting-car" hidden>出発前のくるま選びに戻ろ</button>
+            <button id="depart" class="primary departure">
+              ほな、クラブ行こ →
+            </button>
+          </div>
+          <div id="garage-content" hidden>
+            <div class="shop-heading">
+              <h2>うちらのガレージ</h2>
+              <span>ハートで稼いだコインで、いまのくるまを盛ってこ。</span>
+            </div>
+            <p id="garage-wallet" aria-live="polite"></p>
+            <h3>走りも盛ってこ</h3>
+            <div id="shop" class="shop-grid"></div>
+            <p id="shop-status" aria-live="polite"></p>
+
+            <button id="garage-done" class="primary">
+              くるま準備できた。道選ぼ →
+            </button>
+          </div>
+        </section>
+      </div>
+      <footer>
+        DJありねぇが運転、DJちゃながハート担当。ほな、フロアで会お。
+      </footer>
+    </main>
+    <details id="music-panel" class="music-panel" open>
+      <summary id="music-heading">公式SoundCloudで音出そ</summary>
+      <button id="music-close" hidden>ゲームに戻ろ →</button>
+      <button id="music-toggle" hidden>音楽と効果音をオン</button>
+      <p id="music-status" role="status">音をオンにして、プレイヤーの再生をタップしてな。</p>
+      <iframe id="music" title="GYARUINTHEMIX SoundCloud 公式プレイヤー"
+        src="https://w.soundcloud.com/player/?url=https%3A%2F%2Fsoundcloud.com%2Fgyaruinthemix&amp;auto_play=false&amp;show_user=true&amp;show_artwork=true"
+        allow="autoplay" height="166" loading="lazy"></iframe>
+      <a href="https://soundcloud.com/gyaruinthemix" target="_blank" rel="noopener noreferrer">ギャルインザミックス公式 · SoundCloudで聴こ</a>
+    </details>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

@@ -1,0 +1,222 @@
+[
+  {
+    "id": "westtowers",
+    "name": "西新宿の摩天楼",
+    "english": "WEST TOWER EDGE",
+    "files": {
+      "spring": "westtowers-spring.png",
+      "summer": "westtowers-summer.png",
+      "autumn": "westtowers-autumn.png",
+      "winter": "westtowers-winter.png"
+    }
+  },
+  {
+    "id": "kabukicho",
+    "name": "歌舞伎町ネオン門",
+    "english": "KABUKICHO NEON GATE",
+    "files": {
+      "spring": "kabukicho-spring.png",
+      "summer": "kabukicho-summer.png",
+      "autumn": "kabukicho-autumn.png",
+      "winter": "kabukicho-winter.png"
+    }
+  },
+  {
+    "id": "omoide",
+    "name": "思い出横丁",
+    "english": "OMOIDE YOKOCHO",
+    "files": {
+      "spring": "omoide-spring.png",
+      "summer": "omoide-summer.png",
+      "autumn": "omoide-autumn.png",
+      "winter": "omoide-winter.png"
+    }
+  },
+  {
+    "id": "goldengai",
+    "name": "ゴールデン街",
+    "english": "GOLDEN GAI LANES",
+    "files": {
+      "spring": "goldengai-spring.png",
+      "summer": "goldengai-summer.png",
+      "autumn": "goldengai-autumn.png",
+      "winter": "goldengai-winter.png"
+    }
+  },
+  {
+    "id": "hanazono",
+    "name": "花園神社の灯",
+    "english": "HANAZONO SHRINE",
+    "files": {
+      "spring": "hanazono-spring.png",
+      "summer": "hanazono-summer.png",
+      "autumn": "hanazono-autumn.png",
+      "winter": "hanazono-winter.png"
+    }
+  },
+  {
+    "id": "gyoen",
+    "name": "新宿御苑の外苑",
+    "english": "GYOEN GARDEN WALL",
+    "files": {
+      "spring": "gyoen-spring.png",
+      "summer": "gyoen-summer.png",
+      "autumn": "gyoen-autumn.png",
+      "winter": "gyoen-winter.png"
+    }
+  },
+  {
+    "id": "southdeck",
+    "name": "南口デッキ",
+    "english": "SOUTH EXIT DECK",
+    "files": {
+      "spring": "southdeck-spring.png",
+      "summer": "southdeck-summer.png",
+      "autumn": "southdeck-autumn.png",
+      "winter": "southdeck-winter.png"
+    }
+  },
+  {
+    "id": "baba",
+    "name": "高田馬場ガード街",
+    "english": "TAKADANOBABA TRACKS",
+    "files": {
+      "spring": "baba-spring.png",
+      "summer": "baba-summer.png",
+      "autumn": "baba-autumn.png",
+      "winter": "baba-winter.png"
+    }
+  },
+  {
+    "id": "shinokubo",
+    "name": "新大久保の市場",
+    "english": "SHIN OKUBO MARKET",
+    "files": {
+      "spring": "shinokubo-spring.png",
+      "summer": "shinokubo-summer.png",
+      "autumn": "shinokubo-autumn.png",
+      "winter": "shinokubo-winter.png"
+    }
+  },
+  {
+    "id": "okubo",
+    "name": "大久保の音楽通り",
+    "english": "OKUBO MUSIC ROW",
+    "files": {
+      "spring": "okubo-spring.png",
+      "summer": "okubo-summer.png",
+      "autumn": "okubo-autumn.png",
+      "winter": "okubo-winter.png"
+    }
+  },
+  {
+    "id": "kagurazaka",
+    "name": "神楽坂の石畳",
+    "english": "KAGURAZAKA STONE LANE",
+    "files": {
+      "spring": "kagurazaka-spring.png",
+      "summer": "kagurazaka-summer.png",
+      "autumn": "kagurazaka-autumn.png",
+      "winter": "kagurazaka-winter.png"
+    }
+  },
+  {
+    "id": "iidabashi",
+    "name": "飯田橋の運河",
+    "english": "IIDABASHI CANAL DECK",
+    "files": {
+      "spring": "iidabashi-spring.png",
+      "summer": "iidabashi-summer.png",
+      "autumn": "iidabashi-autumn.png",
+      "winter": "iidabashi-winter.png"
+    }
+  },
+  {
+    "id": "yotsuya",
+    "name": "四谷の切通し",
+    "english": "YOTSUYA CUTTING",
+    "files": {
+      "spring": "yotsuya-spring.png",
+      "summer": "yotsuya-summer.png",
+      "autumn": "yotsuya-autumn.png",
+      "winter": "yotsuya-winter.png"
+    }
+  },
+  {
+    "id": "shinanomachi",
+    "name": "信濃町の緑道",
+    "english": "SHINANOMACHI GREENWAY",
+    "files": {
+      "spring": "shinanomachi-spring.png",
+      "summer": "shinanomachi-summer.png",
+      "autumn": "shinanomachi-autumn.png",
+      "winter": "shinanomachi-winter.png"
+    }
+  },
+  {
+    "id": "waseda",
+    "name": "早稲田の古書通り",
+    "english": "WASEDA BOOK WALK",
+    "files": {
+      "spring": "waseda-spring.png",
+      "summer": "waseda-summer.png",
+      "autumn": "waseda-autumn.png",
+      "winter": "waseda-winter.png"
+    }
+  },
+  {
+    "id": "nishiwaseda",
+    "name": "西早稲田の坂",
+    "english": "NISHI WASEDA SLOPE",
+    "files": {
+      "spring": "nishiwaseda-spring.png",
+      "summer": "nishiwaseda-summer.png",
+      "autumn": "nishiwaseda-autumn.png",
+      "winter": "nishiwaseda-winter.png"
+    }
+  },
+  {
+    "id": "nishiochiai",
+    "name": "西落合アトリエ",
+    "english": "NISHI OCHIAI STUDIOS",
+    "files": {
+      "spring": "nishiochiai-spring.png",
+      "summer": "nishiochiai-summer.png",
+      "autumn": "nishiochiai-autumn.png",
+      "winter": "nishiochiai-winter.png"
+    }
+  },
+  {
+    "id": "akebono",
+    "name": "曙橋の高架",
+    "english": "AKEBONOBASHI UNDERPASS",
+    "files": {
+      "spring": "akebono-spring.png",
+      "summer": "akebono-summer.png",
+      "autumn": "akebono-autumn.png",
+      "winter": "akebono-winter.png"
+    }
+  },
+  {
+    "id": "ichigaya",
+    "name": "市ヶ谷のお堀",
+    "english": "ICHIGAYA MOAT",
+    "files": {
+      "spring": "ichigaya-spring.png",
+      "summer": "ichigaya-summer.png",
+      "autumn": "ichigaya-autumn.png",
+      "winter": "ichigaya-winter.png"
+    }
+  },
+  {
+    "id": "nishiportal",
+    "name": "西口地下道入口",
+    "english": "WEST SUBWAY PORTAL",
+    "files": {
+      "spring": "nishiportal-spring.png",
+      "summer": "nishiportal-summer.png",
+      "autumn": "nishiportal-autumn.png",
+      "winter": "nishiportal-winter.png"
+    }
+  }
+]

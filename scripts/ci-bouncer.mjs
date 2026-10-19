@@ -13,6 +13,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { checkWwwRedirect } from './check-www-redirect.mjs';
+import { checkGameTest } from './check-game-test.mjs';
 
 assert.equal(process.env.GITHUB_ACTIONS, 'true');
 assert.equal(process.env.RUNNER_ENVIRONMENT, 'github-hosted');
@@ -211,6 +212,7 @@ try {
       );
     smoke();
     await checkWwwRedirect('http://127.0.0.1:8089');
+    await checkGameTest('http://127.0.0.1:8089');
     docker('compose', 'restart', ...appServices);
     docker(
       'compose',
@@ -226,6 +228,7 @@ try {
     );
     smoke();
     await checkWwwRedirect('http://127.0.0.1:8089');
+    await checkGameTest('http://127.0.0.1:8089');
     console.log(
       'PASS merged website startup and restart; existing services were never started',
     );
