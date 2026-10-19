@@ -31,7 +31,11 @@ try {
     const context = await browser.newContext({
       viewport: { width, height: 1000 },
     });
+    context.setDefaultTimeout(10000);
     const errors = [];
+    await mkdir(resolve(root, 'artifacts/browser/game-test'), {
+      recursive: true,
+    });
     await context.route('**/*', async (route) => {
       const url = new URL(route.request().url());
       if (url.origin === 'https://w.soundcloud.com') {
@@ -66,7 +70,10 @@ try {
       }
     });
     const page = await context.newPage();
-    page.on('pageerror', (e) => errors.push(e.message));
+    page.on('pageerror', (e) => {
+      errors.push(e.message);
+      console.error('Game page error:', e.message);
+    });
     await page.addInitScript(() => {
       globalThis.cspViolations = [];
       document.addEventListener('securitypolicyviolation', (e) =>
@@ -86,7 +93,19 @@ try {
     );
     assert.ok((await page.locator('#custom-paint option').count()) > 1);
     assert.equal(await page.locator('#customization-apply').isDisabled(), true);
+    await page.screenshot({
+      path: resolve(
+        root,
+        `artifacts/browser/game-test/${width}-customization.png`,
+      ),
+      fullPage: true,
+    });
     await page.locator('#cars-ready').click();
+    assert.deepEqual(errors, []);
+    assert.equal(
+      await page.evaluate(() => __HYPERDRIVE__.snapshot().screen),
+      'map',
+    );
     await page.locator('#change-starting-car').click();
     await page.locator('#cars-ready').click();
     const destinations = page.locator('#destination-choices button');
@@ -101,9 +120,17 @@ try {
         .getAttribute('data-node-id'),
       destinationId,
     );
+    await page.screenshot({
+      path: resolve(root, `artifacts/browser/game-test/${width}-map.png`),
+      fullPage: true,
+    });
     await page.locator('#garage-tab').click();
     assert.equal(await page.locator('#garage-content').isVisible(), true);
     assert.ok((await page.locator('#shop button').count()) >= 8);
+    await page.screenshot({
+      path: resolve(root, `artifacts/browser/game-test/${width}-garage.png`),
+      fullPage: true,
+    });
     await page.locator('#garage-done').click();
     await page.locator('#depart').click();
     await page.waitForFunction(
@@ -113,6 +140,10 @@ try {
     assert.ok(
       await page.evaluate(() => __HYPERDRIVE__.snapshot().state.distance > 0),
     );
+    await page.screenshot({
+      path: resolve(root, `artifacts/browser/game-test/${width}-driving.png`),
+      fullPage: true,
+    });
     await page.keyboard.press('KeyP');
     await page.locator('#resume').click();
     await page.locator('#music-open').click();

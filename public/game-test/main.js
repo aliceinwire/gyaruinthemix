@@ -232,10 +232,6 @@ function home() {
   $(savedTour ? "#resume-tour" : "#story").focus();
 }
 function openMap(next = false) {
-  for (const id of ["scenic", "express"]) {
-    $("#" + id).classList.toggle("selected", id === roadChoice);
-    $("#" + id).setAttribute("aria-pressed", String(id === roadChoice));
-  }
   pendingNext = next;
   $("#change-starting-car").hidden = !atNewRunGarage();
   releaseInput();
