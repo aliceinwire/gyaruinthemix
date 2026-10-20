@@ -1,8 +1,19 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { chmod, mkdir, readFile, rename, rm } from 'node:fs/promises';
+import { chmod, mkdir, readFile, rename, rm, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { createGameAudioFixtures } from './ci-game-audio-fixtures.mjs';
+
+export function assertGameAudioFixturePermissions(library, output, uid) {
+  for (const [name, info, mode] of [
+    ['library', library, 0o750],
+    ['output', output, 0o2750],
+  ]) {
+    assert.equal(info.uid, uid, `${name}: fixture owner must be the runner`);
+    assert.equal(info.gid, 10001, `${name}: fixture group must be 10001`);
+    assert.equal(info.mode & 0o7777, mode, `${name}: private fixture mode`);
+  }
+}
 
 export async function prepareGameAudioFixturesInContainer({
   root,
@@ -56,7 +67,14 @@ export async function prepareGameAudioFixturesInContainer({
       output,
     ]);
     await chmod(fixture.library, 0o750);
-    await chmod(output, 0o2750);
+    // Linux may silently clear setgid when the owner is not a member of the
+    // newly assigned group. Only this disposable CI fixture uses sudo chmod.
+    execFileSync('sudo', ['chmod', '2750', '--', output]);
+    assertGameAudioFixturePermissions(
+      await stat(fixture.library),
+      await stat(output),
+      process.getuid(),
+    );
     process.stdout.write(
       execFileSync(
         'python3',

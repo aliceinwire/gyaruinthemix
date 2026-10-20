@@ -21,6 +21,7 @@ import {
 } from '../scripts/ci-game-audio-fixtures.mjs';
 import { assertPrivateAudioDenied } from '../scripts/check-game-audio-runtime.mjs';
 import { checkServedHlsModule } from '../scripts/check-game-test.mjs';
+import { assertGameAudioFixturePermissions } from '../scripts/ci-game-audio-packager.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 async function temporary(t) {
@@ -336,4 +337,39 @@ test('offline packaging remains a separate bounded target with no host-tool fall
   assert.match(lifecycle, /EROFS/);
   assert.match(lifecycle, /TimeoutExpired/);
   assert.match(lifecycle, /updater\.assert_removed\(\)/);
+});
+
+test('CI rejects a silently cleared setgid bit or incorrect fixture ownership before packaging', async () => {
+  const uid = 1001;
+  const library = { uid, gid: 10001, mode: 0o40750 };
+  const output = { uid, gid: 10001, mode: 0o42750 };
+  assert.doesNotThrow(() =>
+    assertGameAudioFixturePermissions(library, output, uid),
+  );
+  for (const change of [
+    { mode: 0o40750 },
+    { mode: 0o42770 },
+    { mode: 0o42755 },
+    { uid: 0 },
+    { gid: uid },
+  ])
+    assert.throws(() =>
+      assertGameAudioFixturePermissions(library, { ...output, ...change }, uid),
+    );
+  assert.throws(() =>
+    assertGameAudioFixturePermissions({ ...library, gid: uid }, output, uid),
+  );
+  const source = await readFile(
+    join(root, 'scripts/ci-game-audio-packager.mjs'),
+    'utf8',
+  );
+  assert.match(
+    source,
+    /execFileSync\('sudo', \['chmod', '2750', '--', output\]\)/,
+  );
+  assert.doesNotMatch(source, /await chmod\(output,/);
+  assert.match(
+    source,
+    /await stat\(fixture\.library\),\s+await stat\(output\),\s+process\.getuid\(\)/,
+  );
 });
