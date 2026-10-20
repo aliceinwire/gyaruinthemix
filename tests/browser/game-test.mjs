@@ -7,6 +7,12 @@ import {
   exportCampaignSave,
 } from '../../public/game-test/src/simulation.js';
 import { SAVE_KEY } from '../../public/game-test/src/save-store.js';
+import {
+  getRpgView,
+  normalizeRpg,
+} from '../../public/game-test/src/tour-rpg.js';
+import { SETTINGS_KEY } from '../../public/game-test/src/tour-settings.js';
+import { STORY_SAVE_KEY } from '../../public/game-test/src/tour-director.js';
 import { extname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
@@ -27,6 +33,80 @@ const mime = {
   '.json': 'application/json',
   '.svg': 'image/svg+xml',
 };
+async function finishStory(page) {
+  // Use the same reading/choice controls as players, including remembered
+  // scenes that return immediately without opening a panel.
+  for (let line = 0; line < 60; line++) {
+    if (
+      (await page.evaluate(() => __HYPERDRIVE__.snapshot().screen)) !== 'story'
+    )
+      return;
+    const choices = page.locator('#story-choices button');
+    if (await choices.count()) await choices.first().click();
+    else await page.locator('#story-next').click();
+  }
+  assert.fail('Story did not finish through its reading controls');
+}
+async function assertWorldUncovered(page) {
+  const overlaps = await page.evaluate(() => {
+    const world = document.querySelector('#game').getBoundingClientRect();
+    return [
+      '.topline',
+      '#rpg-status',
+      '#road-status',
+      '.dashboard',
+      '.crew',
+      '.controls',
+      '#toast',
+      '#story-panel',
+      '#draft-panel',
+      '#pause-overlay',
+    ].filter((selector) => {
+      const element = document.querySelector(selector);
+      const style = getComputedStyle(element);
+      if (
+        element.hidden ||
+        style.visibility === 'hidden' ||
+        Number(style.opacity) === 0
+      )
+        return false;
+      const box = element.getBoundingClientRect();
+      return (
+        box.width > 0 &&
+        box.height > 0 &&
+        Math.min(world.right, box.right) - Math.max(world.left, box.left) > 1 &&
+        Math.min(world.bottom, box.bottom) - Math.max(world.top, box.top) > 1
+      );
+    });
+  });
+  assert.deepEqual(
+    overlaps,
+    [],
+    'Live UI must occupy its own space outside the road',
+  );
+}
+async function loadCampaignFixture(page, save) {
+  await page.evaluate(
+    ({ key, value }) => localStorage.setItem(key, JSON.stringify(value)),
+    {
+      key: SAVE_KEY,
+      value: save,
+    },
+  );
+  await page.reload();
+  await page.waitForFunction(() => __HYPERDRIVE__?.snapshot().ready);
+  await page.locator('#resume-tour').click();
+  await finishStory(page);
+}
+async function departThroughStory(page) {
+  await page.locator('#depart').click();
+  // Departure can wait for route artwork before opening its remembered or new
+  // conversation. Do not mistake that loading interval for a skipped story.
+  await page.waitForFunction(() =>
+    ['story', 'playing', 'draft'].includes(__HYPERDRIVE__.snapshot().screen),
+  );
+  await finishStory(page);
+}
 async function reloadWithoutCampaign(page) {
   // Independent audio fixtures must not inherit the workshop's unfinished tour
   // or the new tour created by the previous audio case. Keep garage progress.
@@ -133,10 +213,57 @@ try {
     assert.equal(await page.locator('iframe#music').count(), 1);
     assert.equal(await page.locator('#music audio').count(), 0);
     await page.locator('#story').click();
+    assert.equal(await page.locator('#story-panel').isVisible(), true);
+    assert.equal(
+      await page.locator('#story-panel').getAttribute('aria-modal'),
+      'true',
+    );
+    assert.ok((await page.locator('#story-speaker').innerText()).length > 0);
+    assert.ok((await page.locator('#story-text').innerText()).length > 0);
+    const openingState = (await page.evaluate(() => __HYPERDRIVE__.snapshot()))
+      .state;
+    await page.waitForTimeout(150);
+    assert.equal(
+      (await page.evaluate(() => __HYPERDRIVE__.snapshot())).state.elapsed,
+      openingState.elapsed,
+      'Reading the opening must freeze simulation time',
+    );
+    await page.screenshot({
+      path: resolve(root, `artifacts/browser/game-test/${width}-story.png`),
+      fullPage: true,
+    });
+    await page.locator('#story-skip').click();
+    assert.equal(await page.locator('#story-choices button').count(), 2);
+    assert.equal(await page.locator('#story-next').isVisible(), false);
+    await finishStory(page);
+    const openingMemory = (await page.evaluate(() => __HYPERDRIVE__.snapshot()))
+      .story;
+    assert.equal(openingMemory.choices['tour:opening'], 'crew');
+    assert.ok(openingMemory.seen.includes('tour:opening'));
     assert.equal(
       await page.locator('#starting-customization').isVisible(),
       true,
     );
+    const styles = page.locator('#style-options button');
+    assert.equal(await styles.count(), 3);
+    await page.locator('#style-options [data-style="guardian"]').click();
+    assert.equal(
+      await page
+        .locator('#style-options [data-style="guardian"]')
+        .getAttribute('aria-pressed'),
+      'true',
+    );
+    assert.equal(
+      (await page.evaluate(() => __HYPERDRIVE__.snapshot())).rpg.style,
+      'guardian',
+    );
+    await page.screenshot({
+      path: resolve(
+        root,
+        `artifacts/browser/game-test/${width}-style-selection.png`,
+      ),
+      fullPage: true,
+    });
     assert.ok((await page.locator('#custom-paint option').count()) > 1);
     assert.equal(await page.locator('#customization-apply').isDisabled(), true);
     await page.screenshot({
@@ -203,6 +330,9 @@ try {
     });
     await page.locator('#garage-done').click();
     await page.locator('#depart').click();
+    await page.locator('#story-panel').waitFor({ state: 'visible' });
+    assert.equal(await page.locator('#story-panel').isVisible(), true);
+    await finishStory(page);
     await page.waitForFunction(
       () => __HYPERDRIVE__.snapshot().screen === 'playing',
     );
@@ -214,6 +344,7 @@ try {
     assert.ok(
       await page.evaluate(() => __HYPERDRIVE__.snapshot().state.distance > 0),
     );
+    await assertWorldUncovered(page);
     await page.screenshot({
       path: resolve(
         root,
@@ -226,18 +357,80 @@ try {
     await page.keyboard.press('Shift+Tab');
     assert.equal(
       await page
-        .locator('#auto-hearts')
+        .locator('#reduced-motion')
         .evaluate((el) => el === document.activeElement),
       true,
     );
     await page.keyboard.press('Space');
-    assert.equal(await page.locator('#auto-hearts').isChecked(), true);
+    assert.equal(await page.locator('#reduced-motion').isChecked(), true);
     await page.keyboard.press('Tab');
     assert.equal(
       await page
         .locator('#resume')
         .evaluate((el) => el === document.activeElement),
       true,
+    );
+    await page.locator('#auto-hearts').focus();
+    await page.keyboard.press('Space');
+    assert.equal(await page.locator('#auto-hearts').isChecked(), true);
+    await page.keyboard.press('Tab');
+    assert.equal(
+      await page
+        .locator('#assist-mode')
+        .evaluate((el) => el === document.activeElement),
+      true,
+    );
+    await page.keyboard.press('Space');
+    assert.equal(await page.locator('#assist-mode').isChecked(), true);
+    const expectedSettings = {
+      version: 1,
+      autoHearts: true,
+      assistMode: true,
+      reducedMotion: true,
+    };
+    assert.deepEqual(
+      await page.evaluate(
+        (key) => JSON.parse(localStorage.getItem(key)),
+        SETTINGS_KEY,
+      ),
+      expectedSettings,
+    );
+    assert.deepEqual(
+      (await page.evaluate(() => __HYPERDRIVE__.snapshot())).settings,
+      expectedSettings,
+    );
+    assert.equal(
+      await page.evaluate(() => document.body.dataset.reducedMotion),
+      'true',
+    );
+    await page.screenshot({
+      path: resolve(
+        root,
+        `artifacts/browser/game-test/${width}-pause-settings.png`,
+      ),
+      fullPage: true,
+    });
+    await page.locator('#resume').click();
+    await page.locator('#run-journal').click();
+    assert.equal(await page.locator('#story-panel').isVisible(), true);
+    assert.match(await page.locator('#story-kicker').innerText(), /JOURNAL/);
+    assert.equal(await page.locator('#story-skip').isVisible(), true);
+    assert.equal(await page.locator('#story-skip').innerText(), '記録を閉じる');
+    await page.locator('#story-skip').click();
+    assert.equal(await page.locator('#pause-overlay').isVisible(), true);
+    assert.equal(
+      (await page.evaluate(() => __HYPERDRIVE__.snapshot())).paused,
+      true,
+    );
+    await page.locator('#resume').click();
+    await page.locator('#run-journal').click();
+    await page.keyboard.press('Escape');
+    assert.equal(await page.locator('#story-panel').isVisible(), false);
+    assert.equal(await page.locator('#pause-overlay').isVisible(), true);
+    assert.equal(
+      (await page.evaluate(() => __HYPERDRIVE__.snapshot())).paused,
+      true,
+      'Closing the journal with Escape must not also toggle the global pause off',
     );
     await page.locator('#resume').click();
     await page.locator('#music-open').click();
@@ -258,6 +451,152 @@ try {
       JSON.stringify(metrics, null, 2),
     );
     if (width === 1440) {
+      // A committed departure with one earned level makes the browser draft
+      // deterministic without farming live encounters or mutating browser state.
+      const draftFixture = createState({
+        routeIndex: 1,
+        seed: 175,
+        campaignStarted: true,
+      });
+      draftFixture.rpg = normalizeRpg({
+        version: 1,
+        enabled: true,
+        style: 'guardian',
+        xp: 32,
+      });
+      draftFixture._stageStart.rpg = normalizeRpg(draftFixture.rpg);
+      const expectedOffers = getRpgView(draftFixture).offers.map(
+        (perk) => perk.id,
+      );
+      assert.equal(expectedOffers.length, 3);
+      await loadCampaignFixture(page, exportCampaignSave(draftFixture));
+      assert.deepEqual(
+        (await page.evaluate(() => __HYPERDRIVE__.snapshot())).settings,
+        expectedSettings,
+        'Assist and motion settings survive a reload',
+      );
+      await departThroughStory(page);
+      await page.waitForFunction(
+        () => __HYPERDRIVE__.snapshot().screen === 'draft',
+      );
+      const draftOptions = page.locator('#draft-options button');
+      assert.deepEqual(
+        await draftOptions.evaluateAll((buttons) =>
+          buttons.map((button) => button.dataset.perkId),
+        ),
+        expectedOffers,
+      );
+      assert.equal(
+        await page.locator('#draft-panel').getAttribute('aria-modal'),
+        'true',
+      );
+      assert.equal(await page.locator('#pause').isDisabled(), true);
+      assert.equal(await page.locator('#run-journal').isDisabled(), true);
+      const frozenDraft = (await page.evaluate(() => __HYPERDRIVE__.snapshot()))
+        .state;
+      // Keep Space off the focused choice: releasing Space on a button is a
+      // legitimate selection, whereas driving keys on the panel must do nothing.
+      await page.locator('#draft-panel').focus();
+      await page.keyboard.down('Space');
+      await page.keyboard.down('KeyX');
+      await page.waitForTimeout(200);
+      await page.keyboard.up('Space');
+      await page.keyboard.up('KeyX');
+      const afterReading = (
+        await page.evaluate(() => __HYPERDRIVE__.snapshot())
+      ).state;
+      for (const key of [
+        'elapsed',
+        'distance',
+        'energy',
+        'integrity',
+        'rushCooldown',
+      ]) {
+        assert.equal(
+          afterReading[key],
+          frozenDraft[key],
+          `${key} freezes during a draft`,
+        );
+      }
+      assert.deepEqual(afterReading.rpg, frozenDraft.rpg);
+      await page.screenshot({
+        path: resolve(root, 'artifacts/browser/game-test/rpg-draft.png'),
+        fullPage: true,
+      });
+      const selectedPerk = expectedOffers[0];
+      await draftOptions.first().click();
+      await page.waitForFunction(
+        () => __HYPERDRIVE__.snapshot().screen === 'playing',
+      );
+      const afterDraft = await page.evaluate(() => __HYPERDRIVE__.snapshot());
+      assert.deepEqual(afterDraft.state.rpg.perks, [selectedPerk]);
+      assert.equal(afterDraft.rpg.rank, 2);
+      assert.equal(await page.locator('#draft-panel').isVisible(), false);
+      await assertWorldUncovered(page);
+      const savedDeparture = await page.evaluate(
+        (key) => JSON.parse(localStorage.getItem(key)),
+        SAVE_KEY,
+      );
+      assert.deepEqual(
+        savedDeparture.checkpoint.rpg.perks,
+        [],
+        'An unfinished road saves its departure, not newly selected run power',
+      );
+      const memoryBeforeReload = await page.evaluate(
+        (key) => JSON.parse(localStorage.getItem(key)),
+        STORY_SAVE_KEY,
+      );
+      assert.equal(memoryBeforeReload.choices['tour:opening'], 'crew');
+      assert.ok(memoryBeforeReload.seen.includes('departure:1'));
+      await page.reload();
+      await page.waitForFunction(() => __HYPERDRIVE__?.snapshot().ready);
+      await page.locator('#resume-tour').click();
+      const rolledBack = await page.evaluate(() => __HYPERDRIVE__.snapshot());
+      assert.equal(rolledBack.screen, 'map');
+      assert.deepEqual(rolledBack.state.rpg.perks, []);
+      assert.equal(rolledBack.state.rpg.xp, 32);
+      assert.deepEqual(
+        rolledBack.story,
+        memoryBeforeReload,
+        'Story memory survives a road rollback',
+      );
+
+      // Completing the road commits the selected skill into the next departure.
+      const completedDraft = createState({
+        routeIndex: 1,
+        seed: 175,
+        campaignStarted: true,
+      });
+      completedDraft.rpg = normalizeRpg({
+        ...draftFixture.rpg,
+        perks: [selectedPerk],
+      });
+      completedDraft.entities = [];
+      completedDraft._stations = [];
+      completedDraft._nextEncounter = 1e9;
+      completedDraft._quizTriggered = true;
+      completedDraft.distance = completedDraft.routeLength - 0.01;
+      update(completedDraft, {}, 0.01);
+      assert.equal(completedDraft.status, 'won');
+      await loadCampaignFixture(page, exportCampaignSave(completedDraft));
+      assert.deepEqual(
+        (await page.evaluate(() => __HYPERDRIVE__.snapshot())).state.rpg.perks,
+        [selectedPerk],
+        'A completed road retains its selected skill',
+      );
+      await departThroughStory(page);
+      await page.waitForFunction(
+        () => __HYPERDRIVE__.snapshot().screen === 'playing',
+      );
+      assert.deepEqual(
+        await page.evaluate(
+          (key) => JSON.parse(localStorage.getItem(key)).checkpoint.rpg.perks,
+          SAVE_KEY,
+        ),
+        [selectedPerk],
+        'The next road departure commits the acquired skill',
+      );
+
       // Fixture-backed stop UI: the earned twelve-road simulation is tested separately.
       const fixture = createState({
         routeIndex: 5,
@@ -280,17 +619,7 @@ try {
       fixture.runBuild.purchasedLegs = [0, 1, 2, 3];
       fixture.distance = fixture.routeLength - 0.01;
       update(fixture, {}, 0.01);
-      await page.evaluate(
-        (save) =>
-          localStorage.setItem(
-            'gyaruinthemix-club-tour-v1',
-            JSON.stringify(save),
-          ),
-        exportCampaignSave(fixture),
-      );
-      await page.reload();
-      await page.waitForFunction(() => __HYPERDRIVE__?.snapshot().ready);
-      await page.locator('#resume-tour').click();
+      await loadCampaignFixture(page, exportCampaignSave(fixture));
       assert.match(
         await page.locator('#route-mission-preview').innerText(),
         /目標/,
@@ -325,6 +654,7 @@ try {
       await page.reload();
       await page.waitForFunction(() => __HYPERDRIVE__?.snapshot().ready);
       await page.locator('#resume-tour').click();
+      await finishStory(page);
       assert.deepEqual(
         (await page.evaluate(() => __HYPERDRIVE__.snapshot())).state.runBuild,
         bought.runBuild,
@@ -360,6 +690,7 @@ try {
       await page.locator('#music [data-action="play"]').click();
       await page.locator('#music-close').click();
       await page.locator('#story').click();
+      await finishStory(page);
       assert.equal(
         await page.evaluate(() => __HYPERDRIVE__.snapshot().screen),
         'cars',
@@ -432,6 +763,7 @@ try {
       assert.equal(await page.locator('iframe#music').count(), 1);
       assert.equal(await page.locator('#music audio').count(), 0);
       await page.locator('#story').click();
+      await finishStory(page);
       assert.equal(
         await page.locator('#starting-customization').isVisible(),
         true,

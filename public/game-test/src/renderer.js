@@ -1,3 +1,4 @@
+import { getThreatSignals } from './road-feedback.js';
 import { drawCabinCharacter, preloadCabinCharacters } from "./cabin-characters.js";
 import { preloadUmbrellaArt, drawUmbrellaArt } from "./umbrella-art.js";
 import { preloadRoadSurfaceArt, drawRoadSurface } from "./road-surface.js";
@@ -202,7 +203,56 @@ function road(g, state, time) {
   drawRoadSurface(g, {distance:state.distance,weather:state.weather,season:state.season});
 }
 
+/** A tiny stage rig, drawn with the same integer grid as the street. The jam is
+ * an object in the fiction; restoring it lights the speakers without changing
+ * an NPC's appearance or implying a fight with a passer-by. */
+export function drawSignalHeadliner(g, actor, x, y, time = 0) {
+  const color = actor.headliner?.color || '#ff91cd';
+  const restored = actor.converted || actor.type === 'gyaru';
+  const guarded = !restored && actor.shielded;
+  g.save(); g.translate(Math.round(x), Math.round(y));
+  box(g, -39, -3, 78, 5, '#10101c');
+  // Two cabinets, grill ribs, bass drivers and grounded feet.
+  for (const side of [-1, 1]) {
+    const left = side < 0 ? -35 : 9;
+    box(g, left - 2, -84, 28, 83, '#111322');
+    box(g, left, -82, 24, 77, '#323149');
+    box(g, left + 2, -80, 20, 73, '#171a2b');
+    box(g, left + 1, -81, 22, 2, color);
+    for (let row = 0; row < 9; row++) box(g, left + 3, -74 + row * 7, 18, 1, '#424156');
+    for (const centerY of [-63, -30]) {
+      box(g, left + 5, centerY - 8, 14, 16, '#080c17');
+      box(g, left + 3, centerY - 5, 18, 10, '#080c17');
+      box(g, left + 8, centerY - 4, 8, 8, guarded ? '#655c81' : color);
+      box(g, left + 10, centerY - 2, 4, 4, '#fff2e5');
+    }
+    box(g, left - 2, -2, 8, 4, '#8d859d');
+    box(g, left + 20, -2, 8, 4, '#8d859d');
+  }
+  // Signal gate: its horizontal shutters visibly open into a live display.
+  box(g, -18, -108, 36, 31, '#111321');
+  box(g, -16, -106, 32, 25, guarded ? '#413951' : '#163a3a');
+  box(g, -17, -108, 34, 2, color);
+  if (guarded) {
+    for (let i = 0; i < 5; i++) box(g, -14, -102 + i * 4, 28, 2, '#b7a5d5');
+  } else {
+    for (let i = 0; i < 7; i++) {
+      const height = 4 + Math.round((Math.sin(time * 6 + i * 1.2) + 1) * 6);
+      box(g, -13 + i * 4, -84 - height, 2, height, restored ? '#9cf5d5' : color);
+    }
+  }
+  // Center cabling and small status lamp stay inside the obstacle silhouette.
+  box(g, -2, -78, 4, 74, '#555065');
+  box(g, -12, -52, 24, 14, '#111321');
+  box(g, -8, -48, 16, 4, restored ? '#9cf5d5' : guarded ? '#b7a5d5' : '#ffe1a2');
+  if (restored) {
+    for (let i = 0; i < 3; i++) box(g, -25 + i * 24, -115 - Math.round(Math.sin(time * 3 + i) * 3), 3, 3, '#b8ffe3');
+  }
+  g.restore();
+}
+
 function entity(g, e, x, y, time, state) {
+  if (e.headliner) { drawSignalHeadliner(g, e, x, y, time); return true; }
   if (drawRoadsideObject(g, { type: e.type, x, y, time, weather: state.weather, season: state.season, charging: state.charging })) return true;
   if (
     drawStreetCharacter(g, {
@@ -370,36 +420,39 @@ export function render(
   drawThreatSignals(g, state, time);
 }
 
-/** Intent sits above atmosphere: color plus outline, text and timing, never color alone. */
+/** Small world-space markers live on the pavement below actors. Instructions
+ * live in the HTML rail, so no floating tooltip can cover the car or a threat. */
 function drawThreatSignals(g, state, time) {
-  for (const actor of state.entities || []) {
-    if (actor.resolved || actor.cleared || actor.converted || !['salaryman','barrier','pothole','cone'].includes(actor.type)) continue;
-    const x = 190 + (actor.distance - state.distance) * 3;
-    if (x < 265 || x > 945 || actor.distance - state.distance > 205) continue;
-    const special = actor.behavior && actor.behavior !== 'steady';
-    if (!special && !actor.elite && actor.type !== 'pothole') continue;
-    const color = actor.shielded ? '#c7b2ff' : actor.tell ? '#ffdb91' : actor.vulnerable && special ? '#a1f4dc' : '#ffdca4';
-    const label = actor.type === 'pothole' ? '↑ 飛ぶで' : actor.shielded ? '◇ ガード中' : actor.behavior === 'charger' ? actor.tell ? '→ 前に出るで' : '→ ダッシュ' : actor.behavior === 'sway' ? '↔ 動くで' : actor.elite ? '★ 盛り上げ隊長' : '♡ いま開いてる';
-    g.save(); g.textAlign = 'center'; g.font = '800 13px system-ui,sans-serif';
-    const width = Math.max(80, g.measureText(label).width + 18), y = actor.elite ? 328 : 347;
-    g.fillStyle = '#16172aeb'; g.fillRect(Math.round(x-width/2),y-18,width,25);
-    g.lineWidth = 2; g.strokeStyle = color; g.strokeRect(Math.round(x-width/2),y-18,width,25);
-    g.fillStyle = color; g.fillText(label,x,y);
-    g.beginPath(); g.moveTo(x-4,y+9); g.lineTo(x+4,y+9); g.lineTo(x,y+15); g.closePath();g.fill();
-    if ((actor.maxHp || 1) > 1) {
-      const hp = Math.max(0,actor.hp ?? actor.maxHp);
-      for (let i=0;i<actor.maxHp;i++) { g.fillStyle = i<hp ? '#ffabd5' : '#594358'; g.fillRect(x-actor.maxHp*5+i*10, y+20,7,4); }
+  for (const signal of getThreatSignals(state)) {
+    const { actor, x, color } = signal;
+    if (x < 265 || x > 945) continue;
+    const width = actor.headliner ? 42 : 24;
+    g.save();
+    g.strokeStyle = '#111321'; g.lineWidth = 5;
+    g.beginPath(); g.moveTo(x-width,470); g.lineTo(x-width,480);
+    g.lineTo(x+width,480); g.lineTo(x+width,470); g.stroke();
+    g.strokeStyle = color; g.lineWidth = 2; g.stroke();
+    // HP is explicit discrete pips; anticipation is a separate progress stroke.
+    const maxHp = Math.max(1, Math.min(8, actor.maxHp || 1));
+    const hp = Math.max(0, actor.hp ?? maxHp);
+    for (let i = 0; i < maxHp; i++) {
+      box(g, x-maxHp*6+i*12, 486, 9, 5, i<hp ? color : '#50465f');
     }
-    // A short ground bracket leaves the original enemy artwork fully visible.
-    g.strokeStyle = '#181524';g.lineWidth=5;g.beginPath();g.moveTo(x-24,469);g.lineTo(x-24,476);g.lineTo(x+24,476);g.lineTo(x+24,469);g.stroke();
-    g.strokeStyle = color;g.lineWidth=2;g.stroke();
-    if (actor.tell) { g.fillStyle=color;g.fillRect(x-22,480,44*Math.max(.05,actor.telegraphProgress || .05),3); }
+    if (signal.phase === 'tell' || signal.phase === 'guard') {
+      box(g, x-width, 495, width*2, 2, '#3d344c');
+      box(g, x-width, 495, width*2*Math.max(.04,actor.telegraphProgress || .04), 2, color);
+    }
+    if (signal.action === 'boost') {
+      // An upward chevron supplements colour for a lift-only obstacle.
+      g.beginPath(); g.moveTo(x-6,507); g.lineTo(x,501); g.lineTo(x+6,507); g.stroke();
+    } else if (signal.phase === 'active') {
+      g.beginPath(); g.moveTo(x-6,503); g.lineTo(x-12,507); g.lineTo(x-6,511); g.stroke();
+    }
     g.restore();
   }
   if (state.buildRuntime?.shield > 0) {
     const y=433-(state.jumpHeight||0)*95;
-    g.save();g.strokeStyle='#9df2df';g.lineWidth=2;g.setLineDash([8,7]);g.lineDashOffset=-time*15;
-    g.beginPath();g.ellipse(190,y,111,39,0,Math.PI*.1,Math.PI*1.9);g.stroke();g.setLineDash([]);
-    text(g,'◇ ガード',140,y-43,12,'#b1ffec');g.restore();
+    g.save(); g.strokeStyle='#9df2df'; g.lineWidth=2; g.setLineDash([8,7]); g.lineDashOffset=-time*15;
+    g.beginPath(); g.ellipse(190,y,111,39,0,Math.PI*.1,Math.PI*1.9); g.stroke(); g.setLineDash([]); g.restore();
   }
 }

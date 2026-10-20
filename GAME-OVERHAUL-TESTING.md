@@ -1,43 +1,47 @@
-# Verification record · 20 October 2026
+# NIGHTFALL TOUR 5.0 verification record
 
-## Passed
+Recorded 20 October 2026. This document separates executed checks from prepared browser coverage and remaining release checks.
 
-- `npm run check`: complete district catalog, runtime syntax checks and 256 unit/integration tests.
-- Existing 768 stage × road × season × weather winnability combinations.
-- Encounter director: 16 focused tests plus 36,000 actual seeded route configurations, with no missing target, lift or elite quotas.
-- Independent frozen-source acceptance: 45 full twelve-road tours with earned-coin builds. Every family completed all 15 tested EV/event/service tours. Generated relay encounters triggered 79 chain events; guardian builds blocked actual contacts.
-- Every completed acceptance run awarded three completion points once and zero on restored repetition.
-- Exact EV-range regression at levels 0–3: no collisions, 100 hull. Separate checks cover invalid charge away from EV, explicit jump escape, same-station guard rearming, safe cluster contact and keyboard focus-trap inclusion.
-- Save/retry/next-road tests preserve current-car modules and receipts, roll back partial-road earnings, reject duplicate arrivals and retain schema-2 twelve-road interpretation.
-- Final independent balance sample: 655 simulated full-tour attempts, including 264 earned-coin family/hover-first tours that all cleared, 300 ordinary-economy tours (297 clears), 60 passive no-shop tours and 15 retry/reload tours. Both responsive policies cleared all 200 ordinary-economy attempts. All 11 genuine failed-road retries recovered without reward or checkpoint faults.
-- A separate 9,000-plan sample checked 53,559 actors with no station-envelope, separation or target-quota failures; 50 EV-fringe checks covered all five cars. These are deterministic controller simulations, not human enjoyment or device playtests.
-- The forgiving economy intentionally lets hold-fire plus competent shopping finish most tested tours. In the sampled event routes, median collisions/repairs improved from 24/10 with hold-fire to 14/5 with delayed reactions and 0/0 with responsive play; remaining cash improved from 3,277 to 4,070 coins. Skill is rewarded with cleaner driving and less repair expense, not mandatory perfection.
-- Native Canvas pixel inspection of original-art title world, rainy guard encounter, crowd build, final road and DJ encore. Japanese Noto CJK fonts were registered for the inspection adapter.
+## Executed checks
 
-## Native timing, not browser timing
+- `npm test`: 504 tests passed, zero failed. Includes the existing site, checkout, audio, game and persistence regressions plus the new RPG, story, director, settings, encounter and UI suites.
+- `npm run build`: passed Astro generation and public-page, canonical URL, robots, sitemap and Open Graph checks.
+- `npm run lint`: passed ESLint and repository formatting checks.
+- Runtime JavaScript syntax and `git diff --check`: passed.
+- Existing simulation coverage includes 768 stage, route, season and weather combinations. The new RPG regression completes six twelve-road tours, reaching all six skill drafts with each starting style.
+- An additional deterministic controller audit completed 120 twelve-road tours across all three styles on event and service roads: 1,440 road completions, without assists, purchases or retries. It exercised 31 rushes and optional signal repairs and bypasses. This audit preceded the final additive workshop-stacking correction; targeted tests subsequently exercised that correction. These are reachability checks, not human difficulty or enjoyment measurements.
+- Overlapping shop parts and perks have actual-effect regressions: two distinct chain targets, additive charged damage, faster shield preparation, guarded penetration and bounded rush-wave range. Signal repairs preserve rewards and objectives without incrementing invited-person totals.
+- Narrative tests cover six soundcheck milestones, explicit intercity transfers, remembered choices, repeat-safe callbacks and independent persistence. Director tests cover required choices, immediate journal closure, Escape propagation, key repeat and unavailable storage.
 
-A 360-sample warm native Canvas scene-render run measured approximately 0.85 ms median, 1.86 ms p95 and 4.63 ms maximum. This uses the installed native Canvas engine and is not evidence of browser FPS, mobile performance, CSS layout or SoundCloud behavior. The browser runtime exposes bounded frame-cost samples for subsequent real-browser measurement.
+## Browser smoke test performed
 
-## Not verified here
+Used the managed preview's standalone `/game-test/index.html` entry. Astro's development server does not serve the directory index at `/game-test/`; production route behavior remains covered by the existing container suite.
 
-The execution environment blocked local Chromium startup. Its supported cloud browser could not reach the isolated local preview. Therefore desktop/mobile browser layout, real keyboard/touch sequences, the full browser campaign, real SoundCloud continuity, browser frame timing and any hosted version remain unverified. Native PNGs are not browser screenshots.
+Actual UI actions exercised:
 
-## Browser checks prepared
+- Title, opening story, explicit narrative choice and all three style cards.
+- Guardian selection, route map and departure dialogue.
+- Keyboard flight, held invitations, charging, collision feedback and Guardian charge recovery.
+- Roadside quiz, reward and return to the road.
+- An earned level-two draft with three choices: the road remained at the same distance while reading; selecting a skill raised the displayed rank and resumed play.
+- Pause, automatic invitations, damage assist and their persistence after reload.
+- Reload restored the road departure checkpoint, with its style and zero in-road skills, while retaining story history.
+- Journal access from the map, immediate closure, and Escape returning to a paused game without restarting the road.
+- Desktop gameplay layout at an observed 1363 × 936 viewport: the full 16:9 world, health, energy, warnings and all four controls were visible together after the cockpit correction.
+- The official SoundCloud widget rendered. Playback continuity was not independently established in this smoke test.
 
-Run on a supported connected environment:
+![Desktop gameplay with the original art and the new cockpit](docs/nightfall-desktop-20261020.jpg)
 
-```sh
-npm ci
-npx playwright install chromium
-npm run test:browser
-```
+This was a focused browser smoke test, not a complete twelve-road human playthrough or a mobile performance measurement.
 
-The suite includes desktop/mobile portrait/landscape layout, actual multi-pointer input/cancellation, every city, a keyboard-driven twelve-leg campaign, interruption/reload/retry, and a new fixture-backed workshop test covering explicit replacement, repeated clicks, reload persistence, pause-assist keyboard reachability, persistent music iframe and recorded frame costs. Fixture-backed screens are labeled separately from earned full-campaign progression.
+## Deployment baseline limitation
 
-Before publication, inspect fresh desktop/mobile screenshots, confirm external SoundCloud playback survives quiz/map transitions, and inspect frame-cost p95 on a representative phone. No publish, merge or deploy was performed for this overhaul.
+`npm run test:deployment` ran 154 tests with 12 failures and 10 errors in this environment. The unchanged repository HEAD was separately archived and run in the same environment: all 22 failing test IDs matched exactly. Deployment code, fixtures and safeguards are unchanged. The failures arise from deployment-owner and UID/GID assumptions in the test environment; no access control was changed to force a passing result.
 
-## Frozen mechanics
+## Prepared browser coverage and release gates
 
-- simulation.js: a9280311e7ae5642c7d30fd3d5d49414557d3a6b9071d4e81987140111bc4b2b
-- encounter-director.js: 30be6aa71d2917fa357bc17953280bfeca828b51dc397c4b47b7023b799d63b7
-- run-build.js: 22ea6a8099df3d62ca4a3848b18667e92b6bbf0c1216c14dc81ce81b009074a5
+`tests/browser/game-test.mjs` retains the existing mobile widths, touch cancellation, map, workshop, audio, CSP and full-campaign cases. It adds story/style interactions, frozen reading time, settings persistence, journal return-to-pause, earned-skill fixtures and checkpoint rollback/commit checks. The updated suite was syntax-checked but was not executed as a complete suite in this environment.
+
+Before merging, require the repository's browser and container CI gates, review mobile portrait/landscape captures, confirm real SoundCloud playback across scenes, and inspect frame timing on a representative phone. Follow `GAME-TEST.md` for rollout verification. This branch does not establish that the production game has changed.
+
+The runtime manifest identifies this snapshot. `browserVerified` remains false until the full desktop/mobile browser release gate is complete; the narrower smoke-test evidence above is not treated as equivalent.
