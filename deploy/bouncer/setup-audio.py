@@ -450,6 +450,8 @@ class AudioSetup(update.Updater):
         if not Path(key_value).is_absolute() or str(Path(key_value)) != key_value or ".." in Path(key_value).parts:
             raise Error("The key path must be absolute and normalized.")
         key = safe_path(key_value)
+        if key.resolve() != key:
+            raise Error("Use a normalized non-symlink key path.")
         if key == self.checkout or self.checkout in key.parents or key.parent in (self.directory, Path("/")):
             raise Error("Use a dedicated key directory outside the checkout, not a shared deployment/root directory.")
         if inside_git(key.parent):
@@ -499,6 +501,7 @@ class AudioSetup(update.Updater):
 
     def show_plan(self, plan):
         print(f"Read-only plan: existing {plan['mode']} checkout, reviewed candidate revision {plan['revision']}.")
+        print("Selected containers: " + ", ".join(plan["expected"]))
         print("Preserve this Compose project, shared services, unrelated profiles and .env comments.")
         print("Reuse the existing private key." if plan["key_exists"] else "Create a new private 32-byte key outside the checkout; never print it.")
         print(f"Private key destination: {plan['key']}")
@@ -768,7 +771,7 @@ class AudioSetup(update.Updater):
 def confirm(token):
     if not sys.stdin.isatty() or not sys.stdout.isatty():
         raise Error("Apply/recovery requires an interactive terminal and explicit confirmation; there is no --yes mode.")
-    print("This changes private key/access settings, installed configuration and selected running containers.")
+    print("This changes private key/access settings, installed configuration and selected running containers; website/audio may briefly restart.")
     print("Only continue after reviewing this checkout and the displayed plan.")
     print("Only the normal reviewed deploy/bouncer/update.py schedule is coordinated automatically.")
     print("Pause any older copied updater, custom cron/systemd deployment or plain Docker operation separately before continuing.")
