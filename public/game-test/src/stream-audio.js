@@ -7,6 +7,7 @@ export function createStreamAudio({
   trackId,
   onState = () => {},
   canPlay = () => true,
+  loadAvailability = async () => true,
   fetchImpl = globalThis.fetch,
   loadHlsImpl = loadHls,
   documentRef = globalThis.document,
@@ -76,6 +77,9 @@ export function createStreamAudio({
   };
   async function loadCatalog() {
     try {
+      const available = await loadAvailability();
+      if (destroyed) return [];
+      if (!available) { desired = false; message('unavailable'); return []; }
       const data = await request('catalog');
       if (destroyed) return [];
       catalog = Array.isArray(data.tracks)
@@ -91,9 +95,12 @@ export function createStreamAudio({
         catalog.find((t) => t.id === trackId) ||
         catalog[0] ||
         null;
+      if (!track) desired = false;
       message(track ? 'ready' : 'empty');
       return catalog;
     } catch {
+      if (destroyed) return [];
+      desired = false;
       message('unavailable');
       return [];
     }

@@ -1,6 +1,21 @@
-# NIGHTFALL TOUR 5.0 verification record
+# NIGHTFALL TOUR 5.1 verification record
 
-Recorded 20 October 2026. This document separates executed checks from prepared browser coverage and remaining release checks.
+Recorded 21 October 2026 (JST).
+
+## Current checks
+
+- `npm test`: 514 tests passed. This includes all 768 environment/route combinations, full twelve-road tours with each style, faster movement, longer duration, safe encounter envelopes, every new street role and hazard, pickup rollback, and shuffled question/answer decks.
+- `npm run build` passed Astro and public-route checks. `npm run lint`, changed JavaScript syntax checks, the runtime manifest hash and `git diff --check` passed.
+- The radio client suite passes availability, cancellation, persistence and failure handling checks. External audio provider code is removed from the game runtime.
+- Managed browser smoke checks exercised real title/setup/map/garage/gameplay/quiz/pause/draft flows at desktop, portrait phone and 844 × 390 landscape sizes. The branching map remains selectable, and the three skill cards can be paged without scrolling. A road was completed at the new speed, with quiz feedback and small-keepsake rewards observed in actual play.
+- The preview audio service was unavailable. Live music playback and deployment remain unverified.
+- The complete browser automation suite is prepared for CI, not claimed as locally executed. `browserVerified` stays false until that release gate completes.
+
+![Connected route map and car radio inside the desktop frame](docs/nightfall-frame-20261021.jpg)
+
+## Historical 5.0 evidence
+
+The following checks describe the preceding rewrite. They are retained for provenance and are not substitutes for current release gates.
 
 ## Executed checks
 
@@ -42,6 +57,6 @@ This was a focused browser smoke test, not a complete twelve-road human playthro
 
 `tests/browser/game-test.mjs` retains the existing mobile widths, touch cancellation, map, workshop, audio, CSP and full-campaign cases. It adds story/style interactions, frozen reading time, settings persistence, journal return-to-pause, earned-skill fixtures and checkpoint rollback/commit checks. The updated suite was syntax-checked but was not executed as a complete suite in this environment.
 
-Before merging, require the repository's browser and container CI gates, review mobile portrait/landscape captures, confirm real SoundCloud playback across scenes, and inspect frame timing on a representative phone. Follow `GAME-TEST.md` for rollout verification. This branch does not establish that the production game has changed.
+Before merging, require the repository's browser and container CI gates, review mobile portrait/landscape captures, confirm real car-radio playback across scenes, and inspect frame timing on a representative phone. Follow `GAME-TEST.md` for rollout verification. This branch does not establish that the production game has changed.
 
 The runtime manifest identifies this snapshot. `browserVerified` remains false until the full desktop/mobile browser release gate is complete; the narrower smoke-test evidence above is not treated as equivalent.

@@ -1,13 +1,16 @@
+import { DRIVING_PACE } from './pace.js';
+import { decorateEncounter } from './street-culture.js';
+
 /** Seeded, DOM-free encounter pacing. Distances are metres; speed inputs are km/h.
  * The plan owns only road threats. Charging stations, rewards and collisions stay
  * in the simulation. Every moving actor reserves its entire motion envelope.
  */
 export const ENCOUNTER_RULES = Object.freeze({
   minimumCounterTime: 1.25,
-  maximumSupportedSpeed: 180,
-  warningViewDistance: 210,
+  maximumSupportedSpeed: 180 * DRIVING_PACE.speedMultiplier,
+  warningViewDistance: 210 * DRIVING_PACE.speedMultiplier,
   stationBuffer: 8,
-  arrivalClearance: 96,
+  arrivalClearance: 96 * DRIVING_PACE.speedMultiplier,
   maximumMotion: 18,
 });
 
@@ -142,7 +145,7 @@ function nextSafe(distance, actor, stations, radius) {
   }
   return next;
 }
-function placePattern(actors, requested, end, stations, radius, cluster = false, maxAdvance = 112) {
+function placePattern(actors, requested, end, stations, radius, cluster = false, maxAdvance = 112 * DRIVING_PACE.speedMultiplier) {
   const offsets = [0];
   for (let i = 1; i < actors.length; i++) offsets.push(offsets[i - 1] + (cluster ? 28 : separation(actors[i - 1], actors[i]) + 8));
   let start = requested;
@@ -190,7 +193,7 @@ function ensureLiftChecks(plan, { stage, kind, length, end, stations, radius, ra
       if (old.elite || old.type === 'pothole' || (old.cluster && old.phraseIndex !== 0)) continue;
       const last = old.cluster ? index + old.clusterSize - 1 : index;
       const previous = plan[index - 1], next = plan[last + 1];
-      const lower = previous ? previous.distance + separation(previous, hole) : 112;
+      const lower = previous ? previous.distance + separation(previous, hole) : 112 * DRIVING_PACE.speedMultiplier;
       const upper = next ? next.distance - separation(hole, next) : end;
       const position = nearestLegalPosition(preferred, lower, upper, hole, stations, radius);
       if (position === null) continue;
@@ -246,7 +249,7 @@ function minimumPlan({ stage, kind, length, end, stations, radius, random, lowCe
     ? [pair(), lift(), pair(), lift(), solo(), ...(minimum.holes >= 3 ? [lift()] : [])]
     : [lift(), { name: 'heart-line', actors: [actorDefinition('salaryman')] }, lift(), solo(), ...(minimum.holes >= 3 ? [lift()] : [])];
   const result = [];
-  let cursor = 112 + random() * 8;
+  let cursor = (112 + random() * 8) * DRIVING_PACE.speedMultiplier;
   for (let phraseIndex = 0; phraseIndex < phrases.length; phraseIndex++) {
     const phrase = phrases[phraseIndex];
     const actors = phrase.actors.map(def => descriptor(def, stage, random, lowCeiling));
@@ -277,7 +280,7 @@ export function createEncounterPlan(options = {}) {
   const length = clamp(finite(source.routeLength, 1400), 0, 100000);
   const node = source.node && typeof source.node === 'object' ? source.node : {};
   const kind = ['ev', 'event', 'service'].includes(node.kind) ? node.kind : node.routeOption === 'express' ? 'event' : 'ev';
-  const radius = clamp(finite(source.stationRadius, kind === 'ev' ? 72 : 60), 0, 200);
+  const radius = clamp(finite(source.stationRadius, (kind === 'ev' ? 72 : 60) * DRIVING_PACE.speedMultiplier), 0, 400);
   const stations = [...new Set((Array.isArray(source.stations) ? source.stations : []).map(item => typeof item === 'object' && item ? item.distance : item).filter(value => Number.isFinite(value) && value >= 0 && value <= length))].sort((a, b) => a - b).slice(0, 512);
   const lowCeiling = node.lowCeiling === true || (Number.isFinite(node.maxAltitude) && node.maxAltitude < 24);
   const random = makeRandom(hashSeed(source.seed) ^ Math.imul(stage + 1, 0x9e3779b9) ^ hashSeed(node.nodeId ?? kind));
@@ -290,13 +293,14 @@ export function createEncounterPlan(options = {}) {
       plan.push(Object.freeze({ ...actor, distance, motionBaseDistance: distance, encounterId: id, encounterIndex: encounter - 1, phraseIndex: i, phraseSize: actors.length, beat, routePhase: phase, tutorial, cluster, clusterSize: cluster ? actors.length : 1, clusterGrace: cluster ? 1.7 : 0, threatBudget: 1, telegraphBaseDistance: cluster ? positions[0] : distance, telegraph: cluster ? actors[0].telegraph : actor.telegraph }));
     }
   };
-  if (stage === 0 && end >= 185) {
+  const firstHeart = 80 * DRIVING_PACE.speedMultiplier, firstLift = 185 * DRIVING_PACE.speedMultiplier;
+  if (stage === 0 && end >= firstLift) {
     const heart = descriptor(actorDefinition('salaryman'), stage, random, lowCeiling);
     const hole = descriptor(actorDefinition('pothole'), stage, random, lowCeiling);
-    if (safeAt(80, heart, stations, radius)) add([heart], [80], 'first-heart', 'opening', true);
-    if (safeAt(185, hole, stations, radius) && (!plan.length || 185 - plan.at(-1).distance >= separation(plan.at(-1), hole))) add([hole], [185], lowCeiling ? 'first-obstacle' : 'first-lift', 'opening', true);
+    if (safeAt(firstHeart, heart, stations, radius)) add([heart], [firstHeart], 'first-heart', 'opening', true);
+    if (safeAt(firstLift, hole, stations, radius) && (!plan.length || firstLift - plan.at(-1).distance >= separation(plan.at(-1), hole))) add([hole], [firstLift], lowCeiling ? 'first-obstacle' : 'first-lift', 'opening', true);
   }
-  let cursor = stage === 0 ? Math.max(320, (plan.at(-1)?.distance ?? 80) + 130) : 112 + random() * 18;
+  let cursor = stage === 0 ? Math.max(320 * DRIVING_PACE.speedMultiplier, (plan.at(-1)?.distance ?? firstHeart) + 130 * DRIVING_PACE.speedMultiplier) : (112 + random() * 18) * DRIVING_PACE.speedMultiplier;
   const spacingMultiplier = clamp(finite(node.encounterSpacingMultiplier, 1), .7, 1.4);
   for (let count = 0; count < 1000 && cursor <= end; count++) {
     const phase = phaseAt(cursor / Math.max(length, 1), stage);
@@ -315,7 +319,7 @@ export function createEncounterPlan(options = {}) {
     const actualPhase = phaseAt(positions[0] / Math.max(length, 1), stage);
     add(actors, positions, phrase.name, actualPhase, false, phrase.cluster === true);
     const breathing = actualPhase === 'breather' ? 150 : phrase.cluster ? 45 : actors.length > 1 ? 70 : 20;
-    cursor = positions.at(-1) + (108 + breathing + random() * 28 - stage * 2) * spacingMultiplier;
+    cursor = positions.at(-1) + (108 + breathing + random() * 28 - stage * 2) * spacingMultiplier * DRIVING_PACE.speedMultiplier;
   }
   // Club roads feature a single readable anchor, never extra overlapping spawns.
   // An existing late-route slot becomes elite; station and spacing guarantees
@@ -364,7 +368,7 @@ export function createEncounterPlan(options = {}) {
       });
     }
   }
-  return Object.freeze(plan);
+  return Object.freeze(plan.map(actor => decorateEncounter(actor, stage, source.seed)));
 }
 
 /** Update the same authoritative actor position used by both render and collision.

@@ -1,3 +1,4 @@
+import { ENCOUNTER_RULES } from '../public/game-test/src/encounter-director.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
@@ -280,7 +281,7 @@ test('stacked charge damage, guarded piercing and rush range change actual hits 
     2,
     '75m wave cannot reach an 80m target',
   );
-  assert.ok(rush.speed <= 180);
+  assert.ok(rush.speed <= ENCOUNTER_RULES.maximumSupportedSpeed);
 });
 
 test('styles are free, distinct action changes and lock on first departure', () => {

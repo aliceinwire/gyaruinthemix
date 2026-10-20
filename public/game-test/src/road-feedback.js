@@ -1,5 +1,6 @@
 /** Small, bounded feedback layer. Detailed world and character art remain unobscured. */
 import { ENCOUNTER_RULES } from './encounter-director.js';
+import { DRIVING_PACE } from './pace.js';
 const MAX_EFFECTS = 36;
 const finite = (value, fallback = 0) => typeof value === 'number' && Number.isFinite(value) ? value : fallback;
 export function createRoadFeedback() { return { effects: [], time: 0 }; }
@@ -17,6 +18,7 @@ export function captureRoadFeedback(feedback, events, distance = 0) {
     else if (event.type === 'rank-up') { label = 'LEVEL UP'; color = '#ffe2a8'; }
     else if (event.type === 'headliner-clear') { label = 'SIGNAL CLEAR'; color = '#ffe2a8'; kind = 'signal'; }
     else if (event.type === 'heart-chain') { label = 'RELAY'; color = '#d4b7ff'; }
+    else if (event.type === 'little-find') { label = 'ちいさなしあわせ +75'; color = '#a6f6e5'; kind = 'heart'; }
     else continue;
     feedback.effects.push({ label, color, kind, distance: finite(event.distance, finite(distance)), age: 0, duration: event.type === 'convert' ? 1.15 : .8 });
   }
@@ -72,6 +74,8 @@ export function getThreatSignals(state = {}) {
       else if (actor.type === 'cone') label = 'コーンはハートか、短く浮いてかわそ';
       else if (actor.behavior === 'sway') label = 'ゆれる人波。ハートをつないでこ';
       else label = 'ハートでフロアに誘お';
+      if (actor.routineHazard) label = `${actor.routineHazard.name}：${actor.routineHazard.advice}`;
+      else if (actor.streetRole) label = `${actor.streetRole.name}：${label}`;
       return { actor, id: actor.id ?? actor.encounterId, label, action, phase,
         distance: Math.max(0, actor.distance - distance),
         seconds: Math.max(0, (actor.distance - distance - (actor.collisionRadius || 15)) / metresPerSecond),
@@ -87,7 +91,7 @@ export function getRoadCue(state) {
   if (upcoming && (!state.atStation || upcoming.seconds < 2)) return { label: upcoming.label, action: upcoming.action, urgency: upcoming.urgency };
   if (state.energy < 15 && !state.atStation) return { label: 'でんち少なめ。EVまで地上で行こ', action: 'charge', urgency: 'low' };
   if (state.atStation) return { label: state.altitude > 12 ? 'EVや！ 地面に降りて充電しよ' : 'EV到着。充電を長押しや', action: 'charge', urgency: 'safe' };
-  if (state.routeIndex === 0 && state.distance < 145) return { label: '運転は自動やで。ハートを長押ししてみよ', action: 'shoot', urgency: 'learn' };
-  if (state.routeIndex === 0 && state.distance > 390 && state.distance < 540) return { label: '加速は無敵。でんちを残して、ここぞで使お', action: 'rush', urgency: 'learn' };
+  if (state.routeIndex === 0 && state.distance < 145 * DRIVING_PACE.speedMultiplier) return { label: '運転は自動やで。ハートを長押ししてみよ', action: 'shoot', urgency: 'learn' };
+  if (state.routeIndex === 0 && state.distance > 390 * DRIVING_PACE.speedMultiplier && state.distance < 540 * DRIVING_PACE.speedMultiplier) return { label: '加速は無敵。でんちを残して、ここぞで使お', action: 'rush', urgency: 'learn' };
   return { label: state.combo >= 3 ? `${state.combo}連続！ この調子で街をつなご` : 'ハートで誘って、段差は飛んでいこ', action: null, urgency: 'calm' };
 }

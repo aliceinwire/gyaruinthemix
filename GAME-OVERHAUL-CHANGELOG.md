@@ -1,4 +1,14 @@
-# NIGHTFALL MIX 5.0 · Six nights, one mix
+# NIGHTFALL TOUR 5.1 · More road, more personality
+
+- Doubles cruising speed to 184/216 km/h and extends roads to 2.5 times their previous distance, with earlier warnings and wider safe charging zones.
+- Keeps every screen inside the game cabinet, retains direct choices on the branching map, and pages long garage and skill collections.
+- Makes the built-in car radio the only music control and removes the accidental instruction footer.
+- Adds a randomized 24-question bank, including 21 unit questions and three culture questions. Each tour contains 11 unit questions and one culture question; answers shuffle too.
+- Keeps the suit commuter and introduces five additional street roles about copy-paste work, corporate advertising, endless meetings, approval queues and deadlines.
+- Adds six routine-themed hazard appearances with one-, two- and three-heart counters or mandatory flight, plus distinct creative accessories for invited fans.
+- Adds safe EV-area cats, four small keepsakes, role-specific replies, and more dialogue about modeling, photography, DJs, television, events and individuality.
+
+## Earlier 5.0 rewrite
 
 ## Play and progression
 
@@ -29,7 +39,7 @@
 
 - Twelve playable legs across six cities, direct destination-node choices and all existing illustrated districts/seasons.
 - Car unlocks/selection remain new-run-only; ordinary tour coins fund current-car improvements.
-- One persistent SoundCloud iframe, native player access without a sound-menu prerequisite, and no scene-transition remount.
+- One persistent audio player with no scene-transition remount; 5.1 uses the built-in radio exclusively.
 - World/crew animation with a reduced-motion option, Kansai Japanese copy, deterministic 120 Hz simulation and checkpoint migration.
 - No new runtime dependency, telemetry, account, payment flow or deployment credential. Existing optional-audio protections remain intact.
 

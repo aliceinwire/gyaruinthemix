@@ -1,6 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createState, update } from '../public/game-test/src/simulation.js';
+import {
+  createState,
+  update,
+  ROUTE_OPTIONS,
+} from '../public/game-test/src/simulation.js';
 import { getJourneyChoices } from '../public/game-test/src/journey.js';
 import {
   createEncounterPlan,
@@ -47,7 +51,7 @@ test('all six club chapters carry one distinct optional signal challenge without
           head.distance < state.routeLength - ENCOUNTER_RULES.arrivalClearance,
         );
         for (const station of state._stations) {
-          const radius = state.routeOption === 'express' ? 60 : 72;
+          const radius = ROUTE_OPTIONS[state.routeOption].stationRadius;
           assert.ok(
             Math.abs(head.distance - station) >=
               radius +
@@ -103,7 +107,7 @@ test('chapter view reflects guard, opening, last signal and completion without m
     }).find((actor) => actor.headliner),
   };
   head.distance = head.motionBaseDistance = head.telegraphBaseDistance = 500;
-  const state = { distance: 340, elapsed: 10, speed: 108, entities: [head] };
+  const state = { distance: 200, elapsed: 10, speed: 216, entities: [head] };
   updateEncounterActor(head, state, 0);
   assert.equal(getHeadlinerView(state).phase, 'closed');
   assert.equal(getHeadlinerView(state).optional, true);

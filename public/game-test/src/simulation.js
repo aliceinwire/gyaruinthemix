@@ -1,4 +1,6 @@
 import { createEncounterPlan, updateEncounterActor, getEncounterPhase } from './encounter-director.js';
+import { DRIVING_PACE } from './pace.js';
+import { littleFindAt } from './street-culture.js';
 import { createRunBuild, normalizeRunBuild, getBuildModifiers, routeMissionProgress, settleRouteReward } from './run-build.js';
 import { normalizeRpg, recordRpgEvent, openRpgDraft } from './tour-rpg.js';
 import { JOURNEY_STAGE_COUNT, getJourneyChoices, getJourneyNode, createJourneyProgress, chooseJourneyNode, completeJourneyNode, restoreJourneyProgress } from './journey.js';
@@ -15,7 +17,7 @@ export const PLAYER_X = 190;
 export const METERS_TO_PIXELS = 3;
 export const GROUND_Y = 465;
 export const LANE_Y = Object.freeze([365, 414, GROUND_Y]);
-export const MAX_SPEED = 108;
+export const MAX_SPEED = 108 * DRIVING_PACE.speedMultiplier;
 export const VIEW_DISTANCE = 430;
 export const FIXED_STEP = 1 / 120;
 export const THRUST_DRAIN = 23;
@@ -135,8 +137,8 @@ const CITY_ROUTES = Object.freeze(
 export const ROUTES = Object.freeze(CITY_ROUTES.flatMap((city, cityIndex) => [0, 1].map(leg => Object.freeze({
   ...city, id: String(cityIndex * 2 + leg + 1).padStart(2, '0'), cityIndex, leg,
   name: `${city.name}・${leg === 0 ? '街角編' : 'クラブ編'}`,
-  distance: Math.round(city.distance * (leg === 0 ? .76 : .88)),
-  meters: Math.round(city.distance * (leg === 0 ? .76 : .88)),
+  distance: Math.round(city.distance * (leg === 0 ? .76 : .88) * DRIVING_PACE.distanceMultiplier),
+  meters: Math.round(city.distance * (leg === 0 ? .76 : .88) * DRIVING_PACE.distanceMultiplier),
   intro: leg === 0 ? city.intro : `ちゃな「次は${city.club}！ 選んだ街を抜けて行こ！」`,
   win: leg === 0 ? `${city.goal}の街角に到着！ 次の目的地を選ぼ。` : city.win,
 }))));
@@ -147,20 +149,20 @@ export const ROUTE_OPTIONS = Object.freeze({
     name: "充電ゆったりルート",
     description: "EV多め・長い道・障害物少なめ",
     lengthMultiplier: 1,
-    speed: 92,
-    stationSpacing: 360,
-    stationRadius: 72,
-    encounterSpacing: 105,
+    speed: 92 * DRIVING_PACE.speedMultiplier,
+    stationSpacing: 360 * DRIVING_PACE.speedMultiplier,
+    stationRadius: 72 * DRIVING_PACE.speedMultiplier,
+    encounterSpacing: 105 * DRIVING_PACE.speedMultiplier,
   }),
   express: Object.freeze({
     id: "express",
     name: "ハートリレー特急ルート",
     description: "近道・サラリーマン多め・EV少なめ",
     lengthMultiplier: 0.8,
-    speed: 108,
-    stationSpacing: 510,
-    stationRadius: 60,
-    encounterSpacing: 77,
+    speed: MAX_SPEED,
+    stationSpacing: 510 * DRIVING_PACE.speedMultiplier,
+    stationRadius: 60 * DRIVING_PACE.speedMultiplier,
+    encounterSpacing: 77 * DRIVING_PACE.speedMultiplier,
   }),
 });
 export const UPGRADE_CATALOG = Object.freeze(
@@ -296,17 +298,17 @@ function stationPositions(state) {
   const settings = roadSettings(state);
   const positions = [];
   for (
-    let distance = 300;
-    distance < state.routeLength - 120;
+    let distance = 300 * DRIVING_PACE.speedMultiplier;
+    distance < state.routeLength - 120 * DRIVING_PACE.speedMultiplier;
     distance += settings.stationSpacing
   )
     positions.push(distance);
   if (
     !positions.some(
-      (distance) => Math.abs(distance - (state.routeLength - 170)) < 140,
+      (distance) => Math.abs(distance - (state.routeLength - 170 * DRIVING_PACE.speedMultiplier)) < 140 * DRIVING_PACE.speedMultiplier,
     )
   )
-    positions.push(state.routeLength - 170);
+    positions.push(state.routeLength - 170 * DRIVING_PACE.speedMultiplier);
   return positions;
 }
 function populate(state) {
@@ -325,6 +327,7 @@ function populate(state) {
       !state._spawnedStations.includes(distance)
     ) {
       spawn(state, "ev", distance, { radius: settings.stationRadius });
+      spawn(state, 'little-find', distance, { find: littleFindAt(state.seed + state.routeIndex, state._stations.indexOf(distance)) });
       state._spawnedStations.push(distance);
     }
   }
@@ -345,6 +348,7 @@ const PRESERVED = [
   "money",
   "totalFans",
   "gyaruConverted",
+  "littleFinds",
   "signalClears",
   "stageSignals",
   "bestCombo",
@@ -458,6 +462,7 @@ export function createState({
     totalFans: 0,
     stageFans: 0,
     gyaruConverted: 0,
+    littleFinds: 0,
     stageGyaru: 0,
     signalClears: 0,
     stageSignals: 0,
@@ -549,6 +554,7 @@ function convert(state, target) {
     signalClears: state.signalClears,
     elite: Boolean(target.elite),
     headliner: target.headliner || null,
+    streetRole: target.streetRole || null,
   });
 }
 function fire(state) {
@@ -761,6 +767,15 @@ function step(state, input, dt) {
   populate(state);
   moveEnemies(state, dt);
   projectilesStep(state, dt);
+  for (const item of state.entities) {
+    if (item.type !== 'little-find' || item.resolved || state.altitude > 36) continue;
+    if (previousDistance > item.distance + 18 || state.distance < item.distance - 18) continue;
+    item.resolved = true;
+    state.littleFinds++;
+    state.score += 75;
+    state.energy = Math.min(state.energyCapacity, state.energy + 6);
+    emit(state, 'little-find', { entityId: item.id, distance: item.distance, find: item.find, reward: 75 });
+  }
   for (const target of state.entities) {
     const hazard = HAZARDS[target.type];
     if (!hazard || target.resolved || target.cleared || target.converted)
@@ -770,7 +785,8 @@ function step(state, input, dt) {
       state.distance < target.distance - hazard.radius
     )
       continue;
-    if (state.jumpHeight < hazard.clearance) {
+    const clearance = target.routineHazard?.clearance ?? hazard.clearance;
+    if (state.jumpHeight < clearance) {
       if (!state.rushing && state.invulnerability <= 0) collide(state, target, hazard);
       else target.cleared = true;
     } else if (state.distance >= target.distance) {
@@ -778,7 +794,7 @@ function step(state, input, dt) {
       state.score += 25;
       state.energy = Math.min(state.energyCapacity, state.energy + state.buildModifiers.comboFlight);
       emit(state, "jump-clear", { entityId: target.id, distance: target.distance });
-      if (state.jumpHeight < hazard.clearance + .35)
+      if (state.jumpHeight < clearance + .35)
         emit(state, "precision", { entityId: target.id, distance: target.distance });
     }
   }
@@ -944,7 +960,7 @@ function normalizeCheckpoint(value, fallback) {
   const checkpoint = {};
   for (const key of PRESERVED)
     checkpoint[key] = safeNumber(saved[key], fallback[key]);
-  for (const key of ["money", "totalFans", "gyaruConverted", "signalClears", "stageSignals", "bestCombo", "stagesCompleted"])
+  for (const key of ["money", "totalFans", "gyaruConverted", "littleFinds", "signalClears", "stageSignals", "bestCombo", "stagesCompleted"])
     checkpoint[key] = Math.floor(checkpoint[key]);
   checkpoint.stagesCompleted = Math.min(ROUTES.length, checkpoint.stagesCompleted);
   checkpoint.mudAmount = clamp(checkpoint.mudAmount, 0, 1);

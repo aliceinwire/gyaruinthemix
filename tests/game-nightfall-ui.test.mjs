@@ -170,7 +170,7 @@ test('live world has no text overlays, while accessible story and draft panels r
     'assist-mode',
   ])
     assert.ok(ids.includes(id), id);
-  assert.equal((html.match(/<iframe\b/g) || []).length, 1);
+  assert.equal((html.match(/<iframe\b/g) || []).length, 0);
   assert.match(html, /<progress id="rpg-xp"/);
   assert.match(
     html,

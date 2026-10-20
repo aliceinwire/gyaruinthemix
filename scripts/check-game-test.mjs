@@ -39,11 +39,11 @@ export async function checkGameTest(origin) {
   );
   assert.match(
     page.headers.get('content-security-policy'),
-    /script-src 'self' https:\/\/w.soundcloud.com;/,
+    /script-src 'self';/,
   );
   assert.match(
     page.headers.get('content-security-policy'),
-    /frame-src https:\/\/w.soundcloud.com;/,
+    /frame-src 'none';/,
   );
   assert.match(
     page.headers.get('content-security-policy'),
@@ -56,12 +56,17 @@ export async function checkGameTest(origin) {
   for (const path of [
     '/game-test/main.js',
     '/game-test/style.css',
+    '/game-test/frame.css',
     '/game-test/car-stereo.css',
     '/game-test/src/audio.js',
     '/game-test/src/game-audio-config.js',
     '/game-test/src/car-stereo.js',
     '/game-test/src/stream-audio.js',
     '/game-test/src/journey.js',
+    '/game-test/src/frame.js',
+    '/game-test/src/pace.js',
+    '/game-test/src/street-culture.js',
+    '/game-test/src/street-culture-art.js',
     '/game-test/src/encounter-director.js',
     '/game-test/src/run-build.js',
     '/game-test/src/tour-rpg.js',

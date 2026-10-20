@@ -1,3 +1,4 @@
+import { installFrame } from './src/frame.js';
 import { RUN_STYLES, chooseRunStyle, getRpgView, choosePerk } from './src/tour-rpg.js';
 import { createSettingsStore } from './src/tour-settings.js';
 import { createStoryDirector } from './src/tour-director.js';
@@ -84,11 +85,9 @@ let state = newTour(),
   visualTime = 0,
   toastTime = 0,
   ready = false;
-let musicPanelOpen = false;
 let performanceSet = createPerformance(), roadFeedback = createRoadFeedback(), autoHearts = false;
 let lastHud = 0, lastCue = "";
 const frameSamples = [];
-let musicReturnFocus = null;
 let storage;
 try {
   storage = globalThis.localStorage;
@@ -129,8 +128,8 @@ $("#resume-tour").addEventListener("click", () => {
 });
 const sceneUI = createSceneUI();
 const controls = bindGameInput({
-  isPlaying: () => ["playing", "finale"].includes(screen) && !musicPanelOpen,
-  isQuiz: () => screen === "quiz" && !musicPanelOpen,
+  isPlaying: () => ["playing", "finale"].includes(screen),
+  isQuiz: () => screen === "quiz",
   isPaused: () => paused,
   onPause: setPause,
   onAnswer: chooseAnswer,
@@ -177,57 +176,10 @@ $('#run-journal').addEventListener('click', () => {
 const music = $("#music");
 const audio = createGameAudio({
   music,
-  button: $("#sound"),
-  status: $("#music-status"),
-  onEnabledChange: enabled => { $("#music-toggle").textContent = enabled ? "音楽と効果音をオフ" : "音楽と効果音をオン"; },
-  canPlay: () => musicPanelOpen || !paused,
+
 });
 const beep = (...args) => audio.beep(...args),
   unlockSound = () => audio.unlock();
-function setMusicPanel(open) {
-  if (musicPanelOpen === open) return;
-  const panel = $("#music-panel");
-  if (open) musicReturnFocus = document.activeElement;
-  musicPanelOpen = open;
-  releaseInput();
-  accumulator = 0;
-  document.body.dataset.musicOpen = String(open);
-  $(".shell").inert = open;
-  $("#music-open").setAttribute("aria-expanded", String(open));
-  $("#music-close").hidden = !open;
-  $("#music-toggle").hidden = !open;
-  if (open) {
-    panel.open = true;
-    panel.setAttribute("role", "dialog");
-    panel.setAttribute("aria-modal", "true");
-    panel.setAttribute("aria-labelledby", "music-heading");
-    $("#music-toggle").textContent = audio.enabled ? "音楽と効果音をオフ" : "音楽と効果音をオン";
-    $("#music-close").focus();
-    unlockSound();
-  } else {
-    panel.removeAttribute("role");
-    panel.removeAttribute("aria-modal");
-    panel.removeAttribute("aria-labelledby");
-    if (paused) audio.pause();
-    if (screen === "playing" && !paused) canvas.focus({preventScroll:true});
-    else (musicReturnFocus?.isConnected ? musicReturnFocus : $("#music-open")).focus({preventScroll:true});
-  }
-}
-$("#music-open").addEventListener("click", () => setMusicPanel(true));
-$("#music-close").addEventListener("click", () => setMusicPanel(false));
-$("#music-toggle").addEventListener("click", () => { $("#sound").click(); $("#music-toggle").textContent = audio.enabled ? "音楽と効果音をオフ" : "音楽と効果音をオン"; });
-$("#music-panel summary").addEventListener("click", event => { if (musicPanelOpen) event.preventDefault(); });
-document.addEventListener("keydown", event => {
-  if (!musicPanelOpen) return;
-  // Keep underlying quiz shortcuts and scene dialog traps out of this dialog.
-  event.stopPropagation();
-  if (event.code === "Escape") { event.preventDefault(); setMusicPanel(false); return; }
-  if (event.code !== "Tab") return;
-  const nodes = [...$("#music-panel").querySelectorAll("summary,button:not([hidden]),iframe,a[href],input:not([disabled]),select,[role=slider]")];
-  const first = nodes[0], last = nodes.at(-1);
-  if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
-  else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
-}, true);
 
 function toast(msg) {
   $("#toast").textContent = msg;
@@ -248,7 +200,6 @@ function setPause(value) {
   $("#pause").textContent = paused ? "ほな、再開" : "ひと休み";
   accumulator = 0;
   if (paused) {
-    if (document.activeElement !== music) audio.pause();
     $("#resume").focus();
   } else {
     canvas.focus({ preventScroll: true });
@@ -265,7 +216,6 @@ function setScreen(value) {
 function showMapPanel(panel) {
   sceneUI.mapPanel(panel);
   $(panel === "garage" ? "#garage-tab" : "#route-tab").focus();
-  $("#route-panel").scrollIntoView({ block: "start", behavior: "instant" });
 }
 $("#route-tab").addEventListener("click", () => showMapPanel("route"));
 $("#garage-tab").addEventListener("click", () => showMapPanel("garage"));
@@ -337,7 +287,6 @@ function enterPlay(announce = true) {
   accumulator = 0;
   saveTour();
   hud();
-  $(".cabinet").scrollIntoView({ block: "start", behavior: "instant" });
 }
 let departing = false;
 function warmMapArt() {
@@ -449,7 +398,7 @@ function showDraft() {
   setScreen('draft');
   const view = getRpgView(state), host = $('#draft-options');
   $('#draft-title').textContent = `MIX LEVEL ${view.rank + 1} / ひとつ、盛ってこ。`;
-  $('#draft-copy').textContent = '時間は止まってるで。今回の走りに合うスキルを選ぼ。効果はこの旅だけ。';
+  $('#draft-copy').textContent = '時間は止まってるで。前へ・次へで3枚を見比べて、欲しいカードをタップ。効果はこの旅だけ。';
   host.replaceChildren();
   for (const perk of view.offers || []) {
     const card = document.createElement('button'); card.className = 'draft-card'; card.dataset.perkId = perk.id;
@@ -468,7 +417,6 @@ function showDraft() {
     host.append(card);
   }
   host.querySelector('button')?.focus();
-  $('#draft-panel').scrollIntoView({ block: 'nearest', behavior: 'instant' });
   renderRpgHud();
 }
 $('#draft-panel').addEventListener('keydown', event => {
@@ -633,13 +581,14 @@ function showQuiz() {
   releaseInput();
   paused = false;
   setScreen("quiz");
-  currentQuestion = questionForStage(state.routeIndex, state.routeOption);
+  currentQuestion = questionForStage(state.routeIndex, state.routeOption, state.seed);
   quizAnswered = false;
   $("#quiz").hidden = false;
   $("#quiz-question").textContent = currentQuestion.question;
   $("#quiz-feedback").textContent = "";
   $("#quiz-source").hidden = true;
   $("#quiz-continue").hidden = true;
+  $("#quiz-choices").hidden = false;
   $("#quiz-choices").replaceChildren();
   currentQuestion.choices.forEach((choice, index) => {
     const button = document.createElement("button");
@@ -648,7 +597,6 @@ function showQuiz() {
     $("#quiz-choices").append(button);
   });
   $("#quiz-choices button").focus();
-  $(".cabinet").scrollIntoView({ block: "start", behavior: "instant" });
 }
 function chooseAnswer(index) {
   if (screen !== "quiz" || quizAnswered) return;
@@ -658,7 +606,8 @@ function chooseAnswer(index) {
   releaseInput();
   $("#quiz-feedback").textContent =
     (correct ? "正解！新しいファンが増えたで " : "今回は惜しい！ ") +
-    currentQuestion.explanation;
+    `答えは「${currentQuestion.choices[currentQuestion.answer]}」。${currentQuestion.explanation}`;
+  $("#quiz-choices").hidden = true;
   $("#quiz-source").href = currentQuestion.source;
   $("#quiz-source").hidden = false;
   $("#quiz-continue").hidden = false;
@@ -716,7 +665,7 @@ function showResult() {
     ? state.route.win || "街で増えた仲間も、一緒にフロアへ！"
     : (state.reason === "energy" ? "電池が足りへんかったな。次はEVの手前で浮上をやめて、E長押しで充電しよ。" : "いったんピットへ戻ろ。段差は浮上、音の壁はハートかラッシュ。休憩メニューでダメージを減らすこともできるで。");
   $("#result-stats").textContent =
-    `${state.stageGyaru}人と出会えた · 最高${state.bestCombo}コンボ · この道の出発前に戻って再挑戦。前の街までのパーツと記録は残るで。`;
+    `${state.stageGyaru}人と出会えた · 最高${state.bestCombo}コンボ · ちいさなしあわせ ${state.littleFinds}個` + (won ? '。次の街でも、うちららしく。' : '。この道の出発前へ戻って再挑戦。前の街までの記録は残るで。');
   $("#continue").textContent = won
     ? state.campaignComplete
       ? "ほな、音出そ →"
@@ -779,6 +728,7 @@ function renderDestinationChoices() {
   const choices = getJourneyChoices(pendingNext ? state.routeIndex+1 : state.routeIndex,state.seed);
   const chosen = choices.find(node => node.nodeId === selectedNodeId);
   const mission = previewMission(chosen);
+  $("#map-route-detail").textContent = chosen ? `${chosen.label} · ${chosen.description}` : "";
   $("#route-mission-preview").textContent = mission ? `寄り道の目標「${mission.label}」 ${mission.description} ${mission.rewardLabel}` : "";
   $("#map-selected-route").textContent = chosen ? `選んだ道：${chosen.districtName}` : "地図の行き先を選んでな";
   const host = $("#destination-choices"); host.replaceChildren();
@@ -815,7 +765,7 @@ function selectDestination(nodeId) {
   $("#destination-choices [aria-pressed=true]")?.focus({preventScroll:true});
 }
 canvas.addEventListener("pointerup",event=>{
-  if(screen!=="map" || musicPanelOpen)return;
+  if(screen!=="map")return;
   const bounds=canvas.getBoundingClientRect();
   const hit=hitTestMapChoice((event.clientX-bounds.left)*960/bounds.width,(event.clientY-bounds.top)*540/bounds.height);
   const node=getJourneyChoices(pendingNext?state.routeIndex+1:state.routeIndex,state.seed)[hit];
@@ -873,6 +823,10 @@ function handleEvents() {
       beep(850, 0.07);
       if (event.elite || (state.combo > 1 && state.combo % 5 === 0)) toast(`${state.combo}連続！ 街がつながってきたで`);
     }
+    if (event.type === 'little-find') {
+      beep(1040, .08);
+      toast(`${event.find.name} / +75・でんち+6`);
+    }
     if (["collision", "hit"].includes(event.type)) {
       beep(110, 0.16);
       toast("いたっ！ロケットでかわして！");
@@ -902,8 +856,8 @@ function frame(now) {
   const frameStart = performance.now();
   const dt = Math.min(0.1, (now - last) / 1000 || 0);
   last = now;
-  if (!paused && !musicPanelOpen && !["story", "draft", "quiz", "result"].includes(screen)) visualTime += dt;
-  if (screen === "playing" && !paused && !musicPanelOpen) {
+  if (!paused && !["story", "draft", "quiz", "result"].includes(screen)) visualTime += dt;
+  if (screen === "playing" && !paused) {
     accumulator += dt;
     while (accumulator >= 1 / 60) {
       update(state, { ...input, shoot: input.shoot || autoHearts }, 1 / 60);
@@ -920,7 +874,7 @@ function frame(now) {
     if (visualTime - lastHud > .09) { hud(); lastHud = visualTime; }
     refreshCrewDialogue();
   }
-  if (screen === "finale" && !paused && !musicPanelOpen) {
+  if (screen === "finale" && !paused) {
     updatePerformance(performanceSet, input, dt);
     const view = performanceView(performanceSet);
     $("#performance-title").textContent = view.title;
@@ -930,7 +884,7 @@ function frame(now) {
     if ($("#performance-score").textContent !== completed) $("#performance-score").textContent = completed;
     document.querySelectorAll("[data-control]").forEach(button => button.classList.toggle("suggested", button.dataset.control === view.action));
   }
-  if (screen === "playing" && !paused && !musicPanelOpen) updateRoadFeedback(roadFeedback, dt);
+  if (screen === "playing" && !paused) updateRoadFeedback(roadFeedback, dt);
   if (toastTime > 0) {
     toastTime -= dt;
     if (toastTime <= 0) $("#toast").classList.remove("on");
@@ -1000,3 +954,5 @@ Object.defineProperty(window, "__HYPERDRIVE__", {
   },
   writable: false,
 });
+
+installFrame();

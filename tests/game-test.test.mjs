@@ -27,8 +27,8 @@ test('game Docker context and scoped audio security policy are included', async 
   assert.match(nginx, /location \^~ \/game-test\/ \{/);
   assert.match(nginx, /X-Robots-Tag 'noindex, nofollow, noarchive'/);
   const game = await read('deploy/game-security-headers.conf');
-  assert.match(game, /script-src 'self' https:\/\/w.soundcloud.com;/);
-  assert.match(game, /frame-src https:\/\/w.soundcloud.com;/);
+  assert.match(game, /script-src 'self';/);
+  assert.match(game, /frame-src 'none';/);
   assert.match(game, /media-src 'self' blob:;/);
   assert.doesNotMatch(game, /unsafe-inline|unsafe-eval|https:\/\/\*/);
   assert.doesNotMatch(
@@ -97,5 +97,6 @@ test('game runtime is a self-contained static snapshot without private audio', a
   const html = await read('public/game-test/index.html');
   assert.match(html, /src="\.\/main.js"/);
   assert.match(html, /href="\.\/style.css"/);
-  assert.match(html, /https:\/\/w.soundcloud.com\/player\//);
+  assert.doesNotMatch(html, /soundcloud|<iframe/i);
+  assert.match(html, /<div id="music"/);
 });

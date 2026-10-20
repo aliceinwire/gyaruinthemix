@@ -1,7 +1,7 @@
 /**
  * The bouncer operator flag controls availability, never a source-code switch.
  * Probe once without blocking gameplay. Failure, redirects and late responses
- * all preserve SoundCloud; this endpoint contains no secrets or media paths.
+ * leave music unavailable; this endpoint contains no secrets or media paths.
  */
 export async function loadGameAudioConfig({
   fetchImpl = globalThis.fetch,
