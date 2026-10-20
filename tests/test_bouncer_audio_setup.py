@@ -28,6 +28,18 @@ def legacy_compose():
     return "\n".join(line for line in text.splitlines() if "GAME_AUDIO_ENABLED:" not in line and "Resolved by the installed updater" not in line) + "\n"
 
 
+MEMBERSHIP_KEYS = (
+    "MEMBER_AUTH_ENABLED", "MEMBERSHIP_ENABLED", "MEMBERSHIP_DETAILS_REVIEWED",
+    "STRIPE_PRICE_MEMBERSHIP", "MEMBERSHIP_AMOUNT_JPY", "MEMBERSHIP_PORTAL_URL",
+    "MEMBER_EMAIL_FROM", "MEMBER_EMAIL_API_KEY_FILE", "MEMBER_CONTENT_DIR",
+)
+
+
+def pre_membership_compose(text):
+    return "".join(line for line in text.splitlines(keepends=True)
+                   if not any(line.startswith("      " + key + ":") for key in MEMBERSHIP_KEYS))
+
+
 class FakeSetup(setup.AudioSetup):
     def __init__(self, directory, key_file=None, mode="payment_links", legacy=True):
         super().__init__(directory, key_file)
@@ -205,6 +217,24 @@ class SetupTests(unittest.TestCase):
             self.assertEqual(setup.main(["--directory", str(self.directory)]), 0)
         self.assertEqual(self.tree(), before)
         self.assertFalse((self.directory / setup.LOCK).exists())
+        self.assertFalse(any(call[0] == "docker" and call[1][0] == "pull" for call in fixture.calls))
+
+    def test_old_api_plan_preserves_membership_absence_and_dotenv_values(self):
+        fixture = self.fixture(mode="api")
+        compose = self.directory / "docker-compose.yml"
+        compose.write_text(pre_membership_compose(compose.read_text()))
+        env = self.directory / ".env"
+        env.write_text(env.read_text() + "MEMBER_AUTH_ENABLED=true\nMEMBERSHIP_ENABLED=true\nMEMBERSHIP_DETAILS_REVIEWED=true\n")
+        before = self.tree()
+        with patch.object(setup.os, "urandom", side_effect=AssertionError("random called")):
+            plan = fixture.plan()
+        self.assertEqual(self.tree(), before)
+        for key in MEMBERSHIP_KEYS:
+            self.assertNotIn("      " + key + ":", plan["compose_after"])
+        for key in ("MEMBER_AUTH_ENABLED", "MEMBERSHIP_ENABLED", "MEMBERSHIP_DETAILS_REVIEWED"):
+            self.assertEqual(setup.dotenv_value(plan["env_after"], key), "true")
+            self.assertNotIn(key, plan["changes"])
+        self.assertEqual(set(plan["changes"]), set(setup.MANAGED_ENV))
         self.assertFalse(any(call[0] == "docker" and call[1][0] == "pull" for call in fixture.calls))
 
     def test_plan_distinguishes_deployment_root_private_music_and_one_shot_helper(self):
@@ -1093,6 +1123,48 @@ class SafePathTests(unittest.TestCase):
 
 
 class PureHelperTests(unittest.TestCase):
+    def test_exact_pre_membership_api_is_preserved_with_both_audio_layouts(self):
+        for source in (legacy_compose(), CANONICAL):
+            for newline in ("\n", "\r\n"):
+                with self.subTest(audio_present=source == CANONICAL, newline=repr(newline)):
+                    original = pre_membership_compose(source).replace("\n", newline)
+                    result = setup.merge_compose(original, CANONICAL)
+                    old_range = setup.entry(original.replace("\r\n", "\n"), "services", setup.API)
+                    new_range = setup.entry(result.replace("\r\n", "\n"), "services", setup.API)
+                    old_api = original.replace("\r\n", "\n")[slice(*old_range)]
+                    new_api = result.replace("\r\n", "\n")[slice(*new_range)]
+                    # Appending the audio service may add its blank-line separator,
+                    # but never changes any existing API line or comment.
+                    self.assertEqual(new_api.rstrip("\n"), old_api.rstrip("\n"))
+                    for key in MEMBERSHIP_KEYS:
+                        self.assertNotIn("      " + key + ":", result)
+                    self.assertEqual(result.count("  " + setup.AUDIO + ":"), 1)
+                    self.assertEqual(setup.merge_compose(result, CANONICAL), result)
+                    if newline == "\r\n":
+                        self.assertNotIn("\n", result.replace("\r\n", ""))
+
+    def test_partial_or_modified_membership_api_still_rejects_drift(self):
+        old = pre_membership_compose(CANONICAL)
+        cases = [
+            "".join(line for line in CANONICAL.splitlines(keepends=True)
+                    if not line.startswith("      " + key + ":"))
+            for key in MEMBERSHIP_KEYS
+        ] + [
+            old.replace("      STATE_DIR: /app/state\n", "      STATE_DIR: /app/state\n      MEMBER_AUTH_ENABLED: false\n"),
+            old.replace("      SALES_ENABLED: ${SALES_ENABLED:-false}", "      SALES_ENABLED: true"),
+            old.replace("      STATE_DIR: /app/state", "      STATE_DIR: /different"),
+            old.replace("      NODE_ENV: production\n", "      NODE_ENV: production\n      NODE_ENV: production\n"),
+        ]
+        for changed in cases:
+            with self.subTest(changed=changed), self.assertRaisesRegex(setup.Error, "drift"):
+                setup.merge_compose(changed, CANONICAL)
+
+    def test_legacy_api_allowance_is_not_applied_to_changed_canonical_membership_block(self):
+        changed_canonical = CANONICAL.replace("      MEMBERSHIP_ENABLED: ${MEMBERSHIP_ENABLED:-false}",
+                                              "      MEMBERSHIP_ENABLED: ${MEMBERSHIP_ENABLED:-true}")
+        with self.assertRaisesRegex(setup.Error, "drift"):
+            setup.merge_compose(pre_membership_compose(CANONICAL), changed_canonical)
+
     def test_merge_preserves_local_shared_edits_and_line_endings(self):
         original = legacy_compose().replace("container_name: znc", "container_name: operator-znc\n    # local edit")
         for newline in ("\n", "\r\n"):
