@@ -20,6 +20,10 @@ class FakeUpdater(module.Updater):
         if audio:
             self.services.append(module.AUDIO)
         self.packages = 0
+        self.packager_image = "sha256:" + "d" * 64
+        self.packager_revision = "a" * 40
+        self.packager_role = "audio-packager"
+        self.packaged_images = []
         self.fail_package = False
         self.extra_audio = False
         self.concurrent = False
@@ -58,7 +62,14 @@ class FakeUpdater(module.Updater):
                 "secrets": [{"source": module.AUDIO_SECRET, "target": "game_audio_signing_key"}],
             }
 
-    def package_audio(self):
+    def validate_packaging_user(self):
+        return 1000
+
+    def validate_packaging_docker(self):
+        pass
+
+    def package_audio(self, image_id):
+        self.packaged_images.append(image_id)
         self.packages += 1
         if self.fail_package:
             raise module.UpdateError("Packaging failed")
@@ -78,8 +89,14 @@ class FakeUpdater(module.Updater):
         if args[0] == "inspect":
             return json.dumps([{"Image": self.current[args[1]], "State": {"Running": True, "Health": {"Status": "healthy" if self.healthy else "unhealthy"}}}])
         if args[:2] == ("image", "inspect"):
-            name = {module.REGISTRY + "api:main": module.API,
-                    module.REGISTRY + "game-audio:main": module.AUDIO}.get(args[2], module.WEB)
+            if args[2].startswith(module.PACKAGER + ":"):
+                return json.dumps([{"Id": self.packager_image, "Config": {"Labels": {
+                    "org.opencontainers.image.source": self.source,
+                    "org.opencontainers.image.revision": self.packager_revision,
+                    module.PACKAGER_ROLE: self.packager_role,
+                }}}])
+            name = {module.REGISTRY + "api": module.API,
+                    module.REGISTRY + "game-audio": module.AUDIO}.get(args[2].split(":", 1)[0], module.WEB)
             return json.dumps([{"Id": self.desired[name], "Config": {"Labels": {
                 "org.opencontainers.image.source": self.source,
                 "org.opencontainers.image.revision": self.revisions[name],

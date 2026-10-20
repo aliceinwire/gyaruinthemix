@@ -254,6 +254,7 @@ Only a trusted push to `main` in `aliceinwire/gyaruinthemix`, after the required
 - `ghcr.io/aliceinwire/gyaruinthemix-web-api`: API-mode frontend
 - `ghcr.io/aliceinwire/gyaruinthemix-api`: optional backend
 - `ghcr.io/aliceinwire/gyaruinthemix-game-audio`: optional private music service
+- `ghcr.io/aliceinwire/gyaruinthemix-game-audio-packager`: bounded one-shot music packaging, without host Node/FFmpeg
 
 Each uses `main` and `sha-<full commit hash>` tags with source/revision labels. Pull requests and manual validation do not publish images. Only the publishing job has package-write permission; it uses GitHub's built-in token. **No new GitHub/VPS/SSH secrets or Stripe credentials are needed.** The owner must make the packages publicly readable after the first trusted publish, then install and opt into the [VPS image updater](deploy/bouncer/README.md). Do not put Stripe credentials into CI. API fixtures keep sales disabled and never contact Stripe; synthetic public Payment Links are never opened by the checks.
 

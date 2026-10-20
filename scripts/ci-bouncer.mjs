@@ -12,7 +12,7 @@ import {
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createGameAudioFixtures } from './ci-game-audio-fixtures.mjs';
+import { prepareGameAudioFixturesInContainer } from './ci-game-audio-packager.mjs';
 import {
   assertGameAudioCompose,
   gameAudioFalseBindOptions,
@@ -60,6 +60,7 @@ const env = {
   SALES_ENABLED: 'false',
   CI_LAYOUT: 'bouncer',
 };
+const packagerImage = `gyaruinthemix-game-audio-packager:${process.env.GAME_AUDIO_IMAGE_TAG || process.env.IMAGE_TAG}`;
 const docker = (...args) =>
   execFileSync('docker', args, {
     cwd: directory,
@@ -247,11 +248,6 @@ try {
     'PASS merged Compose: four original services/networks/volumes preserved, website paths, secret targets, API alias and isolation',
   );
   if (!configOnly) {
-    if (audioEnabled)
-      audioFixtures = await createGameAudioFixtures({
-        checkoutRoot: resolve(root),
-        secretFile: env.GAME_AUDIO_SIGNING_KEY_FILE,
-      });
     // Only the runner gets a private test port and uniquely named proxy network.
     // No proxy, companion, ZNC or Limnoria image is built or started in this test.
     const override = join(directory, 'ci.yaml');
@@ -267,6 +263,30 @@ try {
         '--pull',
         ...(buildAudioOnly ? [GAME_AUDIO_SERVICE] : appServices),
       );
+    if (audioEnabled) {
+      if (!noBuild)
+        docker(
+          'build',
+          '--pull',
+          '--target',
+          'packager',
+          '--build-arg',
+          `GYARUINTHEMIX_REVISION=${process.env.GYARUINTHEMIX_REVISION || 'local'}`,
+          '-t',
+          packagerImage,
+          '-f',
+          join(root, 'Dockerfile.game-audio'),
+          root,
+        );
+      audioFixtures = await prepareGameAudioFixturesInContainer({
+        root: resolve(root),
+        temporary,
+        secretFile: env.GAME_AUDIO_SIGNING_KEY_FILE,
+        packagerImage,
+        servingImage: env.GYARUINTHEMIX_GAME_AUDIO_IMAGE,
+        docker,
+      });
+    }
     // Reused release images are never rebuilt between their smoke test and push.
     for (const service of appServices) {
       const [image] = JSON.parse(

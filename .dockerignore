@@ -24,6 +24,7 @@
 !game-audio/server/app.mjs
 !game-audio/server/start.mjs
 !game-audio/deploy/healthcheck.mjs
+!game-audio/scripts/package-library.mjs
 
 assets/music/**
 public/game-test/assets/music/**

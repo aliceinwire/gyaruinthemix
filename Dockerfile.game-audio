@@ -1,5 +1,23 @@
+# Offline one-shot tooling, never copied into the serving image. Alpine's signed
+# official repositories provide FFmpeg and the independent process timeout.
+# Use the same reviewed Node 24 base as the serving target.
+FROM node:24.21.0-alpine3.23 AS packager
+RUN apk add --no-cache ffmpeg coreutils
+ARG GYARUINTHEMIX_REVISION=local
+LABEL org.opencontainers.image.source="https://github.com/aliceinwire/gyaruinthemix" \
+      org.opencontainers.image.revision="$GYARUINTHEMIX_REVISION" \
+      io.gyaruinthemix.role="audio-packager"
+WORKDIR /app
+COPY game-audio/scripts/package-library.mjs ./scripts/package-library.mjs
+ENV UV_THREADPOOL_SIZE=1 OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1
+USER 10001:10001
+# A caller that disappears cannot leave an unbounded transcoding process. The
+# updater additionally enforces a wall timeout and cleans its owned container.
+ENTRYPOINT ["/bin/sh", "-c", "umask 0027; exec timeout --signal=TERM --kill-after=5s 600s node --jitless --max-old-space-size=64 /app/scripts/package-library.mjs /library/assets/music --strict"]
+
+# Keep serving last: existing builds retain the same FFmpeg-free default target.
 # Match the website's reviewed Node 24 base; verify this tag/digest during release.
-FROM node:24.21.0-alpine3.23
+FROM node:24.21.0-alpine3.23 AS serving
 WORKDIR /app
 COPY game-audio/server/app.mjs game-audio/server/start.mjs ./
 COPY game-audio/deploy/healthcheck.mjs ./
