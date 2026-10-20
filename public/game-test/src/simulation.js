@@ -1,3 +1,5 @@
+import { createEncounterPlan, updateEncounterActor, getEncounterPhase } from './encounter-director.js';
+import { createRunBuild, normalizeRunBuild, getBuildModifiers, routeMissionProgress, settleRouteReward } from './run-build.js';
 import { JOURNEY_STAGE_COUNT, getJourneyChoices, getJourneyNode, createJourneyProgress, chooseJourneyNode, completeJourneyNode, restoreJourneyProgress } from './journey.js';
 import { normalizeGarage, serializeGarage, applyCarStats } from "./garage.js";
 import {
@@ -246,6 +248,7 @@ function random(state) {
 }
 function emit(state, type, detail = {}) {
   state.events.push({ ...detail, type });
+  if (state.runBuild) routeMissionProgress(state, { ...detail, type });
 }
 function stats(state) {
   applyCarStats(state);
@@ -260,7 +263,7 @@ function spawn(state, type, distance, detail = {}) {
     resolved: false,
     ...detail,
   };
-  if (type === "salaryman") {
+  if (type === "salaryman" && !detail.directorManaged) {
     const node = getJourneyNode(state.journeyNodeId);
     const fraction = ((Math.imul(item.id + state.seed, 2654435761) >>> 0) % 1000) / 1000;
     if (fraction < (node?.movingEnemyRate ?? .2)) {
@@ -277,8 +280,9 @@ function roadSettings(state) {
     encounterSpacing: mode.encounterSpacing * (node?.encounterSpacingMultiplier ?? 1) };
 }
 /** Enemy distance is the authoritative moving position for renderer, hits and collisions. */
-function moveEnemies(state) {
+function moveEnemies(state, dt) {
   for (const target of state.entities) {
+    if (target.directorManaged) { updateEncounterActor(target, state, dt); continue; }
     if (target.motionBaseDistance === undefined || target.converted || target.cleared) continue;
     target.motionOffset = Math.sin(state.elapsed * target.motionRate + target.motionPhase) * target.motionAmplitude;
     target.distance = target.motionBaseDistance + target.motionOffset;
@@ -322,44 +326,14 @@ function populate(state) {
       state._spawnedStations.push(distance);
     }
   }
-  while (
-    state._nextEncounter <
-    Math.min(state.routeLength - 75, state.distance + VIEW_DISTANCE)
-  ) {
-    const distance = state._nextEncounter;
-    const encounter = state._encounter;
-    const inChargingZone = state._stations.some(
-      (station) => Math.abs(station - distance) < settings.stationRadius + 38,
-    );
-    if (!inChargingZone && Math.abs(distance - 185) >= 65) {
-      state._encounter++;
-      const obstacle =
-        encounter % (state.routeOption === "express" ? 4 : 3) === 2;
-      if (obstacle) {
-        const type =
-          random(state) < 0.48
-            ? "pothole"
-            : random(state) < 0.65
-              ? "barrier"
-              : "cone";
-        spawn(state, type, distance, { hp: type === "barrier" ? 2 : 1 });
-      } else {
-        spawn(state, "salaryman", distance, { converted: false });
-        if (
-          state.routeOption === "express" &&
-          encounter % 3 === 0 &&
-          !state._stations.some(
-            (station) =>
-              Math.abs(station - (distance + 31)) < settings.stationRadius + 30,
-          )
-        )
-          spawn(state, "salaryman", distance + 31, { converted: false });
-      }
+  // The legacy next-encounter sentinel remains an intentional empty-road test seam.
+  if (state._nextEncounter < 1e9) {
+    while (state._encounterCursor < state._encounterPlan.length) {
+      const descriptor = state._encounterPlan[state._encounterCursor];
+      if (descriptor.distance > state.distance + VIEW_DISTANCE) break;
+      spawn(state, descriptor.type, descriptor.distance, { ...descriptor });
+      state._encounterCursor++;
     }
-    state._nextEncounter +=
-      settings.encounterSpacing +
-      random(state) * 18 -
-      state.route.difficulty * 2;
   }
   state.entities.sort((a, b) => a.distance - b.distance || a.id - b.id);
 }
@@ -381,6 +355,7 @@ function snapshot(state) {
     ...PRESERVED.map((key) => [key, state[key]]),
     ["upgrades", { ...state.upgrades }],
     ["garage", serializeGarage(state)],
+    ["runBuild", normalizeRunBuild(state.runBuild, { carId: state.garage.equipped })],
     ["runId", state.runId],
     ["campaignStarted", state.campaignStarted === true],
   ]);
@@ -389,6 +364,8 @@ function restoreSnapshot(state, saved) {
   for (const key of PRESERVED) state[key] = saved[key];
   state.upgrades = { ...saved.upgrades };
   state.garage = normalizeGarage(saved.garage);
+  state.runBuild = normalizeRunBuild(saved.runBuild, { carId: state.garage.equipped });
+  state.buildModifiers = getBuildModifiers(state);
   state.runId = validCampaignRunId(saved.runId) ? saved.runId : state.runId;
   state.campaignStarted = state.campaignStarted === true || saved.campaignStarted === true;
   stats(state);
@@ -500,6 +477,11 @@ export function createState({
     _nextProjectileId: 1,
     _nextEncounter: 120,
     _encounter: 0,
+    _encounterPlan: [],
+    _encounterCursor: 0,
+    buildRuntime: { shield: 0, chargeSeconds: 0, shieldStation: null, chargedShot: 0 },
+    runBuild: null,
+    lastRouteReward: null,
     _stations: [],
     _spawnedStations: [],
     pendingQuiz: null,
@@ -510,6 +492,8 @@ export function createState({
     _fanId: null,
   };
   stats(state);
+  state.runBuild = createRunBuild(state.garage.equipped);
+  state.buildModifiers = getBuildModifiers(state);
   state.energy = state.energyCapacity;
   state.integrity = state.integrityCapacity;
   updateEnvironment(state, 0);
@@ -519,9 +503,7 @@ export function createState({
       Math.abs(a - state.routeLength * 0.6) -
       Math.abs(b - state.routeLength * 0.6),
   )[0];
-  // A readable early jump teaches the thrusters on either route. Its end is
-  // safely before the first EV charging zone, with no overlapping enemy row.
-  spawn(state, "pothole", 185, { hp: 1, tutorial: true });
+  state._encounterPlan = createEncounterPlan({ seed: state.seed, routeIndex: index, routeLength: state.routeLength, node, stations: state._stations, stationRadius: roadSettings(state).stationRadius });
   populate(state);
   state._stageStart = snapshot(state);
   return state;
@@ -539,6 +521,7 @@ function convert(state, target) {
   state.gyaruConverted++;
   state.stageGyaru++;
   state.score += reward * 2;
+  state.energy = Math.min(state.energyCapacity, state.energy + (state.buildModifiers?.conversionEnergy || 0));
   emit(state, "convert", {
     entityId: target.id,
     distance: target.distance,
@@ -547,6 +530,7 @@ function convert(state, target) {
     combo: state.combo,
     totalFans: state.totalFans,
     gyaruConverted: state.gyaruConverted,
+    elite: Boolean(target.elite),
   });
 }
 function fire(state) {
@@ -557,63 +541,59 @@ function fire(state) {
     lane: 1,
     age: 0,
     resolved: false,
+    hitIds: [],
+    pierceLeft: (state.buildModifiers?.heartPierce || 0) + (state.buildModifiers?.shieldPiercing && state.buildRuntime.shield > 0 ? 1 : 0),
+    damage: 1 + (state.buildRuntime.chargedShot || 0),
   });
+  state.buildRuntime.chargedShot = 0;
   state.shotCooldown = state.shotInterval;
   emit(state, "shoot");
+}
+function hitTarget(state, target, damage = 1, chain = true) {
+  if (target.shielded && !(state.buildModifiers.shieldPiercing && state.buildRuntime.shield > 0)) {
+    if (!target._lastGuardHit || state.elapsed - target._lastGuardHit > .4) {
+      emit(state, "guard-hit", { entityId: target.id, distance: target.distance }); target._lastGuardHit = state.elapsed;
+    }
+    return false;
+  }
+  target.hp = (target.hp ?? (target.type === "barrier" ? 2 : 1)) - damage;
+  if (target.hp > 0) { emit(state, "heart-hit", { entityId: target.id, distance: target.distance }); return false; }
+  if (target.type === "salaryman") {
+    convert(state, target);
+    if (chain && state.buildModifiers.heartChain) {
+      const next = state.entities.find(other => other.id !== target.id && other.type === "salaryman" && !other.converted && !other.cleared && !other.resolved && Math.abs(other.distance - target.distance) <= state.buildModifiers.heartChainRange);
+      if (next) { hitTarget(state, next, 1, false); emit(state, "heart-chain", { distance: target.distance, targetDistance: next.distance }); }
+    }
+  } else {
+    target.resolved = true; state.score += 25;
+    emit(state, "destroy", { entityId: target.id, entityType: target.type, distance: target.distance });
+  }
+  return true;
 }
 function projectilesStep(state, dt) {
   for (const heart of state.projectiles) {
     if (heart.resolved) continue;
     const previous = heart.distance;
-    heart.distance += (state.speed / 3.6 + 100) * dt;
-    heart.age += dt;
+    heart.distance += (state.speed / 3.6 + 100) * dt; heart.age += dt;
+    heart.hitIds ??= [];
     for (const target of state.entities) {
-      if (
-        target.resolved ||
-        target.converted ||
-        target.cleared ||
-        !["salaryman", "cone", "barrier"].includes(target.type)
-      )
-        continue;
-      const heightLimit =
-        target.type === "salaryman"
-          ? 0.7 + (state.heartHeightBonus || 0)
-          : target.type === "barrier"
-            ? 0.44
-            : 0.29;
-      if (
-        heart.height > heightLimit ||
-        previous > target.distance + (state.heartHitRadius || 8) ||
-        heart.distance < target.distance - (state.heartHitRadius || 8)
-      )
-        continue;
-      heart.resolved = true;
-      if (target.type === "salaryman") convert(state, target);
-      else {
-        target.hp = (target.hp ?? (target.type === "barrier" ? 2 : 1)) - 1;
-        if (target.hp <= 0) {
-          target.resolved = true;
-          state.score += 25;
-          emit(state, "destroy", {
-            entityId: target.id,
-            entityType: target.type,
-            distance: target.distance,
-          });
-        } else
-          emit(state, "heart-hit", {
-            entityId: target.id,
-            distance: target.distance,
-          });
-      }
-      break;
+      if (target.resolved || target.converted || target.cleared || heart.hitIds.includes(target.id) || !["salaryman", "cone", "barrier"].includes(target.type)) continue;
+      const heightLimit = target.type === "salaryman" ? 0.7 + (state.heartHeightBonus || 0) : target.type === "barrier" ? .44 : .29;
+      if (heart.height > heightLimit || previous > target.distance + (state.heartHitRadius || 8) || heart.distance < target.distance - (state.heartHitRadius || 8)) continue;
+      heart.hitIds.push(target.id);
+      hitTarget(state, target, heart.damage || 1);
+      if ((heart.pierceLeft || 0) > 0) heart.pierceLeft--; else { heart.resolved = true; break; }
     }
   }
-  state.projectiles = state.projectiles.filter(
-    (heart) => !heart.resolved && heart.age < 3.1,
-  );
+  state.projectiles = state.projectiles.filter(heart => !heart.resolved && heart.age < 3.1);
 }
 function collide(state, target, hazard) {
   target.cleared = true;
+  if (target.cluster) for (const member of state.entities) if (member.cluster && member.encounterId === target.encounterId) member.cleared = true;
+  if (state.buildRuntime.shield > 0) {
+    state.buildRuntime.shield = 0; state.buildRuntime.chargeSeconds = 0; state.invulnerability = COLLISION_GRACE;
+    emit(state, "shield-block", { distance: target.distance, entityId: target.id }); return;
+  }
   const damage = Math.round(
     hazard.damage * (state.routeOption === "express" ? 1.12 : 1),
   );
@@ -654,6 +634,7 @@ function finish(state, status, reason) {
     state.integrity = Math.min(state.integrityCapacity, state.integrity + (getJourneyNode(state.journeyNodeId)?.arrivalRepair || 0));
     state.campaignComplete = state.routeIndex === ROUTES.length - 1;
     state.score += 500 + Math.floor(state.integrity * 3);
+    state.lastRouteReward = settleRouteReward(state, getJourneyNode(state.journeyNodeId));
   }
   emit(state, status, { reason, campaignComplete: state.campaignComplete });
 }
@@ -667,15 +648,28 @@ function step(state, input, dt) {
   state.comboTimer = Math.max(0, state.comboTimer - dt);
   if (state.comboTimer === 0) state.combo = 0;
   state.rushCooldown = Math.max(0, state.rushCooldown - dt);
+  const station = state.entities.find(item => {
+    if (item.type !== "ev") return false;
+    const range = Math.abs(item.distance - state.distance);
+    if (range <= item.radius) return true;
+    if (range > item.radius + (state.chargeRadiusBonus || 0)) return false;
+    // Range upgrades only add SAFE charging windows. Their fringe cannot pull
+    // the car into a charge lock beside a hazard outside the protected base zone.
+    return !state.entities.some(actor => HAZARDS[actor.type] && !actor.cleared && !actor.converted && !actor.resolved && Math.abs(actor.distance - state.distance) < HAZARDS[actor.type].radius + 40);
+  });
+  const chargeIntent = Boolean(input.charge && station && !input.boost);
   const rushPressed = Boolean(input.rush) && !state._rushHeld;
   state._rushHeld = Boolean(input.rush);
-  if (state.rushing && (!input.rush || input.charge || state.energy <= 0))
-    stopRush(state, input.charge ? "charge" : !input.rush ? "release" : "empty");
-  if (rushPressed && !input.charge && !state.rushing && state.rushCooldown <= 1e-9 && state.energy >= RUSH_MIN_ENERGY) {
+  if (state.rushing && (!input.rush || chargeIntent || state.energy <= 0))
+    stopRush(state, chargeIntent ? "charge" : !input.rush ? "release" : "empty");
+  if (rushPressed && !chargeIntent && !state.rushing && state.rushCooldown <= 1e-9 && state.energy >= RUSH_MIN_ENERGY) {
     state.rushing = true;
     state.rushTime = RUSH_DURATION;
     state.rushGestureTime = 0.75;
     emit(state, "rush-start");
+    if (state.buildModifiers.rushPulse > 0) {
+      for (const target of state.entities) if (target.type === "salaryman" && !target.converted && !target.cleared && target.distance >= state.distance && target.distance <= state.distance + state.buildModifiers.rushPulse) hitTarget(state, target, 2);
+    }
   }
   state.speed =
     modeFor(state.routeOption).speed *
@@ -683,26 +677,25 @@ function step(state, input, dt) {
     (state.rushing ? RUSH_SPEED_MULTIPLIER : 1) *
     (state.hitSlow > 0 ? 0.76 : 1) *
     (state.landingRecovery > 0 ? 0.8 : 1);
-  const station = state.entities.find(
-    (item) =>
-      item.type === "ev" &&
-      Math.abs(item.distance - state.distance) <= item.radius + (state.chargeRadiusBonus || 0),
-  );
   state.atStation = Boolean(station);
   state.stationId = station?.id ?? null;
   const wasCharging = state.charging;
-  state.charging = Boolean(input.charge && station && state.altitude < 12);
-  state.boosting = Boolean(input.boost && !input.charge && state.energy > 0);
-  state.shooting = Boolean(input.shoot && !input.charge);
+  state.charging = Boolean(chargeIntent && state.altitude < 12);
+  state.boosting = Boolean(input.boost && !chargeIntent && state.energy > 0);
+  state.shooting = Boolean(input.shoot && !chargeIntent);
   if (state.charging) {
     const previous = state.energy;
     state.energy = Math.min(
       state.energyCapacity,
       state.energy + state.chargeRate * dt,
     );
+    routeMissionProgress(state, { type: "charge", seconds: dt });
+    if (state.buildRuntime.shieldStation !== station.id) { state.buildRuntime.chargeSeconds = 0; state.buildRuntime.shieldStation = station.id; }
+    state.buildRuntime.chargeSeconds += dt;
+    if (state.buildModifiers.chargeShield && state.buildRuntime.chargeSeconds >= state.buildModifiers.chargeShieldSeconds) state.buildRuntime.shield = 1;
     if (!wasCharging) emit(state, "charge-start", { stationId: station.id });
     if (previous < state.energyCapacity && state.energy >= state.energyCapacity)
-      emit(state, "charged");
+      { state.buildRuntime.chargedShot = state.buildModifiers.chargedHeartBonus; emit(state, "charged"); }
   } else if (wasCharging) emit(state, "charge-stop");
   if (state.rushing) state.energy = Math.max(0, state.energy - RUSH_DRAIN * dt);
   const previousAltitude = state.altitude;
@@ -713,7 +706,7 @@ function step(state, input, dt) {
     }
     state.energy = Math.max(
       0,
-      state.energy - state.thrustDrain * environment.drain * dt,
+      state.energy - state.thrustDrain * state.buildModifiers.thrustDrainMultiplier * environment.drain * dt,
     );
   }
   state.altitudeVelocity +=
@@ -723,12 +716,11 @@ function step(state, input, dt) {
         ? Math.sin(state.elapsed * 2.4) * 55
         : 0)) *
     dt;
-  state.altitudeVelocity = Math.max(-MAX_DESCENT_SPEED, state.altitudeVelocity);
+  state.altitudeVelocity = Math.max(-MAX_DESCENT_SPEED * state.buildModifiers.descentMultiplier, state.altitudeVelocity);
   state.altitude = clamp(
     state.altitude + state.altitudeVelocity * dt,
     0,
     MAX_ALTITUDE,
-  HOVER_HEIGHT_UNIT, MAX_DESCENT_SPEED,
   );
   if (state.altitude === 0 || state.altitude === MAX_ALTITUDE)
     state.altitudeVelocity = 0;
@@ -748,7 +740,7 @@ function step(state, input, dt) {
   state.totalDistance += movement;
   state.score += movement * 0.3;
   populate(state);
-  moveEnemies(state);
+  moveEnemies(state, dt);
   projectilesStep(state, dt);
   for (const target of state.entities) {
     const hazard = HAZARDS[target.type];
@@ -765,7 +757,8 @@ function step(state, input, dt) {
     } else if (state.distance >= target.distance) {
       target.cleared = true;
       state.score += 25;
-      emit(state, "jump-clear", { entityId: target.id });
+      state.energy = Math.min(state.energyCapacity, state.energy + state.buildModifiers.comboFlight);
+      emit(state, "jump-clear", { entityId: target.id, distance: target.distance });
     }
   }
   state.entities = state.entities.filter(
@@ -802,6 +795,7 @@ export function update(state, input = {}, dt = 0) {
   if (state.status !== "playing" || !Number.isFinite(dt) || dt <= 0)
     return state;
   beginCampaign(state);
+  state.buildModifiers = getBuildModifiers(state);
   let remaining = dt;
   while (remaining > 1e-10 && state.status === "playing") {
     const delta = Math.min(FIXED_STEP, remaining);
@@ -882,6 +876,7 @@ export function nextRoute(state, routeOption = "scenic", journeyNodeId = null) {
   next.locationIndex = getJourneyNode(next.journeyNodeId).locationIndex;
   next.energy = next.energyCapacity;
   next.integrity = Math.max(next.integrity, next.integrityCapacity * 0.4);
+  routeMissionProgress(next, { type: "stage-start" });
   next._stageStart = snapshot(next);
   emit(next, "stage-start", {
     routeIndex: next.routeIndex,
@@ -912,7 +907,7 @@ export function retryRoute(state) {
   return state;
 }
 
-export const CAMPAIGN_SAVE_VERSION = 2;
+export const CAMPAIGN_SAVE_VERSION = 3;
 const SAVE_NUMBER_LIMIT = 1_000_000_000;
 function safeNumber(value, fallback = 0, max = SAVE_NUMBER_LIMIT) {
   return typeof value === "number" && Number.isFinite(value)
@@ -933,6 +928,7 @@ function normalizeCheckpoint(value, fallback) {
   for (const id of ["battery", "hearts", "charger", "armor", "rushCooler", "heartReach", "evRange"])
     checkpoint.upgrades[id] = Math.floor(safeNumber(saved.upgrades?.[id], fallback.upgrades?.[id] || 0, 3));
   checkpoint.garage = normalizeGarage(saved.garage ?? fallback.garage);
+  checkpoint.runBuild = normalizeRunBuild(saved.runBuild ?? fallback.runBuild, { carId: checkpoint.garage.equipped });
   checkpoint.runId = validCampaignRunId(saved.runId) ? saved.runId : fallback.runId;
   checkpoint.campaignStarted = saved.campaignStarted === true || fallback.campaignStarted === true;
   const holder = { garage: checkpoint.garage, upgrades: checkpoint.upgrades };
@@ -975,10 +971,10 @@ export function restoreCampaignSave(value) {
     try { saved = JSON.parse(saved); } catch { return null; }
   }
   if (!saved || typeof saved !== "object" || Array.isArray(saved)) return null;
-  if (saved.version !== undefined && saved.version !== 0 && saved.version !== 1 && saved.version !== CAMPAIGN_SAVE_VERSION) return null;
+  if (saved.version !== undefined && saved.version !== 0 && saved.version !== 1 && saved.version !== 2 && saved.version !== CAMPAIGN_SAVE_VERSION) return null;
   if (!Number.isInteger(saved.routeIndex) || saved.routeIndex < 0 || saved.routeIndex >= ROUTES.length) return null;
-  if ((saved.version === 1 || saved.version === CAMPAIGN_SAVE_VERSION) && (!saved.checkpoint || typeof saved.checkpoint !== "object" || Array.isArray(saved.checkpoint))) return null;
-  const legacy = saved.version !== CAMPAIGN_SAVE_VERSION;
+  if ((saved.version === 1 || saved.version === 2 || saved.version === CAMPAIGN_SAVE_VERSION) && (!saved.checkpoint || typeof saved.checkpoint !== "object" || Array.isArray(saved.checkpoint))) return null;
+  const legacy = saved.version === undefined || saved.version === 0 || saved.version === 1;
   const atClub = saved.status === "won";
   const source = saved.checkpoint ?? (!atClub && saved._stageStart ? saved._stageStart : saved);
   if (legacy && saved.routeIndex > 5) return null;

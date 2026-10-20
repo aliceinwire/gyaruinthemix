@@ -1294,3 +1294,167 @@ body[data-music-open="true"] .music-panel summary { cursor: default; }
 .destination-option strong,.destination-option small { display:block; }
 .route-note { color:var(--muted); font-size:12px; line-height:1.7; }
 @media(max-width:600px) { #destination-choices { grid-template-columns:1fr; } .destination-option { display:grid; grid-template-columns:100px 1fr; gap:6px 12px; } .destination-option img { grid-row:1 / 3; margin:0; align-self:center; } }
+
+/* A semantic, directly selectable route map. It never scales Japanese text
+   down with the game canvas. Branches split from the garage and rejoin at club. */
+.masthead { height: 116px; }
+.brand { flex-direction: column; gap: 2px; text-decoration: none; }
+.brand img { width: 290px; height: 88px; }
+.brand-caption { color: #ffe3f2; font-size: 13px; font-weight: 800; letter-spacing: .12em; }
+body[data-screen="map"] .workspace { display: block; }
+body[data-screen="map"] .cabinet { display: none; }
+body[data-screen="map"] .tour-guide { max-width: 1120px; margin: auto; padding: 24px; }
+body[data-screen="map"] .guide-title h2 { font-size: clamp(23px, 3vw, 32px); }
+body[data-screen="map"] .guide-title p { font-size: 15px; }
+body[data-screen="map"] #climate-summary { font-size: 14px; }
+.journey-map { --route-line: #95738f; background: #151321; border: 1px solid #65506a; border-radius: 16px; padding: 22px; }
+.map-stop { position: relative; z-index: 1; display: grid; gap: 6px; padding: 16px; border: 2px solid var(--cyan); border-radius: 12px; background: #1d3034; text-align: center; max-width: 520px; margin: auto; }
+.map-stop strong { font-size: 22px; overflow-wrap: anywhere; }
+.map-stop-label { font-size: 14px; font-weight: 800; color: var(--cyan); }
+.map-stop-hint { font-size: 14px; color: #e0d1e6; }
+.map-goal { border-color: var(--pink); background: #332039; }
+.map-goal .map-stop-label { color: #ffb3dd; }
+.map-branch-label { position: relative; width: fit-content; margin: 0 auto; padding: 18px 12px; font-size: 14px; font-weight: 800; color: #ffe0f1; background: #151321; }
+.journey-map #destination-choices { position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; padding-block: 24px; margin-bottom: 24px; }
+.journey-map #destination-choices::before, .journey-map #destination-choices::after { content: ""; position: absolute; left: 16.66%; right: 16.66%; height: 3px; background: var(--route-line); top: 0; }
+.journey-map #destination-choices::after { top: auto; bottom: 0; }
+.map-origin::after { content: ""; position: absolute; height: 62px; width: 3px; background: var(--route-line); left: calc(50% - 1px); top: calc(100% + 2px); z-index: -1; }
+.map-goal::before { content: ""; position: absolute; height: 26px; width: 3px; background: var(--route-line); left: calc(50% - 1px); bottom: calc(100% + 2px); }
+.journey-map .destination-option { position: relative; overflow: visible; display: flex; flex-direction: column; gap: 10px; padding: 14px; border: 2px solid #79617f; border-radius: 12px; background: #282238; }
+.journey-map .destination-option::before, .journey-map .destination-option::after { content: ""; position: absolute; width: 3px; height: 26px; background: var(--route-line); left: calc(50% - 1px); bottom: calc(100% + 2px); }
+.journey-map .destination-option::after { bottom: auto; top: calc(100% + 2px); }
+.journey-map .destination-option[data-kind="ev"] { --node-color: #8fe8dc; }
+.journey-map .destination-option[data-kind="event"] { --node-color: #ffb1d9; }
+.journey-map .destination-option[data-kind="service"] { --node-color: #ffda91; }
+.journey-map .destination-option.selected { border-color: var(--node-color); box-shadow: 0 0 0 3px #ffffff18; background: #3c2d44; }
+.journey-map .destination-option.selected::before, .journey-map .destination-option.selected::after { background: var(--node-color); width: 5px; }
+.journey-map .destination-option img { width: 100%; aspect-ratio: 2.7; object-fit: cover; margin: 0; border-radius: 6px; }
+.journey-map .destination-option strong { font-size: 20px; line-height: 1.5; }
+.journey-map .destination-option small { font-size: 14px; line-height: 1.65; margin: 0; color: #e3d5e9; }
+.destination-kind { font-size: 14px; color: var(--node-color); }
+.destination-status { align-self: stretch; font-size: 14px; padding-top: 10px; margin-top: auto; border-top: 1px solid #67536d; color: var(--node-color); }
+.selected-route { font-size: 16px; font-weight: 800; margin: 16px 0 6px; color: var(--cyan); }
+.route-note { font-size: 14px; }
+@media (max-width: 800px) {
+  .masthead { height: auto; min-height: 128px; flex-wrap: wrap; justify-content: center; padding: 8px 0 12px; gap: 8px; }
+  .brand img { width: min(290px, 75vw); height: 86px; }
+  .brand-caption { font-size: 12px; }
+  .settings { margin-left: 0; }
+  body[data-screen="map"] .tour-guide { padding: 16px; }
+}
+@media (max-width: 600px) {
+  .masthead { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
+  .brand img { width: 100%; max-width: 270px; height: 86px; }
+  .brand-caption { font-size: 11px; letter-spacing: .04em; }
+  .settings { flex-direction: column; gap: 5px; }
+  .settings button { font-size: 11px; padding-inline: 9px; }
+  body[data-screen="map"] .tour-guide { padding: 12px; }
+  body[data-screen="map"] .guide-title p { font-size: 14px; }
+  .journey-map { padding: 16px 10px; }
+  .map-stop { padding: 12px 10px; }
+  .map-stop strong { font-size: 19px; }
+  .map-stop-hint { font-size: 13px; }
+  .map-origin::after { height: 26px; }
+  .map-branch-label { margin-left: 20px; padding-block: 16px; }
+  .journey-map #destination-choices { grid-template-columns: minmax(0, 1fr); gap: 18px; margin: 0 0 24px; padding: 10px 17px; }
+  .journey-map #destination-choices::before, .journey-map #destination-choices::after { top: 0; bottom: 0; left: 0; width: 3px; height: auto; right: auto; border-radius: 2px; }
+  .journey-map #destination-choices::after { left: auto; right: 0; }
+  .journey-map .destination-option { gap: 7px; padding: 12px; }
+  .journey-map .destination-option::before, .journey-map .destination-option::after { left: auto; right: calc(100% + 2px); bottom: auto; top: 50%; width: 17px; height: 3px; }
+  .journey-map .destination-option::after { left: calc(100% + 2px); right: auto; }
+  .journey-map .destination-option.selected::before, .journey-map .destination-option.selected::after { width: 17px; height: 5px; }
+  .journey-map .destination-option img { aspect-ratio: 3.6; }
+  .journey-map .destination-option strong { font-size: 19px; }
+  .journey-map .destination-option small { font-size: 14px; }
+  .map-goal::before { height: 24px; width: calc(50% - 1px); left: auto; right: -1px; bottom: calc(100% + 2px); border-top: 3px solid var(--route-line); border-right: 3px solid var(--route-line); background: transparent; }
+}
+/* Preserve the compact landscape play header. */
+@media (orientation: landscape) and (max-height: 600px) {
+  body[data-screen="playing"] .masthead, body[data-screen="quiz"] .masthead { display: flex; min-height: 0; height: 48px; padding: 0; flex-wrap: nowrap; }
+  body[data-screen="playing"] .brand img, body[data-screen="quiz"] .brand img { width: 120px; height: 40px; }
+  body[data-screen="playing"] .brand-caption, body[data-screen="quiz"] .brand-caption { display: none; }
+  body[data-screen="playing"] .settings, body[data-screen="quiz"] .settings { margin-left: auto; flex-direction: row; }
+}
+@media (max-width: 600px) {
+  .map-origin::after { height: 54px; }
+  .journey-map #destination-choices { background: linear-gradient(var(--route-line), var(--route-line)) top / 100% 3px no-repeat, linear-gradient(var(--route-line), var(--route-line)) bottom / 100% 3px no-repeat; padding-block: 18px; }
+  .map-goal::before { border: 0; width: 3px; height: 26px; left: calc(50% - 1px); right: auto; background: var(--route-line); }
+}
+
+/* Tour edition: bright signals, quiet framing, original painted streets. */
+:root { --mint: #9af0dc; --lilac: #cfb5ff; --night: #101321; }
+body { background: radial-gradient(ellipse at 18% 0, #3b2546 0, transparent 48%), radial-gradient(ellipse at 90% 55%, #172f37 0, transparent 46%), #11121e; }
+.cabinet { border-color: #79617c; box-shadow: 0 18px 64px #05081277, 0 0 0 4px #ffffff04; }
+.topline { background: linear-gradient(90deg,#302439,#172c32); border-bottom-color: #6b5874; }
+.screen-menu { background: linear-gradient(90deg,#121522f5 0,#21182be8 36%,#19152730 69%,transparent 100%); }
+.screen-menu h1 { letter-spacing: -.065em; text-shadow: 3px 3px 0 #201a2b; }
+.tour-ticket { display: inline-flex; gap: 12px; align-items: center; padding: 9px 12px; margin: 2px 0 12px; border: 1px solid #ab8c9a; border-radius: 3px; color: #ffe1a6; background:#1c1b2cbb; font-size:11px; letter-spacing:.11em; font-weight:850; transform:rotate(-1deg); }
+.tour-ticket i { width:4px;height:4px;background:var(--pink);transform:rotate(45deg); }
+.menu-guide { font-size:11px;color:#d0c4d8;max-width:320px;margin:12px 0 0; }
+.road-status { display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:14px;align-items:center;background:#171b2b;border-block:1px solid #42525e;padding:9px 16px;font-size:12px; }
+.road-status > span:first-child { color:var(--mint);font-size:10px;letter-spacing:.1em;font-weight:850; }
+.road-status strong { font-size:13px;font-weight:700;color:#f3e7f6; }
+.road-status > span:last-child { color:#a5f0db;font-variant-numeric:tabular-nums;white-space:nowrap; }
+.road-status[data-urgency="warning"] { border-left:4px solid #ffcf87;padding-left:12px; }
+.road-status[data-urgency="warning"] strong { color:#ffe1ae; }
+.road-status[data-urgency="safe"] { border-left:4px solid var(--mint);padding-left:12px; }
+body:not([data-screen="playing"]) .road-status { display:none; }
+.dashboard { background:linear-gradient(125deg,#1c2231,#241f31); }
+.meter { overflow:hidden; }
+.meter[data-low="true"] { box-shadow:0 0 0 2px #ffbe87; }
+.meter[data-low="true"] i { background:#ffb785; }
+.controls button { position:relative;border-width:2px;transition:background .12s,box-shadow .12s; }
+.controls button.suggested { box-shadow:0 0 0 2px #fff1be,0 0 22px #ffe1a324; }
+.controls button.suggested::after { content:"いまココ";position:absolute;top:-10px;right:8px;border-radius:4px;padding:1px 5px;background:#ffe5ad;color:#2a1d34;font-size:9px;font-weight:850; }
+.assist-setting { display:block;max-width:420px;padding:15px;text-align:left;border:1px solid #695473;border-radius:12px;margin:12px 0 20px;background:#241b32;font-size:15px; }
+.assist-setting input { width:22px;height:22px;vertical-align:middle;accent-color:var(--pink);margin:0 7px 8px 0; }
+.assist-setting small { display:block;font-size:12px; }
+.tour-ribbon { display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;margin:0 0 22px; }
+.tour-ribbon span { padding:9px 4px;text-align:center;border-top:3px solid #53455f;color:#968ca1;font-size:12px;font-weight:700; }
+.tour-ribbon span.passed { color:var(--mint);border-color:var(--mint); }
+.tour-ribbon span.current { color:var(--pink);border-color:var(--pink);background:#ff95ce0b; }
+.arrival-summary { padding:16px 18px;background:linear-gradient(100deg,#243c36,#24213a);border:1px solid #7fcbb0;border-radius:12px;margin-bottom:18px;color:#e2f9ef;line-height:1.7;font-size:14px; }
+.arrival-summary strong { color:#b1ffe2; }
+.route-mission-preview { border-left:3px solid var(--gold);padding:12px 16px;background:#302738;line-height:1.6;border-radius:0 8px 8px 0;margin-top:14px;font-size:14px; }
+.route-mission-preview small { display:block;margin-top:4px; }
+.destination-option .route-fit { color:#aaf6df;font-size:12px;min-height:18px; }
+.build-workshop { border:1px solid #89749d;border-radius:16px;padding:20px;margin-block:18px 28px;background:linear-gradient(135deg,#2c233c,#182d31); }
+.build-workshop h3 { font-size:24px;margin:8px 0; }
+#build-summary { color:#eadcf6;line-height:1.7;font-size:14px; }
+.build-offers { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px; }
+.build-card { display:flex;flex-direction:column;gap:10px;padding:18px;border:1px solid #927a98;border-top:4px solid var(--pink);border-radius:10px;background:#211c30; }
+.build-card[data-family="charge"],.build-card[data-family="guardian"] { border-top-color:var(--mint); }
+.build-card[data-family="air"],.build-card[data-family="rush"] { border-top-color:var(--lilac); }
+.build-card h4 { margin:0;color:#fff3e9;font-size:18px; }
+.build-card p { margin:0;color:#e0d2e8;font-size:13px;line-height:1.7; }
+.build-card small { font-size:12px; }
+.build-card button { margin-top:auto; }
+#build-note { margin:14px 0 0;font-size:12px;color:var(--gold); }
+.performance-panel { grid-column:1/-1;padding:20px;border:1px solid #896998;border-radius:14px;background:linear-gradient(100deg,#332141,#193336);margin-top:14px; }
+.performance-panel h2 { margin:7px 0;font-size:clamp(18px,2.4vw,25px); }
+.performance-panel p { font-size:13px;color:#e0d3e7;margin:7px 0; }
+.performance-meter { height:5px;background:#181827;overflow:hidden;border-radius:4px; }
+.performance-meter i { display:block;height:100%;width:0;background:linear-gradient(90deg,var(--pink),var(--mint)); }
+body[data-screen="finale"] .controls { display:grid; }
+body[data-screen="finale"] .below-stage { margin-top:14px; }
+@media(max-width:600px) {
+  .tour-ticket { gap:7px;font-size:8px;padding:6px 8px;margin-bottom:8px; }
+  .menu-guide { display:none; }
+  .road-status { grid-template-columns:1fr auto;gap:4px 9px;padding:8px 10px;font-size:10px; }
+  .road-status > span:first-child { display:none; }
+  .road-status strong { font-size:11px; }
+  .road-status[data-urgency="warning"],.road-status[data-urgency="safe"] { padding-left:7px; }
+  .tour-ribbon span { font-size:11px; }
+  .build-workshop { padding:15px; }
+  .build-offers { grid-template-columns:1fr; }
+  .build-card { gap:8px;padding:15px; }
+  .controls button.suggested::after { font-size:8px;top:-9px;right:4px; }
+  .performance-panel { padding:14px; }
+}
+@media(orientation:landscape) and (max-height:600px) {
+  body[data-screen="playing"] .road-status { position:absolute;top:40px;left:8px;right:8px;z-index:3;border:1px solid #74806e;border-radius:7px;background:#161c2ce8;padding:6px 8px;gap:8px;pointer-events:none; }
+  body[data-screen="playing"] .road-status strong { font-size:11px; }
+  body[data-screen="playing"] .road-status > span:first-child { display:none; }
+  body[data-screen="playing"] .road-status { grid-template-columns:1fr auto; }
+  .tour-ticket,.menu-guide { display:none; }
+}

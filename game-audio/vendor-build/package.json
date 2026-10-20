@@ -1,0 +1,8 @@
+{
+  "name": "gyaru-hls-vendor",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "hls.js": "1.7.3"
+  }
+}

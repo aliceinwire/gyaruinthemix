@@ -31,6 +31,12 @@ export async function checkGameTest(origin) {
     '/game-test/main.js',
     '/game-test/style.css',
     '/game-test/src/journey.js',
+    '/game-test/src/encounter-director.js',
+    '/game-test/src/run-build.js',
+    '/game-test/src/performance.js',
+    '/game-test/src/road-feedback.js',
+    '/game-test/src/road-surface.js',
+    '/game-test/src/umbrella-art.js',
     '/game-test/assets/brand/gyaruinthemix-logo.png',
     '/game-test/build-info.json',
   ]) {

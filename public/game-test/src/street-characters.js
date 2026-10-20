@@ -100,6 +100,12 @@ export function preloadStreetCharacters() {
   return loading;
 }
 
+/** One integer ground anchor shared by the sprite and attached weather gear. */
+export function streetCharacterBob({type="salaryman",id=type,time=0,scale=1}={}) {
+  const gyaru = type === "gyaru" || type === "converted";
+  return Math.round(Math.sin((finite(time)%100000)*(gyaru?7:4.2)+phaseOf(id))*(gyaru?1.8:.8)*Math.min(Math.max(finite(scale,1),0),8));
+}
+
 /**
  * Draw a roughly 45–58 × 76px sprite, or an 83px umbrella pose. Returns only
  * readiness, so `if (!drawStreetCharacter(...))` can preserve a fallback.
@@ -146,12 +152,7 @@ export function drawStreetCharacter(ctx, options = {}) {
   const size = Math.min(scale, 8);
   const height = frame.height * size;
   const width = (sw / sh) * height;
-  const t = finite(time) % 100000;
-  const phase = phaseOf(id);
-  const bob =
-    Math.sin(t * (selected === "gyaru" ? 7 : 4.2) + phase) *
-    (selected === "gyaru" ? 1.8 : 0.8) *
-    size;
+  const bob = streetCharacterBob({type,id,time,scale:size});
   ctx.save();
   ctx.imageSmoothingEnabled = false;
   ctx.drawImage(
