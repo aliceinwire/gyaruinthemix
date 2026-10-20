@@ -182,7 +182,9 @@ A different published image set is tried normally. If both activation and rollba
 
 Pause updates before changing mode. Set `CHECKOUT_MODE=api`, add `checkout-api` to `COMPOSE_PROFILES` (preserve `game-audio` if already enabled), and `GYARUINTHEMIX_WEB_IMAGE=ghcr.io/aliceinwire/gyaruinthemix-web-api:main` in `~/bouncer/.env`; keep `GYARUINTHEMIX_API_IMAGE=ghcr.io/aliceinwire/gyaruinthemix-api:main`. Set up restricted TEST credentials and settings using [the README](../../README.md#optional-custom-cart-api-mode) and [SECURITY.md](../../SECURITY.md). Sales remain false until deliberately reviewed.
 
-For this first start, choose one successful published release's full commit SHA and set `RELEASE_SHA` in the shell. Pin both image names to that same release before pulling/activating, so a `:main` publication in progress cannot mix revisions:
+The two-service command below applies only when game audio is disabled. If music is already enabled, use the [all-selected-services activation recipe](#activate-all-selected-services) instead, selecting its API web image and adding the API service/image. That keeps web, API and audio on the same release without repeating music provisioning.
+
+For an API-only first start, choose one successful published release's full commit SHA and set `RELEASE_SHA` in the shell. Pin both image names to that same release before pulling/activating, so a `:main` publication in progress cannot mix revisions:
 
 ```bash
 cd ~/bouncer
@@ -222,7 +224,9 @@ Prepare the initial catalog through the same locked, bounded updater before star
 
 This mode only prepares local generated media. It does not pull images or start, stop or recreate any container. It uses the installed configuration, refuses unsafe paths and requires the explicit enabled setting. Investigate any failure before continuing; do not remove locks or loosen permissions blindly.
 
-For first activation, choose a successful published correction release and pin all selected services to its same full SHA for the manual start. Keep their `:main` values in `.env` for later automatic updates. Run from the existing deployment user and project:
+### Activate all selected services
+
+For first activation or an explicitly reviewed checkout-mode change with music already enabled, choose a successful published correction release and pin all selected services to its same full SHA for the manual start. Keep their `:main` values in `.env` for later automatic updates. Run from the existing deployment user and project:
 
 ```bash
 cd ~/bouncer

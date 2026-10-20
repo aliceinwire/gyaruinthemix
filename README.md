@@ -83,7 +83,7 @@ For local development: `npm ci`, `npm run images`, then `npm run dev`. No Stripe
 
 ## Optional custom-cart API mode
 
-Only follow the API-specific sections below if you want the multi-product cart. In `~/bouncer/.env`, set **both** `CHECKOUT_MODE=api` and `COMPOSE_PROFILES=checkout-api`, select `GYARUINTHEMIX_WEB_IMAGE=ghcr.io/aliceinwire/gyaruinthemix-web-api:main`, and set `GYARUINTHEMIX_API_IMAGE=ghcr.io/aliceinwire/gyaruinthemix-api:main`. Configure its two secret files using a restricted API key and Stripe settings before starting it. See the [bouncer guide](deploy/bouncer/README.md) for the complete mode-switch procedure. Local Astro development needs `CHECKOUT_MODE=api npm run dev`; the API uses `npm run dev:api`. The frontend and nginx routing mode are fixed at image build time; changing only the runtime mode does not change the selected image.
+Only follow the API-specific sections below if you want the multi-product cart. In `~/bouncer/.env`, set **both** `CHECKOUT_MODE=api` and `COMPOSE_PROFILES=checkout-api` (use `checkout-api,game-audio` if music is already enabled), select `GYARUINTHEMIX_WEB_IMAGE=ghcr.io/aliceinwire/gyaruinthemix-web-api:main`, and set `GYARUINTHEMIX_API_IMAGE=ghcr.io/aliceinwire/gyaruinthemix-api:main`. Configure its two secret files using a restricted API key and Stripe settings before starting it. See the [bouncer guide](deploy/bouncer/README.md) for the complete mode-switch procedure. Local Astro development needs `CHECKOUT_MODE=api npm run dev`; the API uses `npm run dev:api`. The frontend and nginx routing mode are fixed at image build time; changing only the runtime mode does not change the selected image.
 
 The [Payment Links guide](deploy/PAYMENT-LINKS.md) covers default deployment, shipping, smoke checks, live configuration, updates, pausing sales, rollback, backups and migration away from an already-running API. The numbered API instructions below describe the optional custom cart, not requirements for the default website.
 
@@ -253,6 +253,7 @@ Only a trusted push to `main` in `aliceinwire/gyaruinthemix`, after the required
 - `ghcr.io/aliceinwire/gyaruinthemix-web`: Payment Links frontend
 - `ghcr.io/aliceinwire/gyaruinthemix-web-api`: API-mode frontend
 - `ghcr.io/aliceinwire/gyaruinthemix-api`: optional backend
+- `ghcr.io/aliceinwire/gyaruinthemix-game-audio`: optional private music service
 
 Each uses `main` and `sha-<full commit hash>` tags with source/revision labels. Pull requests and manual validation do not publish images. Only the publishing job has package-write permission; it uses GitHub's built-in token. **No new GitHub/VPS/SSH secrets or Stripe credentials are needed.** The owner must make the packages publicly readable after the first trusted publish, then install and opt into the [VPS image updater](deploy/bouncer/README.md). Do not put Stripe credentials into CI. API fixtures keep sales disabled and never contact Stripe; synthetic public Payment Links are never opened by the checks.
 
@@ -350,7 +351,7 @@ Default rate limiting trusts no client forwarding headers: nginx overwrites `X-S
 
 Production images contain source, locked `npm ci` dependencies and prebuilt static files. Review Docker base-image and dependency updates deliberately; retain image digests or full-commit release tags for rollback. CI publishes tested application images; the VPS does not build them.
 
-In `~/bouncer/.env`, set `CHECKOUT_MODE=api`, `COMPOSE_PROFILES=checkout-api`, `GYARUINTHEMIX_WEB_IMAGE=ghcr.io/aliceinwire/gyaruinthemix-web-api:main` and `GYARUINTHEMIX_API_IMAGE=ghcr.io/aliceinwire/gyaruinthemix-api:main`. For a pinned release, use matching `sha-<full commit hash>` tags for both images. Confirm package access and follow the [bouncer guide](deploy/bouncer/README.md) before enabling the optional updater.
+In `~/bouncer/.env`, set `CHECKOUT_MODE=api`, `COMPOSE_PROFILES=checkout-api` (preserve `game-audio` when enabled), `GYARUINTHEMIX_WEB_IMAGE=ghcr.io/aliceinwire/gyaruinthemix-web-api:main` and `GYARUINTHEMIX_API_IMAGE=ghcr.io/aliceinwire/gyaruinthemix-api:main`. For a pinned release, use matching `sha-<full commit hash>` tags for every selected image, including the audio image when enabled. Confirm package access and follow the [bouncer guide](deploy/bouncer/README.md) before enabling the optional updater.
 
 After preflight, configure a restricted TEST key, TEST Price IDs, TEST shipping rate, test webhook endpoint and correct HTTPS domain. Use the endpoint's **own** signing secret. The local Stripe CLI secret and a Dashboard webhook secret are different. Register a snapshot webhook destination for exactly:
 
@@ -370,16 +371,7 @@ docker compose config --services
 
 The resolved stack must retain the original services and include the two website services, with API-only secrets, the correct website hostname, expected images/limits and **no new website host port bindings**. Keep sales disabled until configuration and TEST review are complete. `.env` must contain no secret values.
 
-Only after review, pull and start the two website services:
-
-```bash
-cd ~/bouncer
-docker compose pull gyaruinthemix-web gyaruinthemix-api
-docker compose up -d --no-deps --no-build --pull never --wait --wait-timeout 90 gyaruinthemix-api gyaruinthemix-web
-docker compose ps gyaruinthemix-web gyaruinthemix-api
-docker compose logs --tail=50 gyaruinthemix-api
-docker compose stats --no-stream gyaruinthemix-web gyaruinthemix-api
-```
+Only after review, follow the [canonical API first-start procedure](deploy/bouncer/README.md#optional-api-mode). With music already enabled, use its [all-selected-services recipe](deploy/bouncer/README.md#activate-all-selected-services) so web, API and audio remain on the same pinned release. Do not replace the music profile or leave its service on an older image.
 
 No command should build/recreate the proxy, companion, ZNC or Limnoria. Do not use unscoped stack operations, `--remove-orphans`, `down -v`, `docker system prune`, `docker volume prune` or other blanket cleanup. Confirm mode/image alignment and complete the smoke procedure before enabling scheduled updates.
 

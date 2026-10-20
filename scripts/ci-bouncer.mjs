@@ -12,10 +12,7 @@ import {
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { checkWwwRedirect } from './check-www-redirect.mjs';
-import { checkGameTest } from './check-game-test.mjs';
 import { createGameAudioFixtures } from './ci-game-audio-fixtures.mjs';
-import { checkGameAudioRuntime } from './check-game-audio-runtime.mjs';
 import {
   assertGameAudioCompose,
   gameAudioFalseBindOptions,
@@ -321,10 +318,24 @@ try {
           },
         ),
       );
-    const audioSmoke = async () => {
-      await checkGameAudioRuntime('http://127.0.0.1:8089', {
-        enabled: audioEnabled,
-      });
+    const routeSmoke = (enabled = audioEnabled) => {
+      // The parent intentionally uses synchronous Docker commands. HTTP checks
+      // therefore own a fresh process/pool for every phase, rather than reusing
+      // sockets whose close events could be pending across a container restart.
+      process.stdout.write(
+        execFileSync(
+          process.execPath,
+          [join(root, 'scripts/ci-bouncer-http.mjs')],
+          {
+            cwd: directory,
+            env: { ...env, GAME_AUDIO_ENABLED: String(enabled) },
+            encoding: 'utf8',
+            maxBuffer: 4 * 1024 * 1024,
+          },
+        ),
+      );
+    };
+    const audioIsolation = () => {
       if (!audioEnabled) return;
       const [container] = JSON.parse(
         docker(
@@ -362,9 +373,8 @@ try {
       assert.ok(container.Mounts.every((mount) => mount.RW === false));
     };
     smoke();
-    await audioSmoke();
-    await checkWwwRedirect('http://127.0.0.1:8089');
-    await checkGameTest('http://127.0.0.1:8089');
+    routeSmoke();
+    audioIsolation();
     docker('compose', 'restart', ...appServices);
     docker(
       'compose',
@@ -379,13 +389,11 @@ try {
       ...appServices,
     );
     smoke();
-    await audioSmoke();
-    await checkWwwRedirect('http://127.0.0.1:8089');
-    await checkGameTest('http://127.0.0.1:8089');
+    routeSmoke();
+    audioIsolation();
     if (audioEnabled) {
       docker('compose', 'stop', GAME_AUDIO_SERVICE);
-      await checkGameAudioRuntime('http://127.0.0.1:8089', { enabled: false });
-      await checkGameTest('http://127.0.0.1:8089');
+      routeSmoke(false);
       docker(
         'compose',
         'up',
@@ -398,7 +406,8 @@ try {
         '120',
         GAME_AUDIO_SERVICE,
       );
-      await audioSmoke();
+      routeSmoke();
+      audioIsolation();
     }
     console.log(
       'PASS merged website startup and restart; existing services were never started',
