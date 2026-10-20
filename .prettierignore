@@ -6,3 +6,5 @@ assets
 package-lock.json
 secrets
 .env
+
+public/game-test/src/vendor/**

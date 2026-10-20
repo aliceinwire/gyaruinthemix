@@ -1,4 +1,8 @@
-import { JOURNEY_STAGE_COUNT, getJourneyChoices, getJourneyNode } from "./src/journey.js";
+import { RUN_MOD_CATALOG, getBuildOffers, buyRunMod, describeBuild, getRouteMission } from './src/run-build.js';
+import { getEncounterPhase } from './src/encounter-director.js';
+import { createPerformance, updatePerformance, performanceView } from './src/performance.js';
+import { createRoadFeedback, captureRoadFeedback, updateRoadFeedback, drawRoadFeedback, getRoadCue } from './src/road-feedback.js';
+import { JOURNEY_STAGE_COUNT, getJourneyChoices, getJourneyNode, getJourneyStage } from "./src/journey.js";
 import { selectCrewDialogue, selectCrewEvent } from "./src/crew-dialogue.js";
 import { createSaveStore } from "./src/save-store.js";
 import { prepareRouteArt, prepareGameArt } from "./src/resources.js";
@@ -77,6 +81,9 @@ let state = newTour(),
   toastTime = 0,
   ready = false;
 let musicPanelOpen = false;
+let performanceSet = createPerformance(), roadFeedback = createRoadFeedback(), autoHearts = false;
+let lastHud = 0, lastCue = "";
+const frameSamples = [];
 let musicReturnFocus = null;
 let storage;
 try {
@@ -117,7 +124,7 @@ $("#resume-tour").addEventListener("click", () => {
 });
 const sceneUI = createSceneUI();
 const controls = bindGameInput({
-  isPlaying: () => screen === "playing" && !musicPanelOpen,
+  isPlaying: () => ["playing", "finale"].includes(screen) && !musicPanelOpen,
   isQuiz: () => screen === "quiz" && !musicPanelOpen,
   isPaused: () => paused,
   onPause: setPause,
@@ -176,7 +183,7 @@ document.addEventListener("keydown", event => {
   event.stopPropagation();
   if (event.code === "Escape") { event.preventDefault(); setMusicPanel(false); return; }
   if (event.code !== "Tab") return;
-  const nodes = [...$("#music-panel").querySelectorAll("summary,button:not([hidden]),iframe,a[href]")];
+  const nodes = [...$("#music-panel").querySelectorAll("summary,button:not([hidden]),iframe,a[href],input:not([disabled]),select,[role=slider]")];
   const first = nodes[0], last = nodes.at(-1);
   if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
   else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
@@ -194,7 +201,7 @@ function say(text, speaker = "DJちゃな / ナビ担当", holdSeconds = 5) {
   $("#speaker").textContent = speaker;
 }
 function setPause(value) {
-  if (screen !== "playing") return;
+  if (!["playing", "finale"].includes(screen)) return;
   paused = value;
   releaseInput();
   $("#pause-overlay").hidden = !paused;
@@ -210,8 +217,10 @@ function setPause(value) {
 }
 function setScreen(value) {
   screen = value;
+  $("#performance-panel").hidden = value !== "finale";
   releaseInput();
   sceneUI.show(value);
+  if (value === "finale") { document.querySelectorAll("[data-control]").forEach(button => button.disabled = false); canvas.focus({ preventScroll: true }); }
 }
 function showMapPanel(panel) {
   sceneUI.mapPanel(panel);
@@ -243,18 +252,37 @@ function openMap(next = false) {
     : { season: state.season, weather: state.weather };
   $("#climate-summary").textContent =
     `${seasonNames[mapClimate.season]}・${weatherNames[mapClimate.weather]}やで。${weatherTips[mapClimate.weather]}`;
-  $("#map-heading").textContent = `次のフロア / ${route.club}`;
-  $("#map-subtitle").textContent = `${route.goal}のフロアへ、どっちで行く？`;
+  $("#map-heading").textContent = "次の街角、どの道で行こ？";
+  $("#map-subtitle").textContent = `${route.goal}のフロアへ。地図の行き先を選んで出発しよ。`;
   const stageIndex = next ? state.routeIndex + 1 : state.routeIndex;
+  const stage = getJourneyStage(stageIndex);
+  const previousId = next ? state.journeyNodeId : state.journey?.completedNodeIds?.[stageIndex - 1];
+  const previous = getJourneyNode(previousId);
+  $("#map-current-location").textContent = previous ? previous.districtName : stageIndex ? "前のクラブ" : "出発ガレージ";
+  $("#map-progress").textContent = `道のり ${stageIndex + 1} / ${JOURNEY_STAGE_COUNT} · ${stage.cityName}`;
+  $("#map-next-club").textContent = `${stage.cityName} / ${stage.club}`;
+  $("#map-club-distance").textContent = stage.clubStop ? "この道を走るとクラブ到着" : "この街角 → もう1本の道 → クラブ到着";
   const choices = getJourneyChoices(stageIndex,state.seed);
   selectedNodeId = choices.find(node=>node.nodeId===(next?state.pendingJourneyNodeId:state.journeyNodeId))?.nodeId || choices[0].nodeId;
   roadChoice = getJourneyNode(selectedNodeId).routeOption;
   renderDestinationChoices();
   warmMapArt();
   renderShop();
+  const ribbon = $("#tour-ribbon"); ribbon.replaceChildren();
+  ["中野", "新宿", "渋谷", "浅草", "大阪", "京都"].forEach((name,index) => {
+    const stamp = document.createElement("span"); stamp.textContent = `${index < Math.floor(stageIndex/2) ? "✓ " : ""}${name}`;
+    stamp.className = index < Math.floor(stageIndex/2) ? "passed" : index === Math.floor(stageIndex/2) ? "current" : "";
+    if (index === Math.floor(stageIndex/2)) stamp.setAttribute("aria-current", "step"); ribbon.append(stamp);
+  });
+  const arrived = $("#arrival-summary"); arrived.hidden = !next;
+  if (next) {
+    const mission = getRouteMission(state);
+    arrived.textContent = `${state.route.goal}、到着や！ ${state.stageGyaru}人をギャル仲間に。${mission?.complete ? `道の目標も達成、+${mission.reward}コイン！` : "次の道でもうひと盛りしよ。"} ガレージでこの旅のパーツを選べるで。`;
+  }
   hud();
   $("#route-tab").focus();
 }
+$("#auto-hearts").addEventListener("change", event => { autoHearts = event.target.checked; });
 function enterPlay() {
   paused = false;
   releaseInput();
@@ -263,7 +291,7 @@ function enterPlay() {
   canvas.focus({ preventScroll: true });
   $("#pause").textContent = "ひと休み";
   say(state.route.intro || "ハートで仲間増やして、EVで充電やで！");
-  toast("SPACEで飛ぶ · Zでハート · Eで充電 · Xでテキーラ加速や");
+  if (state.distance === 0) { roadFeedback = createRoadFeedback(); toast(state.routeIndex === 0 ? "運転は自動。まずはハートを長押しや♡" : "選んだ街角へ。今回の盛りで行くで！"); }
   unlockSound();
   accumulator = 0;
   saveTour();
@@ -346,6 +374,7 @@ function atNewRunGarage() {
 }
 function renderShop() {
   renderGarage();
+  renderBuildWorkshop();
   $("#shop").replaceChildren();
   for (const item of UPGRADE_CATALOG) {
     const node = document.createElement("article"); node.className = "shop-item";
@@ -363,6 +392,37 @@ function renderShop() {
     node.append(button); $("#shop").append(node);
   }
   $("#shop-status").textContent = "ハートで稼いだコインで、いま乗ってるくるまを盛れるで。";
+}
+function renderBuildWorkshop() {
+  const build = describeBuild(state), offers = getBuildOffers(state), host = $("#build-offers");
+  $("#build-summary").textContent = `${build.name} · ${build.mods.length} / 4 パーツ。${build.summary}`;
+  host.replaceChildren();
+  for (const offer of offers) {
+    const card = document.createElement("article"); card.className = "build-card"; card.dataset.family = offer.family;
+    const tag = document.createElement("span"); tag.className = "eyebrow"; tag.textContent = `${offer.familyName} / ${offer.rarityLabel}`;
+    const title = document.createElement("h4"); title.textContent = offer.name;
+    const copy = document.createElement("p"); copy.textContent = offer.description;
+    const preview = document.createElement("small"); preview.textContent = offer.preview;
+    card.append(tag,title,copy,preview);
+    let replacement;
+    if (offer.requiresReplacement) {
+      const label = document.createElement("label"); label.textContent = "外すパーツを選んでな";
+      replacement = document.createElement("select"); replacement.setAttribute("aria-label", `${offer.name}と入れ替えるパーツ`);
+      const none = document.createElement("option"); none.value = ""; none.textContent = "4枠いっぱい。入れ替えを選ぶ"; replacement.append(none);
+      for (const item of build.mods) { const option = document.createElement("option"); option.value = item.id; option.textContent = item.name; replacement.append(option); }
+      label.append(replacement); card.append(label);
+    }
+    const button = document.createElement("button"); button.dataset.modId = offer.id;
+    button.textContent = offer.available ? `${offer.price} コインで${offer.requiresReplacement ? "入れ替えよ" : "付けよ"}` : offer.reason;
+    button.disabled = !offer.available || Boolean(replacement && !replacement.value);
+    replacement?.addEventListener("change",()=>{ button.disabled = !offer.available || !replacement.value; });
+    button.addEventListener("click",()=>{
+      if (!buyRunMod(state,offer.id,replacement?.value || null)) return;
+      saveTour(); beep(760,.12); renderShop(); hud(); toast(`${offer.name}、この旅の相棒や！`);
+    });
+    card.append(button); host.append(card);
+  }
+  $("#build-note").textContent = state.status !== "won" ? "到着してから選べるで。まずは最初の街角へ！" : offers.length ? "各到着地点で1つ。最大4パーツ。外すと効果は消えて、この旅では買い直し・返金なし。くるまは今のままや。" : "今あるパーツで、この旅だけの走りを楽しも。基本パーツと修理も使えるで。";
 }
 function renderGarage() {
   const grid = $("#car-garage");
@@ -522,11 +582,12 @@ function showResult() {
   if (state.status === "won") {
     releaseInput();
     if (state.campaignComplete) {
+      performanceSet = createPerformance();
       setScreen("finale");
       say("DJありねぇとDJちゃな、みんなでぶちアゲやー！");
       unlockSound();
       $("#pause").disabled = false;
-      $("#pause").textContent = "タイトル戻ろか";
+      $("#pause").textContent = "ひと休み";
     } else {
       openMap(true);
       toast(state.route.win);
@@ -587,29 +648,38 @@ $("#pause").addEventListener("click", () => setPause(!paused));
 $("#continue").addEventListener("click", () => {
   if (state.status === "won") {
     if (state.campaignComplete) {
+      performanceSet = createPerformance();
       setScreen("finale");
       say("DJありねぇとDJちゃな、全員ぶちアゲやー！");
       unlockSound();
       $("#pause").disabled = false;
-      $("#pause").textContent = "タイトル戻ろか";
+      $("#pause").textContent = "ひと休み";
     } else openMap(true);
   } else {
     state = retryRoute(state);
     enterPlay();
   }
 });
-// Finale has no failure timer; the title control is an explicit way back.
-$("#pause").addEventListener("click", () => {
-  if (screen === "finale") home();
-});
+// The encore is optional; leaving never changes already-earned completion credit.
+$("#finale-home").addEventListener("click", home);
+function previewMission(node) {
+  if (!node) return null;
+  const preview = node.nodeId === state.journeyNodeId ? state : createState({ routeIndex: node.stageIndex, seed: state.seed, journeyNodeId: node.nodeId, ...mapClimate });
+  return getRouteMission(preview,node);
+}
 function renderDestinationChoices() {
   const choices = getJourneyChoices(pendingNext ? state.routeIndex+1 : state.routeIndex,state.seed);
+  const chosen = choices.find(node => node.nodeId === selectedNodeId);
+  const mission = previewMission(chosen);
+  $("#route-mission-preview").textContent = mission ? `寄り道の目標「${mission.label}」 ${mission.description} ${mission.rewardLabel}` : "";
+  $("#map-selected-route").textContent = chosen ? `選んだ道：${chosen.districtName}` : "地図の行き先を選んでな";
   const host = $("#destination-choices"); host.replaceChildren();
   for (const [index,node] of choices.entries()) {
     const button = document.createElement("button");
     button.id = ["scenic","event-road","express"][index];
     button.className = "road-option destination-option";
     button.dataset.nodeId = node.nodeId;
+    button.dataset.kind = node.kind;
     button.classList.toggle("selected",node.nodeId===selectedNodeId);
     button.setAttribute("aria-pressed",String(node.nodeId===selectedNodeId));
     const image = document.createElement("img");
@@ -617,7 +687,11 @@ function renderDestinationChoices() {
     image.src = new URL(`./assets/districts/${node.cityId}/${district.files[mapClimate.season]}`,import.meta.url).href; image.alt = ""; image.loading="lazy";
     const title = document.createElement("strong"); title.textContent=node.districtName;
     const detail = document.createElement("small"); detail.textContent=`${node.label} · ${node.description}`;
-    button.append(image,title,detail);
+    const kind = document.createElement("span"); kind.className="destination-kind"; kind.textContent=`${index + 1} · ${node.label}`;
+    const status = document.createElement("span"); status.className="destination-status"; status.textContent=node.nodeId===selectedNodeId ? "✓ この道を選択中" : "この街角へ →";
+    const fit = document.createElement("span"); fit.className = "route-fit";
+    fit.textContent = node.kind === "service" ? `到着で耐久+20 / 現在${Math.ceil(state.integrity)}` : node.kind === "event" ? "コイン+25% / 動く相手が多め" : "EV多め / ゆっくり長めの道";
+    button.append(kind,image,title,detail,fit,status);
     button.addEventListener("click",()=>selectDestination(node.nodeId)); host.append(button);
   }
 }
@@ -642,6 +716,18 @@ canvas.addEventListener("pointerup",event=>{
 function hud() {
   const rushButton = $('[data-control="rush"]');
   rushButton.querySelector("small").textContent = state.rushing ? "無敵やで！ 電池めっちゃ使ってる！" : state.rushCooldown > 0 ? `あと ${Math.ceil(state.rushCooldown)} 秒待ってな` : "X / SHIFT · 電池めっちゃ使うで";
+  const cue = getRoadCue(state);
+  const cueKey = `${cue.label}:${cue.action}`;
+  if (cueKey !== lastCue) {
+    $("#road-cue").textContent = cue.label; $("#road-status").dataset.urgency = cue.urgency;
+    document.querySelectorAll("[data-control]").forEach(button => button.classList.toggle("suggested", button.dataset.control === cue.action)); lastCue = cueKey;
+  }
+  const ev = state._stations.find(distance => distance > state.distance + 5);
+  $("#next-ev").textContent = state.atStation ? "⚡ EVエリア" : ev ? `⚡ あと${Math.ceil(ev - state.distance)}m` : "⚑ まもなく到着";
+  $("#road-phase").textContent = getEncounterPhase(state).label;
+  for (const [kind,value,capacity] of [["health",state.integrity,state.integrityCapacity],["energy",state.energy,state.energyCapacity]]) {
+    const meter = $("#" + kind + "-meter"); meter.setAttribute("aria-valuenow", String(Math.ceil(value))); meter.setAttribute("aria-valuemax", String(capacity)); meter.dataset.low = String(value / capacity < .25);
+  }
   const route = state.route;
   $("#location-label").textContent =
     `${(getDistrictScene(route.cityId, state.locationIndex || 0) || { name: route.goal }).name} / ${String((state.locationIndex || 0) + 1).padStart(2, "0")}`;
@@ -671,12 +757,12 @@ function hud() {
     `${(state.energy / (state.energyCapacity || 100)) * 100}%`;
 }
 function handleEvents() {
+  captureRoadFeedback(roadFeedback, state.events, state.distance);
   const crewEvent = selectCrewEvent(state.events || [], {...state, time: visualTime});
   for (const event of state.events || []) {
     if (["convert"].includes(event.type)) {
       beep(850, 0.07);
-      toast(`ギャル仲間 +${event.reward || event.money || 20} ♡`);
-      say("仲間が増えた！フロアで会おな！");
+      if (event.elite || (state.combo > 1 && state.combo % 5 === 0)) toast(`${state.combo}連続！ 街がつながってきたで♡`);
     }
     if (["collision", "hit"].includes(event.type)) {
       beep(110, 0.16);
@@ -704,13 +790,14 @@ function refreshCrewDialogue() {
   lastDialogueId = line.id; say(line.text,line.speaker,line.holdSeconds);
 }
 function frame(now) {
+  const frameStart = performance.now();
   const dt = Math.min(0.1, (now - last) / 1000 || 0);
   last = now;
   if (!paused && !musicPanelOpen) visualTime += dt;
   if (screen === "playing" && !paused && !musicPanelOpen) {
     accumulator += dt;
     while (accumulator >= 1 / 60) {
-      update(state, input, 1 / 60);
+      update(state, { ...input, shoot: input.shoot || autoHearts }, 1 / 60);
       handleEvents();
       accumulator -= 1 / 60;
       if (state.status !== "playing") {
@@ -720,33 +807,33 @@ function frame(now) {
         break;
       }
     }
-    hud();
+    if (visualTime - lastHud > .09) { hud(); lastHud = visualTime; }
     refreshCrewDialogue();
   }
+  if (screen === "finale" && !paused && !musicPanelOpen) {
+    updatePerformance(performanceSet, input, dt);
+    const view = performanceView(performanceSet);
+    $("#performance-title").textContent = view.title;
+    $("#performance-phase").textContent = view.phase;
+    $("#performance-progress").style.width = `${view.progress * 100}%`;
+    const completed = `${view.hits} / 8 フレーズ · ファン ${state.totalFans}人 · ギャル仲間 ${state.gyaruConverted}人`;
+    if ($("#performance-score").textContent !== completed) $("#performance-score").textContent = completed;
+    document.querySelectorAll("[data-control]").forEach(button => button.classList.toggle("suggested", button.dataset.control === view.action));
+  }
+  if (!paused && !musicPanelOpen) updateRoadFeedback(roadFeedback, dt);
   if (toastTime > 0) {
     toastTime -= dt;
     if (toastTime <= 0) $("#toast").classList.remove("on");
   }
   if (screen === "map") {
-    const routeIndex = pendingNext ? state.routeIndex + 1 : state.routeIndex;
-    drawMap(ctx, {
-      routeIndex,
-      stageIndex: routeIndex,
-      seed: state.seed,
-      season: mapClimate.season,
-      choices: getJourneyChoices(routeIndex,state.seed),
-      route: ROUTES[routeIndex],
-      choice: selectedNodeId,
-      carId: getCarProfile(state).id,
-      time: reducedMotion ? 0 : visualTime,
-      width: 960,
-      height: 540,
-    });
+    // The directly selectable DOM map owns this screen; do not redraw a hidden canvas.
   } else if (screen === "finale")
     drawFinale(ctx, {
       time: reducedMotion ? 0 : visualTime,
       score: state.score,
       totalFans: state.totalFans,
+      converted: state.gyaruConverted,
+      performance: performanceView(performanceSet),
       width: 960,
       height: 540,
     });
@@ -756,6 +843,7 @@ function frame(now) {
       menu: screen === "menu",
       reducedMotion,
     });
+  if (["playing", "quiz"].includes(screen)) drawRoadFeedback(ctx, roadFeedback, state);
   const portraits = $("#crew-actions").getContext("2d");
   portraits.clearRect(0, 0, 240, 128);
   for (const [i, character] of ["arisu", "chana"].entries())
@@ -777,6 +865,8 @@ function frame(now) {
       invulnerability: state.invulnerability,
       action: screen === "finale" ? "cheer" : undefined,
     });
+  frameSamples.push(performance.now() - frameStart);
+  if (frameSamples.length > 600) frameSamples.shift();
   requestAnimationFrame(frame);
 }
 async function loadGameArt() {
@@ -803,7 +893,8 @@ loadGameArt();
 document.querySelectorAll("[data-control]").forEach((b) => (b.disabled = true));
 Object.defineProperty(window, "__HYPERDRIVE__", {
   value: {
-    snapshot: () => structuredClone({ state, input, screen, paused, ready }),
+    snapshot: () => structuredClone({ state, input, screen, paused, ready, performanceSet, autoHearts }),
+    metrics: () => { const samples = [...frameSamples].sort((a,b)=>a-b); return { frames: samples.length, p50: samples[Math.floor(samples.length*.5)] || 0, p95: samples[Math.floor(samples.length*.95)] || 0, max: samples.at(-1) || 0 }; },
   },
   writable: false,
 });

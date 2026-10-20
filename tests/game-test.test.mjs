@@ -35,7 +35,9 @@ test('game Docker context and scoped SoundCloud security policy are included', a
 
 test('game runtime is a self-contained static snapshot without private audio', async () => {
   const manifest = JSON.parse(await read('public/game-test/build-info.json'));
-  assert.match(manifest.sourceCommit, /^[a-f0-9]{40}$/);
+  assert.match(manifest.baseSourceCommit, /^[a-f0-9]{40}$/);
+  assert.match(manifest.snapshotSha256, /^[a-f0-9]{64}$/);
+  assert.match(manifest.sourcePublication, /Local tested snapshot/);
   async function walk(path) {
     for (const entry of await readdir(new URL(`../${path}`, import.meta.url), {
       withFileTypes: true,

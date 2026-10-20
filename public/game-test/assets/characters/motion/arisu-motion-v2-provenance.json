@@ -1,0 +1,7 @@
+{
+  "purpose": "Repair Arisu motion atlas overlap while preserving approved identity and all 16 poses",
+  "date": "2026-10-20",
+  "original": "arisu-motion.png",
+  "output": "arisu-motion-v2.png",
+  "notes": "Runtime uses measured integer 244x210 crops; no raster postprocessing."
+}

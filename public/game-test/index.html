@@ -14,6 +14,7 @@
     />
     <title>ギャルインザミックス / クラブまで行こ</title>
     <link rel="stylesheet" href="./style.css" />
+    <link rel="stylesheet" href="./car-stereo.css" />
   </head>
   <body data-screen="menu" data-map-panel="route">
     <main class="shell">
@@ -25,7 +26,7 @@
           ><img
             src="./assets/brand/gyaruinthemix-logo.png"
             alt="ギャルインザミックス"
-        /></a>
+        /><span class="brand-caption" aria-hidden="true">ギャルインザミックス</span></a>
         <p class="app-caption">クラブまで、うちらと。</p>
         <div class="settings">
           <button id="music-open" aria-label="公式音楽プレイヤーを開く" aria-controls="music-panel" aria-expanded="false" title="公式音楽プレイヤー">♫</button>
@@ -71,7 +72,7 @@
             <div id="menu" class="screen-menu">
               <div class="eyebrow">ギャルインザミックスと行こ</div>
               <h1>ハイパー<span>ドライブ</span><sup>♡</sup></h1>
-              <p class="tagline">盛って、飛ばして、フロアまで。</p>
+              <p class="tagline">盛って、飛ばして、フロアまで。</p><div class="tour-ticket"><span>6 CITIES</span><i></i><span>12 ROADS</span><i></i><span>ONE CREW</span></div>
               <p class="menu-copy">
                 ハートで街をギャルに変えて、クラブへ。<br />ふたりのナイトツアー、どの道で行く？
               </p>
@@ -82,7 +83,7 @@
               </div>
               <button id="resume-tour" hidden>つづきから行こ →</button>
               <button id="retry-art" hidden>もう一回読み込むで</button>
-              <div id="loading" class="loading">街の灯り、つけてるで…</div>
+              <p class="menu-guide">運転は自動。4つの操作で、ふたりだけの旅をつくろ。</p><div id="loading" class="loading">街の灯り、つけてるで…</div>
             </div>
             <div
               id="result"
@@ -110,7 +111,7 @@
               aria-labelledby="pause-title"
             >
               <h2 id="pause-title">ちょい休憩しよ。</h2>
-              <p>準備できたら、もう一度走ろ。</p>
+              <p>準備できたら、もう一度走ろ。</p><label class="assist-setting"><input id="auto-hearts" type="checkbox" /> ハートの長押しをおまかせ<br /><small>オンなら走行中は自動でハート。飛ぶ・充電・加速はそのままやで。</small></label>
               <button id="resume" class="primary">ほな、行こ →</button
               ><button id="quit">タイトル戻ろか</button>
             </div>
@@ -149,7 +150,7 @@
               aria-live="polite"
             ></div>
           </div>
-          <div class="dashboard" aria-label="くるまの状態">
+          <div class="road-status" id="road-status"><span id="road-phase">出発準備</span><strong id="road-cue">ハートで街をつなご</strong><span id="next-ev">次のEV</span></div><div class="dashboard" aria-label="くるまの状態">
             <div class="objective">
               <div>
                 <span id="destination">次のクラブへ</span
@@ -163,9 +164,9 @@
             </div>
             <div class="condition">
               <label>くるま <b id="health-value">100</b></label>
-              <div class="meter"><i id="health-bar"></i></div>
+              <div class="meter" id="health-meter" role="meter" aria-label="くるまの耐久" aria-valuemin="0" aria-valuemax="100"><i id="health-bar"></i></div>
               <label>でんち <b id="energy-value">100</b></label>
-              <div class="meter energy"><i id="energy-bar"></i></div>
+              <div class="meter energy" id="energy-meter" role="meter" aria-label="でんち" aria-valuemin="0" aria-valuemax="100"><i id="energy-bar"></i></div>
             </div>
             <div class="wallet">
               <span>コイン</span><strong id="money">000</strong>
@@ -173,7 +174,7 @@
             </div>
           </div>
         </section>
-        <section class="below-stage" aria-label="ふたりの会話と操作">
+        <div id="performance-panel" class="performance-panel" hidden><div><span id="performance-phase" class="eyebrow">WELCOME HOME</span><h2 id="performance-title">うちらの時間や。</h2><p id="performance-tip">同じ4つのボタンでフロアを盛り上げよ。見てるだけでもOKやで。</p></div><div class="performance-meter"><i id="performance-progress"></i></div><p id="performance-score" aria-live="polite"></p><button id="finale-home">タイトル戻ろか</button></div><section class="below-stage" aria-label="ふたりの会話と操作">
           <div class="crew">
             <div class="crew-portraits">
               <canvas
@@ -210,14 +211,28 @@
             ><button id="garage-tab" aria-pressed="false">ガレージ</button>
           </nav>
           <div id="route-content">
-            <div class="guide-title">
-              <span class="eyebrow">次のフロアへ</span>
+            <div id="arrival-summary" class="arrival-summary" hidden role="status"></div><div class="tour-ribbon" id="tour-ribbon" aria-label="6つの街の旅の進み具合"></div><div class="guide-title">
+              <span class="eyebrow" id="map-progress">道のり 1 / 12</span>
               <h2 id="map-heading">どの道で行こか？</h2>
               <p id="map-subtitle">寄り道も、旅のうちや。</p>
             </div>
             <p id="climate-summary"></p>
-            <div id="destination-choices" class="road-options" aria-label="次に行く場所を選ぼ"></div>
-            <p class="route-note">地図の行き先を選んだら、その道の景色・充電所・出会いも決まるで。</p>
+            <div class="journey-map" role="group" aria-label="現在地からクラブへつながる分岐マップ">
+              <div class="map-stop map-origin">
+                <span class="map-stop-label">いまここ</span>
+                <strong id="map-current-location">出発ガレージ</strong>
+                <span class="map-stop-hint">ここから、3つの道に分岐</span>
+              </div>
+              <div class="map-branch-label">↓ 走りたい街角をタップ</div>
+              <div id="destination-choices" class="road-options" aria-label="分岐マップの行き先"></div>
+              <div class="map-stop map-goal">
+                <span class="map-stop-label">合流して、次のクラブへ</span>
+                <strong id="map-next-club">中野 / BEAT BASE 175</strong>
+                <span id="map-club-distance" class="map-stop-hint">あと2本の道でクラブ到着</span>
+              </div>
+            </div>
+            <p id="map-selected-route" class="selected-route" aria-live="polite"></p>
+            <div id="route-mission-preview" class="route-mission-preview"></div><p class="route-note">どの分岐も同じクラブへ。道の長さ・充電所・出会いが変わるで。</p>
             <button id="change-starting-car" hidden>出発前のくるま選びに戻ろ</button>
             <button id="depart" class="primary departure">
               ほな、クラブ行こ →
@@ -229,7 +244,7 @@
               <span>ハートで稼いだコインで、いまのくるまを盛ってこ。</span>
             </div>
             <p id="garage-wallet" aria-live="polite"></p>
-            <h3>走りも盛ってこ</h3>
+            <section class="build-workshop" aria-labelledby="build-heading"><span class="eyebrow">いまのくるま、この旅だけの盛り</span><h3 id="build-heading">どんな走りに育てよ？</h3><p id="build-summary"></p><div id="build-offers" class="build-offers"></div><p id="build-note"></p></section><h3>基本のパーツも盛ってこ</h3>
             <div id="shop" class="shop-grid"></div>
             <p id="shop-status" aria-live="polite"></p>
 
@@ -253,6 +268,7 @@
         allow="autoplay" height="166" loading="lazy"></iframe>
       <a href="https://soundcloud.com/gyaruinthemix" target="_blank" rel="noopener noreferrer">ギャルインザミックス公式 · SoundCloudで聴こ</a>
     </details>
+    <small class="game-copyright">copyright 2026 ギャルインザミックス. all right reserved.</small>
     <script type="module" src="./main.js"></script>
   </body>
 </html>

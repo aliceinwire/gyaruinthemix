@@ -453,8 +453,9 @@ function crowd(ctx, time, totalFans) {
       );
       const y = (row ? 526 : 496) - hop;
       const color = row ? "#090b19" : i % 3 === 0 ? "#452142" : "#27203c";
-      rect(ctx, x - 10, y - 12, 20, 19, color);
-      rect(ctx, x - 15, y + 6, 30, 39, color);
+      ctx.fillStyle = color;
+      ctx.beginPath(); ctx.ellipse(x, y-3, 10, 12, 0, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(x-9,y+6); ctx.lineTo(x+9,y+6); ctx.quadraticCurveTo(x+17,y+10,x+18,y+40); ctx.lineTo(x-18,y+40); ctx.quadraticCurveTo(x-17,y+10,x-9,y+6); ctx.fill();
       const raise = (i * 7 + row * 11) % 10 < 3 + energy * 6;
       if (raise) {
         line(
@@ -488,14 +489,15 @@ function crowd(ctx, time, totalFans) {
 /** The final, animated two-DJ set after all six clubs have been cleared. */
 export function drawFinale(
   ctx,
-  { time = 0, score = 0, totalFans = 0, width = W, height = H } = {},
+  { time = 0, score = 0, totalFans = 0, converted = 0, performance = null, width = W, height = H } = {},
 ) {
   setCanvas(ctx, width, height);
   rect(ctx, 0, 0, W, H, "#0c1023");
   if (images.stage) ctx.drawImage(images.stage, 0, 0, W, H);
+  const setEnergy = performance?.energy || 0;
   for (let i = 0; i < 6; i++) {
     const x = 80 + i * 160;
-    beam(ctx, x, 72, x + Math.sin(time * .7 + i * 1.7) * 190, 450, 55,
+    beam(ctx, x, 72, x + Math.sin(time * (.7 + setEnergy*.25) + i * 1.7) * 190, 450, 55 + setEnergy*20,
       i % 2 ? "#61f2eb0d" : "#ff50bd10");
   }
   rect(ctx, 20, 8, 920, 30, "#0c1023c9");
@@ -573,8 +575,14 @@ export function drawFinale(
       [C.pink, C.cyan, C.gold, "#b78ffa"][i % 4],
     );
   }
-  crowd(ctx, time, fanCount);
+  crowd(ctx, time, fanCount + Math.min(120, converted) + Math.round(setEnergy * 80));
   panel(ctx, 259, 489, 442, 35, "#a5659c", "#201329");
-  text(ctx, "6つの街、全員ぶちアゲ！", 480, 507, 20, "#fff0fd", "center", 900);
+  text(ctx, performance?.phase || "6つの街、全員ぶちアゲ！", 480, 507, 20, performance?.color || "#fff0fd", "center", 900);
+  if (performance?.energy > .2) {
+    for (let i = 0; i < 8; i++) {
+      const x = 98 + i * 108, h = (12 + Math.sin(time*4+i)*8) * performance.energy;
+      rect(ctx,x,194-h,3,h, i%2 ? C.cyan : C.pink);
+    }
+  }
   ctx.restore();
 }

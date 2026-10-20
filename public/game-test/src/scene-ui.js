@@ -45,7 +45,7 @@ export function createSceneUI(root = document) {
     if (!dialog) return;
     const controls = [
       ...dialog.querySelectorAll(
-        'button:not(:disabled),a[href],select:not(:disabled),[tabindex="0"]',
+        'button:not(:disabled),a[href],input:not(:disabled),select:not(:disabled),textarea:not(:disabled),[tabindex="0"]',
       ),
     ].filter((node) => !node.hidden && node.getClientRects().length);
     if (!controls.length) return;

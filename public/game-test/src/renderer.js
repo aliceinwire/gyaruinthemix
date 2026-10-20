@@ -1,15 +1,17 @@
+import { preloadUmbrellaArt, drawUmbrellaArt } from "./umbrella-art.js";
+import { preloadRoadSurfaceArt, drawRoadSurface } from "./road-surface.js";
 import { preloadRoadsideArt, drawRoadsideObject } from "./roadside-art.js";
 import { preloadCarArt, getCarArt, CAR_ROOF_ART, getCarArtLayout, drawCarBody, drawCarWheels, drawCarRoof } from "./car-art.js";
 import { getCarProfile, getCarAppearance } from "./garage.js";
 import {
   preloadStreetCharacters,
   drawStreetCharacter,
+  streetCharacterBob,
 } from "./street-characters.js";
 import { drawLocation } from "./location-renderer.js";
 import { environmentFor, getLocation } from "./locations.js";
 import { drawCharacter, resolveCrewActions, preloadCharacterActions } from "./character-actions.js";
 import {
-  drawRoadWeather,
   drawNpcWeather,
   drawCarWeather,
   drawWeatherOverlay,
@@ -41,12 +43,16 @@ function paintLocation(g, options, alpha, slot = 0) {
   g.restore();
 }
 export async function preloadSprites() {
-  const [crew, street, , roadside] = await Promise.all([
+  const [crew, street, , roadside, roadReady, umbrellasReady] = await Promise.all([
     preloadCharacterActions(),
     preloadStreetCharacters(),
     preloadCarArt(),
     preloadRoadsideArt(),
+    preloadRoadSurfaceArt(),
+    preloadUmbrellaArt(),
   ]);
+  if (!umbrellasReady) throw new Error("Required umbrella art failed to load");
+  if (!roadReady) throw new Error("Required road surface art failed to load");
   if (!street) throw new Error("Required street character art failed to load");
   if (!roadside) throw new Error("Required roadside art failed to load");
   if (crew.some((item) => !item.ready))
@@ -111,7 +117,7 @@ export function drawCar(g, x, y, {
   g.save(); g.translate(Math.round(x), Math.round(y)); g.scale(scale, scale);
   g.globalAlpha = Math.max(.08, .28 - jump * .06);
   box(g, -94 + jump * 12, -2, 188 - jump * 24, 5, "#0b1020"); g.globalAlpha = 1;
-  g.translate(0, -jump * 95 + (speed > 4 ? Math.sin(time * 9) : 0));
+  g.translate(0, Math.round(-jump * 95 + (speed > 4 ? Math.sin(time * 9) : 0)));
   if (rushing) {
     for (let i = 0; i < 17; i++) {
       const age = ((time * 1.7 + i / 17) % 1);
@@ -148,7 +154,7 @@ export function drawCar(g, x, y, {
   drawCarBody(g,{...layoutOptions,paint:appearance.paint});
   const logo=layout.logo;
   if(assets.logo) {
-    const lw=Math.min(layout.body.width*.48,Math.max(logo.width,78)), lh=lw/3;
+    const lw=Math.min(layout.body.width*.62,Math.max(logo.width*1.2,96)), lh=lw/3;
     g.drawImage(assets.logo,Math.round(logo.x+(logo.width-lw)/2),Math.round(logo.y+(logo.height-lh)/2),Math.round(lw),Math.round(lh));
   }
   // Optional motifs occupy spare rear bodywork; the authentic logo stays clear.
@@ -160,7 +166,10 @@ export function drawCar(g, x, y, {
     else if(decal.id==="leopard") for(let i=0;i<5;i++) { box(g,dx+i*3,dy+(i%2)*3,3,2,"#34213c");box(g,dx+i*3+1,dy+(i%2)*3,1,1,"#b28b64"); }
     else for(let i=0;i<4;i++) poly(g,[[dx+i*3,dy],[dx+i*3+9,dy-6],[dx+i*3+4,dy+2]],decal.color);
   }
-  if (damage && Math.floor(time*12)%2===0) { g.globalAlpha=.2; box(g,layout.body.x,layout.body.y,layout.body.width,layout.body.height,"#fff7e0");g.globalAlpha=1; }
+  // Damage feedback stays outside the sprite silhouette; never flash an opaque body rectangle.
+  if (damage && Math.floor(time*12)%2===0) {
+    for (let i=0;i<4;i++) { const angle=time*4+i*Math.PI/2; text(g,"✦",Math.round(Math.cos(angle)*36),Math.round(layout.body.y-7+Math.sin(angle)*7),9,"#fff0bd"); }
+  }
   if (roofClosed && layout.openTop) {
     drawCarRoof(g,{...layoutOptions,paint:appearance.paint});
     const front=layout.cabins.at(-1);
@@ -180,39 +189,9 @@ export function drawCar(g, x, y, {
 }
 
 function road(g, state, time) {
-  box(g, 0, 326, W, 214, "#29243b");
-  box(g, 0, 326, W, 5, "#ffc58c");
-  box(g, 0, 332, W, 20, "#665071");
-  box(g, 0, 352, W, 4, "#171a2e");
-  const shift = state.distance * 3;
-  box(g, 0, 357, W, 113, "#30283e");
-  for (let x = -120 - (shift % 180); x < W; x += 180) {
-    box(g, x, 380, 91, 3, "#8d748b");
-    box(g, x + 2, 383, 88, 1, "#1a1d30");
-  }
-  for (let x = -100 - (shift % 110); x < W; x += 110) {
-    box(g, x, 339, 57, 5, "#bda0bd");
-    box(g, x, 470, 52, 6, "#e4a0bf");
-    box(g, x + 52, 470, 57, 6, "#432c48");
-  }
-  box(g, 0, 479, W, 61, "#181b30");
-  box(g, 0, 479, W, 3, "#805b7d");
-  for (let x = -(shift % 70); x < W; x += 70) {
-    box(g, x, 494, 42, 2, "#342b44");
-    box(g, x + 13, 525, 49, 2, "#29243b");
-  }
-  for (let i = 0; i < 14; i++) {
-    const x = (i * 193 - shift * 0.72) % 1100;
-    box(
-      g,
-      x,
-      394 + (i % 3) * 23,
-      40 + (i % 4) * 12,
-      2,
-      i % 2 ? "#5b3654" : "#2b4b57",
-    );
-  }
+  drawRoadSurface(g, {distance:state.distance,weather:state.weather,season:state.season});
 }
+
 function entity(g, e, x, y, time, state) {
   if (drawRoadsideObject(g, { type: e.type, x, y, time, weather: state.weather, season: state.season, charging: state.charging })) return true;
   if (
@@ -221,11 +200,13 @@ function entity(g, e, x, y, time, state) {
       x,
       y,
       time,
-      weather: state.weather,
+      weather: ["rain","storm"].includes(state.weather) ? "sunny" : state.weather,
       season: state.season,
       id: e.id,
     })
   ) {
+    if (e.type === "salaryman" && ["rain","storm"].includes(state.weather))
+      drawUmbrellaArt(g,{type:e.type,x:Math.round(x),y:Math.round(y)+streetCharacterBob({type:e.type,id:e.id,time})});
     if (e.type === "fan") text(g, "話そ", x - 21, y - 96, 11, "#fff3d7");
     if (e.type === "gyaru") {
       text(g, "♡", x - 6, y - 82 + Math.sin(time * 6) * 2, 18, "#ff9fd3");
@@ -276,7 +257,6 @@ export function render(
   // Keep weather, but never overlay the rejected flat geometry on painted city art.
   paintLocation(g, { ...locationOptions, architecture: false }, 1);
   road(g, state, time);
-  drawRoadWeather(g, state, time);
   if (menu) {
     drawCar(g, 690, 443, {
       time,
@@ -374,4 +354,39 @@ export function render(
     text(g, "→", goalX + 17, 322, 10, "#ffd881");
   }
   drawWeatherOverlay(g, state, time, reducedMotion);
+  drawThreatSignals(g, state, time);
+}
+
+/** Intent sits above atmosphere: color plus outline, text and timing, never color alone. */
+function drawThreatSignals(g, state, time) {
+  for (const actor of state.entities || []) {
+    if (actor.resolved || actor.cleared || actor.converted || !['salaryman','barrier','pothole','cone'].includes(actor.type)) continue;
+    const x = 190 + (actor.distance - state.distance) * 3;
+    if (x < 265 || x > 945 || actor.distance - state.distance > 205) continue;
+    const special = actor.behavior && actor.behavior !== 'steady';
+    if (!special && !actor.elite && actor.type !== 'pothole') continue;
+    const color = actor.shielded ? '#c7b2ff' : actor.tell ? '#ffdb91' : actor.vulnerable && special ? '#a1f4dc' : '#ffdca4';
+    const label = actor.type === 'pothole' ? '↑ 飛ぶで' : actor.shielded ? '◇ ガード中' : actor.behavior === 'charger' ? actor.tell ? '→ 前に出るで' : '→ ダッシュ' : actor.behavior === 'sway' ? '↔ 動くで' : actor.elite ? '★ 盛り上げ隊長' : '♡ いま開いてる';
+    g.save(); g.textAlign = 'center'; g.font = '800 13px system-ui,sans-serif';
+    const width = Math.max(80, g.measureText(label).width + 18), y = actor.elite ? 328 : 347;
+    g.fillStyle = '#16172aeb'; g.fillRect(Math.round(x-width/2),y-18,width,25);
+    g.lineWidth = 2; g.strokeStyle = color; g.strokeRect(Math.round(x-width/2),y-18,width,25);
+    g.fillStyle = color; g.fillText(label,x,y);
+    g.beginPath(); g.moveTo(x-4,y+9); g.lineTo(x+4,y+9); g.lineTo(x,y+15); g.closePath();g.fill();
+    if ((actor.maxHp || 1) > 1) {
+      const hp = Math.max(0,actor.hp ?? actor.maxHp);
+      for (let i=0;i<actor.maxHp;i++) { g.fillStyle = i<hp ? '#ffabd5' : '#594358'; g.fillRect(x-actor.maxHp*5+i*10, y+20,7,4); }
+    }
+    // A short ground bracket leaves the original enemy artwork fully visible.
+    g.strokeStyle = '#181524';g.lineWidth=5;g.beginPath();g.moveTo(x-24,469);g.lineTo(x-24,476);g.lineTo(x+24,476);g.lineTo(x+24,469);g.stroke();
+    g.strokeStyle = color;g.lineWidth=2;g.stroke();
+    if (actor.tell) { g.fillStyle=color;g.fillRect(x-22,480,44*Math.max(.05,actor.telegraphProgress || .05),3); }
+    g.restore();
+  }
+  if (state.buildRuntime?.shield > 0) {
+    const y=433-(state.jumpHeight||0)*95;
+    g.save();g.strokeStyle='#9df2df';g.lineWidth=2;g.setLineDash([8,7]);g.lineDashOffset=-time*15;
+    g.beginPath();g.ellipse(190,y,111,39,0,Math.PI*.1,Math.PI*1.9);g.stroke();g.setLineDash([]);
+    text(g,'◇ ガード',140,y-43,12,'#b1ffec');g.restore();
+  }
 }

@@ -1,6 +1,11 @@
 // Offline subpath/CSP integration; SoundCloud's actual playback remains provider-dependent.
 import assert from 'node:assert/strict';
-import { readFile, mkdir } from 'node:fs/promises';
+import { readFile, mkdir, writeFile } from 'node:fs/promises';
+import {
+  createState,
+  update,
+  exportCampaignSave,
+} from '../../public/game-test/src/simulation.js';
 import { extname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
@@ -27,7 +32,7 @@ const browser = await chromium.launch({
     : {}),
 });
 try {
-  for (const width of [390, 1440]) {
+  for (const width of [320, 390, 768, 1440]) {
     const context = await browser.newContext({
       viewport: { width, height: 1000 },
     });
@@ -75,6 +80,8 @@ try {
       console.error('Game page error:', e.message);
     });
     await page.addInitScript(() => {
+      // Deterministic autumn/rain fixture, not random user gameplay.
+      Math.random = () => 7.1 / 0x7fffffff;
       globalThis.cspViolations = [];
       document.addEventListener('securitypolicyviolation', (e) =>
         globalThis.cspViolations.push(
@@ -108,7 +115,31 @@ try {
     );
     await page.locator('#change-starting-car').click();
     await page.locator('#cars-ready').click();
-    const destinations = page.locator('#destination-choices button');
+    const destinations = page.locator('.journey-map button');
+    assert.equal(await destinations.count(), 3);
+    for (const node of await destinations.all()) {
+      const box = await node.boundingBox();
+      assert.ok(box.width >= 44 && box.height >= 44);
+      assert.ok(
+        await node
+          .locator('strong')
+          .evaluate((el) => parseFloat(getComputedStyle(el).fontSize) >= 18),
+      );
+      await node.click();
+      assert.equal(await node.getAttribute('aria-pressed'), 'true');
+    }
+    await destinations.first().focus();
+    await page.keyboard.press('Enter');
+    assert.equal(
+      await destinations.first().getAttribute('aria-pressed'),
+      'true',
+    );
+    assert.equal(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth > innerWidth,
+      ),
+      false,
+    );
     assert.ok((await destinations.count()) >= 2);
     const destinationId = await destinations
       .nth(1)
@@ -136,15 +167,39 @@ try {
     await page.waitForFunction(
       () => __HYPERDRIVE__.snapshot().screen === 'playing',
     );
-    await page.waitForTimeout(700);
+    await page.waitForTimeout(1800);
+    assert.equal(
+      await page.evaluate(() => __HYPERDRIVE__.snapshot().state.weather),
+      'rain',
+    );
     assert.ok(
       await page.evaluate(() => __HYPERDRIVE__.snapshot().state.distance > 0),
     );
     await page.screenshot({
-      path: resolve(root, `artifacts/browser/game-test/${width}-driving.png`),
+      path: resolve(
+        root,
+        `artifacts/browser/game-test/${width}-rain-driving.png`,
+      ),
       fullPage: true,
     });
     await page.keyboard.press('KeyP');
+    await page.locator('#resume').focus();
+    await page.keyboard.press('Shift+Tab');
+    assert.equal(
+      await page
+        .locator('#auto-hearts')
+        .evaluate((el) => el === document.activeElement),
+      true,
+    );
+    await page.keyboard.press('Space');
+    assert.equal(await page.locator('#auto-hearts').isChecked(), true);
+    await page.keyboard.press('Tab');
+    assert.equal(
+      await page
+        .locator('#resume')
+        .evaluate((el) => el === document.activeElement),
+      true,
+    );
     await page.locator('#resume').click();
     await page.locator('#music-open').click();
     assert.equal(await page.locator('#music-panel').isVisible(), true);
@@ -157,6 +212,87 @@ try {
       path: resolve(root, `artifacts/browser/game-test/${width}.png`),
       fullPage: true,
     });
+    const metrics = await page.evaluate(() => __HYPERDRIVE__.metrics());
+    assert.ok(metrics.frames > 10);
+    await writeFile(
+      resolve(root, `artifacts/browser/game-test/${width}-frame-metrics.json`),
+      JSON.stringify(metrics, null, 2),
+    );
+    if (width === 1440) {
+      // Fixture-backed stop UI: the earned twelve-road simulation is tested separately.
+      const fixture = createState({
+        routeIndex: 5,
+        seed: 175,
+        campaignStarted: true,
+      });
+      fixture.stagesCompleted = 5;
+      fixture.money = 1800;
+      fixture.entities = [];
+      fixture._stations = [];
+      fixture._nextEncounter = 1e9;
+      fixture._quizTriggered = true;
+      fixture.runBuild.mods = [
+        'heart-pierce',
+        'heart-chain',
+        'charge-shield',
+        'air-control',
+      ];
+      fixture.runBuild.acquiredIds = [...fixture.runBuild.mods];
+      fixture.runBuild.purchasedLegs = [0, 1, 2, 3];
+      fixture.distance = fixture.routeLength - 0.01;
+      update(fixture, {}, 0.01);
+      await page.evaluate(
+        (save) =>
+          localStorage.setItem(
+            'gyaruinthemix-club-tour-v1',
+            JSON.stringify(save),
+          ),
+        exportCampaignSave(fixture),
+      );
+      await page.reload();
+      await page.waitForFunction(() => __HYPERDRIVE__?.snapshot().ready);
+      await page.locator('#resume-tour').click();
+      assert.match(
+        await page.locator('#route-mission-preview').innerText(),
+        /目標/,
+      );
+      await page.locator('#garage-tab').click();
+      assert.match(await page.locator('#build-summary').innerText(), /4 \/ 4/);
+      const card = page.locator('.build-card').first();
+      assert.equal(await card.locator('button').isDisabled(), true);
+      await card.locator('select').selectOption('heart-pierce');
+      const before = (await page.evaluate(() => __HYPERDRIVE__.snapshot()))
+        .state.money;
+      await card.locator('button').evaluate((button) => {
+        button.click();
+        button.click();
+      });
+      const bought = (await page.evaluate(() => __HYPERDRIVE__.snapshot()))
+        .state;
+      assert.equal(bought.runBuild.mods.length, 4);
+      assert.ok(!bought.runBuild.mods.includes('heart-pierce'));
+      assert.ok(bought.money < before);
+      assert.equal(
+        bought.runBuild.purchasedLegs.filter((leg) => leg === 5).length,
+        1,
+      );
+      await page.screenshot({
+        path: resolve(
+          root,
+          'artifacts/browser/game-test/workshop-replacement.png',
+        ),
+        fullPage: true,
+      });
+      await page.reload();
+      await page.waitForFunction(() => __HYPERDRIVE__?.snapshot().ready);
+      await page.locator('#resume-tour').click();
+      assert.deepEqual(
+        (await page.evaluate(() => __HYPERDRIVE__.snapshot())).state.runBuild,
+        bought.runBuild,
+      );
+      assert.deepEqual(await page.evaluate(() => globalThis.cspViolations), []);
+      assert.deepEqual(errors, []);
+    }
     await context.close();
     console.log(
       `PASS game subpath start/drive/pause/resume/music panel at ${width}px with production CSP`,

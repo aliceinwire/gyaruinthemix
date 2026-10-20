@@ -18,3 +18,10 @@
 !deploy/api-healthcheck.mjs
 !public/game-test/**
 !deploy/game-security-headers.conf
+
+!game-audio/server/app.mjs
+!game-audio/server/start.mjs
+!game-audio/deploy/healthcheck.mjs
+
+assets/music/**
+public/game-test/assets/music/**

@@ -22,3 +22,6 @@ artifacts/
 .gyaruinthemix-update*
 __pycache__/
 *.py[cod]
+
+/assets/music/
+/public/game-test/assets/music/

@@ -13,21 +13,21 @@ const rects = (rows) => rows.map(([top, bottom, edges]) =>
 export const CHARACTER_ACTION_SHEETS = Object.freeze({
   arisu: {
     url: new URL(
-      "../assets/characters/motion/arisu-motion.png",
+      "../assets/characters/motion/arisu-motion-v2.png",
       import.meta.url,
     ).href,
-    width: 1278,
-    height: 1230,
+    width: 1254,
+    height: 1254,
     columns: 4,
     rows: 4,
     framesPerAction: 4,
     actions: ["drive", "point", "shocked", "rally"],
-    sourceRects: rects([
-      [0, 300, [0, 319, 637, 953, 1278]],
-      [300, 600, [0, 318, 626, 962, 1278]],
-      [600, 904, [0, 319, 640, 957, 1278]],
-      [904, 1210, [0, 323, 641, 963, 1278]],
-    ]),
+    // Repaired isolated drawings, measured on the generated 1254px sheet.
+    // Equal runtime crops keep head scale fixed across actions and frames;
+    // broad transparent atlas gutters separate every hand and hair outline.
+    sourceRects: [76, 384, 690, 982].map((top) =>
+      [42, 356, 670, 984].map((left) => Object.freeze([left, top, 244, 210])),
+    ),
   },
   chana: {
     url: new URL(
@@ -281,30 +281,34 @@ export function drawCharacter(ctx, options = {}) {
   const heartSending=name==="chana"&&localAction==="hearts";
   const img=images[localAction === "rush" ? `${name}-rush` : heartSending?"chana-hearts":name];
   if(!img)return false;
-  const sourceRect = localAction === "rush" ? RUSH_ACTION_SHEETS[name].sourceRects[animationFrame] : heartSending ? CHANA_HEART_SHEET.sourceRects[animationFrame] : CHARACTER_ACTION_SHEETS[name].sourceRects[frame][animationFrame];
+  const actionRects = localAction === "rush" ? RUSH_ACTION_SHEETS[name].sourceRects : heartSending ? CHANA_HEART_SHEET.sourceRects : CHARACTER_ACTION_SHEETS[name].sourceRects[frame];
+  const sourceRect = actionRects[animationFrame];
   const [sx, sy, cellW, cellH] = sourceRect;
-  const wind = resolved.weather === "wind" || resolved.weather === "storm";
   const upbeat = localAction === "cheer" || localAction === "point" || localAction === "hearts";
   const bob = animate
     ? Math.sin(time * (upbeat ? 8 : 4) + (name === "chana" ? 0.5 : 0)) *
       height *
       (upbeat ? 0.018 : 0.007)
     : 0;
-  const sway = animate
-    ? Math.sin(time * (wind ? 7 : 2.5)) * (wind ? 0.035 : 0.008)
-    : 0;
   ctx.save();
   ctx.imageSmoothingEnabled = false;
-  ctx.translate(Math.round(x + width / 2), Math.round(y + height + bob));
-  ctx.rotate(sway);
-  ctx.translate(-width / 2, -height);
-  // Integer source rectangles prevent a neighbouring row from leaking in.
-  // Keep source aspect ratio, centered horizontally and anchored at the seat.
-  const fit = Math.min(width / cellW, height / cellH);
-  const drawnWidth = cellW * fit;
-  const drawnHeight = cellH * fit;
+  // A whole-pixel top-left origin avoids half-pixel pivots on odd-size cabins.
+  // The illustrated keyframes supply motion; rotating nearest-neighbor pixels
+  // continuously makes hair and facial detail crawl even between keyframes.
+  ctx.translate(Math.round(x), Math.round(y + bob));
+  // All frames of an action use one scale and the same bottom-center seat.
+  // Fitting each crop separately made wider hand/prop poses shrink the head.
+  // Source rectangles stay untouched: some original illustrations meet across
+  // atlas boundaries, so blindly trimming edges would remove hair or fingers.
+  const fit = Math.min(
+    width / Math.max(...actionRects.map((rect) => rect[2])),
+    height / Math.max(...actionRects.map((rect) => rect[3])),
+  );
+  const drawnWidth = Math.max(1, Math.round(cellW * fit));
+  const drawnHeight = Math.max(1, Math.round(cellH * fit));
   ctx.drawImage(img, sx, sy, cellW, cellH,
-    (width - drawnWidth) / 2, height - drawnHeight, drawnWidth, drawnHeight);
+    Math.round((width - drawnWidth) / 2), Math.round(height) - drawnHeight,
+    drawnWidth, drawnHeight);
   drawWeatherAccessories(ctx, {
     character: name,
     width,
