@@ -21,7 +21,7 @@ const C = {
   cyan: "#77f4e8",
   gold: "#ffe091",
 };
-const images = { arisu: null, chana: null, logo: null, stage: null, console: null };
+const images = { arisu: null, chana: null, logo: null, stage: null, console: null, duoConsole: null };
 let preload;
 
 /** Resolves when the approved transparent character atlases and logo are ready. */
@@ -34,6 +34,7 @@ export function preloadCampaign() {
         ["logo", "../assets/brand/gyaruinthemix-logo.png"],
         ["stage", "../assets/finale/neon-club-stage.png"],
         ["console", "../assets/finale/dj-console.png"],
+        ["duoConsole", "../assets/finale/duo-dj-console.png"],
       ].map(([key, path]) => {
         if (images[key]) return Promise.resolve(images[key]);
         return new Promise((resolve, reject) => {
@@ -46,7 +47,11 @@ export function preloadCampaign() {
             clearTimeout(timeout);
             img.onload = null;
             img.onerror = null;
-            if (error) { img.src = ""; reject(error); }
+            if (error) {
+              img.src = "";
+              if (key === "duoConsole") resolve(null);
+              else reject(error);
+            }
             else { images[key] = img; resolve(img); }
           };
           img.onload = () => finish();
@@ -408,41 +413,6 @@ function avatar(ctx, key, centerX, time, phase) {
   );
 }
 
-function djHand(ctx, x, time, phase, sleeve) {
-  const shift = Math.round(Math.sin(time * 6.8 + phase) * 7);
-  const handX = x + shift;
-  line(
-    ctx,
-    [
-      [x - 17, 330],
-      [x - 18, 352],
-      [handX, 370],
-    ],
-    "#382137",
-    13,
-  );
-  line(
-    ctx,
-    [
-      [x - 17, 330],
-      [x - 18, 352],
-    ],
-    sleeve,
-    9,
-  );
-  line(
-    ctx,
-    [
-      [x - 18, 350],
-      [handX, 370],
-    ],
-    "#d9915e",
-    8,
-  );
-  rect(ctx, handX - 6, 367, 15, 9, "#efb17e");
-  rect(ctx, handX + 4, 374, 6, 3, "#c7784e");
-}
-
 function crowd(ctx, time, totalFans) {
   const energy = Math.min(1, Math.log2(totalFans + 1) / 7);
   for (let row = 0; row < 2; row++) {
@@ -542,18 +512,21 @@ export function drawFinale(
     true,
   );
 
-  avatar(ctx, "arisu", 348, time, 0);
-  avatar(ctx, "chana", 609, time, 1.8);
-
-  if (images.console) ctx.drawImage(images.console, 193, 335, 574, 159);
-  // Moving deck marker lights and faders stay on the illustrated hardware.
-  for (const [x, phase, color] of [[337, 0, C.pink], [623, 2, C.cyan]]) {
-    ctx.save(); ctx.translate(x, 369); ctx.scale(1, .42);
-    ctx.rotate(time * (phase ? -2.8 : 2.8));
-    rect(ctx, 30, -1, 10, 2, color); ctx.restore();
+  // Hands and hardware share one composition, keeping every wrist attached
+  // throughout the beat. Lighting moves independently of the contact points.
+  if (images.duoConsole) {
+    const pulse = Math.sin(time * 6.8) * .002;
+    const w = 640 * (1 + pulse), h = 365 * (1 + pulse);
+    ctx.drawImage(images.duoConsole, 480 - w / 2, 490 - h, w, h);
+    for (let i = 0; i < 12; i++) {
+      const h = 2 + (Math.sin(time * 8 + i) + 1) * 5;
+      rect(ctx, 453 + i * 5, 425 - h, 3, h, i % 2 ? C.cyan : C.pink);
+    }
+  } else {
+    avatar(ctx, "arisu", 348, time, 0);
+    avatar(ctx, "chana", 609, time, 1.8);
+    if (images.console) ctx.drawImage(images.console, 193, 335, 574, 159);
   }
-  djHand(ctx, 341, time, 0, "#241d30");
-  djHand(ctx, 613, time, 2, "#ee4fa5");
   text(ctx, "DJありねぇ", 333, 453, 24, "#ffe0f0", "center", 900);
   text(ctx, "DJちゃな", 626, 453, 24, "#e0fffa", "center", 900);
   text(ctx, "音出してるで", 480, 457, 11, C.pink, "center", 900, true);
