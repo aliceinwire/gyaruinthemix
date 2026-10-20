@@ -106,6 +106,7 @@ async function assertFrameFits(page, selectors) {
         faults.push({
           selector,
           lang: document.documentElement.lang,
+          route: document.querySelector('#destination-choices [aria-pressed="true"]')?.textContent,
           viewport: [innerWidth, innerHeight],
           box: box.toJSON(),
           availableBottom: bottom,

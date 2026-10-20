@@ -468,6 +468,9 @@ html:not(:lang(ja)) .destination-kind { letter-spacing: .02em; }
  .style-picker { margin: 4px 0; padding: 4px 0; }
  /* Keep full translated route names and descriptions above the radio. */
  .map-stop, .destination-kind { line-height: 1.35; }
+ .map-origin, .map-goal { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+ .map-stop-label { max-width: 44%; text-align: left; }
+ .map-stop strong { flex: 1; text-align: right; }
  .map-branch-label, .destination-status, #climate-summary { line-height: 1.4; }
  .destination-option strong, .map-route-detail { line-height: 1.4; }
  .journey-map { padding: 4px; }

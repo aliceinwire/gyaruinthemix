@@ -728,7 +728,7 @@ function renderDestinationChoices() {
   const choices = getJourneyChoices(pendingNext ? state.routeIndex+1 : state.routeIndex,state.seed);
   const chosen = choices.find(node => node.nodeId === selectedNodeId);
   const mission = previewMission(chosen);
-  localizeText($("#map-route-detail"), chosen ? message("{0} · {1}", [chosen.label, chosen.description]) : "");
+  localizeText($("#map-route-detail"), chosen?.description || "");
   localizeText($("#route-mission-preview"), mission ? message("寄り道の目標「{0}」 {1} {2}", [mission.label, mission.description, mission.rewardLabel]) : "");
   localizeText($("#map-selected-route"), chosen ? message("選んだ道：{0}", [chosen.districtName]) : "地図の行き先を選んでな");
   const host = $("#destination-choices"); host.replaceChildren();
