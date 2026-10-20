@@ -1,9 +1,9 @@
 {
   "sourceRepository": "aliceinwire/gyaruinthemix_game",
   "baseSourceCommit": "67c32d11a563430ad85198ad5fcc6ca99af0ecc4",
-  "snapshotSha256": "9f891b795ecc3e98d049c869a836f12dd24285e0ac0c2ae94117827aa409c0de",
+  "snapshotSha256": "dc6dac44f56c58892dee7048e32edb06f975577e72f129d609ef94172d51d232",
   "snapshotHashFormat": "SHA-256 of sorted UTF-8 lines: file SHA-256, two spaces, path relative to game-test, LF; excludes build-info.json.",
-  "sourcePublication": "Local tested snapshot; these source changes have not been published to the game repository.",
-  "version": "4.0.0",
+  "sourcePublication": "Local tested snapshot; NIGHTFALL TOUR changes maintained in aliceinwire/gyaruinthemix. The base game repository commit predates this rewrite.",
+  "version": "5.0.0",
   "browserVerified": false
 }

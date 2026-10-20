@@ -1,6 +1,7 @@
 /** Current-car tour builds and destination goals. No DOM, randomness, unlocks or new currency. */
 import { CAR_CATALOG, DEFAULT_CAR_ID } from './garage.js';
 import { getJourneyNode, JOURNEY_STAGE_COUNT } from './journey.js';
+import { getRpgModifiers } from './tour-rpg.js';
 
 export const RUN_BUILD_VERSION = 1;
 export const RUN_BUILD_CAPACITY = 4;
@@ -11,15 +12,15 @@ const FAMILIES = Object.freeze([
   Object.freeze({ id: 'air', name: '空中ラッシュ', color: '#ffe091', description: '浮いてよけて、ラッシュで道を開こ。' }),
 ]);
 const data = [
-  { id: 'heart-pierce', family: 'relay', tier: 1, name: 'つらぬきハート', description: 'ハートがもう1体まで貫通するで。並んだ相手をねらお。', preview: '1発で最大2体に届く', effects: { heartPierce: 1 } },
-  { id: 'heart-chain', family: 'relay', tier: 2, name: 'となりもギャル', description: 'ギャル化した相手から32m以内のもう1人へ連鎖や。貫通と組むと人波に強いで。', preview: '命中した相手の近くへ1回連鎖', effects: { heartChain: 1, heartChainRange: 32 } },
-  { id: 'heart-recycle', family: 'relay', tier: 3, name: 'ときめき還元', description: 'ギャル化1人につき電池+3や。貫通も連鎖も次の浮力につながるで。', preview: 'ギャル化ごとに電池+3', effects: { conversionEnergy: 3 } },
-  { id: 'charge-shield', family: 'guardian', tier: 1, name: 'EVおまもり', description: 'EVで2秒充電したら、次の衝突1回をガードや。使ったらまた充電しよ。', preview: '2秒のEV充電で1回ガード', effects: { chargeShield: true, chargeShieldSeconds: 2 } },
-  { id: 'charged-heart', family: 'guardian', tier: 2, name: '満タンの一撃', description: '満充電で次のハートの威力+1や。守りを仕込んだあとの障害物に使お。', preview: '満充電後の次弾は威力+1', effects: { chargedHeartBonus: 1 } },
+  { id: 'heart-pierce', family: 'relay', tier: 1, name: 'つらぬきハート', description: 'ハートがさらに1か所まで貫通するで。スタイルや得意技の貫通にも足せるで。', preview: 'ハートの貫通数+1', effects: { heartPierce: 1 } },
+  { id: 'heart-chain', family: 'relay', tier: 2, name: 'となりもリレー', description: 'ハートが届いた場所から32m以内の1か所へ連鎖や。コーラスハートと組むと38m以内の2か所へ。', preview: '連鎖+1 / コーラス併用で2連鎖・38m', effects: { heartChain: 1, heartChainRange: 32 } },
+  { id: 'heart-recycle', family: 'relay', tier: 3, name: 'ときめき還元', description: '招待やシグナル復旧で電池+3や。ときめきリチャージと合わせたら+6や。', preview: 'ハートが届くたび電池+3 / 得意技と合算', effects: { conversionEnergy: 3 } },
+  { id: 'charge-shield', family: 'guardian', tier: 1, name: 'EVおまもり', description: 'EVで2秒充電したら、次の衝突1回をガードや。すでにガードがあれば充電時間を0.25秒短縮。', preview: 'EV充電2秒でガード / 併用はさらに−0.25秒', effects: { chargeShield: true, chargeShieldSeconds: 2 } },
+  { id: 'charged-heart', family: 'guardian', tier: 2, name: '満タンの一撃', description: '満充電で次のハートの威力+1や。満タンアンプと合わせて威力+2にできるで。', preview: '満充電後の次弾は威力+1 / アンプ併用で+2', effects: { chargedHeartBonus: 1 } },
   { id: 'shield-piercing', family: 'guardian', tier: 3, name: 'おまもり貫通', description: 'EVガードを持ってる間は敵のガードを無視して、ハートがさらに1体貫通や。EVおまもりと一緒に積んで、守りを残そ。', preview: 'EVガード保持中、敵のガードを無視・貫通+1', effects: { shieldPiercing: true } },
   { id: 'air-control', family: 'air', tier: 1, name: 'ふわっと着地', description: '落ちる速さを35%抑えて、スラスター消費も15%節約や。高く飛ぶほど着地を見よ。', preview: '下降速度×0.65 / スラスター消費×0.85', effects: { descentMultiplier: .65, thrustDrainMultiplier: .85 } },
-  { id: 'rush-pulse', family: 'air', tier: 2, name: 'ラッシュ開花', description: 'ラッシュ開始で前45mにハートの波や。浮いて距離を合わせてから、一気にいこ。', preview: 'ラッシュ開始時、前45mへハート波', effects: { rushPulse: 45 } },
-  { id: 'combo-flight', family: 'air', tier: 3, name: '飛びこえチャージ', description: '障害物を空中でよけたら電池+4や。ふわっと飛んで次のラッシュへつなご。', preview: '空中で障害物を回避するたび電池+4', effects: { comboFlight: 4 } },
+  { id: 'rush-pulse', family: 'air', tier: 2, name: 'ラッシュ開花', description: 'ラッシュ開始で前45mに威力2のハート波。ベースドロップと組むと前75mに広がるで。', preview: '前45mへハート波 / ドロップ併用で75m', effects: { rushPulse: 45 } },
+  { id: 'combo-flight', family: 'air', tier: 3, name: '飛びこえチャージ', description: '障害物を空中でよけたら電池+4や。スタイルや得意技と合算、1回につき最大+8。', preview: '空中回避で電池+4 / 合算で最大+8', effects: { comboFlight: 4 } },
 ];
 export const RUN_MOD_CATALOG = Object.freeze(data.map(item => Object.freeze({
   ...item, minLeg: [0, 2, 5][item.tier - 1], rarity: ['basic', 'uncommon', 'rare'][item.tier - 1],
@@ -87,12 +88,48 @@ export function getBuildModifiers(state) {
     chargeShield: false, chargeShieldSeconds: 2, chargedHeartBonus: 0, shieldPiercing: false,
     rushPulse: 0, descentMultiplier: 1, thrustDrainMultiplier: 1, comboFlight: 0 };
   for (const id of stateBuild(state).mods) Object.assign(effects, BY_ID.get(id).effects);
+  const mastery = getRpgModifiers(state);
+  if (mastery) {
+    effects.heartPierce = Math.min(3, effects.heartPierce + mastery.heartPierce);
+    effects.heartChain = Math.min(2, effects.heartChain + mastery.heartChain);
+    effects.heartChainRange = Math.max(effects.heartChainRange, mastery.heartChainRange);
+    effects.conversionEnergy = Math.min(6, effects.conversionEnergy + mastery.conversionEnergy);
+    const stackedShield = effects.chargeShield && mastery.chargeShield;
+    effects.chargeShield = effects.chargeShield || mastery.chargeShield;
+    if (mastery.chargeShield) effects.chargeShieldSeconds = Math.max(.5, Math.min(effects.chargeShieldSeconds, mastery.chargeShieldSeconds) - (stackedShield ? .25 : 0));
+    effects.chargedHeartBonus = Math.min(2, effects.chargedHeartBonus + mastery.chargedHeartBonus);
+    effects.guardedHeartPierce = Number(effects.shieldPiercing) + Number(mastery.shieldPiercing);
+    effects.shieldPiercing = effects.shieldPiercing || mastery.shieldPiercing;
+    effects.rushPulse = effects.rushPulse && mastery.rushPulse ? 75 : Math.max(effects.rushPulse, mastery.rushPulse);
+    effects.descentMultiplier = Math.max(.5, effects.descentMultiplier * mastery.descentMultiplier);
+    effects.thrustDrainMultiplier = Math.max(.55, effects.thrustDrainMultiplier * mastery.thrustDrainMultiplier);
+    effects.comboFlight = Math.min(8, effects.comboFlight + mastery.comboFlight);
+  }
   return effects;
 }
 function hash(value) {
   let result = 2166136261;
   for (const char of value) result = Math.imul(result ^ char.charCodeAt(0), 16777619) >>> 0;
   return result;
+}
+function offerPreview(state, item, build) {
+  const before = getBuildModifiers(state);
+  // Each shop part owns distinct effect fields. Preview this part with mastery;
+  // any player-selected replacement has its own separately displayed effect.
+  const after = getBuildModifiers({ ...state, runBuild: { ...build, mods: [item.id], acquiredIds: [...build.acquiredIds, item.id] } });
+  const delta = (key, unit = '') => `${before[key]}${unit}→${after[key]}${unit}`;
+  const guardPierce = effects => effects.guardedHeartPierce ?? Number(effects.shieldPiercing);
+  return {
+    'heart-pierce': `ハート貫通 ${delta('heartPierce')}`,
+    'heart-chain': `連鎖 ${delta('heartChain')} / 距離${after.heartChainRange}m`,
+    'heart-recycle': `招待・復旧の電池回復 +${before.conversionEnergy}→+${after.conversionEnergy}`,
+    'charge-shield': before.chargeShield ? `ガード必要充電 ${delta('chargeShieldSeconds', '秒')}` : `EV充電${after.chargeShieldSeconds}秒で1回ガード`,
+    'charged-heart': `満充電後の次弾 威力+${before.chargedHeartBonus}→+${after.chargedHeartBonus}`,
+    'shield-piercing': `ガード保持中、敵ガード無視 / 貫通+${guardPierce(before)}→+${guardPierce(after)}`,
+    'air-control': `下降速度×${before.descentMultiplier.toFixed(2)}→×${after.descentMultiplier.toFixed(2)} / 浮力消費×${before.thrustDrainMultiplier.toFixed(2)}→×${after.thrustDrainMultiplier.toFixed(2)}`,
+    'rush-pulse': `ラッシュ波の範囲 ${delta('rushPulse', 'm')} / 威力2`,
+    'combo-flight': `空中回避の電池回復 +${before.comboFlight}→+${after.comboFlight}`,
+  }[item.id];
 }
 /** Up to three stable, unlocked next-step choices. Mastered families never crowd out a choice. */
 export function getBuildOffers(state) {
@@ -113,7 +150,7 @@ export function getBuildOffers(state) {
       familyName: family.name, color: family.color, mastered: false, owned: false,
       requiresReplacement: build.mods.length >= RUN_BUILD_CAPACITY,
       installedMods: build.mods.map(id => ({ id, name: BY_ID.get(id).name, preview: BY_ID.get(id).preview })),
-      available: reason === '', reason, preview: `${item.preview} / ${car.name}専用・今回の旅だけ` };
+      available: reason === '', reason, preview: `${offerPreview(state, item, build)} / ${car.name}専用・今回の旅だけ${build.mods.length >= RUN_BUILD_CAPACITY ? '（交換するパーツの効果は外れる）' : ''}` };
   }).filter(Boolean);
 }
 /** Spend tour coins once at a cleared stop, never permanent completion points. */
@@ -162,7 +199,7 @@ export function getRouteMission(state, node) {
     description = `EVで合計${goal.chargeSeconds}秒充電して到着や。電池満タンでも数えるで。`;
     complete = progress.chargeSeconds + 1e-8 >= goal.chargeSeconds;
   } else if (target.kind === 'event') {
-    label = '街角で連続ギャル化'; goal = { conversions: 3 + tier, bestCombo: 2 + (tier === 2 ? 1 : 0) };
+    label = '街角のハートリレー'; goal = { conversions: 3 + tier, bestCombo: 2 + (tier === 2 ? 1 : 0) };
     // Use the complete deterministic road plan, never the transient visible entities.
     // Map previews construct this same candidate road, so their promise matches play.
     if (state?.journeyNodeId === target.nodeId && state.routeIndex === target.stageIndex && Array.isArray(state._encounterPlan)) {
@@ -177,7 +214,7 @@ export function getRouteMission(state, node) {
       goal.conversions = Math.max(1, Math.min(goal.conversions, distances.length - 1));
       goal.bestCombo = Math.max(1, Math.min(goal.bestCombo, longest));
     }
-    description = `${goal.conversions}人ギャル化して、${goal.bestCombo}コンボを1回決めよ。人波をつなぐで。`;
+    description = `ハートを${goal.conversions}か所につないで、${goal.bestCombo}コンボを1回決めよ。仲間への招待もシグナル復旧も数えるで。`;
     complete = progress.conversions >= goal.conversions && progress.bestCombo >= goal.bestCombo;
   } else {
     label = 'ピットまでスマートに'; goal = { maxHits: 2, rushes: 1 };

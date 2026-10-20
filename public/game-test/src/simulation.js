@@ -1,5 +1,6 @@
 import { createEncounterPlan, updateEncounterActor, getEncounterPhase } from './encounter-director.js';
 import { createRunBuild, normalizeRunBuild, getBuildModifiers, routeMissionProgress, settleRouteReward } from './run-build.js';
+import { normalizeRpg, recordRpgEvent, openRpgDraft } from './tour-rpg.js';
 import { JOURNEY_STAGE_COUNT, getJourneyChoices, getJourneyNode, createJourneyProgress, chooseJourneyNode, completeJourneyNode, restoreJourneyProgress } from './journey.js';
 import { normalizeGarage, serializeGarage, applyCarStats } from "./garage.js";
 import {
@@ -48,7 +49,7 @@ const CITY_ROUTES = Object.freeze(
       weather: "clear",
       accent: "#ff72bd",
       difficulty: 0,
-      intro: "ちゃな「ハートで街をギャルにして、中野のフロアへ出発や！」",
+      intro: "ちゃな「街のみんなに招待を届けて、中野のフロアへ出発や！」",
       win: "ありねぇ「間に合った。中野、音出すで！」",
     },
     {
@@ -57,7 +58,7 @@ const CITY_ROUTES = Object.freeze(
       start: "高円寺",
       goal: "新宿",
       name: "新宿ネオン・ラッシュ",
-      title: "スーツの波を、ピンクに染めろ。",
+      title: "ネオンの街に、招待をつなげ。",
       club: "PINK FLASH",
       distance: 1750,
       weather: "rain",
@@ -78,7 +79,7 @@ const CITY_ROUTES = Object.freeze(
       weather: "clear",
       accent: "#ff527f",
       difficulty: 2,
-      intro: "ありねぇ「段差はロケット。スーツにはハートや！」",
+      intro: "ありねぇ「段差はジャンプ。街のみんなには招待のハートや！」",
       win: "ちゃな「109もフロアも、全部きらきらやん！」",
     },
     {
@@ -99,7 +100,7 @@ const CITY_ROUTES = Object.freeze(
     {
       id: "05",
       cityId: "osaka",
-      start: "京都",
+      start: "大阪駅",
       goal: "大阪",
       name: "大阪ミッドナイト",
       title: "関西ツッコミ超特急。",
@@ -114,7 +115,7 @@ const CITY_ROUTES = Object.freeze(
     {
       id: "06",
       cityId: "kyoto",
-      start: "大阪",
+      start: "京都駅",
       goal: "京都",
       name: "京都ギャラクシー",
       title: "最後のフロアまで、全開。",
@@ -153,7 +154,7 @@ export const ROUTE_OPTIONS = Object.freeze({
   }),
   express: Object.freeze({
     id: "express",
-    name: "ギャル化特急ルート",
+    name: "ハートリレー特急ルート",
     description: "近道・サラリーマン多め・EV少なめ",
     lengthMultiplier: 0.8,
     speed: 108,
@@ -249,6 +250,7 @@ function random(state) {
 function emit(state, type, detail = {}) {
   state.events.push({ ...detail, type });
   if (state.runBuild) routeMissionProgress(state, { ...detail, type });
+  if (state.rpg) recordRpgEvent(state, { ...detail, type });
 }
 function stats(state) {
   applyCarStats(state);
@@ -343,6 +345,8 @@ const PRESERVED = [
   "money",
   "totalFans",
   "gyaruConverted",
+  "signalClears",
+  "stageSignals",
   "bestCombo",
   "stagesCompleted",
   "integrity",
@@ -356,6 +360,7 @@ function snapshot(state) {
     ["upgrades", { ...state.upgrades }],
     ["garage", serializeGarage(state)],
     ["runBuild", normalizeRunBuild(state.runBuild, { carId: state.garage.equipped })],
+    ["rpg", normalizeRpg(state.rpg)],
     ["runId", state.runId],
     ["campaignStarted", state.campaignStarted === true],
   ]);
@@ -365,6 +370,7 @@ function restoreSnapshot(state, saved) {
   state.upgrades = { ...saved.upgrades };
   state.garage = normalizeGarage(saved.garage);
   state.runBuild = normalizeRunBuild(saved.runBuild, { carId: state.garage.equipped });
+  state.rpg = normalizeRpg(saved.rpg);
   state.buildModifiers = getBuildModifiers(state);
   state.runId = validCampaignRunId(saved.runId) ? saved.runId : state.runId;
   state.campaignStarted = state.campaignStarted === true || saved.campaignStarted === true;
@@ -453,6 +459,8 @@ export function createState({
     stageFans: 0,
     gyaruConverted: 0,
     stageGyaru: 0,
+    signalClears: 0,
+    stageSignals: 0,
     combo: 0,
     comboTimer: 0,
     bestCombo: 0,
@@ -468,6 +476,8 @@ export function createState({
     seed: numericSeed,
     runId: validCampaignRunId(runId) ? runId : `run:${numericSeed.toString(16)}`,
     campaignStarted: campaignStarted === true,
+    assistMode: false,
+    rpg: normalizeRpg(null),
     _rng:
       (numericSeed ^
         Math.imul(index + 1, 0x9e3779b9) ^
@@ -518,8 +528,13 @@ function convert(state, target) {
   state.bestCombo = Math.max(state.bestCombo, state.combo);
   const reward = Math.round((50 + Math.min(state.combo - 1, 5) * 10) * (getJourneyNode(state.journeyNodeId)?.conversionRewardMultiplier ?? 1));
   state.money += reward;
-  state.gyaruConverted++;
-  state.stageGyaru++;
+  if (target.headliner) {
+    state.signalClears++;
+    state.stageSignals++;
+  } else {
+    state.gyaruConverted++;
+    state.stageGyaru++;
+  }
   state.score += reward * 2;
   state.energy = Math.min(state.energyCapacity, state.energy + (state.buildModifiers?.conversionEnergy || 0));
   emit(state, "convert", {
@@ -530,7 +545,10 @@ function convert(state, target) {
     combo: state.combo,
     totalFans: state.totalFans,
     gyaruConverted: state.gyaruConverted,
+    signalRepaired: Boolean(target.headliner),
+    signalClears: state.signalClears,
     elite: Boolean(target.elite),
+    headliner: target.headliner || null,
   });
 }
 function fire(state) {
@@ -542,7 +560,7 @@ function fire(state) {
     age: 0,
     resolved: false,
     hitIds: [],
-    pierceLeft: (state.buildModifiers?.heartPierce || 0) + (state.buildModifiers?.shieldPiercing && state.buildRuntime.shield > 0 ? 1 : 0),
+    pierceLeft: (state.buildModifiers?.heartPierce || 0) + (state.buildModifiers?.shieldPiercing && state.buildRuntime.shield > 0 ? state.buildModifiers.guardedHeartPierce ?? 1 : 0),
     damage: 1 + (state.buildRuntime.chargedShot || 0),
   });
   state.buildRuntime.chargedShot = 0;
@@ -561,8 +579,9 @@ function hitTarget(state, target, damage = 1, chain = true) {
   if (target.type === "salaryman") {
     convert(state, target);
     if (chain && state.buildModifiers.heartChain) {
-      const next = state.entities.find(other => other.id !== target.id && other.type === "salaryman" && !other.converted && !other.cleared && !other.resolved && Math.abs(other.distance - target.distance) <= state.buildModifiers.heartChainRange);
-      if (next) { hitTarget(state, next, 1, false); emit(state, "heart-chain", { distance: target.distance, targetDistance: next.distance }); }
+      // Each source adds one distinct secondary target. Secondary hits never recurse.
+      const neighbors = state.entities.filter(other => other.id !== target.id && other.type === "salaryman" && !other.converted && !other.cleared && !other.resolved && Math.abs(other.distance - target.distance) <= state.buildModifiers.heartChainRange).slice(0, state.buildModifiers.heartChain);
+      for (const next of neighbors) { hitTarget(state, next, 1, false); emit(state, "heart-chain", { distance: target.distance, targetDistance: next.distance }); }
     }
   } else {
     target.resolved = true; state.score += 25;
@@ -595,7 +614,7 @@ function collide(state, target, hazard) {
     emit(state, "shield-block", { distance: target.distance, entityId: target.id }); return;
   }
   const damage = Math.round(
-    hazard.damage * (state.routeOption === "express" ? 1.12 : 1),
+    hazard.damage * (state.routeOption === "express" ? 1.12 : 1) * (state.assistMode === true ? .55 : 1),
   );
   state.integrity = Math.max(0, state.integrity - damage);
   state.invulnerability = COLLISION_GRACE;
@@ -695,7 +714,7 @@ function step(state, input, dt) {
     if (state.buildModifiers.chargeShield && state.buildRuntime.chargeSeconds >= state.buildModifiers.chargeShieldSeconds) state.buildRuntime.shield = 1;
     if (!wasCharging) emit(state, "charge-start", { stationId: station.id });
     if (previous < state.energyCapacity && state.energy >= state.energyCapacity)
-      { state.buildRuntime.chargedShot = state.buildModifiers.chargedHeartBonus; emit(state, "charged"); }
+      { state.buildRuntime.chargedShot = state.buildModifiers.chargedHeartBonus; emit(state, "charged", { stationId: station.id }); }
   } else if (wasCharging) emit(state, "charge-stop");
   if (state.rushing) state.energy = Math.max(0, state.energy - RUSH_DRAIN * dt);
   const previousAltitude = state.altitude;
@@ -759,6 +778,8 @@ function step(state, input, dt) {
       state.score += 25;
       state.energy = Math.min(state.energyCapacity, state.energy + state.buildModifiers.comboFlight);
       emit(state, "jump-clear", { entityId: target.id, distance: target.distance });
+      if (state.jumpHeight < hazard.clearance + .35)
+        emit(state, "precision", { entityId: target.id, distance: target.distance });
     }
   }
   state.entities = state.entities.filter(
@@ -788,6 +809,7 @@ function step(state, input, dt) {
     };
     emit(state, "quiz", { ...state.pendingQuiz });
   }
+  openRpgDraft(state);
 }
 /** Mutates state. Pause belongs to caller: do not call update while paused. */
 export function update(state, input = {}, dt = 0) {
@@ -873,6 +895,8 @@ export function nextRoute(state, routeOption = "scenic", journeyNodeId = null) {
     weather: state.weather,
   });
   restoreSnapshot(next, snapshot(state));
+  next.assistMode = state.assistMode === true;
+  next.stageSignals = 0;
   next.locationIndex = getJourneyNode(next.journeyNodeId).locationIndex;
   next.energy = next.energyCapacity;
   next.integrity = Math.max(next.integrity, next.integrityCapacity * 0.4);
@@ -901,6 +925,7 @@ export function retryRoute(state) {
     weather: state.weather,
   });
   restoreSnapshot(next, state._stageStart);
+  next.assistMode = state.assistMode === true;
   next._stageStart = snapshot(next);
   emit(next, "stage-retry", { routeIndex: next.routeIndex });
   Object.assign(state, next);
@@ -919,7 +944,7 @@ function normalizeCheckpoint(value, fallback) {
   const checkpoint = {};
   for (const key of PRESERVED)
     checkpoint[key] = safeNumber(saved[key], fallback[key]);
-  for (const key of ["money", "totalFans", "gyaruConverted", "bestCombo", "stagesCompleted"])
+  for (const key of ["money", "totalFans", "gyaruConverted", "signalClears", "stageSignals", "bestCombo", "stagesCompleted"])
     checkpoint[key] = Math.floor(checkpoint[key]);
   checkpoint.stagesCompleted = Math.min(ROUTES.length, checkpoint.stagesCompleted);
   checkpoint.mudAmount = clamp(checkpoint.mudAmount, 0, 1);
@@ -929,6 +954,7 @@ function normalizeCheckpoint(value, fallback) {
     checkpoint.upgrades[id] = Math.floor(safeNumber(saved.upgrades?.[id], fallback.upgrades?.[id] || 0, 3));
   checkpoint.garage = normalizeGarage(saved.garage ?? fallback.garage);
   checkpoint.runBuild = normalizeRunBuild(saved.runBuild ?? fallback.runBuild, { carId: checkpoint.garage.equipped });
+  checkpoint.rpg = normalizeRpg(saved.rpg ?? fallback.rpg);
   checkpoint.runId = validCampaignRunId(saved.runId) ? saved.runId : fallback.runId;
   checkpoint.campaignStarted = saved.campaignStarted === true || fallback.campaignStarted === true;
   const holder = { garage: checkpoint.garage, upgrades: checkpoint.upgrades };
@@ -1033,6 +1059,7 @@ export function changeRouteBeforeStart(state, routeOption = "scenic", environmen
   });
   const selectedLocation = next.locationIndex;
   restoreSnapshot(next, snapshot(state));
+  next.assistMode = state.assistMode === true;
   next.locationIndex = selectedLocation;
   next._stageStart = snapshot(next);
   Object.assign(state, next);

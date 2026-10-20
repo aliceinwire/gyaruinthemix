@@ -11,6 +11,17 @@ export const ENCOUNTER_RULES = Object.freeze({
   maximumMotion: 18,
 });
 
+/** Named, fictional sound-system challenges. They are optional skill checks: the
+ * safe aerial route remains available and clearing one never gates arrival. */
+export const SIGNAL_HEADLINERS = Object.freeze([
+  { id: 'nakano-relay', cityId: 'nakano', name: '中野リレー', title: '止まった街角スピーカー', lesson: 'ハートで信号を送ろ', color: '#ff91cd' },
+  { id: 'shinjuku-filter', cityId: 'shinjuku', name: '新宿フィルター', title: 'ネオンのノイズゲート', lesson: 'ゲートが開いたらハート', color: '#c0a4ff' },
+  { id: 'shibuya-feedback', cityId: 'shibuya', name: '渋谷フィードバック', title: 'スクランブルの音詰まり', lesson: '開くタイミングをつなご', color: '#ff87ad' },
+  { id: 'asakusa-echo', cityId: 'asakusa', name: '浅草エコー', title: '提灯通りのエコーボックス', lesson: 'ハートを重ねて音を戻そ', color: '#ffcc8d' },
+  { id: 'osaka-resonance', cityId: 'osaka', name: '大阪レゾナンス', title: '道頓堀の共鳴タワー', lesson: '開いたら一気に届けよ', color: '#ffb673' },
+  { id: 'kyoto-nightfall', cityId: 'kyoto', name: '京都ナイトフォール', title: '最後のミックスゲート', lesson: '最後の信号、ふたりでつなご', color: '#d4b5ff' },
+].map(Object.freeze));
+
 const TYPES = Object.freeze(['salaryman', 'cone', 'barrier', 'pothole']);
 const RADII = Object.freeze({ salaryman: 15, cone: 21, barrier: 27, pothole: 21 });
 const MAX_METRES_PER_SECOND = ENCOUNTER_RULES.maximumSupportedSpeed / 3.6;
@@ -70,6 +81,13 @@ function grammar(stage, kind, phase, random) {
   if (stage >= 7) choices.push({ name: 'charge-and-answer', actors: [charger(), heart()] });
   if (stage >= 8) choices.push({ name: 'heart-trio', actors: [heart(), sway(), heart()] });
   if (stage >= 9) choices.push({ name: 'guard-and-charge', actors: [shield(), charger()] });
+  // Authored calls and answers teach combinations before the climax. These use
+  // the same reserved movement envelopes as solos, never surprise spawns.
+  if (stage >= 2) choices.push({ name: 'call-and-response', actors: [heart(), sway()] });
+  if (stage >= 4 && kind !== 'ev') choices.push({ name: 'lift-refrain', actors: [heart(), jump(), heart()] });
+  if (stage >= 5) choices.push({ name: 'gate-response', actors: [shield(), heart(), obstacle()] });
+  if (stage >= 7 && phase === 'pressure') choices.push({ name: 'syncopated-lift', actors: [sway(), jump(), charger()] });
+  if (stage >= 8 && ['climax', 'finale'].includes(phase)) choices.push({ name: 'last-call', actors: [charger(), heart(), shield()] });
   if (phase === 'breather') return { name: 'breathing-space', actors: [heart()] };
   if (stage >= 2 && kind === 'event' && random() < .42) {
     const member = stage >= 6 && random() < .6 ? sway : heart;
@@ -88,7 +106,7 @@ function descriptor(definition, stage, random, lowCeiling) {
   const radius = RADII[type];
   const leadDistance = Math.min(ENCOUNTER_RULES.warningViewDistance, Math.max(94, MAX_METRES_PER_SECOND * (anticipation + counterWindow) + radius + motionAmplitude));
   const counter = type === 'pothole' ? 'hover' : behavior === 'shield' ? 'open-or-hover' : behavior === 'charger' ? 'shoot-or-hover' : type === 'salaryman' ? 'heart-or-hover' : 'shoot-or-hover';
-  const label = type === 'pothole' ? '浮いてかわそう' : behavior === 'shield' ? 'ガードが開いたら♡' : behavior === 'charger' ? '突進前に♡か浮上' : behavior === 'sway' ? '動く相手に♡' : type === 'salaryman' ? '♡を届けよう' : '♡か浮上でクリア';
+  const label = type === 'pothole' ? '浮いてかわそう' : behavior === 'shield' ? 'ゲートが開いたらハート' : behavior === 'charger' ? '動く前にハートか浮上' : behavior === 'sway' ? '動く相手にハート' : type === 'salaryman' ? 'ハートを届けよう' : 'ハートか浮上でクリア';
   return {
     type, behavior, hp, maxHp: hp, elite, variant: Math.floor(random() * 4),
     directorManaged: true, converted: false, collisionRadius: radius,
@@ -321,6 +339,31 @@ export function createEncounterPlan(options = {}) {
     const replacement = minimumPlan(constraints);
     if (replacement) plan.splice(0, plan.length, ...replacement);
   }
+  // Attach a chapter identity only after the safety/quota pass. The beginner
+  // chapters retain their original one/two-hit teaching vocabulary; late-road
+  // anchors keep existing HP and collision envelopes. Never add an extra actor.
+  if (stage % 2 === 1 || stage === 10) {
+    const headliner = SIGNAL_HEADLINERS[Math.floor(stage / 2)];
+    const eliteIndex = plan.findIndex(actor => actor.elite);
+    const candidates = plan.map((actor, index) => ({ actor, index })).filter(({ actor }) =>
+      !actor.cluster && !actor.tutorial && (actor.type === 'salaryman' || stage < 4) &&
+      actor.distance >= length * .4 && actor.distance <= length * .9);
+    const chosen = eliteIndex >= 0 ? eliteIndex : candidates.sort((a, b) =>
+      Math.abs(a.actor.distance - length * .76) - Math.abs(b.actor.distance - length * .76))[0]?.index
+      ?? plan.map((actor, index) => ({ actor, index })).filter(({ actor }) =>
+        actor.type === 'salaryman' && !actor.tutorial && (!actor.cluster || actor.phraseIndex === 0) && actor.distance >= length * .25 && actor.distance <= length * .9).at(-1)?.index;
+    if (chosen !== undefined && chosen >= 0) {
+      const old = plan[chosen];
+      const actor = old.type === 'salaryman' ? old : { ...old,
+        ...descriptor(actorDefinition('salaryman', stage >= 3 ? 'shield' : 'steady'), stage, random, lowCeiling),
+        telegraphBaseDistance: old.distance, motionBaseDistance: old.distance };
+      plan[chosen] = Object.freeze({ ...actor, headliner,
+        headlinerOptional: true,
+        telegraph: Object.freeze({ ...actor.telegraph,
+          label: `${headliner.name} / ${headliner.lesson}` }),
+      });
+    }
+  }
   return Object.freeze(plan);
 }
 
@@ -390,7 +433,28 @@ export function updateEncounterActor(entity, state = {}, dt = 0) {
     entity.telegraphProgress = entity.shielded && started ? clamp(cycle / anticipation, 0, 1) : 1;
     entity.counterWindow = openDuration;
   }
+  if (entity.headliner) {
+    const health = clamp(finite(entity.hp, finite(entity.maxHp, 1)), 0, Math.max(1, finite(entity.maxHp, 1)));
+    entity.headlinerPhase = health <= 1 ? 'last-signal' : entity.shielded ? 'closed' : 'response';
+  }
   return entity;
+}
+
+/** Read-only chapter view for the HTML HUD. A name never implies that clearing
+ * the optional obstacle is required to finish the road. */
+export function getHeadlinerView(state = {}) {
+  const distance = Math.max(0, finite(state?.distance));
+  const actor = (Array.isArray(state?.entities) ? state.entities : []).find(item =>
+    item?.headliner && !item.cleared && !item.resolved && !item.converted &&
+    Number.isFinite(item.distance) && item.distance >= distance - 15 &&
+    item.distance - distance <= ENCOUNTER_RULES.warningViewDistance);
+  if (!actor) return null;
+  const maxHp = Math.max(1, finite(actor.maxHp, 1));
+  return { id: actor.headliner.id, name: actor.headliner.name, title: actor.headliner.title,
+    lesson: actor.headliner.lesson, color: actor.headliner.color,
+    hp: clamp(finite(actor.hp, maxHp), 0, maxHp), maxHp,
+    phase: actor.headlinerPhase || (actor.shielded ? 'closed' : 'response'),
+    distance: round(Math.max(0, actor.distance - distance)), optional: true };
 }
 
 /** Compact HUD data, derived without changing the route or consuming randomness. */
