@@ -40,6 +40,18 @@ REVIEWED = ("deploy/bouncer/setup-audio.py", "deploy/bouncer/update.py",
             "deploy/bouncer/docker-compose.yml", "game-audio/scripts/package-library.mjs")
 TRANSACTION_LABEL = "io.gyaruinthemix.audio-setup"
 IMAGE_ID = re.compile(r"sha256:[0-9a-f]{64}\Z")
+# The earlier canonical API service omitted this entire optional membership block.
+# Audio setup recognizes that exact layout without adding or enabling its settings.
+API_MEMBERSHIP_BLOCK = """      MEMBER_AUTH_ENABLED: ${MEMBER_AUTH_ENABLED:-false}
+      MEMBERSHIP_ENABLED: ${MEMBERSHIP_ENABLED:-false}
+      MEMBERSHIP_DETAILS_REVIEWED: ${MEMBERSHIP_DETAILS_REVIEWED:-false}
+      STRIPE_PRICE_MEMBERSHIP: ${STRIPE_PRICE_MEMBERSHIP:-}
+      MEMBERSHIP_AMOUNT_JPY: ${MEMBERSHIP_AMOUNT_JPY:-500}
+      MEMBERSHIP_PORTAL_URL: ${MEMBERSHIP_PORTAL_URL:-}
+      MEMBER_EMAIL_FROM: ${MEMBER_EMAIL_FROM:-}
+      MEMBER_EMAIL_API_KEY_FILE: /app/state/member_email_api_key
+      MEMBER_CONTENT_DIR: /app/state/member-content
+"""
 
 
 def digest(data):
@@ -171,7 +183,10 @@ def _merge_compose(installed, canonical):
         actual, target = result[slice(*old)], canonical[slice(*new)]
         legacy = "\n".join(line for line in target.splitlines()
                            if "GAME_AUDIO_ENABLED:" not in line and "Resolved by the installed updater" not in line)
-        if normalized(actual) not in (normalized(target), normalized(legacy)):
+        recognized = {normalized(target), normalized(legacy)}
+        if name == API and target.count(API_MEMBERSHIP_BLOCK) == 1:
+            recognized.add(normalized(target.replace(API_MEMBERSHIP_BLOCK, "", 1)))
+        if normalized(actual) not in recognized:
             raise Error(f"Unrecognized local {name} drift; reconcile it with the reviewed canonical file first.")
         if name == WEB and "GAME_AUDIO_ENABLED:" not in actual:
             anchor = "      ENABLE_HTTP_ON_MISSING_CERT: 'false'\n"
