@@ -1,3 +1,4 @@
+import { drawCabinCharacter, preloadCabinCharacters } from "./cabin-characters.js";
 import { preloadUmbrellaArt, drawUmbrellaArt } from "./umbrella-art.js";
 import { preloadRoadSurfaceArt, drawRoadSurface } from "./road-surface.js";
 import { preloadRoadsideArt, drawRoadsideObject } from "./roadside-art.js";
@@ -44,7 +45,7 @@ function paintLocation(g, options, alpha, slot = 0) {
 }
 export async function preloadSprites() {
   const [crew, street, , roadside, roadReady, umbrellasReady] = await Promise.all([
-    preloadCharacterActions(),
+    Promise.all([preloadCharacterActions(), preloadCabinCharacters()]).then(([crew]) => crew),
     preloadStreetCharacters(),
     preloadCarArt(),
     preloadRoadsideArt(),
@@ -112,11 +113,11 @@ export function heartVisualPosition(state, shot) {
 export function getCrewSeatLayout(layout) {
   const cabin = layout.cabins.at(-1);
   const driverSeat = layout.seats.at(-1);
-  const size = layout.openTop ? 43 : Math.min(cabin.width + 3, cabin.height + 6);
+  const size = layout.openTop ? 37 : Math.min(cabin.width + 3, cabin.height + 6);
   const center = layout.openTop ? driverSeat.x : cabin.x + cabin.width * .57;
-  const bottom = layout.openTop ? driverSeat.y + 4 : cabin.y + cabin.height + 2;
+  const bottom = layout.openTop ? driverSeat.y + 6 : cabin.y + cabin.height + 2;
   return [
-    { character: "chana", x: center - size * .28 - size * .90 / 2, y: bottom - size * .90 - 2, width: size * .90, height: size * .90, cabin },
+    { character: "chana", x: center + size * .13 - size * .90 / 2, y: bottom - size * .90 - 5, width: size * .90, height: size * .90, cabin },
     { character: "arisu", x: center - size / 2, y: bottom - size, width: size, height: size, cabin },
   ];
 }
@@ -157,7 +158,7 @@ export function drawCar(g, x, y, {
   for (const {character, x, y, width, height, cabin} of getCrewSeatLayout(layout)) {
     g.save();
     if (!layout.openTop) { g.beginPath();g.rect(cabin.x-1,cabin.y-1,cabin.width+2,cabin.height+2);g.clip(); }
-    drawCharacter(g, {...visual, character, x, y, width, height});
+    drawCabinCharacter(g, {...visual, character, x, y, width, height});
     g.restore();
   }
   drawCarBody(g,{...layoutOptions,paint:appearance.paint});
