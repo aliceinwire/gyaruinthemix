@@ -1,3 +1,4 @@
+import { preloadArrivalFans, drawArrivalFans } from './arrival-fans.js';
 import { getThreatSignals } from './road-feedback.js';
 import { drawCultureProp, drawRoutineHazard, drawLittleFind, drawFriendlyCat } from './street-culture-art.js';
 import { drawCabinCharacter, preloadCabinCharacters } from "./cabin-characters.js";
@@ -48,7 +49,7 @@ function paintLocation(g, options, alpha, slot = 0) {
 export async function preloadSprites() {
   const [crew, street, , roadside, roadReady, umbrellasReady] = await Promise.all([
     Promise.all([preloadCharacterActions(), preloadCabinCharacters()]).then(([crew]) => crew),
-    preloadStreetCharacters(),
+    Promise.all([preloadStreetCharacters(), preloadArrivalFans()]).then(([street]) => street),
     preloadCarArt(),
     preloadRoadsideArt(),
     preloadRoadSurfaceArt(),
@@ -336,6 +337,7 @@ export function render(
     text(g, "175", 832, 490, 12, "#8b6c91");
     return;
   }
+  drawArrivalFans(g, state, { time, reducedMotion, carX: 190 + (state.windOffset || 0) });
   const objects = state.entities
     .filter((e) => !e.resolved || e.type === "gyaru")
     .map((e) => ({ e, x: 190 + (e.distance - state.distance) * 3, y: 465 }))
