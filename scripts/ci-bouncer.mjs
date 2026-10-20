@@ -18,6 +18,7 @@ import { createGameAudioFixtures } from './ci-game-audio-fixtures.mjs';
 import { checkGameAudioRuntime } from './check-game-audio-runtime.mjs';
 import {
   assertGameAudioCompose,
+  gameAudioFalseBindOptions,
   GAME_AUDIO_SERVICE,
 } from '../game-audio/scripts/check-game-audio-compose.mjs';
 
@@ -91,6 +92,42 @@ try {
         'json',
       ),
     );
+  console.log(
+    `Compose version: ${docker('compose', 'version', '--short').trim()}`,
+  );
+  let expectedMediaBindOptions;
+  if (audioEnabled) {
+    // A disposable serializer probe only, never a deployment file or startup
+    // input. Compare explicit false/true through this runner's exact CLI.
+    const probeFile = join(directory, 'compose-serialization-probe.json');
+    await writeFile(
+      probeFile,
+      JSON.stringify({
+        services: Object.fromEntries(
+          [false, true].map((create) => [
+            create ? 'enabled' : 'disabled',
+            {
+              image: 'gyaruinthemix-game-audio:serialization-probe',
+              volumes: [
+                {
+                  type: 'bind',
+                  source: join(temporary, 'serialization-probe'),
+                  target: '/private/media',
+                  read_only: true,
+                  bind: { create_host_path: create },
+                },
+              ],
+            },
+          ]),
+        ),
+      }),
+    );
+    const probe = render(probeFile);
+    expectedMediaBindOptions = gameAudioFalseBindOptions({
+      disabled: probe.services.disabled.volumes[0].bind,
+      enabled: probe.services.enabled.volumes[0].bind,
+    });
+  }
   const original = render(join(root, 'tests/fixtures/bouncer.original.yml'));
   const merged = render(env.COMPOSE_FILE);
   const oldServices = ['proxy', 'letsencrypt-companion', 'znc', 'limnoria'];
@@ -108,6 +145,7 @@ try {
     expectedMediaSource: join(directory, 'gyaruinthemix/assets/music'),
     expectedSecretFile: env.GAME_AUDIO_SIGNING_KEY_FILE,
     expectedImage: env.GYARUINTHEMIX_GAME_AUDIO_IMAGE,
+    expectedMediaBindOptions,
   });
   assert.deepEqual(
     Object.keys(merged.services).sort(),

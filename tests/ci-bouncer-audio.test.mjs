@@ -19,7 +19,10 @@ import {
   AUDIO_FIXTURE_SOURCE,
   createGameAudioFixtures,
 } from '../scripts/ci-game-audio-fixtures.mjs';
-import { checkGameAudioRuntime } from '../scripts/check-game-audio-runtime.mjs';
+import {
+  checkGameAudioRuntime,
+  assertPrivateAudioDenied,
+} from '../scripts/check-game-audio-runtime.mjs';
 import { checkServedHlsModule } from '../scripts/check-game-test.mjs';
 import { createAudioHandler, loadCatalog } from '../game-audio/server/app.mjs';
 
@@ -245,5 +248,50 @@ test('served HLS module requires JavaScript MIME, nosniff and valid module synta
         headers: { 'Content-Type': 'application/javascript' },
       }),
     ),
+  );
+});
+
+test('private audio paths accept deny403 or missing404 but never media/catalog payloads', async () => {
+  const path = '/assets/music/.hls/catalog.json';
+  for (const status of [403, 404]) {
+    await assert.doesNotReject(
+      assertPrivateAudioDenied(
+        new Response('<html>Access denied</html>', {
+          status,
+          headers: { 'Content-Type': 'text/html' },
+        }),
+        path,
+      ),
+    );
+    await assert.rejects(
+      assertPrivateAudioDenied(
+        new Response('{"tracks":[]}', {
+          status,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+        path,
+      ),
+    );
+    await assert.rejects(
+      assertPrivateAudioDenied(
+        new Response('media bytes', {
+          status,
+          headers: { 'Content-Type': 'audio/mp4' },
+        }),
+        path,
+      ),
+    );
+    await assert.rejects(
+      assertPrivateAudioDenied(
+        new Response(AUDIO_FIXTURE_KEY, { status }),
+        path,
+      ),
+    );
+    await assert.rejects(
+      assertPrivateAudioDenied(new Response('#EXTM3U', { status }), path),
+    );
+  }
+  await assert.rejects(
+    assertPrivateAudioDenied(new Response('not denied', { status: 200 }), path),
   );
 });

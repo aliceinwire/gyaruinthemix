@@ -42,6 +42,32 @@ function privatePath(path, checkoutRoot, label, approvedCheckoutPath) {
   );
 }
 
+/** Validate a config-only probe produced by the same Compose JSON serializer.
+ * compose-go 2.7.1 omits false booleans; newer versions preserve false and may
+ * omit true instead. Never infer either meaning from an unproven empty object.
+ */
+export function gameAudioFalseBindOptions({ disabled, enabled }) {
+  for (const [value, expected] of [
+    [disabled, false],
+    [enabled, true],
+  ]) {
+    assert.ok(value && typeof value === 'object' && !Array.isArray(value));
+    assert.deepEqual(
+      value,
+      Object.hasOwn(value, 'create_host_path')
+        ? { create_host_path: expected }
+        : {},
+      'Unexpected Compose bind serialization',
+    );
+  }
+  assert.notDeepEqual(
+    disabled,
+    enabled,
+    'Compose must distinguish disabled host-path creation from enabled',
+  );
+  return structuredClone(disabled);
+}
+
 /**
  * Pure validation of Docker Compose's normalized JSON. No daemon, filesystem,
  * credentials or external mutations. Expected paths are trusted CI/operator
@@ -63,6 +89,9 @@ export function assertGameAudioCompose({
   expectedDockerfile = 'Dockerfile.game-audio',
   expectedImage = 'gyaruinthemix-game-audio:ci',
   expectedHealthcheck = ['CMD', 'node', '/app/healthcheck.mjs'],
+  // Trusted false representation returned by gameAudioFalseBindOptions, never
+  // copied from the candidate service. Default remains explicitly false.
+  expectedMediaBindOptions = { create_host_path: false },
 }) {
   assert.equal(typeof audioEnabled, 'boolean');
   assert.equal(typeof apiMode, 'boolean');
@@ -188,8 +217,15 @@ export function assertGameAudioCompose({
     'logging',
     'healthcheck',
   ]);
-  for (const key of Object.keys(audio))
+  for (const key of Object.keys(audio)) {
+    // compose-go intentionally serializes unset image defaults as null. Empty
+    // arrays/strings are NOT equivalent: they clear the image's command.
+    if (key === 'command' || key === 'entrypoint') {
+      assert.equal(audio[key], null, `Audio ${key} override is forbidden`);
+      continue;
+    }
     assert.ok(allowedKeys.has(key), `Unreviewed audio service option: ${key}`);
+  }
   assert.deepEqual(audio.profiles, ['game-audio']);
   assert.equal(audio.read_only, true);
   assert.equal(audio.init, true);
@@ -217,6 +253,17 @@ export function assertGameAudioCompose({
   assert.deepEqual(audio.networks, {
     gyaruinthemix: { aliases: ['game-audio'] },
   });
+  assert.ok(
+    expectedMediaBindOptions &&
+      typeof expectedMediaBindOptions === 'object' &&
+      !Array.isArray(expectedMediaBindOptions),
+  );
+  assert.deepEqual(
+    expectedMediaBindOptions,
+    Object.hasOwn(expectedMediaBindOptions, 'create_host_path')
+      ? { create_host_path: false }
+      : {},
+  );
   assert.deepEqual(
     audio.volumes,
     [
@@ -225,7 +272,7 @@ export function assertGameAudioCompose({
         source: expectedMediaSource,
         target: '/private/media',
         read_only: true,
-        bind: { create_host_path: false },
+        bind: expectedMediaBindOptions,
       },
     ],
     'Only the exact read-only media bind is permitted',

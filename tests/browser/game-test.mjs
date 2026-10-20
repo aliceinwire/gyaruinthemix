@@ -6,6 +6,7 @@ import {
   update,
   exportCampaignSave,
 } from '../../public/game-test/src/simulation.js';
+import { SAVE_KEY } from '../../public/game-test/src/save-store.js';
 import { extname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
@@ -26,6 +27,18 @@ const mime = {
   '.json': 'application/json',
   '.svg': 'image/svg+xml',
 };
+async function reloadWithoutCampaign(page) {
+  // Independent audio fixtures must not inherit the workshop's unfinished tour
+  // or the new tour created by the previous audio case. Keep garage progress.
+  await page.evaluate((key) => localStorage.removeItem(key), SAVE_KEY);
+  await page.reload();
+  await page.waitForFunction(() => __HYPERDRIVE__?.snapshot().ready);
+  assert.equal(await page.locator('#resume-tour').isVisible(), false);
+  assert.equal(
+    await page.evaluate(() => __HYPERDRIVE__.snapshot().screen),
+    'menu',
+  );
+}
 const browser = await chromium.launch({
   headless: true,
   ...(process.env.CHROMIUM_PATH
@@ -323,8 +336,7 @@ try {
       // div-mounted controls and scene continuity, not actual browser playback.
       audioEnabled = true;
       audioRequests.length = 0;
-      await page.reload();
-      await page.waitForFunction(() => __HYPERDRIVE__?.snapshot().ready);
+      await reloadWithoutCampaign(page);
       await page.waitForSelector('#music.car-stereo', { state: 'attached' });
       await page.waitForFunction(
         () =>
@@ -348,7 +360,15 @@ try {
       await page.locator('#music [data-action="play"]').click();
       await page.locator('#music-close').click();
       await page.locator('#story').click();
+      assert.equal(
+        await page.evaluate(() => __HYPERDRIVE__.snapshot().screen),
+        'cars',
+      );
       await page.locator('#cars-ready').click();
+      assert.equal(
+        await page.evaluate(() => __HYPERDRIVE__.snapshot().screen),
+        'map',
+      );
       await page.locator('#music-open').click();
       assert.equal(
         await page.evaluate(
@@ -372,20 +392,19 @@ try {
       // the controller's synthetic non-native playback tests and catches a MIME
       // or CSP failure when the real vendored module is fetched by the browser.
       const hlsPath = '/game-test/src/vendor/hls.light.min.mjs';
-      const responsePromise = page.waitForResponse(
-        (response) => new URL(response.url()).pathname === hlsPath,
-      );
-      assert.equal(
-        await page.evaluate(async () => {
+      const [moduleResponse, moduleAvailable] = await Promise.all([
+        page.waitForResponse(
+          (response) => new URL(response.url()).pathname === hlsPath,
+        ),
+        page.evaluate(async () => {
           const { loadHls } = await import('/game-test/src/stream-audio.js');
           const Hls = await loadHls();
           return (
             typeof Hls === 'function' && typeof Hls.isSupported === 'function'
           );
         }),
-        true,
-      );
-      const moduleResponse = await responsePromise;
+      ]);
+      assert.equal(moduleAvailable, true);
       assert.match(
         moduleResponse.headers()['content-type'],
         /^application\/javascript(?:;|$)/,
@@ -409,8 +428,7 @@ try {
       // not turn into a missing-asset exception or a gameplay startup failure.
       audioEnabled = false;
       audioConfigStatus = 503;
-      await page.reload();
-      await page.waitForFunction(() => __HYPERDRIVE__?.snapshot().ready);
+      await reloadWithoutCampaign(page);
       assert.equal(await page.locator('iframe#music').count(), 1);
       assert.equal(await page.locator('#music audio').count(), 0);
       await page.locator('#story').click();

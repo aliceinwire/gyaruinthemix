@@ -4,6 +4,25 @@ import {
   AUDIO_FIXTURE_SOURCE,
 } from './ci-game-audio-fixtures.mjs';
 
+export async function assertPrivateAudioDenied(response, path) {
+  assert.ok(
+    [403, 404].includes(response.status),
+    `${path}: private content must be denied, got ${response.status}`,
+  );
+  assert.doesNotMatch(
+    response.headers.get('content-type') || '',
+    /^(?:audio|video)\/|application\/(?:octet-stream|vnd\.apple\.mpegurl)/i,
+    `${path}: denial must not contain media`,
+  );
+  const body = await response.text();
+  assert.ok(!body.includes(AUDIO_FIXTURE_KEY), `${path}: fixture key exposed`);
+  assert.doesNotMatch(
+    body,
+    /"(?:tracks|chunks|sourceHash)"\s*:|#EXTM3U|#EXT-X-|\b(?:ftyp|moof)\b/,
+    `${path}: denial must not expose a catalog or media payload`,
+  );
+}
+
 export async function checkGameAudioRuntime(
   base,
   { enabled, origin = 'https://gyaruinthemix.example' },
@@ -25,8 +44,13 @@ export async function checkGameAudioRuntime(
     `/game-test/assets/music/${AUDIO_FIXTURE_SOURCE}`,
     '/assets/music/.hls/catalog.json',
     '/game-test/assets/music/.hls/catalog.json',
-  ])
-    await request(path, 404);
+  ]) {
+    const response = await fetch(new URL(path, base), {
+      redirect: 'manual',
+      signal: AbortSignal.timeout(15000),
+    });
+    await assertPrivateAudioDenied(response, path);
+  }
   if (!enabled) {
     const catalog = await fetch(new URL('/game-audio/v1/catalog', base), {
       signal: AbortSignal.timeout(15000),

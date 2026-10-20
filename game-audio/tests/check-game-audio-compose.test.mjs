@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   assertGameAudioCompose,
+  gameAudioFalseBindOptions,
   GAME_AUDIO_SERVICE as AUDIO,
   GAME_AUDIO_SECRET as SECRET,
   ORIGINAL_SERVICES,
@@ -158,6 +159,24 @@ const mutations = {
   },
   'uses config mount': (f) => {
     f.config.services[AUDIO].configs = ['extra'];
+  },
+  'changes command': (f) => {
+    f.config.services[AUDIO].command = ['sh'];
+  },
+  'clears command with empty list': (f) => {
+    f.config.services[AUDIO].command = [];
+  },
+  'clears command with empty string': (f) => {
+    f.config.services[AUDIO].command = '';
+  },
+  'clears entrypoint with empty list': (f) => {
+    f.config.services[AUDIO].entrypoint = [];
+  },
+  'clears entrypoint with empty string': (f) => {
+    f.config.services[AUDIO].entrypoint = '';
+  },
+  'adds unreviewed null setting': (f) => {
+    f.config.services[AUDIO].privileged = null;
   },
   'changes entrypoint': (f) => {
     f.config.services[AUDIO].entrypoint = ['sh'];
@@ -316,3 +335,82 @@ test('accepts only the explicitly approved checkout assets/music directory', () 
   f.config.services[AUDIO].volumes[0].source = f.expectedMediaSource;
   assert.doesNotThrow(() => assertGameAudioCompose(f));
 });
+
+for (const apiMode of [false, true])
+  test(`accepts Compose JSON null command/entrypoint defaults api=${apiMode}`, () => {
+    const f = fixture({ apiMode });
+    f.config.services[AUDIO].command = null;
+    f.config.services[AUDIO].entrypoint = null;
+    assert.doesNotThrow(() => assertGameAudioCompose(f));
+  });
+
+for (const [name, serialization] of [
+  [
+    'explicit false and true',
+    {
+      disabled: { create_host_path: false },
+      enabled: { create_host_path: true },
+    },
+  ],
+  [
+    'compose-go 2.7.1 omitted false',
+    { disabled: {}, enabled: { create_host_path: true } },
+  ],
+  [
+    'newer omitted true',
+    { disabled: { create_host_path: false }, enabled: {} },
+  ],
+])
+  test(`accepts only probed false bind representation: ${name}`, () => {
+    const f = fixture();
+    f.expectedMediaBindOptions = gameAudioFalseBindOptions(serialization);
+    f.config.services[AUDIO].volumes[0].bind = structuredClone(
+      serialization.disabled,
+    );
+    assert.doesNotThrow(() => assertGameAudioCompose(f));
+    f.config.services[AUDIO].volumes[0].bind = structuredClone(
+      serialization.enabled,
+    );
+    assert.throws(() => assertGameAudioCompose(f));
+    delete f.config.services[AUDIO].volumes[0].bind;
+    assert.throws(() => assertGameAudioCompose(f));
+  });
+
+test('omitted false without trusted serializer evidence still fails closed', () => {
+  const f = fixture();
+  f.config.services[AUDIO].volumes[0].bind = {};
+  assert.throws(() => assertGameAudioCompose(f));
+});
+
+for (const [name, serialization] of [
+  ['ambiguous omission', { disabled: {}, enabled: {} }],
+  [
+    'reversed meanings',
+    {
+      disabled: { create_host_path: true },
+      enabled: { create_host_path: false },
+    },
+  ],
+  [
+    'unknown options',
+    {
+      disabled: { propagation: 'rshared' },
+      enabled: { create_host_path: true },
+    },
+  ],
+  [
+    'missing bind',
+    { disabled: undefined, enabled: { create_host_path: true } },
+  ],
+  ['null bind', { disabled: null, enabled: { create_host_path: true } }],
+  [
+    'string false',
+    {
+      disabled: { create_host_path: 'false' },
+      enabled: { create_host_path: true },
+    },
+  ],
+])
+  test(`rejects unsafe serializer evidence: ${name}`, () => {
+    assert.throws(() => gameAudioFalseBindOptions(serialization));
+  });
