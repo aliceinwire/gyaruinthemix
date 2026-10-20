@@ -1,3 +1,4 @@
+import { t } from './i18n.js';
 /** Small, bounded feedback layer. Detailed world and character art remain unobscured. */
 import { ENCOUNTER_RULES } from './encounter-director.js';
 import { DRIVING_PACE } from './pace.js';
@@ -36,8 +37,8 @@ export function drawRoadFeedback(ctx, feedback, state, { reducedMotion = false }
     if (x < -90 || x > 1050) continue;
     ctx.save(); ctx.globalAlpha = Math.min(1, (1 - p) * 2);
     ctx.font = '800 18px system-ui, sans-serif'; ctx.textAlign = 'center';
-    ctx.lineWidth = 4; ctx.strokeStyle = '#20152e'; ctx.strokeText(effect.label, x, y);
-    ctx.fillStyle = effect.color; ctx.fillText(effect.label, x, y);
+    ctx.lineWidth = 4; ctx.strokeStyle = '#20152e'; ctx.strokeText(t(effect.label), x, y, 260);
+    ctx.fillStyle = effect.color; ctx.fillText(t(effect.label), x, y, 260);
     for (let i = 0; i < (reducedMotion ? 0 : 5); i++) {
       const angle = i * Math.PI * 2 / 5, radius = 9 + p * 30;
       ctx.fillRect(x + Math.cos(angle) * radius, y + 24 + Math.sin(angle) * radius, 3, 3);

@@ -1,10 +1,11 @@
+import { t } from './i18n.js';
 /** Small code-native pixel props extend the original detailed sprite artwork. */
 function rect(ctx, x, y, width, height, color) {
   ctx.fillStyle = color; ctx.fillRect(Math.round(x), Math.round(y), width, height);
 }
 function label(ctx, value, x, y, color = '#fff0dc') {
   ctx.font = 'bold 9px monospace'; ctx.textAlign = 'center'; ctx.fillStyle = color;
-  ctx.fillText(value, Math.round(x), Math.round(y));
+  ctx.fillText(t(value), Math.round(x), Math.round(y), 80);
 }
 const ink = '#242333', paper = '#eee5d8', pink = '#ff8bc8', mint = '#a2f4d9';
 function camera(ctx, x, y) {

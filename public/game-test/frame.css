@@ -420,3 +420,66 @@ body[data-screen="map"] .notification-rail { display: none; }
  body:is([data-screen="playing"], [data-screen="finale"]) .controls button { padding: 4px; min-height: 44px !important; line-height: 1.3; }
  body:is([data-screen="playing"], [data-screen="finale"]) .controls small { font-size: 8px; line-height: 1.4; margin-top: 2px; }
 }
+/* Endonyms stay readable in the same frame, including modal focus traps. */
+.language-picker { display: inline-flex; align-items: center; flex: none; }
+.language-picker select { width: 124px; min-height: 36px; margin: 0; padding: 5px 24px 5px 8px; border: 1px solid var(--line); border-radius: 8px; background: #211b2e; color: var(--ink); font: 600 12px/1.3 system-ui, sans-serif; cursor: pointer; }
+.language-picker select:focus-visible { outline: 2px solid var(--pink); outline-offset: 2px; }
+.language-picker select:disabled { opacity: .65; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+.modal-card { position: relative; }
+.language-picker-modal { position: absolute; right: 12px; top: 10px; }
+.modal-card > .eyebrow:first-child { padding-right: 132px; min-height: 30px; display: flex; align-items: center; }
+.modal-card > :first-child:not(.eyebrow) { padding-right: 132px; }
+html:not(:lang(ja)) .screen-menu h1 { letter-spacing: -.04em; line-height: 1.05; }
+html:not(:lang(ja)) :is(.destination-option,.style-card,.draft-card,.build-card,.story-choices button) { overflow-wrap: anywhere; hyphens: auto; }
+html:not(:lang(ja)) .destination-kind { letter-spacing: .02em; }
+@media (max-width: 680px) {
+ .masthead { gap: 5px; padding-inline: 8px !important; }
+ .language-picker select { width: 108px; padding-left: 6px; font-size: 11px; }
+ .modal-card > .eyebrow:first-child { padding-right: 114px; }
+ .modal-card > :first-child:not(.eyebrow) { padding-right: 114px; }
+ .language-picker-modal { right: 10px; top: 8px; }
+ html:not(:lang(ja)) .screen-menu h1 { font-size: clamp(30px, 8.3vw, 36px); }
+}
+@media (min-width: 681px) and (max-height: 600px) {
+ .language-picker select { min-height: 30px; font-size: 11px; }
+ .language-picker-modal { top: 6px; }
+ .modal-card > .eyebrow:first-child { min-height: 24px; }
+ .new-car-picker { display: grid; grid-template-columns: minmax(0,1fr) minmax(240px,1fr); align-content: start; column-gap: 12px; }
+ .new-car-picker > :is(.frame-tabs,.frame-page) { grid-column: 1 / -1; width: 100%; }
+ #car-select-wallet { grid-column: 1; grid-row: 3; align-self: center; }
+ #cars-ready { grid-column: 2; grid-row: 3; }
+ #car-save-warning { grid-column: 1 / -1; grid-row: 4; }
+ #route-content { grid-template-columns: minmax(0,1fr) 310px; }
+ .route-actions #change-starting-car { flex: 1; min-width: 0; }
+ .map-stop, .destination-kind, .destination-option strong { line-height: 1.35; }
+ .destination-kind { font-size: 10px; }
+ .destination-status, .map-stop-label { line-height: 1.25; }
+ .journey-map { padding-block: 3px; }
+ .map-branch-label { height: 4px; }
+ #destination-choices { padding-block: 4px; }
+ .destination-option::before, .destination-option::after { height: 5px; }
+ .map-origin::after { height: 9px; }
+ .map-goal { margin-top: 4px; }
+ .map-goal::before { height: 5px; }
+}
+@media (max-width: 680px) and (max-height: 740px) {
+ .style-options button :is(span,small) { line-height: 1.4; }
+ .style-picker { margin: 4px 0; padding: 4px 0; }
+ /* Keep full translated route names and descriptions above the radio. */
+ .map-stop, .destination-kind { line-height: 1.35; }
+ .map-origin, .map-goal { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+ .map-stop-label { max-width: 44%; text-align: left; }
+ .map-stop strong { flex: 1; text-align: right; }
+ .map-branch-label, .destination-status, #climate-summary { line-height: 1.4; }
+ .destination-option strong, .map-route-detail { line-height: 1.4; }
+ .journey-map { padding: 4px; }
+ .map-branch-label { padding-block: 0; }
+ #destination-choices { padding-block: 6px; }
+ .destination-option { padding: 4px; gap: 3px; }
+ .destination-option img { height: 32px; }
+ .destination-option::before, .destination-option::after { height: 7px; }
+ .map-origin::after { height: 15px; }
+ .map-goal { margin-top: 8px; }
+ .map-goal::before { height: 9px; }
+}

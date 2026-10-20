@@ -1,3 +1,5 @@
+import { localizeText, localizeAttribute, localizeHTML, initializeLanguage, installLanguageSelectors } from './src/localized-ui.js';
+import { message, number, t } from './src/i18n.js';
 import { installFrame } from './src/frame.js';
 import { RUN_STYLES, chooseRunStyle, getRpgView, choosePerk } from './src/tour-rpg.js';
 import { createSettingsStore } from './src/tour-settings.js';
@@ -54,6 +56,8 @@ import {
 import { questionForStage } from "./src/questions.js";
 import { render, drawCar } from "./src/renderer.js";
 import { drawMap, drawFinale, preloadJourneyMap, hitTestMapChoice } from "./src/campaign.js";
+await initializeLanguage();
+
 const $ = (s) => document.querySelector(s),
   canvas = $("#game"),
   ctx = canvas.getContext("2d", { alpha: false });
@@ -100,7 +104,7 @@ function storageWarning() {
   if (storageWarningShown) return;
   storageWarningShown = true;
   $("#car-save-warning").hidden = false;
-  $("#car-save-warning").textContent = "セーブできへんかった。解禁や買い物の記録は、この画面を閉じると残らへんかもしれんで。";
+  localizeText($("#car-save-warning"), "セーブできへんかった。解禁や買い物の記録は、この画面を閉じると残らへんかもしれんで。");
   toast("このブラウザではセーブできへんみたい。閉じる前に気ぃつけてな。");
 }
 function saveMeta() {
@@ -182,22 +186,22 @@ const beep = (...args) => audio.beep(...args),
   unlockSound = () => audio.unlock();
 
 function toast(msg) {
-  $("#toast").textContent = msg;
+  localizeText($("#toast"), msg);
   $("#toast").classList.add("on");
   toastTime = 2.1;
 }
 let dialogueUntil = 0, lastDialogueId = null;
 function say(text, speaker = "DJちゃな / ナビ担当", holdSeconds = 5) {
   dialogueUntil = visualTime + holdSeconds;
-  $("#dialogue").textContent = text;
-  $("#speaker").textContent = speaker;
+  localizeText($("#dialogue"), text);
+  localizeText($("#speaker"), speaker);
 }
 function setPause(value) {
   if (!["playing", "finale"].includes(screen)) return;
   paused = value;
   releaseInput();
   $("#pause-overlay").hidden = !paused;
-  $("#pause").textContent = paused ? "ほな、再開" : "ひと休み";
+  localizeText($("#pause"), paused ? "ほな、再開" : "ひと休み");
   accumulator = 0;
   if (paused) {
     $("#resume").focus();
@@ -241,18 +245,17 @@ function openMap(next = false) {
   mapClimate = next
     ? campaignEnvironment(state.seed, state.routeIndex + 1)
     : { season: state.season, weather: state.weather };
-  $("#climate-summary").textContent =
-    `${seasonNames[mapClimate.season]}・${weatherNames[mapClimate.weather]}やで。${weatherTips[mapClimate.weather]}`;
-  $("#map-heading").textContent = "次の街角、どの道で行こ？";
-  $("#map-subtitle").textContent = `${route.goal}のフロアへ。地図の行き先を選んで出発しよ。`;
+  localizeText($("#climate-summary"), message("{0}・{1}やで。{2}", [seasonNames[mapClimate.season], weatherNames[mapClimate.weather], weatherTips[mapClimate.weather]]));
+  localizeText($("#map-heading"), "次の街角、どの道で行こ？");
+  localizeText($("#map-subtitle"), message("{0}のフロアへ。地図の行き先を選んで出発しよ。", [route.goal]));
   const stageIndex = next ? state.routeIndex + 1 : state.routeIndex;
   const stage = getJourneyStage(stageIndex);
   const previousId = next ? state.journeyNodeId : state.journey?.completedNodeIds?.[stageIndex - 1];
   const previous = getJourneyNode(previousId);
-  $("#map-current-location").textContent = previous ? previous.districtName : stageIndex ? "前のクラブ" : "出発ガレージ";
-  $("#map-progress").textContent = `道のり ${stageIndex + 1} / ${JOURNEY_STAGE_COUNT} · ${stage.cityName}`;
-  $("#map-next-club").textContent = `${stage.cityName} / ${stage.club}`;
-  $("#map-club-distance").textContent = stage.clubStop ? "この道を走るとクラブ到着" : "この街角 → もう1本の道 → クラブ到着";
+  localizeText($("#map-current-location"), previous ? previous.districtName : stageIndex ? "前のクラブ" : "出発ガレージ");
+  localizeText($("#map-progress"), message("道のり {0} / {1} · {2}", [stageIndex + 1, JOURNEY_STAGE_COUNT, stage.cityName]));
+  localizeText($("#map-next-club"), message("{0} / {1}", [stage.cityName, stage.club]));
+  localizeText($("#map-club-distance"), stage.clubStop ? "この道を走るとクラブ到着" : "この街角 → もう1本の道 → クラブ到着");
   const choices = getJourneyChoices(stageIndex,state.seed);
   selectedNodeId = choices.find(node=>node.nodeId===(next?state.pendingJourneyNodeId:state.journeyNodeId))?.nodeId || choices[0].nodeId;
   roadChoice = getJourneyNode(selectedNodeId).routeOption;
@@ -261,14 +264,14 @@ function openMap(next = false) {
   renderShop();
   const ribbon = $("#tour-ribbon"); ribbon.replaceChildren();
   ["中野", "新宿", "渋谷", "浅草", "大阪", "京都"].forEach((name,index) => {
-    const stamp = document.createElement("span"); stamp.textContent = `${index < Math.floor(stageIndex/2) ? "✓ " : ""}${name}`;
+    const stamp = document.createElement("span"); localizeText(stamp, message("{0}{1}", [index < Math.floor(stageIndex/2) ? "✓ " : "", name]));
     stamp.className = index < Math.floor(stageIndex/2) ? "passed" : index === Math.floor(stageIndex/2) ? "current" : "";
     if (index === Math.floor(stageIndex/2)) stamp.setAttribute("aria-current", "step"); ribbon.append(stamp);
   });
   const arrived = $("#arrival-summary"); arrived.hidden = !next;
   if (next) {
     const mission = getRouteMission(state);
-    arrived.textContent = `${state.route.goal}、到着や！ ${state.stageGyaru}人をフロアの仲間に。${mission?.complete ? `道の目標も達成、+${mission.reward}コイン！` : "次の道でもうひと盛りしよ。"} ガレージでこの旅のパーツを選べるで。`;
+    localizeText(arrived, message("{0}、到着や！ {1}人をフロアの仲間に。{2} ガレージでこの旅のパーツを選べるで。", [state.route.goal, state.stageGyaru, mission?.complete ? message("道の目標も達成、+{0}コイン！", [mission.reward]) : "次の道でもうひと盛りしよ。"]));
   }
   hud();
   $("#route-tab").focus();
@@ -280,7 +283,7 @@ function enterPlay(announce = true) {
   setScreen("playing");
   canvas.tabIndex = 0;
   canvas.focus({ preventScroll: true });
-  $("#pause").textContent = "ひと休み";
+  localizeText($("#pause"), "ひと休み");
   if (announce) say(state.route.intro || "ハートで仲間を誘って、EVで充電やで！");
   if (announce && state.distance === 0) { roadFeedback = createRoadFeedback(); toast(state.routeIndex === 0 ? "運転は自動。まずはハートを長押しや" : "選んだ街角へ。今回の盛りで行くで！"); }
   unlockSound();
@@ -372,9 +375,9 @@ function renderStyles() {
     const button = document.createElement('button');
     button.className = 'style-card'; button.dataset.style = style.id;
     button.setAttribute('aria-pressed', String(current.style === style.id));
-    const name = document.createElement('strong'); name.textContent = style.name;
-    const detail = document.createElement('span'); detail.textContent = style.description;
-    const hint = document.createElement('small'); hint.textContent = `${style.effect} / ${style.signature}`;
+    const name = document.createElement('strong'); localizeText(name, style.name);
+    const detail = document.createElement('span'); localizeText(detail, style.description);
+    const hint = document.createElement('small'); localizeText(hint, message("{0} / {1}", [style.effect, style.signature]));
     button.append(name, detail, hint);
     button.addEventListener('click', () => {
       if (!chooseRunStyle(state, style.id)) return;
@@ -386,26 +389,26 @@ function renderStyles() {
 }
 function renderRpgHud() {
   const view = getRpgView(state);
-  $('#rpg-rank').textContent = view.enabled ? `MIX Lv.${view.rank} · ${view.styleName}` : 'CLASSIC TOUR';
+  localizeText($('#rpg-rank'), view.enabled ? message("MIX Lv.{0} · {1}", [view.rank, view.styleName]) : 'CLASSIC TOUR');
   const xp = $('#rpg-xp');
   xp.value = view.progress || 0; xp.max = 1;
-  xp.setAttribute('aria-valuetext', view.enabled ? `${view.xp} XP / 次のレベル ${view.nextXp ?? 'MAX'}` : 'クラシックツアー');
+  localizeAttribute(xp, 'aria-valuetext', view.enabled ? message("{0} XP / 次のレベル {1}", [view.xp, view.nextXp ?? 'MAX']) : 'クラシックツアー');
   const active = view.synergy?.filter(item => item.active) || [];
-  $('#rpg-build').textContent = view.enabled ? (active.length ? active.map(item => `${item.name}連携`).join(' / ') : `${view.perks?.length || 0} スキル · ハートと回避でXP`) : 'いまの旅はそのまま続けられるで';
+  localizeText($('#rpg-build'), view.enabled ? (active.length ? active.map(item => message("{0}連携", [item.name])).join(' / ') : message("{0} スキル · ハートと回避でXP", [view.perks?.length || 0])) : 'いまの旅はそのまま続けられるで');
 }
 function showDraft() {
   releaseInput(); accumulator = 0; paused = false;
   setScreen('draft');
   const view = getRpgView(state), host = $('#draft-options');
-  $('#draft-title').textContent = `MIX LEVEL ${view.rank + 1} / ひとつ、盛ってこ。`;
-  $('#draft-copy').textContent = '時間は止まってるで。前へ・次へで3枚を見比べて、欲しいカードをタップ。効果はこの旅だけ。';
+  localizeText($('#draft-title'), message("MIX LEVEL {0} / ひとつ、盛ってこ。", [view.rank + 1]));
+  localizeText($('#draft-copy'), '時間は止まってるで。前へ・次へで3枚を見比べて、欲しいカードをタップ。効果はこの旅だけ。');
   host.replaceChildren();
   for (const perk of view.offers || []) {
     const card = document.createElement('button'); card.className = 'draft-card'; card.dataset.perkId = perk.id;
-    const family = document.createElement('span'); family.className = 'eyebrow'; family.textContent = perk.familyName || perk.family || 'MIX SKILL';
-    const name = document.createElement('strong'); name.textContent = perk.name;
-    const description = document.createElement('span'); description.textContent = perk.description;
-    const detail = document.createElement('small'); detail.textContent = `${perk.effect} / ${perk.synergy}`;
+    const family = document.createElement('span'); family.className = 'eyebrow'; localizeText(family, perk.familyName || perk.family || 'MIX SKILL');
+    const name = document.createElement('strong'); localizeText(name, perk.name);
+    const description = document.createElement('span'); localizeText(description, perk.description);
+    const detail = document.createElement('small'); localizeText(detail, message("{0} / {1}", [perk.effect, perk.synergy]));
     card.append(family, name, description, detail);
     card.addEventListener('click', () => {
       if (!choosePerk(state, perk.id)) return;
@@ -432,9 +435,9 @@ function renderShop() {
     const level = state.upgrades[item.id] || 0, price = upgradePrice(state, item.id);
     const repairFull = item.id === "repair" && state.integrity >= state.integrityCapacity;
     const max = repairFull || (item.id !== "repair" && level >= item.maxLevel);
-    node.innerHTML = `<h3>${item.name}</h3><p>${item.description}</p><small>${item.id === "repair" ? "お手入れ" : `盛り ${level} / ${item.maxLevel}`}</small>`;
+    localizeHTML(node, `<h3>${item.name}</h3><p>${item.description}</p><small>${item.id === "repair" ? "お手入れ" : `盛り ${level} / ${item.maxLevel}`}</small>`);
     const button = document.createElement("button");
-    button.textContent = repairFull ? "修理いらんで" : max ? "めっちゃ盛れた" : `${price} コインで${item.id === "repair" ? "直そ" : "盛ろ"}`;
+    localizeText(button, repairFull ? "修理いらんで" : max ? "めっちゃ盛れた" : message("{0} コインで{1}", [price, item.id === "repair" ? "直そ" : "盛ろ"]));
     button.disabled = max || state.money < price || state.status !== "won" || !state.campaignStarted;
     button.addEventListener("click", () => {
       if (!buyUpgrade(state, item.id)) return;
@@ -442,29 +445,29 @@ function renderShop() {
     });
     node.append(button); $("#shop").append(node);
   }
-  $("#shop-status").textContent = "ハートで稼いだコインで、いま乗ってるくるまを盛れるで。";
+  localizeText($("#shop-status"), "ハートで稼いだコインで、いま乗ってるくるまを盛れるで。");
 }
 function renderBuildWorkshop() {
   const build = describeBuild(state), offers = getBuildOffers(state), host = $("#build-offers");
-  $("#build-summary").textContent = `${build.name} · ${build.mods.length} / 4 パーツ。${build.summary}`;
+  localizeText($("#build-summary"), message("{0} · {1} / 4 パーツ。{2}", [build.name, build.mods.length, build.summary]));
   host.replaceChildren();
   for (const offer of offers) {
     const card = document.createElement("article"); card.className = "build-card"; card.dataset.family = offer.family;
-    const tag = document.createElement("span"); tag.className = "eyebrow"; tag.textContent = `${offer.familyName} / ${offer.rarityLabel}`;
-    const title = document.createElement("h4"); title.textContent = offer.name;
-    const copy = document.createElement("p"); copy.textContent = offer.description;
-    const preview = document.createElement("small"); preview.textContent = offer.preview;
+    const tag = document.createElement("span"); tag.className = "eyebrow"; localizeText(tag, message("{0} / {1}", [offer.familyName, offer.rarityLabel]));
+    const title = document.createElement("h4"); localizeText(title, offer.name);
+    const copy = document.createElement("p"); localizeText(copy, offer.description);
+    const preview = document.createElement("small"); localizeText(preview, offer.preview);
     card.append(tag,title,copy,preview);
     let replacement;
     if (offer.requiresReplacement) {
-      const label = document.createElement("label"); label.textContent = "外すパーツを選んでな";
-      replacement = document.createElement("select"); replacement.setAttribute("aria-label", `${offer.name}と入れ替えるパーツ`);
-      const none = document.createElement("option"); none.value = ""; none.textContent = "4枠いっぱい。入れ替えを選ぶ"; replacement.append(none);
-      for (const item of build.mods) { const option = document.createElement("option"); option.value = item.id; option.textContent = item.name; replacement.append(option); }
+      const label = document.createElement("label"); localizeText(label, "外すパーツを選んでな");
+      replacement = document.createElement("select"); localizeAttribute(replacement, "aria-label", message("{0}と入れ替えるパーツ", [offer.name]));
+      const none = document.createElement("option"); none.value = ""; localizeText(none, "4枠いっぱい。入れ替えを選ぶ"); replacement.append(none);
+      for (const item of build.mods) { const option = document.createElement("option"); option.value = item.id; localizeText(option, item.name); replacement.append(option); }
       label.append(replacement); card.append(label);
     }
     const button = document.createElement("button"); button.dataset.modId = offer.id;
-    button.textContent = offer.available ? `${offer.price} コインで${offer.requiresReplacement ? "入れ替えよ" : "付けよ"}` : offer.reason;
+    localizeText(button, offer.available ? message("{0} コインで{1}", [offer.price, offer.requiresReplacement ? "入れ替えよ" : "付けよ"]) : offer.reason);
     button.disabled = !offer.available || Boolean(replacement && !replacement.value);
     replacement?.addEventListener("change",()=>{ button.disabled = !offer.available || !replacement.value; });
     button.addEventListener("click",()=>{
@@ -473,7 +476,7 @@ function renderBuildWorkshop() {
     });
     card.append(button); host.append(card);
   }
-  $("#build-note").textContent = state.status !== "won" ? "到着してから選べるで。まずは最初の街角へ！" : offers.length ? "各到着地点で1つ。最大4パーツ。外すと効果は消えて、この旅では買い直し・返金なし。くるまは今のままや。" : "今あるパーツで、この旅だけの走りを楽しも。基本パーツと修理も使えるで。";
+  localizeText($("#build-note"), state.status !== "won" ? "到着してから選べるで。まずは最初の街角へ！" : offers.length ? "各到着地点で1つ。最大4パーツ。外すと効果は消えて、この旅では買い直し・返金なし。くるまは今のままや。" : "今あるパーツで、この旅だけの走りを楽しも。基本パーツと修理も使えるで。");
 }
 function renderGarage() {
   const grid = $("#car-garage");
@@ -481,9 +484,8 @@ function renderGarage() {
   const current = getCarProfile(state);
   const atStart =
     state.routeIndex === 0 && !state.campaignStarted && state.distance === 0;
-  $("#garage-wallet").textContent =
-    `${state.money} コイン / ギャルポイント ${meta.completionPoints} · ${atStart ? "最初に乗るくるま、選ぼか" : "この旅はこのくるまで行くで"}`;
-  $("#car-select-wallet").textContent = `${meta.completionPoints} ギャルポイント · 今回は ${current.name}`;
+  localizeText($("#garage-wallet"), message("{0} コイン / ギャルポイント {1} · {2}", [state.money, meta.completionPoints, atStart ? "最初に乗るくるま、選ぼか" : "この旅はこのくるまで行くで"]));
+  localizeText($("#car-select-wallet"), message("{0} ギャルポイント · 今回は {1}", [meta.completionPoints, current.name]));
   $("#starting-customization").hidden = !atStart;
   if (!atStart) return;
   renderStyles();
@@ -494,29 +496,29 @@ function renderGarage() {
     const card = document.createElement("article");
     card.className = `car-card${equipped ? " equipped" : ""}`;
     const preview = document.createElement(owned ? "canvas" : "div");
-    if (!owned) { preview.className = "car-mystery"; preview.textContent = "？"; preview.setAttribute("aria-label", "まだ秘密のくるま"); }
+    if (!owned) { preview.className = "car-mystery"; localizeText(preview, "？"); localizeAttribute(preview, "aria-label", "まだ秘密のくるま"); }
     preview.width = 280;
     preview.height = 150;
-    if (owned) preview.setAttribute("aria-label", car.name + " のくるま見本");
+    if (owned) localizeAttribute(preview, "aria-label", car.name + " のくるま見本");
     if (owned) drawCar(preview.getContext("2d"), 140, 125, {
       carId: car.id,
       appearance: getCarAppearance(state, car.id),
       scale: 1.1,
     });
     const heading = document.createElement("h3");
-    heading.textContent = owned ? car.name : "まだ秘密のくるま";
+    localizeText(heading, owned ? car.name : "まだ秘密のくるま");
     const copy = document.createElement("p");
-    copy.textContent = owned ? car.description : "完走して解禁したら、姿も性能も見せるで。";
+    localizeText(copy, owned ? car.description : "完走して解禁したら、姿も性能も見せるで。");
     const stats = document.createElement("div");
     stats.className = "car-stats";
     stats.hidden = !owned;
-    stats.textContent = owned ? `電池 ${car.stats.energyCapacity} · 耐久 ${car.stats.integrityCapacity} · 浮力 ${car.stats.thrustAcceleration} · 消費 ${car.stats.thrustDrain}/秒 · 充電 ${car.stats.chargeRate}/秒 · 連射 ${car.stats.shotInterval}秒` : "";
+    localizeText(stats, owned ? message("電池 {0} · 耐久 {1} · 浮力 {2} · 消費 {3}/秒 · 充電 {4}/秒 · 連射 {5}秒", [car.stats.energyCapacity, car.stats.integrityCapacity, car.stats.thrustAcceleration, car.stats.thrustDrain, car.stats.chargeRate, car.stats.shotInterval]) : "");
     const button = document.createElement("button");
-    button.textContent = equipped
+    localizeText(button, equipped
       ? "これ乗ってるで"
       : owned
         ? "これに乗り換えよ"
-        : `${car.unlockPrice} ギャルポイントで解禁`;
+        : message("{0} ギャルポイントで解禁", [car.unlockPrice]));
     button.disabled =
       equipped ||
       !atStart ||
@@ -550,7 +552,7 @@ function renderStartingCustomization() {
     for (const item of catalog) {
       const option = document.createElement("option"); option.value = item.id;
       const price = startingCustomizationPrice(state, meta, {[key]: item.id});
-      option.textContent = `${item.name} · ${price === 0 ? "解禁済み" : `${price} GP`}`;
+      localizeText(option, message("{0} · {1}", [item.name, price === 0 ? "解禁済み" : message("{0} GP", [price])]));
       select.append(option);
     }
     select.value = appearance[key].id;
@@ -564,9 +566,9 @@ function updateCustomizationPreview() {
   g.clearRect(0,0,preview.width,preview.height);
   drawCar(g,210,160,{carId:getCarProfile(state).id,appearance,scale:1.7});
   const unchanged = Object.keys(patch).every(key => getCarAppearance(state)[key].id === patch[key]);
-  $("#customization-status").textContent = unchanged ? "いまの盛りやで。ロゴはそのまま、うちら仕様！" : price === 0 ? "解禁済みやから、着替えは無料やで。" : `まとめて ${price} ギャルポイント。残り ${meta.completionPoints} GPやで。`;
+  localizeText($("#customization-status"), unchanged ? "いまの盛りやで。ロゴはそのまま、うちら仕様！" : price === 0 ? "解禁済みやから、着替えは無料やで。" : message("まとめて {0} ギャルポイント。残り {1} GPやで。", [price, meta.completionPoints]));
   $("#customization-apply").disabled = unchanged || price === null || price > meta.completionPoints || !atNewRunGarage();
-  $("#customization-apply").textContent = price ? `${price} GPで解禁して着替えよ` : "この盛りで決めよ";
+  localizeText($("#customization-apply"), price ? message("{0} GPで解禁して着替えよ", [price]) : "この盛りで決めよ");
 }
 for (const key of Object.keys(cosmeticCatalogs)) $("#custom-"+key).addEventListener("change",updateCustomizationPreview);
 $("#customization-apply").addEventListener("click", () => {
@@ -584,15 +586,15 @@ function showQuiz() {
   currentQuestion = questionForStage(state.routeIndex, state.routeOption, state.seed);
   quizAnswered = false;
   $("#quiz").hidden = false;
-  $("#quiz-question").textContent = currentQuestion.question;
-  $("#quiz-feedback").textContent = "";
+  localizeText($("#quiz-question"), currentQuestion.question);
+  localizeText($("#quiz-feedback"), "");
   $("#quiz-source").hidden = true;
   $("#quiz-continue").hidden = true;
   $("#quiz-choices").hidden = false;
   $("#quiz-choices").replaceChildren();
   currentQuestion.choices.forEach((choice, index) => {
     const button = document.createElement("button");
-    button.textContent = `${index + 1}. ${choice}`;
+    localizeText(button, message("{0}. {1}", [index + 1, choice]));
     button.addEventListener("click", () => chooseAnswer(index));
     $("#quiz-choices").append(button);
   });
@@ -604,9 +606,8 @@ function chooseAnswer(index) {
   const correct = index === currentQuestion.answer;
   answerQuiz(state, correct);
   releaseInput();
-  $("#quiz-feedback").textContent =
-    (correct ? "正解！新しいファンが増えたで " : "今回は惜しい！ ") +
-    `答えは「${currentQuestion.choices[currentQuestion.answer]}」。${currentQuestion.explanation}`;
+  localizeText($("#quiz-feedback"), (correct ? "正解！新しいファンが増えたで " : "今回は惜しい！ ") +
+    message("答えは「{0}」。{1}", [currentQuestion.choices[currentQuestion.answer], currentQuestion.explanation]));
   $("#quiz-choices").hidden = true;
   $("#quiz-source").href = currentQuestion.source;
   $("#quiz-source").hidden = false;
@@ -642,7 +643,7 @@ function showResult() {
         say('6つの街の音、ひとつになったで。ここからはうちらの時間や！');
         unlockSound();
         $('#pause').disabled = false;
-        $('#pause').textContent = 'ひと休み';
+        localizeText($('#pause'), 'ひと休み');
       }));
     } else {
       storyDirector.show("arrival", () => { openMap(true); toast(state.route.win); });
@@ -653,24 +654,23 @@ function showResult() {
   setScreen("result");
   $("#result").hidden = false;
   const won = state.status === "won";
-  $("#result-eyebrow").textContent = won
+  localizeText($("#result-eyebrow"), won
     ? "出番、間に合ったで"
-    : "もっかい行こか？";
-  $("#result-title").textContent = won
+    : "もっかい行こか？");
+  localizeText($("#result-title"), won
     ? state.campaignComplete
       ? "うちらのラストセット"
       : "クラブ着いたで"
-    : "まだまだ、いけるで。";
-  $("#result-copy").textContent = won
+    : "まだまだ、いけるで。");
+  localizeText($("#result-copy"), won
     ? state.route.win || "街で増えた仲間も、一緒にフロアへ！"
-    : (state.reason === "energy" ? "電池が足りへんかったな。次はEVの手前で浮上をやめて、E長押しで充電しよ。" : "いったんピットへ戻ろ。段差は浮上、音の壁はハートかラッシュ。休憩メニューでダメージを減らすこともできるで。");
-  $("#result-stats").textContent =
-    `${state.stageGyaru}人と出会えた · 最高${state.bestCombo}コンボ · ちいさなしあわせ ${state.littleFinds}個` + (won ? '。次の街でも、うちららしく。' : '。この道の出発前へ戻って再挑戦。前の街までの記録は残るで。');
-  $("#continue").textContent = won
+    : (state.reason === "energy" ? "電池が足りへんかったな。次はEVの手前で浮上をやめて、E長押しで充電しよ。" : "いったんピットへ戻ろ。段差は浮上、音の壁はハートかラッシュ。休憩メニューでダメージを減らすこともできるで。"));
+  localizeText($("#result-stats"), message("{0}人と出会えた · 最高{1}コンボ · ちいさなしあわせ {2}個", [state.stageGyaru, state.bestCombo, state.littleFinds]) + (won ? '。次の街でも、うちららしく。' : '。この道の出発前へ戻って再挑戦。前の街までの記録は残るで。'));
+  localizeText($("#continue"), won
     ? state.campaignComplete
       ? "ほな、音出そ →"
       : "道とくるま、見てこ →"
-    : "もっかいこの道行こ →";
+    : "もっかいこの道行こ →");
   $("#continue").focus();
   beep(won ? 880 : 190, 0.25);
 }
@@ -680,7 +680,7 @@ $("#story").addEventListener("click", () => {
     savedTour &&
     !savedTour.campaignComplete &&
     !confirm(
-      "新しい旅を始めたら、いまの旅のセーブは上書きやで。解禁したくるまとギャルポイントは残るで。始める？",
+      t("新しい旅を始めたら、いまの旅のセーブは上書きやで。解禁したくるまとギャルポイントは残るで。始める？"),
     )
   )
     return;
@@ -709,7 +709,7 @@ $("#continue").addEventListener("click", () => {
       say("DJありねぇとDJちゃな、全員ぶちアゲやー！");
       unlockSound();
       $("#pause").disabled = false;
-      $("#pause").textContent = "ひと休み";
+      localizeText($("#pause"), "ひと休み");
     } else openMap(true);
   } else {
     state = retryRoute(state);
@@ -728,9 +728,9 @@ function renderDestinationChoices() {
   const choices = getJourneyChoices(pendingNext ? state.routeIndex+1 : state.routeIndex,state.seed);
   const chosen = choices.find(node => node.nodeId === selectedNodeId);
   const mission = previewMission(chosen);
-  $("#map-route-detail").textContent = chosen ? `${chosen.label} · ${chosen.description}` : "";
-  $("#route-mission-preview").textContent = mission ? `寄り道の目標「${mission.label}」 ${mission.description} ${mission.rewardLabel}` : "";
-  $("#map-selected-route").textContent = chosen ? `選んだ道：${chosen.districtName}` : "地図の行き先を選んでな";
+  localizeText($("#map-route-detail"), chosen?.description || "");
+  localizeText($("#route-mission-preview"), mission ? message("寄り道の目標「{0}」 {1} {2}", [mission.label, mission.description, mission.rewardLabel]) : "");
+  localizeText($("#map-selected-route"), chosen ? message("選んだ道：{0}", [chosen.districtName]) : "地図の行き先を選んでな");
   const host = $("#destination-choices"); host.replaceChildren();
   for (const [index,node] of choices.entries()) {
     const button = document.createElement("button");
@@ -743,12 +743,12 @@ function renderDestinationChoices() {
     const image = document.createElement("img");
     const district = getDistrictScene(node.cityId,node.locationIndex);
     image.src = new URL(`./assets/districts/${node.cityId}/${district.files[mapClimate.season]}`,import.meta.url).href; image.alt = ""; image.loading="lazy";
-    const title = document.createElement("strong"); title.textContent=node.districtName;
-    const detail = document.createElement("small"); detail.textContent=`${node.label} · ${node.description}`;
-    const kind = document.createElement("span"); kind.className="destination-kind"; kind.textContent=`${index + 1} · ${node.label}`;
-    const status = document.createElement("span"); status.className="destination-status"; status.textContent=node.nodeId===selectedNodeId ? "✓ この道を選択中" : "この街角へ →";
+    const title = document.createElement("strong"); localizeText(title, node.districtName);
+    const detail = document.createElement("small"); localizeText(detail, message("{0} · {1}", [node.label, node.description]));
+    const kind = document.createElement("span"); kind.className="destination-kind"; localizeText(kind, message("{0} · {1}", [index + 1, node.label]));
+    const status = document.createElement("span"); status.className="destination-status"; localizeText(status, node.nodeId===selectedNodeId ? "✓ この道を選択中" : "この街角へ →");
     const fit = document.createElement("span"); fit.className = "route-fit";
-    fit.textContent = node.kind === "service" ? `到着で耐久+20 / 現在${Math.ceil(state.integrity)}` : node.kind === "event" ? "コイン+25% / 動く相手が多め" : "EV多め / ゆっくり長めの道";
+    localizeText(fit, node.kind === "service" ? message("到着で耐久+20 / 現在{0}", [Math.ceil(state.integrity)]) : node.kind === "event" ? "コイン+25% / 動く相手が多め" : "EV多め / ゆっくり長めの道");
     button.append(kind,image,title,detail,fit,status);
     button.addEventListener("click",()=>selectDestination(node.nodeId)); host.append(button);
   }
@@ -774,44 +774,42 @@ canvas.addEventListener("pointerup",event=>{
 function hud() {
   renderRpgHud();
   const rushButton = $('[data-control="rush"]');
-  rushButton.querySelector("small").textContent = state.rushing ? "無敵やで！ 電池めっちゃ使ってる！" : state.rushCooldown > 0 ? `あと ${Math.ceil(state.rushCooldown)} 秒待ってな` : "X / SHIFT · 電池めっちゃ使うで";
+  localizeText(rushButton.querySelector("small"), state.rushing ? "無敵やで！ 電池めっちゃ使ってる！" : state.rushCooldown > 0 ? message("あと {0} 秒待ってな", [Math.ceil(state.rushCooldown)]) : "X / SHIFT · 電池めっちゃ使うで");
   const cue = getRoadCue(state);
   const cueKey = `${cue.label}:${cue.action}`;
   if (cueKey !== lastCue) {
-    $("#road-cue").textContent = cue.label; $("#road-status").dataset.urgency = cue.urgency;
+    localizeText($("#road-cue"), cue.label); $("#road-status").dataset.urgency = cue.urgency;
     document.querySelectorAll("[data-control]").forEach(button => button.classList.toggle("suggested", button.dataset.control === cue.action)); lastCue = cueKey;
   }
   const ev = state._stations.find(distance => distance > state.distance + 5);
-  $("#next-ev").textContent = state.atStation ? "EV · EVエリア" : ev ? `EV · あと${Math.ceil(ev - state.distance)}m` : "まもなく到着";
-  $("#road-phase").textContent = getEncounterPhase(state).label;
+  localizeText($("#next-ev"), state.atStation ? "EV · EVエリア" : ev ? message("EV · あと{0}m", [Math.ceil(ev - state.distance)]) : "まもなく到着");
+  localizeText($("#road-phase"), getEncounterPhase(state).label);
   for (const [kind,value,capacity] of [["health",state.integrity,state.integrityCapacity],["energy",state.energy,state.energyCapacity]]) {
     const meter = $("#" + kind + "-meter"); meter.setAttribute("aria-valuenow", String(Math.ceil(value))); meter.setAttribute("aria-valuemax", String(capacity)); meter.dataset.low = String(value / capacity < .25);
   }
   const route = state.route;
-  $("#location-label").textContent =
-    `${(getDistrictScene(route.cityId, state.locationIndex || 0) || { name: route.goal }).name} / ${String((state.locationIndex || 0) + 1).padStart(2, "0")}`;
-  $("#mode-label").textContent = `クラブ旅 ${state.routeIndex + 1} / ${JOURNEY_STAGE_COUNT}`;
-  $("#money").textContent = String(state.money).padStart(3, "0");
+  localizeText($("#location-label"), message("{0} / {1}", [(getDistrictScene(route.cityId, state.locationIndex || 0) || { name: route.goal }).name, String((state.locationIndex || 0) + 1).padStart(2, "0")]));
+  localizeText($("#mode-label"), message("クラブ旅 {0} / {1}", [state.routeIndex + 1, JOURNEY_STAGE_COUNT]));
+  localizeText($("#money"), String(state.money).padStart(3, "0"));
   $("#combo-bar").style.width =
     `${Math.min(100, ((state.comboTimer || 0) / 4) * 100)}%`;
-  $("#destination").textContent = `次のフロア / ${route.club}`;
+  localizeText($("#destination"), message("次のフロア / {0}", [route.club]));
   const length = state.routeLength || route.distance;
-  $("#remaining").textContent =
-    `${Math.ceil(Math.max(0, length - state.distance)).toLocaleString()} m`;
+  localizeText($("#remaining"), message("{0} m", [number(Math.ceil(Math.max(0, length - state.distance)), { useGrouping: true })]));
   $("#progress").style.width =
     `${Math.min(100, (state.distance / length) * 100)}%`;
-  $("#fans").textContent = `ファン ${state.totalFans} 人`;
-  $("#combo").textContent = state.charging
+  localizeText($("#fans"), message("ファン {0} 人", [state.totalFans]));
+  localizeText($("#combo"), state.charging
     ? "充電中やで"
     : state.atStation
       ? "E長押しで充電や"
       : state.combo > 1
-        ? `${state.combo} 連続やで`
-        : " ハートでフロアへ誘お";
-  $("#health-value").textContent = `${Math.ceil(state.integrity)}`;
+        ? message("{0} 連続やで", [state.combo])
+        : " ハートでフロアへ誘お");
+  localizeText($("#health-value"), message("{0}", [Math.ceil(state.integrity)]));
   $("#health-bar").style.width =
     `${(state.integrity / (state.integrityCapacity || 100)) * 100}%`;
-  $("#energy-value").textContent = `${Math.ceil(state.energy)}`;
+  localizeText($("#energy-value"), message("{0}", [Math.ceil(state.energy)]));
   $("#energy-bar").style.width =
     `${(state.energy / (state.energyCapacity || 100)) * 100}%`;
 }
@@ -877,11 +875,11 @@ function frame(now) {
   if (screen === "finale" && !paused) {
     updatePerformance(performanceSet, input, dt);
     const view = performanceView(performanceSet);
-    $("#performance-title").textContent = view.title;
-    $("#performance-phase").textContent = view.phase;
+    localizeText($("#performance-title"), view.title);
+    localizeText($("#performance-phase"), view.phase);
     $("#performance-progress").style.width = `${view.progress * 100}%`;
     const completed = `${view.hits} / 8 フレーズ · ファン ${state.totalFans}人 · フロアの仲間 ${state.gyaruConverted}人`;
-    if ($("#performance-score").textContent !== completed) $("#performance-score").textContent = completed;
+    if ($("#performance-score").textContent !== completed) localizeText($("#performance-score"), completed);
     document.querySelectorAll("[data-control]").forEach(button => button.classList.toggle("suggested", button.dataset.control === view.action));
   }
   if (screen === "playing" && !paused) updateRoadFeedback(roadFeedback, dt);
@@ -929,17 +927,17 @@ async function loadGameArt() {
   $("#story").disabled = true;
   $("#resume-tour").disabled = true;
   $("#retry-art").hidden = true;
-  $("#loading").textContent = "街の灯り、つけてるで…";
+  localizeText($("#loading"), "街の灯り、つけてるで…");
   try {
     await prepareGameArt(state);
     ready = true;
-    $("#loading").textContent = "準備できたで。いつでも行こ！";
+    localizeText($("#loading"), "準備できたで。いつでも行こ！");
     $("#story").disabled = false;
     $("#resume-tour").disabled = false;
     hud();
     requestAnimationFrame(frame);
   } catch (error) {
-    $("#loading").textContent = "絵が読み込めへんかった。下のボタンでもう一回いこ。";
+    localizeText($("#loading"), "絵が読み込めへんかった。下のボタンでもう一回いこ。");
     $("#retry-art").hidden = false;
     console.error(error);
   }
@@ -956,3 +954,4 @@ Object.defineProperty(window, "__HYPERDRIVE__", {
 });
 
 installFrame();
+installLanguageSelectors({ onError: toast });
