@@ -1,16 +1,12 @@
-"""Offline audio lifecycle, confinement and Linux resource tests; no host deployment."""
-import hashlib
+"""Offline daemon-mocked audio lifecycle and confinement tests; no host deployment."""
 import json
 import os
 from pathlib import Path
-import shutil
 import signal
 import subprocess
-import sys
 import tempfile
 import unittest
 from unittest.mock import patch
-import wave
 
 from test_bouncer_update import FakeUpdater, module, ROOT
 
@@ -125,6 +121,17 @@ class AudioUpdaterTests(unittest.TestCase):
         self.assertEqual([images for _, images in updater.activations], [updater.current])
         self.assertNotIn("pending", json.loads(updater.state_path.read_text()))
 
+    def test_pending_recovery_precedes_packaging_specific_capability_failure(self):
+        updater = self.updater(audio=True)
+        updater.save({"previous": updater.current, "pending": updater.desired})
+        with patch.object(updater, "validate_packaging_docker", side_effect=module.UpdateError("Packaging caps unavailable")):
+            with self.assertRaisesRegex(module.UpdateError, "Packaging caps unavailable"):
+                updater.run()
+        self.assertEqual([images for _, images in updater.activations], [updater.current])
+        self.assertNotIn("pending", json.loads(updater.state_path.read_text()))
+        self.assertEqual(updater.pulls, [])
+        self.assertEqual(updater.packages, 0)
+
     def test_interrupted_audio_transaction_requires_original_enabled_scope(self):
         updater = self.updater(audio=True)
         updater.save({"previous": updater.current, "pending": updater.desired})
@@ -195,12 +202,14 @@ class AudioBootstrapTests(unittest.TestCase):
             run = module.AudioPackager.run
         return FakePackager(self.directory, **kwargs)
 
-    def test_bootstrap_packages_without_existing_sidecar_or_image_operations(self):
+    def test_bootstrap_prepares_matching_release_without_existing_sidecar_or_activation(self):
         updater = self.updater(audio=True)
         updater.current = {}
         updater.run()
         self.assertEqual(updater.packages, 1)
-        self.assertEqual(updater.pulls, [])
+        self.assertEqual(updater.pulls, [module.REGISTRY + "web:main", module.REGISTRY + "game-audio:main",
+                                        module.PACKAGER + ":sha-" + "a" * 40])
+        self.assertEqual(updater.packaged_images, [updater.packager_image])
         self.assertEqual(updater.activations, [])
         self.assertFalse(updater.state_path.exists())
 
@@ -210,6 +219,35 @@ class AudioBootstrapTests(unittest.TestCase):
             updater.run()
         self.assertEqual(updater.packages, 0)
         self.assertEqual(updater.pulls, [])
+
+    def test_bootstrap_derives_same_pinned_release_including_existing_api_mode(self):
+        updater = self.updater(mode="api", audio=True)
+        for service in updater.services:
+            updater.config["services"][service]["image"] = updater.config["services"][service]["image"].removesuffix(":main") + ":sha-" + "a" * 40
+        updater.run()
+        self.assertEqual(updater.packaged_images, [updater.packager_image])
+        self.assertEqual(len(updater.pulls), 4)
+        self.assertTrue(all(reference.endswith(":sha-" + "a" * 40) for reference in updater.pulls))
+        self.assertIn("checkout-api", updater.compose_args)
+        self.assertEqual(updater.activations, [])
+
+    def test_bootstrap_refuses_mixed_or_unreviewed_service_releases(self):
+        for failure in ("mixed", "untrusted", "wrong-mode", "wrong-tag"):
+            with self.subTest(failure=failure):
+                updater = self.updater(audio=True)
+                if failure == "mixed":
+                    updater.revisions[module.AUDIO] = "b" * 40
+                elif failure == "untrusted":
+                    updater.config["services"][module.AUDIO]["image"] = "other/audio:main"
+                elif failure == "wrong-mode":
+                    updater.image_mode = "api"
+                else:
+                    updater.config["services"][module.AUDIO]["image"] = module.REGISTRY + "game-audio:sha-" + "b" * 40
+                with self.assertRaises(module.UpdateError):
+                    updater.run()
+                self.assertEqual(updater.packages, 0)
+                self.assertEqual(updater.activations, [])
+                self.assertFalse(any(reference.startswith(module.PACKAGER + ":") for reference in updater.pulls))
 
     def test_bootstrap_uses_shared_lock_and_refuses_unrecovered_transactions(self):
         argv = ["update.py", "--directory", str(self.directory), "--package-game-audio"]
@@ -228,6 +266,63 @@ class AudioBootstrapTests(unittest.TestCase):
             module.main()
 
 
+class MockPackagerDaemon:
+    """Mock only the daemon protocol; real temporary directory checks still run."""
+    identifier = "c" * 64
+
+    def __init__(self):
+        self.calls = []
+        self.containers = {}
+        self.wait_result = "0\n"
+        self.wait_error = None
+        self.create_error = None
+        self.create_commits = True
+        self.stop_error = None
+        self.remove_error = None
+        self.foreign = False
+
+    def __call__(self, *args, timeout=30):
+        self.calls.append((args, timeout))
+        if args[0] == "create":
+            name = args[args.index("--name") + 1]
+            label = args[args.index("--label") + 1].split("=", 1)
+            if self.create_commits:
+                self.containers[self.identifier] = {
+                    "Id": self.identifier, "Name": "/" + name, "Image": args[-1],
+                    "Config": {"Labels": {label[0]: "foreign" if self.foreign else label[1]}},
+                    "State": {"Running": False},
+                }
+            if self.create_error:
+                raise self.create_error
+            return self.identifier + "\n"
+        if args[0] == "ps":
+            selector = args[-1]
+            return "\n".join(identifier for identifier, record in self.containers.items()
+                             if selector == "id=" + identifier or
+                             selector == "name=^" + record["Name"] + "$")
+        if args[0] == "inspect":
+            return json.dumps([self.containers[args[-1]]])
+        if args[0] == "start":
+            self.containers[args[-1]]["State"]["Running"] = True
+            return args[-1]
+        if args[0] == "wait":
+            if self.wait_error:
+                raise self.wait_error
+            self.containers[args[-1]]["State"]["Running"] = False
+            return self.wait_result
+        if args[0] == "stop":
+            if self.stop_error:
+                raise self.stop_error
+            self.containers[args[-1]]["State"]["Running"] = False
+            return args[-1]
+        if args[0] == "rm":
+            if self.remove_error:
+                raise self.remove_error
+            del self.containers[args[-1]]
+            return args[-1]
+        raise AssertionError(args)
+
+
 class AudioPackagingTests(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
@@ -235,102 +330,283 @@ class AudioPackagingTests(unittest.TestCase):
         self.directory = Path(self.temporary.name)
         self.checkout = self.directory / "gyaruinthemix"
         self.library = self.checkout / "assets/music"
-        self.script = self.checkout / "game-audio/scripts/package-library.mjs"
-        self.library.mkdir(parents=True)
-        self.script.parent.mkdir(parents=True)
-        self.script.write_text("// Synthetic fixture, never executed by mocked tests.\n")
+        self.output = self.library / ".hls"
+        self.output.mkdir(parents=True)
+        self.library.chmod(0o750)
+        self.output.chmod(0o2750)
         self.updater = module.Updater(self.directory)
+        self.image = "sha256:" + "d" * 64
+        self.daemon = MockPackagerDaemon()
+        self.updater.packaging_docker = self.daemon
+        self.metadata = {}
+        original_stat = Path.stat
 
-    def test_only_fixed_script_paths_and_sanitized_commands_are_used(self):
-        with patch.object(module.shutil, "which", side_effect=lambda n, **_: "/usr/bin/" + n), \
-             patch.object(module.subprocess, "run", return_value=subprocess.CompletedProcess([], 0, "v24.19.0\n")), \
-             patch.object(self.updater, "audio_process") as process:
-            self.updater.package_audio()
-        process.assert_called_once_with(["/usr/bin/node", "--jitless", "--max-old-space-size=64", str(self.script), str(self.library), "--strict"])
+        def fixture_stat(path, *args, **kwargs):
+            info = original_stat(path, *args, **kwargs)
+            if path == self.library or self.library in path.parents:
+                fields = list(info)
+                fields[4], fields[5] = 1000, module.AUDIO_GROUP
+                for field, value in self.metadata.get(path, {}).items():
+                    fields[field] = value
+                return os.stat_result(fields)
+            return info
 
-    def test_missing_prerequisite_or_node_version_never_runs_packager(self):
-        for version in ("v22.1.0\n", "v25.0.0\n", "v24.untrusted\n"):
-            with patch.object(module.shutil, "which", side_effect=lambda n, **_: "/usr/bin/" + n), \
-                 patch.object(module.subprocess, "run", return_value=subprocess.CompletedProcess([], 0, version)), \
-                 patch.object(self.updater, "audio_process") as process:
-                with self.assertRaisesRegex(module.UpdateError, "requires Node 24"):
-                    self.updater.package_audio()
-                process.assert_not_called()
-        with patch.object(module.shutil, "which", return_value=None), \
-             patch.object(self.updater, "audio_process") as process:
-            with self.assertRaisesRegex(module.UpdateError, "operator-installed"):
-                self.updater.package_audio()
-            process.assert_not_called()
+        for context in (patch.object(module.os, "geteuid", return_value=1000),
+                        patch.object(Path, "stat", fixture_stat),
+                        patch.object(self.updater, "validate_packaging_docker")):
+            context.start()
+            self.addCleanup(context.stop)
 
-    def test_symlinked_library_or_script_is_refused(self):
-        for path in (self.library, self.script):
+    def commands(self, operation):
+        return [args for args, _ in self.daemon.calls if args[0] == operation]
+
+    def test_only_baked_code_immutable_image_private_mounts_and_fixed_bounds(self):
+        source = self.library / "original.wav"
+        source.write_bytes(b"synthetic-original-bytes")
+        source.chmod(0o600)
+        before = source.read_bytes()
+        with patch.dict(os.environ, {"NODE_OPTIONS": "untrusted", "FFREPORT": "untrusted"}), \
+             patch.object(module.subprocess, "Popen", side_effect=AssertionError("host executable invoked")):
+            self.updater.package_audio(self.image)
+        command, = self.commands("create")
+        self.assertEqual(command[-1], self.image)
+        expected = {"--user": "1000:10001", "--memory": "192m", "--memory-swap": "192m",
+                    "--cpus": "0.50", "--pids-limit": "64", "--network": "none", "--cap-drop": "ALL",
+                    "--security-opt": "no-new-privileges:true", "--restart": "no", "--pull": "never",
+                    "--log-driver": "none", "--tmpfs": "/tmp:rw,noexec,nosuid,nodev,size=32m,mode=1777"}
+        for flag, value in expected.items():
+            self.assertEqual(command[command.index(flag) + 1], value)
+        self.assertIn("--read-only", command)
+        self.assertEqual([command[i + 1] for i, arg in enumerate(command) if arg == "--ulimit"],
+                         ["core=0:0", "nofile=256:256"])
+        self.assertEqual([command[i + 1] for i, arg in enumerate(command) if arg == "--mount"], [
+            f"type=bind,src={self.library},dst=/library/assets/music,readonly",
+            f"type=bind,src={self.output},dst=/library/assets/music/.hls"])
+        self.assertTrue({"--privileged", "--device", "--env", "--env-file", "--entrypoint", "--volume", "--volumes-from"}.isdisjoint(command))
+        self.assertFalse(any("signing" in value or "docker.sock" in value for value in command))
+        self.assertEqual(source.read_bytes(), before)
+        self.assertEqual(self.daemon.containers, {})
+        self.assertEqual(self.commands("stop"), [("stop", "--time", "5", self.daemon.identifier)])
+        self.assertEqual(self.commands("rm"), [("rm", "--force", self.daemon.identifier)])
+        self.assertEqual(next(timeout for args, timeout in self.daemon.calls if args[0] == "wait"), module.AUDIO_TIMEOUT)
+
+    def test_no_host_node_ffmpeg_or_checkout_script_is_required(self):
+        self.assertFalse((self.checkout / "game-audio/scripts/package-library.mjs").exists())
+        self.updater.package_audio(self.image)
+        self.assertEqual(len(self.commands("create")), 1)
+
+    def test_root_refusal_and_mutable_image_refusal_happen_before_container_creation(self):
+        with patch.object(module.os, "geteuid", return_value=0):
+            with self.assertRaisesRegex(module.UpdateError, "non-root deployment owner"):
+                self.updater.package_audio(self.image)
+        for image in ("untrusted:latest", module.PACKAGER + ":main", "sha256:short", None):
+            with self.assertRaisesRegex(module.UpdateError, "immutable"):
+                self.updater.package_audio(image)
+        self.assertEqual(self.daemon.calls, [])
+
+    def test_symlinked_or_missing_checkout_library_output_is_refused(self):
+        for path in (self.checkout, self.library, self.output):
             original = path.with_name(path.name + "-original")
             path.rename(original)
             path.symlink_to(original)
-            with self.assertRaisesRegex(module.UpdateError, "symlinked"):
-                self.updater.package_audio()
+            with self.assertRaisesRegex(module.UpdateError, "non-symlinked"):
+                self.updater.package_audio(self.image)
             path.unlink()
             original.rename(path)
+        self.output.rmdir()
+        with self.assertRaisesRegex(module.UpdateError, "existing"):
+            self.updater.package_audio(self.image)
+        self.assertEqual(self.daemon.calls, [])
 
-    def test_process_has_limits_sanitized_environment_and_low_priority(self):
-        probe = self.checkout / "probe.json"
-        code = ("import json,os,resource; from pathlib import Path; "
-                "Path('probe.json').write_text(json.dumps({'env':dict(os.environ),"
-                "'as':resource.getrlimit(resource.RLIMIT_AS),'data':resource.getrlimit(resource.RLIMIT_DATA),"
-                "'cpu':resource.getrlimit(resource.RLIMIT_CPU),'affinity':list(os.sched_getaffinity(0)),"
-                "'nice':os.getpriority(os.PRIO_PROCESS,0),'umask':os.umask(0)}))")
-        with patch.dict(os.environ, {"NODE_OPTIONS": "untrusted", "FFREPORT": "untrusted", "AUDIO_SIGNING_KEY_FILE": "secret"}):
-            self.updater.audio_process([sys.executable, "-c", code])
-        observed = json.loads(probe.read_text())
-        self.assertEqual(observed["as"], [768 * 1024 ** 2] * 2)
-        self.assertEqual(observed["data"], [128 * 1024 ** 2] * 2)
-        self.assertEqual(observed["cpu"], [300] * 2)
-        self.assertEqual(len(observed["affinity"]), 1)
-        self.assertGreaterEqual(observed["nice"], 10)
-        self.assertEqual(observed["umask"], 0o027)
-        self.assertTrue({"NODE_OPTIONS", "FFREPORT", "AUDIO_SIGNING_KEY_FILE"}.isdisjoint(observed["env"]))
-        self.assertEqual(observed["env"]["PATH"], module.AUDIO_PATH)
+    def test_wrong_ownership_group_or_wide_output_modes_fail_without_chmod(self):
+        for path, metadata in ((self.library, {4: 2000}), (self.library, {5: 2000}),
+                               (self.library, {0: 0o40700}), (self.output, {5: 2000}),
+                               (self.output, {0: 0o42770}), (self.output, {0: 0o40750}),
+                               (self.output, {0: 0o42755})):
+            with self.subTest(path=path, metadata=metadata):
+                self.metadata[path] = metadata
+                with patch.object(Path, "chmod", side_effect=AssertionError("permissions changed")), \
+                     patch.object(module.os, "chown", side_effect=AssertionError("ownership changed")):
+                    with self.assertRaisesRegex(module.UpdateError, "private library"):
+                        self.updater.package_audio(self.image)
+                self.metadata.clear()
+        self.assertEqual(self.daemon.calls, [])
 
-    def test_timeout_kills_the_entire_subprocess_group_and_restores_signal_handlers(self):
-        handlers = {s: signal.getsignal(s) for s in (signal.SIGINT, signal.SIGTERM)}
-        with patch.object(module.os, "killpg", wraps=os.killpg) as kill:
-            with self.assertRaisesRegex(module.UpdateError, "600-second limit"):
-                self.updater.audio_process([sys.executable, "-c", "import time; time.sleep(30)"], timeout=0.05)
-            kill.assert_called_once()
-            self.assertEqual(kill.call_args.args[1], signal.SIGKILL)
-        self.assertEqual(handlers, {s: signal.getsignal(s) for s in handlers})
+    def test_existing_lock_and_unsafe_cache_links_fail_closed(self):
+        lock = self.output / ".packaging.lock"
+        lock.write_text("fixture")
+        with self.assertRaisesRegex(module.UpdateError, "existing audio packaging lock"):
+            self.updater.package_audio(self.image)
+        self.assertEqual(lock.read_text(), "fixture")
+        lock.unlink()
+        source = self.library / "original.wav"
+        source.write_bytes(b"source")
+        for kind in ("symlink", "hardlink"):
+            target = self.output / "unsafe.json"
+            target.symlink_to(source) if kind == "symlink" else os.link(source, target)
+            with self.assertRaisesRegex(module.UpdateError, "unsafe links"):
+                self.updater.package_audio(self.image)
+            target.unlink()
+        self.assertEqual(source.read_bytes(), b"source")
+        self.assertEqual(self.daemon.calls, [])
 
-    @unittest.skipUnless(shutil.which("node") and shutil.which("ffmpeg") and shutil.which("ffprobe"), "synthetic packaging requires existing node/ffmpeg/ffprobe")
-    def test_real_synthetic_packaging_reuses_cache_without_touching_source(self):
-        node = shutil.which("node")
-        version = subprocess.run([node, "--version"], capture_output=True, text=True, check=True).stdout
-        if not version.startswith("v24."):
-            self.skipTest("bounded synthetic packaging requires Node 24")
-        shutil.copyfile(ROOT / "game-audio/scripts/package-library.mjs", self.script)
-        source = self.library / "synthetic.wav"
-        with wave.open(str(source), "wb") as output:
-            output.setparams((1, 2, 48000, 0, "NONE", "not compressed"))
-            output.writeframes(b"\0\0" * 48000)
-        original = hashlib.sha256(source.read_bytes()).hexdigest()
-        modified = source.stat().st_mtime_ns
-        command = [node, "--jitless", "--max-old-space-size=64", str(self.script), str(self.library), "--strict"]
-        self.updater.audio_process(command)
-        catalog = json.loads((self.library / ".hls/catalog.json").read_text())
-        track = self.library / ".hls" / catalog["tracks"][0]["id"] / "track.json"
-        cached = track.stat().st_mtime_ns
-        self.updater.audio_process(command)
-        self.assertEqual(track.stat().st_mtime_ns, cached)
-        self.assertEqual(hashlib.sha256(source.read_bytes()).hexdigest(), original)
-        self.assertEqual(source.stat().st_mtime_ns, modified)
-        self.assertFalse((self.library / ".hls/.packaging.lock").exists())
-        previous_catalog = (self.library / ".hls/catalog.json").read_bytes()
-        previous_time = (self.library / ".hls/catalog.json").stat().st_mtime_ns
-        (self.library / "corrupt.mp3").write_bytes(b"synthetic-invalid-audio")
-        with self.assertRaisesRegex(module.UpdateError, "packaging failed"):
-            self.updater.audio_process(command)
-        self.assertEqual((self.library / ".hls/catalog.json").read_bytes(), previous_catalog)
-        self.assertEqual((self.library / ".hls/catalog.json").stat().st_mtime_ns, previous_time)
-        self.assertEqual(hashlib.sha256(source.read_bytes()).hexdigest(), original)
+    def test_failure_timeout_and_interrupt_stop_remove_exact_helper_restore_handlers(self):
+        original = {number: signal.getsignal(number) for number in (signal.SIGINT, signal.SIGTERM)}
+        for outcome in ("1\n", subprocess.TimeoutExpired("docker wait", 600), KeyboardInterrupt()):
+            with self.subTest(outcome=type(outcome).__name__):
+                self.daemon.calls.clear()
+                self.daemon.wait_result = outcome if isinstance(outcome, str) else "0"
+                self.daemon.wait_error = None if isinstance(outcome, str) else outcome
+                with self.assertRaises(KeyboardInterrupt if isinstance(outcome, KeyboardInterrupt) else module.UpdateError):
+                    self.updater.package_audio(self.image)
+                self.assertEqual(self.daemon.containers, {})
+                self.assertEqual(self.commands("stop"), [("stop", "--time", "5", self.daemon.identifier)])
+                self.assertEqual(self.commands("rm"), [("rm", "--force", self.daemon.identifier)])
+                self.assertEqual(original, {number: signal.getsignal(number) for number in original})
+
+    def test_actual_signal_handler_interrupt_still_cleans_daemon_container(self):
+        original = self.updater.packaging_docker
+
+        def interrupted(*args, **kwargs):
+            if args[0] == "wait":
+                signal.getsignal(signal.SIGTERM)(signal.SIGTERM, None)
+            return original(*args, **kwargs)
+
+        self.updater.packaging_docker = interrupted
+        with self.assertRaisesRegex(module.UpdateError, "interrupted"):
+            self.updater.package_audio(self.image)
+        self.assertEqual(self.daemon.containers, {})
+
+    def test_timed_out_create_recovers_owned_name_without_starting_or_touching_other_containers(self):
+        self.daemon.create_error = subprocess.TimeoutExpired("docker create", 30)
+        unrelated = {"Id": "f" * 64, "Name": "/proxy", "Image": self.image, "Config": {"Labels": {}}, "State": {"Running": True}}
+        self.daemon.containers[unrelated["Id"]] = unrelated
+        with self.assertRaisesRegex(module.UpdateError, "bounded deadline"):
+            self.updater.package_audio(self.image)
+        self.assertEqual(self.commands("start"), [])
+        self.assertEqual(self.daemon.containers, {unrelated["Id"]: unrelated})
+        self.assertEqual(self.commands("rm"), [("rm", "--force", self.daemon.identifier)])
+
+    def test_uncertain_create_absent_result_is_not_claimed_as_successful_cleanup(self):
+        self.daemon.create_commits = False
+        self.daemon.create_error = subprocess.TimeoutExpired("docker create", 30)
+        with self.assertRaisesRegex(module.UpdateError, "creation outcome is uncertain"):
+            self.updater.package_audio(self.image)
+        self.assertEqual(self.commands("start"), [])
+        self.assertEqual(self.commands("rm"), [])
+
+    def test_foreign_container_is_never_started_stopped_or_removed(self):
+        self.daemon.foreign = True
+        with self.assertRaisesRegex(module.UpdateError, "ownership could not be verified"):
+            self.updater.package_audio(self.image)
+        for command in ("start", "stop", "rm"):
+            self.assertEqual(self.commands(command), [])
+        self.assertIn(self.daemon.identifier, self.daemon.containers)
+
+    def test_stop_error_still_force_removes_exact_container(self):
+        self.daemon.stop_error = subprocess.TimeoutExpired("docker stop", 15)
+        self.updater.package_audio(self.image)
+        self.assertEqual(self.daemon.containers, {})
+
+    def test_unconfirmed_removal_is_an_error_not_a_success_message(self):
+        self.daemon.remove_error = subprocess.TimeoutExpired("docker rm", 30)
+        with self.assertRaisesRegex(module.UpdateError, "cleanup is unconfirmed"):
+            self.updater.package_audio(self.image)
+        self.assertIn(self.daemon.identifier, self.daemon.containers)
+
+
+class PackagerReleaseTests(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.updater = FakeUpdater(self.temporary.name, audio=True)
+
+    def test_exact_sha_repository_role_and_immutable_id(self):
+        identifier = self.updater.prepare_packager("a" * 40)
+        self.assertEqual(identifier, self.updater.packager_image)
+        self.assertEqual(self.updater.pulls, [module.PACKAGER + ":sha-" + "a" * 40])
+
+    def test_untrusted_mismatched_or_invalid_packager_never_packages_or_activates(self):
+        for attribute, value in (("packager_revision", "b" * 40), ("source", "https://untrusted.invalid"),
+                                 ("packager_role", "audio-server"), ("packager_role", None),
+                                 ("packager_image", "mutable:main")):
+            with self.subTest(attribute=attribute):
+                updater = FakeUpdater(self.temporary.name, audio=True)
+                setattr(updater, attribute, value)
+                with self.assertRaises(module.UpdateError):
+                    updater.run()
+                self.assertEqual(updater.packages, 0)
+                self.assertEqual(updater.activations, [])
+                self.assertFalse(updater.state_path.exists())
+
+    def test_missing_matching_packager_never_activates_services(self):
+        original = self.updater.docker
+
+        def absent(*args):
+            if args == ("pull", module.PACKAGER + ":sha-" + "a" * 40):
+                raise module.UpdateError("Matching packager publication is unavailable")
+            return original(*args)
+
+        self.updater.docker = absent
+        with self.assertRaisesRegex(module.UpdateError, "publication is unavailable"):
+            self.updater.run()
+        self.assertEqual(self.updater.packages, 0)
+        self.assertEqual(self.updater.activations, [])
+        self.assertFalse(self.updater.state_path.exists())
+
+    def test_invalid_revision_never_pulls(self):
+        for revision in ("main", "a" * 39, "A" * 40, None):
+            with self.assertRaisesRegex(module.UpdateError, "full release"):
+                self.updater.prepare_packager(revision)
+        self.assertEqual(self.updater.pulls, [])
+
+
+class PackagerDockerPreflightTests(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.updater = module.Updater(self.temporary.name)
+        self.info = {"Architecture": "amd64", "SecurityOptions": ["name=seccomp,profile=builtin"],
+                     "MemoryLimit": True, "SwapLimit": True, "CpuCfsQuota": True,
+                     "CpuCfsPeriod": True, "PidsLimit": True}
+        self.host = "unix:///var/run/docker.sock"
+        self.calls = []
+
+        def docker(*args):
+            self.calls.append(args)
+            if args == ("context", "inspect"):
+                return json.dumps([{"Endpoints": {"docker": {"Host": self.host}}}])
+            if args == ("info", "--format", "{{json .}}"):
+                return json.dumps(self.info)
+            raise AssertionError(args)
+
+        self.updater.docker = docker
+
+    def test_supported_local_rootful_daemon_passes(self):
+        self.updater.validate_packaging_docker()
+        self.assertEqual(len(self.calls), 2)
+
+    def test_missing_or_false_caps_fail_closed(self):
+        for capability in ("MemoryLimit", "SwapLimit", "CpuCfsQuota", "CpuCfsPeriod", "PidsLimit"):
+            for value in (False, None, "true", 1):
+                self.info[capability] = value
+                with self.assertRaisesRegex(module.UpdateError, "every required"):
+                    self.updater.validate_packaging_docker()
+            self.info[capability] = True
+
+    def test_remote_rootless_userns_or_wrong_architecture_are_rejected(self):
+        self.host = "ssh://other"
+        with self.assertRaisesRegex(module.UpdateError, "local Docker"):
+            self.updater.validate_packaging_docker()
+        self.host = "unix:///var/run/docker.sock"
+        for option in ("name=rootless", "name=userns"):
+            self.info["SecurityOptions"] = [option]
+            with self.assertRaisesRegex(module.UpdateError, "rootful Docker"):
+                self.updater.validate_packaging_docker()
+        self.info["SecurityOptions"] = []
+        self.info["Architecture"] = "aarch64"
+        with self.assertRaisesRegex(module.UpdateError, "amd64"):
+            self.updater.validate_packaging_docker()
 
 
 if __name__ == "__main__":

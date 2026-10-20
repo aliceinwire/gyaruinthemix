@@ -36,12 +36,6 @@ jobs:
       - name: Check shell syntax
         run: |
           for script in scripts/*.sh; do bash -n "$script"; done
-      - name: Install audio packaging tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install --no-install-recommends -y ffmpeg
-          ffmpeg -version
-          ffprobe -version
       - run: npm test
       - run: npm run test:deployment
       - run: npm run build
@@ -138,11 +132,6 @@ jobs:
           package-manager-cache: false
       - name: Configure offline fixtures on this disposable runner
         run: node scripts/ci-fixtures.mjs
-      - name: Install synthetic audio fixture packaging tools
-        if: matrix.audio == 'true'
-        run: |
-          sudo apt-get update
-          sudo apt-get install --no-install-recommends -y ffmpeg
       - name: Validate only the canonical bouncer Compose configuration
         run: node scripts/ci-bouncer.mjs --config-only
       - name: Build, check and restart only the selected website services
@@ -174,10 +163,6 @@ jobs:
         with:
           node-version: '24'
           package-manager-cache: false
-      - name: Install synthetic audio fixture packaging tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install --no-install-recommends -y ffmpeg
       # These are real release sources, never the synthetic Payment Link fixture.
       # Audio media and its public placeholder key are temporary runtime mounts,
       # excluded from every image and removed after each smoke test.
@@ -186,7 +171,7 @@ jobs:
           CHECKOUT_MODE: payment_links
           IMAGE_TAG: release-links-${{ github.sha }}
         run: node scripts/ci-bouncer.mjs
-      - name: Test the same static image with the optional audio release image
+      - name: Build and test exact serving and offline packager release images
         env:
           CHECKOUT_MODE: payment_links
           GAME_AUDIO_ENABLED: 'true'
@@ -201,7 +186,7 @@ jobs:
           CHECKOUT_MODE: api
           IMAGE_TAG: release-api-${{ github.sha }}
         run: node scripts/ci-bouncer.mjs
-      - name: Test the same API and audio images together without rebuilding
+      - name: Test the same API, serving and packager images without rebuilding
         env:
           CHECKOUT_MODE: api
           GAME_AUDIO_ENABLED: 'true'

@@ -6,8 +6,8 @@ set -euo pipefail
 [[ ${GITHUB_REPOSITORY:-} == aliceinwire/gyaruinthemix ]]
 [[ ${GITHUB_SHA:-} =~ ^[0-9a-f]{40}$ ]]
 registry=ghcr.io/aliceinwire/gyaruinthemix
-names=(web web-api api game-audio)
-images=("gyaruinthemix-web:release-links-$GITHUB_SHA" "gyaruinthemix-web:release-api-$GITHUB_SHA" "gyaruinthemix-api:release-api-$GITHUB_SHA" "gyaruinthemix-game-audio:release-audio-$GITHUB_SHA")
+names=(web web-api api game-audio game-audio-packager)
+images=("gyaruinthemix-web:release-links-$GITHUB_SHA" "gyaruinthemix-web:release-api-$GITHUB_SHA" "gyaruinthemix-api:release-api-$GITHUB_SHA" "gyaruinthemix-game-audio:release-audio-$GITHUB_SHA" "gyaruinthemix-game-audio-packager:release-audio-$GITHUB_SHA")
 # Refuse any source mismatch before authenticating or moving a registry tag.
 for image in "${images[@]}"; do
   [[ $(docker image inspect "$image" --format '{{index .Config.Labels "org.opencontainers.image.revision"}}') == "$GITHUB_SHA" ]]
@@ -15,6 +15,7 @@ for image in "${images[@]}"; do
 done
 [[ $(docker image inspect "${images[0]}" --format '{{index .Config.Labels "io.gyaruinthemix.checkout-mode"}}') == payment_links ]]
 [[ $(docker image inspect "${images[1]}" --format '{{index .Config.Labels "io.gyaruinthemix.checkout-mode"}}') == api ]]
+[[ $(docker image inspect "${images[4]}" --format '{{index .Config.Labels "io.gyaruinthemix.role"}}') == audio-packager ]]
 export DOCKER_CONFIG
 DOCKER_CONFIG=$(mktemp -d)
 trap 'rm -rf "$DOCKER_CONFIG"' EXIT
@@ -26,7 +27,7 @@ for index in "${!names[@]}"; do
   docker push "$destination:sha-$GITHUB_SHA"
 done
 # Moving tags is not atomic; the updater checks every enabled revision first.
-for index in 3 2 1 0; do
+for index in 4 3 2 1 0; do
   destination="$registry-${names[$index]}"
   docker tag "${images[$index]}" "$destination:main"
   docker push "$destination:main"

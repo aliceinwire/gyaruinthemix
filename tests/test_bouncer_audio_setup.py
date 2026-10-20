@@ -34,7 +34,9 @@ class FakeSetup(setup.AudioSetup):
         self.calls = []
         self.activations = []
         self.packaged = 0
+        self.packaged_images = []
         self.fail_package = False
+        self.fail_packager_pull = False
         self.fail_activate = False
         self.fail_rollback = False
         self.concurrent = False
@@ -42,8 +44,14 @@ class FakeSetup(setup.AudioSetup):
         self.image_revision = self.revision
         self.image_source = setup.update.SOURCE
         self.image_mode = mode
+        self.packager_image = "sha256:" + "d" * 64
+        self.packager_revision = self.revision
+        self.packager_source = setup.update.SOURCE
+        self.packager_role = "audio-packager"
         self.architecture = "amd64"
         self.security_options = []
+        self.docker_limits = dict.fromkeys(
+            ("MemoryLimit", "SwapLimit", "CpuCfsQuota", "CpuCfsPeriod", "PidsLimit"), True)
         self.remote = False
         self.containers = {}
         self.ids = {setup.WEB: "1" * 64, setup.API: "2" * 64, setup.AUDIO: "3" * 64, "proxy": "4" * 64}
@@ -120,6 +128,10 @@ class FakeSetup(setup.AudioSetup):
         if args == ("context", "inspect"):
             return json.dumps([{"Endpoints": {"docker": {"Host": "ssh://remote" if self.remote else "unix:///var/run/docker.sock"}}}])
         if args[:2] == ("info", "--format"):
+            if args[2] == "{{json .}}":
+                return json.dumps({"Architecture": self.architecture,
+                                   "SecurityOptions": self.security_options,
+                                   **self.docker_limits})
             return json.dumps(self.security_options) if "SecurityOptions" in args[2] else self.architecture
         if args[0] == "ps":
             name = args[-1].split("=", 2)[-1]
@@ -127,8 +139,16 @@ class FakeSetup(setup.AudioSetup):
         if args[0] == "inspect":
             return json.dumps([next(value for value in self.containers.values() if value["Id"] == args[1])])
         if args[0] == "pull":
+            if "game-audio-packager:" in args[1] and self.fail_packager_pull:
+                raise setup.Error("synthetic missing packager image")
             return ""
         if args[:2] == ("image", "inspect"):
+            if "game-audio-packager:" in args[2]:
+                return json.dumps([{"Id": self.packager_image, "Config": {"Labels": {
+                    "org.opencontainers.image.source": self.packager_source,
+                    "org.opencontainers.image.revision": self.packager_revision,
+                    "io.gyaruinthemix.role": self.packager_role,
+                }}}])
             name = setup.AUDIO if "game-audio:" in args[2] else setup.API if args[2].startswith(setup.update.REGISTRY + "api:") else setup.WEB
             return json.dumps([{"Id": self.desired[name], "Config": {"Labels": {"org.opencontainers.image.source": self.image_source, "org.opencontainers.image.revision": self.image_revision, "io.gyaruinthemix.checkout-mode": self.image_mode}}}])
         if args[0] == "stop":
@@ -139,8 +159,9 @@ class FakeSetup(setup.AudioSetup):
             return ""
         raise AssertionError(args)
 
-    def package_audio(self):
+    def package_audio(self, image_id):
         self.packaged += 1
+        self.packaged_images.append(image_id)
         if self.fail_package:
             raise setup.Error("synthetic packaging failure")
         (self.hls / "catalog.json").write_text('{"synthetic":"catalog"}\n')
@@ -185,6 +206,80 @@ class SetupTests(unittest.TestCase):
         self.assertFalse((self.directory / setup.LOCK).exists())
         self.assertFalse(any(call[0] == "docker" and call[1][0] == "pull" for call in fixture.calls))
 
+    def test_plan_distinguishes_deployment_root_private_music_and_one_shot_helper(self):
+        fixture = self.fixture()
+        fixture.show_plan(fixture.plan())
+        text = self.output.getvalue()
+        self.assertIn(f"Deployment root (--directory): {self.directory}", text)
+        self.assertIn(f"Private music input: {fixture.library}", text)
+        self.assertIn(f"generated output: {fixture.hls}", text)
+        self.assertIn("not the nested music directory", text)
+        self.assertIn("one-shot packager", text)
+        self.assertIn("no host Node, FFmpeg or package installation", text)
+
+    def test_help_preserves_directory_option_and_default_but_explains_its_scope(self):
+        with self.assertRaises(SystemExit) as exited:
+            setup.main(["--help"])
+        self.assertEqual(exited.exception.code, 0)
+        text = " ".join(self.output.getvalue().split())
+        self.assertIn("--directory DEPLOYMENT_ROOT", text)
+        self.assertIn("default: ~/bouncer", text)
+        self.assertIn("DEPLOYMENT_ROOT/gyaruinthemix/assets/music", text)
+
+    def test_host_dependencies_are_python_git_and_docker_only(self):
+        fixture = self.fixture()
+        def executable(name, *, path):
+            self.assertEqual(path, setup.TOOL_PATH)
+            return "/usr/bin/" + name if name in ("git", "docker") else None
+        with patch.object(setup.sys, "version_info", (3, 9)), patch.object(setup.sys, "platform", "linux"), \
+                patch.object(setup.shutil, "which", side_effect=executable) as which, \
+                patch.object(fixture, "command") as command, patch.object(fixture, "validate_packaging_docker") as local:
+            setup.AudioSetup.dependencies(fixture)
+        self.assertEqual([call.args[0] for call in which.call_args_list], ["git", "docker"])
+        command.assert_called_once_with(["docker", "compose", "version"])
+        local.assert_called_once_with()
+
+    def test_host_dependencies_fail_closed_without_installing_missing_git_or_docker(self):
+        fixture = self.fixture()
+        for missing in ("git", "docker"):
+            with self.subTest(missing=missing), \
+                    patch.object(setup.shutil, "which", side_effect=lambda name, **_: None if name == missing else "/usr/bin/" + name), \
+                    patch.object(fixture, "command") as command, \
+                    patch.object(fixture, "validate_packaging_docker") as local, \
+                    self.assertRaisesRegex(setup.Error, f"Existing {missing} is required"):
+                setup.AudioSetup.dependencies(fixture)
+            command.assert_not_called()
+            local.assert_not_called()
+
+    def test_root_preflight_rejects_before_tools_private_key_or_config_mutations(self):
+        fixture = self.fixture()
+        before = self.tree()
+        with patch.object(setup.os, "geteuid", return_value=0), \
+                patch.object(setup.shutil, "which") as which, \
+                patch.object(fixture, "command") as command, \
+                self.assertRaises(setup.Error):
+            setup.AudioSetup.dependencies(fixture)
+        which.assert_not_called()
+        command.assert_not_called()
+        self.assertEqual(self.tree(), before)
+
+    def test_plan_rejects_unsupported_docker_resource_caps_before_private_mutation(self):
+        fixture = self.fixture()
+        before = self.tree()
+        for name in fixture.docker_limits:
+            for value in (False, None, "true", 1):
+                with self.subTest(capability=name, value=value), \
+                        patch.dict(fixture.docker_limits, {name: value}), \
+                        patch.object(setup.shutil, "which", side_effect=lambda tool, **_: "/usr/bin/" + tool), \
+                        patch.object(fixture, "dependencies", side_effect=lambda: setup.AudioSetup.dependencies(fixture)), \
+                        patch.object(fixture, "command") as command, \
+                        self.assertRaises(setup.Error):
+                    fixture.plan()
+                command.assert_not_called()
+                self.assertEqual(self.tree(), before)
+        self.assertEqual(fixture.packaged, 0)
+        self.assertFalse(any(call[0] == "docker" and call[1][0] == "pull" for call in fixture.calls))
+
     def test_payment_links_activation_uses_same_release_and_scoped_ids(self):
         fixture = self.fixture()
         before_proxy = copy.deepcopy(fixture.containers["proxy"])
@@ -204,7 +299,11 @@ class SetupTests(unittest.TestCase):
         self.assertEqual(fixture.fixture_key.read_bytes(), key_before)
         pulls = [call[1][1] for call in fixture.calls if call[0] == "docker" and call[1][0] == "pull"]
         self.assertTrue(all(image.endswith(":sha-" + "a" * 40) for image in pulls))
+        self.assertIn(setup.update.REGISTRY + "game-audio-packager:sha-" + fixture.revision, pulls)
+        self.assertEqual(fixture.packaged_images, [fixture.packager_image])
         self.assertEqual(fixture.read_journal()["phase"], "complete")
+        self.assertNotIn(fixture.packager_image, fixture.journal_path.read_text())
+        self.assertNotIn(fixture.packager_image, fixture.state_path.read_text())
         self.assertIn("UNRELATED='keep # this' # unchanged", (self.directory / ".env").read_text())
 
     def test_api_mode_and_extra_profiles_preserved(self):
@@ -255,6 +354,64 @@ class SetupTests(unittest.TestCase):
                 setattr(fixture, attribute, old)
                 self.assertEqual(self.tree(), before)
                 self.assertEqual(fixture.packaged, 0)
+
+    def test_packager_pull_or_label_failure_precedes_backups_key_and_config_mutation(self):
+        fixture = self.fixture()
+        fixture.fixture_key.unlink()
+        for attribute, value in (("fail_packager_pull", True),
+                                 ("packager_revision", "b" * 40),
+                                 ("packager_source", "https://invalid.example"),
+                                 ("packager_role", "game-audio"),
+                                 ("packager_image", "game-audio-packager:main")):
+            with self.subTest(attribute=attribute):
+                plan = fixture.plan()
+                before = self.tree()
+                original = getattr(fixture, attribute)
+                setattr(fixture, attribute, value)
+                with patch.object(fixture, "snapshot") as snapshot, \
+                        patch.object(fixture, "provision") as provision, \
+                        patch.object(setup.os, "urandom", side_effect=AssertionError("key generated")), \
+                        self.assertRaises(setup.Error):
+                    fixture.apply(plan)
+                setattr(fixture, attribute, original)
+                snapshot.assert_not_called()
+                provision.assert_not_called()
+                self.assertEqual(self.tree(), before)
+                self.assertEqual(fixture.packaged, 0)
+                self.assertEqual(fixture.activations, [])
+
+    def test_helper_is_prepared_before_snapshot_but_never_a_serving_baseline(self):
+        fixture = self.fixture(mode="api")
+        plan = fixture.plan()
+        snapshot = fixture.snapshot
+        def checked_snapshot(current_plan, images):
+            inspect = ("docker", ("image", "inspect",
+                                  setup.update.REGISTRY + "game-audio-packager:sha-" + plan["revision"]))
+            self.assertIn(inspect, fixture.calls)
+            self.assertEqual(set(images), {setup.WEB, setup.API, setup.AUDIO})
+            state = snapshot(current_plan, images)
+            self.assertEqual(set(state["baselines"]), set(images))
+            return state
+        with patch.object(fixture, "snapshot", side_effect=checked_snapshot):
+            fixture.apply(plan)
+        self.assertEqual(fixture.packaged_images, [fixture.packager_image])
+
+    def test_reviewed_source_change_during_helper_preparation_stops_before_mutation(self):
+        fixture = self.fixture()
+        plan = fixture.plan()
+        before = self.tree()
+        prepare = fixture.prepare_packager
+        def changed_source(revision):
+            image = prepare(revision)
+            fixture.revision = "b" * 40
+            return image
+        with patch.object(fixture, "prepare_packager", side_effect=changed_source), \
+                patch.object(fixture, "snapshot") as snapshot, \
+                self.assertRaisesRegex(setup.Error, "reviewed checkout changed"):
+            fixture.apply(plan)
+        snapshot.assert_not_called()
+        self.assertEqual(self.tree(), before)
+        self.assertEqual(fixture.packaged, 0)
 
     def test_packaging_failure_restores_configuration_without_activation(self):
         fixture = self.fixture()
@@ -344,9 +501,11 @@ class SetupTests(unittest.TestCase):
         fixture = self.fixture()
         fixture.apply(fixture.plan())
         fixture.activations.clear()
+        before_packaged = fixture.packaged
         before_key = fixture.fixture_key.read_bytes()
         fixture.apply(fixture.plan())
         self.assertEqual(fixture.activations, [])
+        self.assertEqual(fixture.packaged, before_packaged)
         self.assertEqual(fixture.fixture_key.read_bytes(), before_key)
 
     def test_pending_guard_blocks_all_other_updater_modes(self):
@@ -407,6 +566,54 @@ class SetupTests(unittest.TestCase):
         self.assertTrue(set(item["path"] for item in changes).issubset({str(fixture.fixture_key.parent), str(fixture.library), str(fixture.hls)}))
         self.assertEqual(next(item for item in changes if item["path"] == str(fixture.hls))["after"]["mode"], 0o2750)
 
+    def test_existing_cache_preflight_rejects_other_owner_hardlinks_and_unsafe_permissions(self):
+        fixture = self.fixture()
+        fixture.fixture_key.chmod(0o640)
+        generated = fixture.hls / "generated-fixture"
+        generated.write_bytes(b"synthetic generated cache")
+        generated.chmod(0o640)
+        original_stat = Path.stat
+        for index, value in ((3, 2), (4, os.geteuid() + 1), (5, os.getegid() + 1),
+                             (0, stat.S_IFREG | 0o660), (0, stat.S_IFREG | 0o644)):
+            def unsafe_stat(path, *args, **kwargs):
+                info = original_stat(path, *args, **kwargs)
+                if path == generated:
+                    fields = list(info)
+                    fields[index] = value
+                    return os.stat_result(fields)
+                return info
+            before = self.tree()
+            with self.subTest(field=index, value=value), patch.object(setup, "GROUP", os.getegid()), \
+                    patch.object(Path, "stat", unsafe_stat), \
+                    self.assertRaisesRegex(setup.Error, "Existing generated .hls entries"):
+                setup.AudioSetup.permissions(fixture, fixture.fixture_key)
+            self.assertEqual(self.tree(), before)
+
+    def test_existing_library_and_output_ownership_are_not_adopted_automatically(self):
+        fixture = self.fixture()
+        original_metadata = setup.metadata
+        for target in (fixture.library, fixture.hls):
+            def other_owner(path):
+                result = original_metadata(path)
+                if path == target:
+                    result["uid"] = os.geteuid() + 1
+                return result
+            before = self.tree()
+            with self.subTest(target=target), patch.object(setup, "GROUP", os.getegid()), \
+                    patch.object(setup, "metadata", side_effect=other_owner), \
+                    self.assertRaisesRegex(setup.Error, "never adopts a different owner"):
+                setup.AudioSetup.permissions(fixture, fixture.fixture_key)
+            self.assertEqual(self.tree(), before)
+
+    def test_docker_bind_delimiters_in_deployment_root_fail_before_mutation(self):
+        for suffix in (",invalid", "\ninvalid"):
+            directory = self.home / ("bouncer" + suffix)
+            directory.mkdir()
+            before = self.tree()
+            with self.subTest(suffix=suffix), self.assertRaisesRegex(setup.Error, "Docker bind paths"):
+                setup.AudioSetup(directory)
+            self.assertEqual(self.tree(), before)
+
     def test_recovery_confirmation_is_invalidated_by_a_changed_pending_journal(self):
         fixture = self.fixture()
         initial = fixture.snapshot(fixture.plan(), fixture.desired)
@@ -459,7 +666,7 @@ class SetupTests(unittest.TestCase):
     def test_setup_shell_environment_does_not_override_routing_or_tools(self):
         with patch.dict(os.environ, {"STORE_DOMAIN": "other.invalid", "STORE_HOSTS": "other.invalid", "PATH": "/untrusted", "NODE_OPTIONS": "--inspect", "DOCKER_HOST": "ssh://other"}):
             fixture = self.fixture()
-        self.assertEqual(fixture.env["PATH"], setup.update.AUDIO_PATH)
+        self.assertEqual(fixture.env["PATH"], setup.TOOL_PATH)
         self.assertTrue({"STORE_DOMAIN", "STORE_HOSTS", "NODE_OPTIONS", "DOCKER_HOST"}.isdisjoint(fixture.env))
 
     def test_raw_checkout_verification_never_uses_status_diff_or_filters(self):

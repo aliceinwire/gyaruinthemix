@@ -7,9 +7,8 @@ import json
 import os
 from pathlib import Path
 import re
-import resource
-import shutil
 import signal
+import secrets
 import stat
 import socket
 import ssl
@@ -23,7 +22,10 @@ REGISTRY = "ghcr.io/aliceinwire/gyaruinthemix-"
 WEB = "gyaruinthemix-web"
 API = "gyaruinthemix-api"
 AUDIO = "gyaruinthemix-game-audio"
-AUDIO_PATH = "/usr/local/bin:/usr/bin:/bin"
+PACKAGER = REGISTRY + "game-audio-packager"
+PACKAGER_ROLE = "io.gyaruinthemix.role"
+PACKAGER_RUN = "io.gyaruinthemix.packager-run"
+AUDIO_GROUP = 10001
 AUDIO_TIMEOUT = 600
 AUDIO_SECRET = "gyaruinthemix_game_audio_signing_key"
 
@@ -120,79 +122,176 @@ class Updater:
             raise UpdateError("Audio signing-key file must be a regular file of at least 32 bytes.")
 
     @staticmethod
-    def audio_limits():
-        # Linux bounds inherited by the serial Node/ffprobe/ffmpeg children.
-        # V8 needs virtual address reservations even with a small JS heap; the
-        # data limit bounds allocations separately. These are per-process limits,
-        # not a claim of an aggregate cgroup RSS cap. Nice/affinity limit contention.
-        # The updater journal remains private (0077); generated media must be
-        # readable by the operator-provisioned sidecar group via setgid .hls.
-        os.umask(0o027)
-        resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
-        resource.setrlimit(resource.RLIMIT_AS, (768 * 1024 ** 2, 768 * 1024 ** 2))
-        resource.setrlimit(resource.RLIMIT_DATA, (128 * 1024 ** 2, 128 * 1024 ** 2))
-        resource.setrlimit(resource.RLIMIT_CPU, (300, 300))
-        os.sched_setaffinity(0, {min(os.sched_getaffinity(0))})
-        os.nice(10)
+    def validate_packaging_user():
+        # Use the existing deployment identity, not root, a new account or a
+        # guessed library owner. This method never changes host privileges.
+        uid = os.geteuid()
+        if uid == 0:
+            raise UpdateError("Run audio packaging as the existing non-root deployment owner with Docker access; do not use sudo or change ownership to bypass this check.")
+        return uid
 
-    def audio_process(self, command, timeout=AUDIO_TIMEOUT):
-        # Do not inherit NODE_OPTIONS, LD_PRELOAD, FFREPORT or shell-selected
-        # executable paths. No configured commands, shell, keys or network input.
-        environment = {"PATH": AUDIO_PATH, "LANG": "C", "LC_ALL": "C",
-                       "UV_THREADPOOL_SIZE": "1", "OMP_NUM_THREADS": "1",
-                       "OPENBLAS_NUM_THREADS": "1"}
-        def interrupted(_signum, _frame):
-            raise UpdateError("Audio packaging interrupted; inspect its lock before retrying.")
-        handlers = {signum: signal.getsignal(signum) for signum in (signal.SIGINT, signal.SIGTERM)}
-        process = None
+    def validate_packaging_docker(self):
+        context = json.loads(self.docker("context", "inspect"))[0]
+        if not context["Endpoints"]["docker"]["Host"].startswith("unix://"):
+            raise UpdateError("Audio packaging requires the existing local Docker context.")
+        info = json.loads(self.docker("info", "--format", "{{json .}}"))
+        if info.get("Architecture") not in ("amd64", "x86_64"):
+            raise UpdateError("Published audio packagers require the local amd64 Docker host.")
+        if any("rootless" in option or "userns" in option for option in info.get("SecurityOptions", []) or []):
+            raise UpdateError("Audio packaging requires existing rootful Docker without user-namespace remapping; no account or daemon settings were changed.")
+        required = ("MemoryLimit", "SwapLimit", "CpuCfsQuota", "CpuCfsPeriod", "PidsLimit")
+        if any(info.get(capability) is not True for capability in required):
+            raise UpdateError("Docker does not report support for every required memory, swap, CPU and PID limit; bounded audio packaging is unavailable on this daemon.")
+
+    def prepare_packager(self, revision):
+        """Pull only the dedicated, matching release; return its immutable ID."""
+        if not isinstance(revision, str) or not re.fullmatch(r"[0-9a-f]{40}", revision):
+            raise UpdateError("Audio packaging requires a reviewed full release revision.")
+        reference = PACKAGER + ":sha-" + revision
+        self.docker("pull", reference)
+        image = json.loads(self.docker("image", "inspect", reference))[0]
+        labels = image.get("Config", {}).get("Labels") or {}
+        if (labels.get("org.opencontainers.image.source") != SOURCE or
+                labels.get("org.opencontainers.image.revision") != revision or
+                labels.get(PACKAGER_ROLE) != "audio-packager"):
+            raise UpdateError("Audio packager source, revision or role does not match the selected release; no images were activated.")
+        identifier = image.get("Id", "")
+        if not re.fullmatch(r"sha256:[0-9a-f]{64}", identifier):
+            raise UpdateError("Could not identify the prepared audio packager image.")
+        return identifier
+
+    def packaging_docker(self, *args, timeout=30):
+        # No shell, injected environment variables, logging of private paths or
+        # container output. Only the fixed Docker CLI talks to the local daemon.
+        result = subprocess.run(["docker", *args], cwd=self.directory, env=self.env,
+                                stdin=subprocess.DEVNULL, text=True, capture_output=True,
+                                check=False, timeout=timeout)
+        if result.returncode:
+            raise UpdateError("Audio packager Docker operation failed; inspect the private library and helper locally. No images were activated.")
+        return result.stdout
+
+    def owned_packager(self, reference, token, image_id, *, allow_missing=False):
+        # A timed-out/interrupted create may have succeeded in the daemon even
+        # without CLI output. Resolve only this invocation's random exact name,
+        # then verify its unguessable ownership label and immutable image ID.
+        selector = ("id=" + reference if re.fullmatch(r"[0-9a-f]{64}", reference)
+                    else "name=^/" + reference + "$")
+        identifiers = self.packaging_docker("ps", "--all", "--quiet", "--no-trunc", "--filter", selector).split()
+        if not identifiers and allow_missing:
+            return None
+        if len(identifiers) != 1 or not re.fullmatch(r"[0-9a-f]{64}", identifiers[0]):
+            raise UpdateError("Cannot identify this invocation's audio packager; no unrelated container will be stopped.")
+        identifier = identifiers[0]
+        container = json.loads(self.packaging_docker("inspect", "--type", "container", identifier))[0]
+        if (container.get("Id") != identifier or container.get("Image") != image_id or
+                container.get("Config", {}).get("Labels", {}).get(PACKAGER_RUN) != token or
+                (re.fullmatch(r"[0-9a-f]{64}", reference) and reference != identifier)):
+            raise UpdateError("Audio packager ownership could not be verified; no unrelated container will be stopped.")
+        return identifier
+
+    def cleanup_packager(self, reference, token, image_id):
+        identifier = self.owned_packager(reference, token, image_id, allow_missing=True)
+        if identifier is None:
+            return False
+        # Killing a Docker CLI is not enough: stop the daemon-owned container,
+        # then remove exactly its verified ID, including all child processes.
         try:
-            for signum in handlers:
-                signal.signal(signum, interrupted)
-            process = subprocess.Popen(command, cwd=self.directory / "gyaruinthemix", env=environment,
-                                       stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
-                                       stderr=subprocess.DEVNULL, start_new_session=True,
-                                       preexec_fn=self.audio_limits)
-            try:
-                result = process.wait(timeout=timeout)
-            except subprocess.TimeoutExpired:
-                raise UpdateError("Audio packaging exceeded its 600-second limit; inspect its lock before retrying. No images were activated.") from None
-            if result:
-                raise UpdateError("Audio packaging failed; inspect the private library and packaging lock locally. No images were activated.")
-        except BaseException:
-            if process is not None:
-                try:
-                    os.killpg(process.pid, signal.SIGKILL)
-                except ProcessLookupError:
-                    pass
-                process.wait()
-            raise
-        finally:
-            for signum, handler in handlers.items():
-                signal.signal(signum, handler)
+            self.packaging_docker("stop", "--time", "5", identifier, timeout=15)
+        except (UpdateError, OSError, subprocess.SubprocessError):
+            pass
+        try:
+            self.packaging_docker("rm", "--force", identifier, timeout=30)
+        except (UpdateError, OSError, subprocess.SubprocessError):
+            # A client timeout can hide successful daemon-side removal.
+            if self.owned_packager(identifier, token, image_id, allow_missing=True) is not None:
+                raise UpdateError(f"Audio helper cleanup is unconfirmed; inspect container {identifier} and the packaging lock locally before retrying. No images were activated.") from None
+        return True
 
-    def package_audio(self):
-        checkout = self.directory / "gyaruinthemix"
-        library = checkout / "assets/music"
-        script = checkout / "game-audio/scripts/package-library.mjs"
-        for path in (checkout, library, script):
-            if path.resolve() != path:
-                raise UpdateError("Audio packaging refuses symlinked checkout, library or script paths.")
-        if not library.is_dir() or not script.is_file():
-            raise UpdateError("Audio packaging needs the installed checkout script and its assets/music directory.")
-        if not hasattr(os, "sched_setaffinity") or not hasattr(resource, "RLIMIT_DATA"):
-            raise UpdateError("Bounded audio packaging requires a Linux host with resource limits and CPU affinity.")
-        executables = {name: shutil.which(name, path=AUDIO_PATH) for name in ("node", "ffmpeg", "ffprobe")}
-        if not all(executables.values()):
-            raise UpdateError("Audio packaging requires operator-installed Node 24, ffmpeg and ffprobe on /usr/local/bin:/usr/bin:/bin.")
-        version = subprocess.run([executables["node"], "--version"], env={"PATH": AUDIO_PATH},
-                                 text=True, capture_output=True, check=False, timeout=10)
-        if version.returncode or not re.fullmatch(r"v24\.\d+\.\d+", version.stdout.strip()):
-            raise UpdateError("Audio packaging requires Node 24; no images were activated.")
-        # The packager is serial and content-addressed: unchanged files reuse
-        # packages, removed files leave the catalog, source files are never edited.
-        # Timeout may leave its own .hls lock, deliberately requiring inspection.
-        self.audio_process([executables["node"], "--jitless", "--max-old-space-size=64", str(script), str(library), "--strict"])
-        print("Enabled game-audio library refreshed with bounded serial packaging.")
+    def package_audio(self, image_id):
+        uid = self.validate_packaging_user()
+        self.validate_packaging_docker()
+        if not isinstance(image_id, str) or not re.fullmatch(r"sha256:[0-9a-f]{64}", image_id):
+            raise UpdateError("Audio packaging requires the prepared immutable packager image ID.")
+        library = self.directory / "gyaruinthemix/assets/music"
+        output = library / ".hls"
+        for path in (self.directory / "gyaruinthemix", library, output):
+            if path.resolve() != path or not path.is_dir():
+                raise UpdateError("Audio packaging requires existing non-symlinked checkout, library and .hls directories; provision narrow access first.")
+        # No recursive chown/chmod, no source-byte reads on the host, and no
+        # automatic directory creation. Group 10001 is only for sidecar access.
+        for path, required in ((library, 0o750), (output, 0o2750)):
+            info = path.stat()
+            mode = stat.S_IMODE(info.st_mode)
+            if (info.st_uid != uid or mode & 0o027 or mode & required != required or
+                    info.st_gid != AUDIO_GROUP):
+                raise UpdateError("Audio packaging requires deployment-owned private library and group-10001 setgid .hls directories; provision narrow access without making originals public.")
+        if (output / ".packaging.lock").exists() or (output / ".packaging.lock").is_symlink():
+            raise UpdateError("Inspect the existing audio packaging lock locally before retrying; it is never removed automatically.")
+        for parent, directories, files in os.walk(output, followlinks=False):
+            for name in directories + files:
+                path = Path(parent) / name
+                info = path.lstat()
+                required = 0o050 if stat.S_ISDIR(info.st_mode) else 0o040
+                if (not (stat.S_ISDIR(info.st_mode) or stat.S_ISREG(info.st_mode)) or
+                        (stat.S_ISREG(info.st_mode) and info.st_nlink != 1) or
+                        info.st_uid != uid or info.st_gid != AUDIO_GROUP or
+                        stat.S_IMODE(info.st_mode) & 0o027 or info.st_mode & required != required):
+                    raise UpdateError("Generated audio cache contains unsafe links, ownership or permissions; inspect it locally without changing original tracks.")
+        if any("," in str(path) or "\n" in str(path) for path in (library, output)):
+            raise UpdateError("Audio packaging bind paths cannot contain commas or newlines.")
+        # The image contains the reviewed serial/content-addressed packager and
+        # its own 600-second timeout. No checkout code, key, socket or network is
+        # available inside it. Only generated .hls is writable; originals are RO.
+        token = secrets.token_hex(16)
+        name = "bouncer-audio-packager-" + token
+        reference = name
+        command = ["create", "--name", name, "--label", PACKAGER_RUN + "=" + token,
+                   "--restart", "no", "--pull", "never", "--network", "none", "--read-only",
+                   "--cap-drop", "ALL", "--security-opt", "no-new-privileges:true",
+                   "--user", f"{uid}:{AUDIO_GROUP}", "--memory", "192m", "--memory-swap", "192m",
+                   "--cpus", "0.50", "--pids-limit", "64", "--ulimit", "core=0:0",
+                   "--ulimit", "nofile=256:256", "--log-driver", "none",
+                   "--tmpfs", "/tmp:rw,noexec,nosuid,nodev,size=32m,mode=1777",
+                   "--mount", f"type=bind,src={library},dst=/library/assets/music,readonly",
+                   "--mount", f"type=bind,src={output},dst=/library/assets/music/.hls", image_id]
+        handlers = {number: signal.getsignal(number) for number in (signal.SIGINT, signal.SIGTERM)}
+        attempted = False
+        creation_confirmed = False
+
+        def interrupted(_signum, _frame):
+            raise UpdateError("Audio packaging interrupted; inspect its lock before retrying. No images were activated.")
+
+        try:
+            for number in handlers:
+                signal.signal(number, interrupted)
+            attempted = True
+            identifier = self.packaging_docker(*command).strip()
+            if not re.fullmatch(r"[0-9a-f]{64}", identifier):
+                raise UpdateError("Audio packager creation returned an invalid container ID.")
+            # Verify ownership before starting and before trusting an ID returned
+            # by the CLI. On uncertain create, finally recovers by unique name.
+            reference = self.owned_packager(identifier, token, image_id)
+            creation_confirmed = True
+            self.packaging_docker("start", reference)
+            result = self.packaging_docker("wait", reference, timeout=AUDIO_TIMEOUT).strip()
+            if result != "0":
+                raise UpdateError("Audio packaging failed; inspect the private library and packaging lock locally. No images were activated.")
+        except subprocess.TimeoutExpired:
+            raise UpdateError("Audio packaging exceeded its bounded deadline; the helper is being stopped. Inspect its lock before retrying. No images were activated.") from None
+        finally:
+            try:
+                if attempted:
+                    # Finish exact-container cleanup even if another signal
+                    # arrives. Always restore the caller's original handlers.
+                    for number in handlers:
+                        signal.signal(number, signal.SIG_IGN)
+                    cleaned = self.cleanup_packager(reference, token, image_id)
+                    if not creation_confirmed and not cleaned:
+                        raise UpdateError(f"Audio helper creation outcome is uncertain; inspect helper {name} locally before retrying. It was never started by this updater; no images were activated.") from None
+            finally:
+                for number, handler in handlers.items():
+                    signal.signal(number, handler)
+        print("Enabled game-audio library refreshed with bounded serial container packaging.")
 
     def read_website_state(self, services):
         state = json.loads(self.state_path.read_text()) if self.state_path.exists() else {}
@@ -253,6 +352,11 @@ class Updater:
             state["rejected"] = state.pop("pending")
             self.save(state)
             print("Recovered the previous images after an interrupted update.")
+        if audio_enabled == "true":
+            # Restoring a pending service transaction does not package media and
+            # must remain possible if packaging-specific host support is lost.
+            self.validate_packaging_user()
+            self.validate_packaging_docker()
         previous = {}
         baselines = {}
         for name in services:
@@ -285,7 +389,7 @@ class Updater:
         if images != previous and images == state.get("rejected") and not self.retry:
             raise UpdateError("This release previously failed health checks; waiting for a new release (or an operator --retry).")
         if audio_enabled == "true":
-            self.package_audio()
+            self.package_audio(self.prepare_packager(next(iter(revisions))))
         if images == previous:
             print("Website already uses the current release.")
             return
@@ -315,17 +419,48 @@ class AudioPackager(Updater):
     """Explicit first-catalog preparation, under the same lock and installed config."""
 
     def run(self):
+        self.validate_packaging_user()
         context = json.loads(self.docker("context", "inspect"))[0]
         if not context["Endpoints"]["docker"]["Host"].startswith("unix://"):
             raise UpdateError("Use a local Docker context on the bouncer host.")
+        if self.docker("info", "--format", "{{.Architecture}}").strip() not in ("x86_64", "amd64"):
+            raise UpdateError("Published images currently require an amd64 Docker host; no containers were changed.")
         config = json.loads(self.compose("config", "--format", "json"))
-        if config["services"][WEB].get("environment", {}).get("GAME_AUDIO_ENABLED", "false") != "true":
+        web = config["services"][WEB]
+        if web.get("environment", {}).get("GAME_AUDIO_ENABLED", "false") != "true":
             raise UpdateError("First enable GAME_AUDIO_ENABLED=true explicitly in the installed bouncer configuration.")
+        mode = web.get("build", {}).get("args", {}).get("CHECKOUT_MODE", "payment_links")
+        if mode not in ("payment_links", "api"):
+            raise UpdateError("Unsupported CHECKOUT_MODE.")
         self.compose_args += ["--profile", "game-audio"]
+        if mode == "api":
+            self.compose_args += ["--profile", "checkout-api"]
         config = json.loads(self.compose("config", "--format", "json"))
         self.validate_audio(config)
-        self.package_audio()
-        print("Game-audio catalog prepared. No containers or images were changed; first activation remains an operator step.")
+        repositories = {WEB: REGISTRY + ("web-api" if mode == "api" else "web"), AUDIO: REGISTRY + "game-audio"}
+        if mode == "api":
+            repositories[API] = REGISTRY + "api"
+        revisions = set()
+        for name, repository in repositories.items():
+            reference = config["services"][name]["image"]
+            if not re.fullmatch(re.escape(repository) + r":(?:main|sha-[0-9a-f]{40})", reference):
+                raise UpdateError("Manual audio packaging requires canonical reviewed main or SHA-tag service images.")
+            self.docker("pull", reference)
+            image = json.loads(self.docker("image", "inspect", reference))[0]
+            labels = image.get("Config", {}).get("Labels") or {}
+            revision = labels.get("org.opencontainers.image.revision", "")
+            if (labels.get("org.opencontainers.image.source") != SOURCE or
+                    not re.fullmatch(r"[0-9a-f]{40}", revision) or
+                    (":sha-" in reference and reference != repository + ":sha-" + revision) or
+                    (name == WEB and labels.get("io.gyaruinthemix.checkout-mode") != mode) or
+                    not re.fullmatch(r"sha256:[0-9a-f]{64}", image.get("Id", ""))):
+                raise UpdateError("Manual audio packaging service source/revision/mode does not match the reviewed release.")
+            revisions.add(revision)
+        if len(revisions) != 1:
+            raise UpdateError("Image publication is incomplete; manual audio packaging requires the same revision for every selected service.")
+        revision = revisions.pop()
+        self.package_audio(self.prepare_packager(revision))
+        print(f"Game-audio catalog prepared for release {revision}. Service containers were not changed; activation remains an operator step.")
 
 
 SHARED_SERVICES = ("proxy", "letsencrypt-companion", "znc", "limnoria")
@@ -693,7 +828,7 @@ def main():
     modes = parser.add_mutually_exclusive_group()
     modes.add_argument("--shared", action="store_true", help="manually update only the four reviewed shared services; may briefly interrupt traffic")
     modes.add_argument("--znc-cert", action="store_true", help="validate/refresh only the ZNC certificate; restart ZNC only if changed")
-    modes.add_argument("--package-game-audio", action="store_true", help="prepare the enabled audio catalog under the normal lock; never change images or containers")
+    modes.add_argument("--package-game-audio", action="store_true", help="prepare the enabled audio catalog with a matching-release helper under the normal lock; never activate service containers")
     args = parser.parse_args()
     if args.shared:
         mode, updater_class = "shared", SharedUpdater

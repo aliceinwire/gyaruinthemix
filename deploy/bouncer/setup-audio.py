@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Plan or interactively enable private music in the existing bouncer deployment.
 
+Uses existing Python 3.9+, Git and Docker with Compose; no host Node or FFmpeg.
 No installation, Git pull, scheduler editing, privilege escalation or source-file
 permission changes. Run only from an operator-reviewed, clean checkout.
 """
@@ -30,6 +31,7 @@ WEB, API, AUDIO = update.WEB, update.API, update.AUDIO
 JOURNAL = ".bouncer-game-audio-setup.json"
 LOCK = ".gyaruinthemix-update.lock"
 GROUP = 10001
+TOOL_PATH = "/usr/local/bin:/usr/bin:/bin"
 MANAGED_ENV = ("GAME_AUDIO_ENABLED", "GAME_AUDIO_SIGNING_KEY_FILE",
                "GYARUINTHEMIX_GAME_AUDIO_IMAGE", "COMPOSE_PROFILES")
 REVIEWED = ("deploy/bouncer/setup-audio.py", "deploy/bouncer/update.py",
@@ -231,10 +233,12 @@ class AudioSetup(update.Updater):
         super().__init__(directory)
         # Installed .env is authoritative, never a transient shell routing/image override.
         self.env = {key: self.env[key] for key in ("HOME", "DOCKER_CONFIG", "XDG_RUNTIME_DIR") if key in self.env}
-        self.env.update({"PATH": update.AUDIO_PATH, "LANG": "C", "LC_ALL": "C"})
+        self.env.update({"PATH": TOOL_PATH, "LANG": "C", "LC_ALL": "C"})
         self.checkout = self.directory / "gyaruinthemix"
         self.library = self.checkout / "assets/music"
         self.hls = self.library / ".hls"
+        if "," in str(self.directory) or "\n" in str(self.directory):
+            raise Error("The deployment root cannot contain commas or newlines in Docker bind paths.")
         self.journal_path = self.directory / JOURNAL
         self.key_argument = key_file
         # All service definitions must be visible for drift and stopped-container checks.
@@ -249,7 +253,7 @@ class AudioSetup(update.Updater):
 
     def git(self, *args):
         return self.command(["git", "--no-optional-locks", "-c", "core.fsmonitor=false", "-C", str(self.checkout), *args],
-                            environment={"PATH": update.AUDIO_PATH, "LANG": "C", "LC_ALL": "C"})
+                            environment={"PATH": TOOL_PATH, "LANG": "C", "LC_ALL": "C"})
 
     def reviewed_checkout(self):
         safe_path(self.checkout, exists=True, directory=True)
@@ -297,18 +301,16 @@ class AudioSetup(update.Updater):
         return revision
 
     def dependencies(self):
-        if sys.version_info < (3, 9) or sys.platform != "linux" or not hasattr(os, "sched_setaffinity"):
-            raise Error("Use Python 3.9+ on Linux with CPU affinity and resource limits; nothing is installed automatically.")
-        for name in ("git", "docker", "node", "ffmpeg", "ffprobe"):
-            executable = shutil.which(name, path=update.AUDIO_PATH)
+        if sys.version_info < (3, 9) or sys.platform != "linux":
+            raise Error("Use existing Python 3.9+ on Linux; nothing is installed automatically.")
+        self.validate_packaging_user()
+        for name in ("git", "docker"):
+            executable = shutil.which(name, path=TOOL_PATH)
             if not executable:
-                raise Error(f"Install {name} through the operator's approved process first; setup never installs software.")
-            if name == "node":
-                if not re.fullmatch(r"v24\.\d+\.\d+", self.command([executable, "--version"]).strip()):
-                    raise Error("Node 24 is required; setup does not install or replace Node.")
-            elif name in ("ffmpeg", "ffprobe"):
-                self.command([executable, "-version"])
-        self.local_docker()
+                raise Error(f"Existing {name} is required; setup never installs software. Node and FFmpeg run only inside the release packager image.")
+        # Bound the one-shot helper before any private key/config mutation.
+        # Recovery keeps its narrower local-daemon check: it does not package.
+        self.validate_packaging_docker()
         self.command(["docker", "compose", "version"])
 
     def local_docker(self):
@@ -340,6 +342,8 @@ class AudioSetup(update.Updater):
                 before = None
             else:
                 before = metadata(path)
+            if before and path in (self.library, self.hls) and before["uid"] != os.geteuid():
+                raise Error("The existing deployment user must own the private library and .hls directories; setup never adopts a different owner.")
             desired = {"mode": mode, "uid": before["uid"] if before else os.geteuid(), "gid": GROUP}
             if before and (path == self.hls or path == self.library or (path == key.parent and not key.exists())) and not os.access(path, os.W_OK | os.X_OK):
                 raise Error("The deployment user needs write/traverse access to the dedicated output/key directories; pre-provision it before setup.")
@@ -369,8 +373,10 @@ class AudioSetup(update.Updater):
                     path = safe_path(Path(parent) / name, exists=True, directory=name in directories)
                     info = path.stat()
                     required = 0o050 if path.is_dir() else 0o040
-                    if info.st_gid != GROUP or stat.S_IMODE(info.st_mode) & 0o007 or stat.S_IMODE(info.st_mode) & required != required:
-                        raise Error("Existing generated .hls entries need reviewed group-10001 access; setup does not recursively change permissions.")
+                    if (info.st_uid != os.geteuid() or info.st_gid != GROUP or
+                            (path.is_file() and info.st_nlink != 1) or
+                            stat.S_IMODE(info.st_mode) & 0o027 or stat.S_IMODE(info.st_mode) & required != required):
+                        raise Error("Existing generated .hls entries need deployment ownership, safe single links and reviewed group-10001 access; setup does not recursively change permissions.")
         return changes
 
     def capture(self, config, selected):
@@ -501,6 +507,9 @@ class AudioSetup(update.Updater):
 
     def show_plan(self, plan):
         print(f"Read-only plan: existing {plan['mode']} checkout, reviewed candidate revision {plan['revision']}.")
+        print(f"Deployment root (--directory): {self.directory} (installed docker-compose.yml and .env).")
+        print(f"Private music input: {self.library}; generated output: {self.hls}.")
+        print("Use the deployment root for --directory, not the nested music directory.")
         print("Selected containers: " + ", ".join(plan["expected"]))
         print("Preserve this Compose project, shared services, unrelated profiles and .env comments.")
         print("Reuse the existing private key." if plan["key_exists"] else "Create a new private 32-byte key outside the checkout; never print it.")
@@ -508,8 +517,10 @@ class AudioSetup(update.Updater):
         for change in plan["permissions"]:
             print(f"Dedicated directory: {change['path']} -> group {GROUP}, mode {change['after']['mode']:04o} (no recursive changes).")
         print(f"Private backups: {Path.home()}/.bouncer-audio-backup-<transaction>/ (0700 directory, 0600 files).")
-        print("After confirmation: back up config, apply only reviewed audio settings/permissions, pull matching SHA-tagged images,")
-        print("run the existing bounded packager, then health-check only selected website/API/audio containers.")
+        print("After confirmation: pull and verify matching SHA-tagged service and one-shot packager images before changing keys/config,")
+        print("then back up config, apply only reviewed audio settings/permissions, package with the immutable release image,")
+        print("and health-check only selected website/API/audio containers. The helper is not a serving Compose service.")
+        print("Host requirements: existing Python 3.9+, Git and Docker with Compose; no host Node, FFmpeg or package installation.")
         print("Keep cron/systemd unchanged; the common updater lock and recovery journal protect this transaction.")
         print(f"Free deployment-filesystem space: {shutil.disk_usage(self.directory).free // (1024 ** 2)} MiB. Review memory/disk headroom before applying.")
         print("No files, permissions, keys, images or containers have been changed by this plan.")
@@ -530,7 +541,10 @@ class AudioSetup(update.Updater):
                     not IMAGE_ID.fullmatch(image.get("Id", ""))):
                 raise Error("A selected image does not match the reviewed published release/source/mode; no configuration changed.")
             images[name] = image["Id"]
-        return images
+        # The helper is prepared for exactly the same reviewed SHA, but is never
+        # a serving service, activation target or rollback/journal baseline.
+        packager_image = self.prepare_packager(plan["revision"])
+        return images, packager_image
 
     def check_baselines(self, plan):
         if self.capture(plan["old_config"], plan["expected"]) != plan["baselines"]:
@@ -714,7 +728,7 @@ class AudioSetup(update.Updater):
         print("Previous configuration and selected images restored. Private key/cache and private backups retained; originals untouched.")
 
     def apply(self, plan):
-        images = self.prepare_images(plan)
+        images, packager_image = self.prepare_images(plan)
         self.check_baselines(plan)
         if self.reviewed_checkout() != plan["revision"]:
             raise Error("The reviewed checkout changed during image preparation; no configuration changed.")
@@ -735,10 +749,12 @@ class AudioSetup(update.Updater):
                 raise Error("Installed candidate differs from the reviewed plan; stopping.")
             self.validate_audio(config)
             if self.reviewed_checkout() != plan["revision"]:
-                raise Error("The reviewed checkout changed before packaging; refusing to execute it.")
+                raise Error("The reviewed checkout changed before packaging; review a fresh plan.")
             state["phase"] = "packaging"
             self.write_journal(state)
-            self.package_audio()
+            # The reviewed source is baked into this prepared image. No host
+            # checkout script, Node binary or FFmpeg executable is run.
+            self.package_audio(packager_image)
             catalog = safe_path(self.hls / "catalog.json", exists=True)
             state["outputs"]["catalog"] = digest(catalog.read_bytes())
             self.write_journal(state)
@@ -781,7 +797,8 @@ def confirm(token):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--directory", default=str(Path.home() / "bouncer"))
+    parser.add_argument("--directory", default=str(Path.home() / "bouncer"), metavar="DEPLOYMENT_ROOT",
+                        help="existing deployment root containing docker-compose.yml and .env (default: ~/bouncer); music remains under DEPLOYMENT_ROOT/gyaruinthemix/assets/music")
     parser.add_argument("--key-file", help="absolute key path in a dedicated directory outside the checkout; never the key itself")
     parser.add_argument("--apply", action="store_true", help="interactively approve and apply the plan")
     parser.add_argument("--dry-run", action="store_true", help="explicit read-only plan (the default)")

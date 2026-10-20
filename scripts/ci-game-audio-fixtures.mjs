@@ -1,13 +1,38 @@
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
-import { chmod, mkdir, readdir, rm, writeFile } from 'node:fs/promises';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { isAbsolute, join, relative, resolve } from 'node:path';
-import { packageLibrary } from '../game-audio/scripts/package-library.mjs';
 
 // Public, deterministic fixture bytes. Never an operator or production key.
 export const AUDIO_FIXTURE_KEY =
   'CI_ONLY_NOT_A_SECRET_SYNTHETIC_AUDIO_FIXTURE_2026';
 export const AUDIO_FIXTURE_SOURCE = 'ci-synthetic-tone.wav';
+
+// Creating PCM samples needs no host encoder. All actual packaging runs in the
+// exact release packager image, through the real bouncer updater's confinement.
+export function syntheticWave(seconds = 8) {
+  assert.ok(Number.isInteger(seconds) && seconds >= 1 && seconds <= 12);
+  const sampleRate = 48000;
+  const dataSize = seconds * sampleRate * 2;
+  const wave = Buffer.alloc(44 + dataSize);
+  wave.write('RIFF', 0);
+  wave.writeUInt32LE(36 + dataSize, 4);
+  wave.write('WAVEfmt ', 8);
+  wave.writeUInt32LE(16, 16);
+  wave.writeUInt16LE(1, 20);
+  wave.writeUInt16LE(1, 22);
+  wave.writeUInt32LE(sampleRate, 24);
+  wave.writeUInt32LE(sampleRate * 2, 28);
+  wave.writeUInt16LE(2, 32);
+  wave.writeUInt16LE(16, 34);
+  wave.write('data', 36);
+  wave.writeUInt32LE(dataSize, 40);
+  for (let sample = 0; sample < seconds * sampleRate; sample++)
+    wave.writeInt16LE(
+      Math.round(8192 * Math.sin((2 * Math.PI * 440 * sample) / sampleRate)),
+      44 + sample * 2,
+    );
+  return wave;
+}
 
 export async function createGameAudioFixtures({ checkoutRoot, secretFile }) {
   assert.ok(isAbsolute(checkoutRoot) && checkoutRoot === resolve(checkoutRoot));
@@ -24,45 +49,11 @@ export async function createGameAudioFixtures({ checkoutRoot, secretFile }) {
   try {
     await writeFile(secretFile, AUDIO_FIXTURE_KEY, { mode: 0o444, flag: 'wx' });
     keyCreated = true;
-    execFileSync(
-      'ffmpeg',
-      [
-        '-hide_banner',
-        '-loglevel',
-        'error',
-        '-nostdin',
-        '-f',
-        'lavfi',
-        '-i',
-        'sine=frequency=440:sample_rate=48000:duration=8',
-        '-threads',
-        '1',
-        '-c:a',
-        'pcm_s16le',
-        join(library, AUDIO_FIXTURE_SOURCE),
-      ],
-      { timeout: 30000, stdio: 'pipe' },
-    );
-    const result = await packageLibrary({
-      directory: library,
-      maxFiles: 1,
-      maxBytes: 2 * 1024 * 1024,
-      maxSeconds: 10,
+    await writeFile(join(library, AUDIO_FIXTURE_SOURCE), syntheticWave(), {
+      mode: 0o640,
+      flag: 'wx',
     });
-    assert.equal(result.packaged, 1);
-    assert.deepEqual(result.failures, []);
-    // These are synthetic CI files only. Permit the fixed non-root container UID
-    // to read them without changing the operator's production permission model.
-    const makeReadable = async (path) => {
-      await chmod(path, 0o755);
-      for (const entry of await readdir(path, { withFileTypes: true })) {
-        const file = join(path, entry.name);
-        if (entry.isDirectory()) await makeReadable(file);
-        else await chmod(file, 0o444);
-      }
-    };
-    await makeReadable(library);
-    return { library, catalog: result.catalog, cleanup };
+    return { library, cleanup };
   } catch (error) {
     await cleanup();
     throw error;

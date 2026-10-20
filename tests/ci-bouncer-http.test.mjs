@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import { createServer } from 'node:http';
-import { mkdir, mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -41,7 +41,29 @@ test('each HTTP phase has a fresh process across restart, audio stop and recover
     secretFile: join(directory, 'fixture-key'),
   });
   t.after(fixture.cleanup);
-  const tracks = await loadCatalog(join(fixture.library, '.hls'));
+  // HTTP lifecycle isolation is independent of encoding. Use inert synthetic
+  // bytes here; the actual FFmpeg output is tested inside the release image.
+  const id = 't-' + 'a'.repeat(24);
+  const output = join(fixture.library, '.hls');
+  await mkdir(join(output, id), { recursive: true });
+  await writeFile(join(output, id, 'init.mp4'), Buffer.alloc(20, 1));
+  await writeFile(join(output, id, 'seg-00000.m4s'), Buffer.alloc(100, 2));
+  await writeFile(
+    join(output, 'catalog.json'),
+    JSON.stringify({
+      version: 1,
+      tracks: [
+        {
+          id,
+          title: 'Synthetic HTTP fixture',
+          init: 'init.mp4',
+          duration: 4,
+          chunks: [{ file: 'seg-00000.m4s', duration: 4 }],
+        },
+      ],
+    }),
+  );
+  const tracks = await loadCatalog(output);
   const moduleSource = await readFile(
     join(root, 'public/game-test/src/vendor/hls.light.min.mjs'),
     'utf8',
