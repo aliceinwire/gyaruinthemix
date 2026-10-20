@@ -449,4 +449,17 @@ html:not(:lang(ja)) .destination-kind { letter-spacing: .02em; }
 @media (max-width: 680px) and (max-height: 740px) {
  .style-options button :is(span,small) { line-height: 1.4; }
  .style-picker { margin: 4px 0; padding: 4px 0; }
+ /* Keep full translated route names and descriptions above the radio. */
+ .map-stop, .destination-kind { line-height: 1.35; }
+ .map-branch-label, .destination-status, #climate-summary { line-height: 1.4; }
+ .destination-option strong, .map-route-detail { line-height: 1.4; }
+ .journey-map { padding: 4px; }
+ .map-branch-label { padding-block: 0; }
+ #destination-choices { padding-block: 6px; }
+ .destination-option { padding: 4px; gap: 3px; }
+ .destination-option img { height: 32px; }
+ .destination-option::before, .destination-option::after { height: 7px; }
+ .map-origin::after { height: 15px; }
+ .map-goal { margin-top: 8px; }
+ .map-goal::before { height: 9px; }
 }

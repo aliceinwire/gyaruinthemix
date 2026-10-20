@@ -103,7 +103,13 @@ async function assertFrameFits(page, selectors) {
         box.right > shell.right + 1 ||
         box.bottom > bottom + 1
       )
-        faults.push(selector);
+        faults.push({
+          selector,
+          lang: document.documentElement.lang,
+          viewport: [innerWidth, innerHeight],
+          box: box.toJSON(),
+          availableBottom: bottom,
+        });
     }
     return faults;
   }, selectors);
