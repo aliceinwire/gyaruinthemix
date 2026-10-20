@@ -27,7 +27,7 @@ import {
   unlockCar,
   equipStartingCar,
 } from "./src/garage.js";
-import { drawCharacter } from "./src/character-actions.js";
+import { drawCharacter, resolveCrewVisuals } from "./src/character-actions.js";
 import {
   createState,
   cancelRush,
@@ -825,6 +825,7 @@ function frame(now) {
     toastTime -= dt;
     if (toastTime <= 0) $("#toast").classList.remove("on");
   }
+  const crewVisuals = resolveCrewVisuals(state, { time: visualTime, reducedMotion, action: screen === "finale" ? "cheer" : undefined });
   if (screen === "map") {
     // The directly selectable DOM map owns this screen; do not redraw a hidden canvas.
   } else if (screen === "finale")
@@ -841,6 +842,7 @@ function frame(now) {
     render(ctx, state, {
       time: visualTime,
       menu: screen === "menu",
+      crewVisuals,
       reducedMotion,
     });
   if (["playing", "quiz"].includes(screen)) drawRoadFeedback(ctx, roadFeedback, state);
@@ -853,17 +855,7 @@ function frame(now) {
       y: 0,
       width: 128,
       height: 128,
-      time: reducedMotion ? 0 : visualTime,
-      weather: state.weather,
-      season: state.season,
-      boosting: state.boosting,
-      rushing: state.rushing,
-      rushTime: state.rushTime,
-      rushGestureTime: state.rushGestureTime,
-      shooting: state.shooting,
-      charging: state.charging,
-      invulnerability: state.invulnerability,
-      action: screen === "finale" ? "cheer" : undefined,
+      ...crewVisuals,
     });
   frameSamples.push(performance.now() - frameStart);
   if (frameSamples.length > 600) frameSamples.shift();

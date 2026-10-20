@@ -10,7 +10,7 @@ import {
 } from "./street-characters.js";
 import { drawLocation } from "./location-renderer.js";
 import { environmentFor, getLocation } from "./locations.js";
-import { drawCharacter, resolveCrewActions, preloadCharacterActions } from "./character-actions.js";
+import { drawCharacter, resolveCrewActions, resolveCrewVisuals, preloadCharacterActions } from "./character-actions.js";
 import {
   drawNpcWeather,
   drawCarWeather,
@@ -99,20 +99,33 @@ function text(g, str, x, y, size = 12, color = "#fff1f5") {
 export function heartVisualPosition(state, shot) {
   const carId=getCarProfile(state).id;
   const layout=getCarArtLayout({carId,x:190+(state.windOffset||0),y:469-(state.jumpHeight||0)*95,...(carId==="heart-limo"?{height:62}:{})});
-  const cabin=layout.cabins[0],seat=layout.seats[0];
-  const startX=layout.openTop?seat.x+12:cabin.x+cabin.width*.75;
-  const startY=layout.openTop?seat.y-13:cabin.y+cabin.height*.65;
+  const passenger=getCrewSeatLayout(layout)[0];
+  const startX=passenger.x+passenger.width*.75;
+  const startY=passenger.y+passenger.height*.65;
   const progress=Math.max(0,Math.min(1,(shot.age||0)/.28));
   const targetX=190+(shot.distance-state.distance)*3;
   const targetY=425-(shot.height||0)*95;
   return {x:startX+(targetX-startX)*progress,y:startY+(targetY-startY)*progress-Math.sin(progress*Math.PI)*18};
 }
 
+/** Side view: both front seats share a row, with the far passenger behind the driver. */
+export function getCrewSeatLayout(layout) {
+  const cabin = layout.cabins.at(-1);
+  const driverSeat = layout.seats.at(-1);
+  const size = layout.openTop ? 43 : Math.min(cabin.width + 3, cabin.height + 6);
+  const center = layout.openTop ? driverSeat.x : cabin.x + cabin.width * .57;
+  const bottom = layout.openTop ? driverSeat.y + 4 : cabin.y + cabin.height + 2;
+  return [
+    { character: "chana", x: center - size * .28 - size * .90 / 2, y: bottom - size * .90 - 2, width: size * .90, height: size * .90, cabin },
+    { character: "arisu", x: center - size / 2, y: bottom - size, width: size, height: size, cabin },
+  ];
+}
+
 export function drawCar(g, x, y, {
   time = 0, speed = 0, jump = 0, scale = 1, boost = false,
   damage = false, shooting = false, charging = false, rushing = false, rushTime = 0, rushGestureTime,
   weather = "sunny", season = "summer", roofClosed = false, mudAmount = 0,
-  carId = "mix-175", appearance = getCarAppearance({equipped:carId}),
+  crewVisuals, carId = "mix-175", appearance = getCarAppearance({equipped:carId}),
 } = {}) {
   g.save(); g.translate(Math.round(x), Math.round(y)); g.scale(scale, scale);
   g.globalAlpha = Math.max(.08, .28 - jump * .06);
@@ -140,15 +153,11 @@ export function drawCar(g, x, y, {
     }
   }
   drawCarWheels(g, {...layoutOptions, rotation:time*speed/12, wheels:appearance.wheels});
-  const actions = resolveCrewActions({time,boosting:boost,shooting,charging,damage,weather,rushing,rushGestureTime});
-  for (const [i, character] of ["chana","arisu"].entries()) {
-    const seat=layout.seats[i], cabin=layout.cabins[Math.min(i,layout.cabins.length-1)];
-    const size=layout.openTop ? 43 : Math.min(cabin.width+3,cabin.height+6);
-    const cx=layout.openTop ? seat.x + (i ? 6 : -6) : cabin.x+cabin.width/2;
-    const bottom=layout.openTop ? seat.y+4 : cabin.y+cabin.height+2;
+  const visual = crewVisuals || { time, action: resolveCrewActions({time,boosting:boost,shooting,charging,damage,weather,rushing,rushGestureTime}), weather, season, rushing, rushTime, rushGestureTime };
+  for (const {character, x, y, width, height, cabin} of getCrewSeatLayout(layout)) {
     g.save();
     if (!layout.openTop) { g.beginPath();g.rect(cabin.x-1,cabin.y-1,cabin.width+2,cabin.height+2);g.clip(); }
-    drawCharacter(g,{character,x:cx-size/2,y:bottom-size,width:size,height:size,time,action:actions,weather,season,rushing,rushTime,rushGestureTime});
+    drawCharacter(g, {...visual, character, x, y, width, height});
     g.restore();
   }
   drawCarBody(g,{...layoutOptions,paint:appearance.paint});
@@ -227,9 +236,10 @@ function entity(g, e, x, y, time, state) {
 export function render(
   g,
   state,
-  { time = 0, menu = false, reducedMotion = false } = {},
+  { time = 0, menu = false, reducedMotion = false, crewVisuals } = {},
 ) {
   if (reducedMotion) time = 0;
+  crewVisuals ||= resolveCrewVisuals(state, {time, reducedMotion});
   g.imageSmoothingEnabled = false;
   drawScenery(g, {
     cityId: state.route.cityId,
@@ -259,6 +269,7 @@ export function render(
   road(g, state, time);
   if (menu) {
     drawCar(g, 690, 443, {
+      crewVisuals,
       time,
       speed: 0,
       scale: 1.7,
@@ -303,6 +314,7 @@ export function render(
         drawNpcWeather(g, o.e, o.x, o.y, time, state);
     });
   drawCar(g, 190 + (state.windOffset || 0), 465, {
+    crewVisuals,
     carId:getCarProfile(state).id, appearance:getCarAppearance(state),
     shooting: state.shooting,
     charging: state.charging,

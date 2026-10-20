@@ -184,6 +184,25 @@ export function resolveCrewActions({
   };
 }
 
+/** One immutable pose clock/event snapshot for every view in a display frame. */
+export function resolveCrewVisuals(state = {}, { time = 0, reducedMotion = false, action } = {}) {
+  const visual = {
+    time: reducedMotion ? 0 : time,
+    animate: !reducedMotion,
+    weather: state.weather,
+    season: state.season,
+    boosting: state.boosting,
+    rushing: state.rushing,
+    rushTime: state.rushTime,
+    rushGestureTime: state.rushGestureTime,
+    shooting: state.shooting,
+    charging: state.charging,
+    invulnerability: state.invulnerability,
+    action,
+  };
+  return Object.freeze({ ...visual, action: Object.freeze(resolveCrewActions(visual)) });
+}
+
 function box(ctx, x, y, width, height, color) {
   ctx.fillStyle = color;
   ctx.fillRect(
@@ -286,7 +305,7 @@ export function drawCharacter(ctx, options = {}) {
   const [sx, sy, cellW, cellH] = sourceRect;
   const upbeat = localAction === "cheer" || localAction === "point" || localAction === "hearts";
   const bob = animate
-    ? Math.sin(time * (upbeat ? 8 : 4) + (name === "chana" ? 0.5 : 0)) *
+    ? Math.sin(time * (upbeat ? 8 : 4)) *
       height *
       (upbeat ? 0.018 : 0.007)
     : 0;
