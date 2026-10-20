@@ -320,6 +320,14 @@ try {
       );
       await node.click();
       assert.equal(await node.getAttribute('aria-pressed'), 'true');
+      await assertFrameFits(page, [
+        '.map-origin',
+        '#destination-choices',
+        '.map-goal',
+        '#route-mission-preview',
+        '#change-starting-car',
+        '#depart',
+      ]);
     }
     await destinations.first().focus();
     await page.keyboard.press('Enter');
@@ -526,10 +534,17 @@ try {
         'true',
       );
       const draftPager = page.locator('#draft-options + .card-pager');
-      assert.equal(await page.locator('#draft-options button:visible').count(), 1);
-      await draftPager.getByRole('button', { name: '次へ →', exact: true }).click();
+      assert.equal(
+        await page.locator('#draft-options button:visible').count(),
+        1,
+      );
+      await draftPager
+        .getByRole('button', { name: '次へ →', exact: true })
+        .click();
       assert.equal(await draftOptions.nth(1).isVisible(), true);
-      await draftPager.getByRole('button', { name: '← 前へ', exact: true }).click();
+      await draftPager
+        .getByRole('button', { name: '← 前へ', exact: true })
+        .click();
       assert.equal(await draftOptions.first().isVisible(), true);
       assert.equal(await page.locator('#pause').isDisabled(), true);
       assert.equal(await page.locator('#run-journal').isDisabled(), true);

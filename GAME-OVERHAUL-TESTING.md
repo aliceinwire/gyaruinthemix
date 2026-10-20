@@ -10,8 +10,11 @@ Recorded 21 October 2026 (JST).
 - Managed browser smoke checks exercised real title/setup/map/garage/gameplay/quiz/pause/draft flows at desktop, portrait phone and 844 × 390 landscape sizes. The branching map remains selectable, and the three skill cards can be paged without scrolling. A road was completed at the new speed, with quiz feedback and small-keepsake rewards observed in actual play.
 - The preview audio service was unavailable. Live music playback and deployment remain unverified.
 - The complete browser automation suite is prepared for CI, not claimed as locally executed. `browserVerified` stays false until that release gate completes.
+- The first CI run passed unit, lint, build, secret and all four container jobs. Browser checks exposed a 390 × 667 route departure overlap. The controls now share one row, verified in the managed preview at 390 × 667 and 844 × 390; CI checks all three map selections against the radio boundary.
 
 ![Connected route map and car radio inside the desktop frame](docs/nightfall-frame-20261021.jpg)
+
+![Event route and departure controls inside the landscape phone frame](docs/nightfall-landscape-20261021.jpg)
 
 ## Historical 5.0 evidence
 
