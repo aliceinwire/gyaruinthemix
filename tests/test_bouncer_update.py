@@ -13,10 +13,16 @@ spec.loader.exec_module(module)
 
 
 class FakeUpdater(module.Updater):
-    def __init__(self, directory, mode="payment_links", **kwargs):
+    def __init__(self, directory, mode="payment_links", audio=False, **kwargs):
         super().__init__(directory, **kwargs)
         self.mode = mode
         self.services = [module.WEB, module.API] if mode == "api" else [module.WEB]
+        if audio:
+            self.services.append(module.AUDIO)
+        self.packages = 0
+        self.fail_package = False
+        self.extra_audio = False
+        self.concurrent = False
         self.current = {name: "sha256:" + str(i + 1) * 64 for i, name in enumerate(self.services)}
         self.desired = {name: "sha256:" + str(i + 3) * 64 for i, name in enumerate(self.services)}
         self.activations = []
@@ -34,9 +40,30 @@ class FakeUpdater(module.Updater):
         self.architecture = "amd64"
         self.config = {"services": {
             module.WEB: {"image": module.REGISTRY + ("web-api" if mode == "api" else "web") + ":main",
-                         "build": {"args": {"CHECKOUT_MODE": mode}}},
+                         "build": {"args": {"CHECKOUT_MODE": mode}},
+                         "environment": {"GAME_AUDIO_ENABLED": "true" if audio else "false"}},
             module.API: {"image": module.REGISTRY + "api:main"},
         }}
+        if audio:
+            (self.directory / "gyaruinthemix/assets/music").mkdir(parents=True, exist_ok=True)
+            key = self.directory / "signing-key-fixture"
+            key.write_bytes(b"synthetic-test-not-a-real-key" * 2)
+            self.config["secrets"] = {module.AUDIO_SECRET: {"file": str(key)}}
+            self.config["services"][module.AUDIO] = {
+                "image": module.REGISTRY + "game-audio:main", "profiles": ["game-audio"],
+                "environment": {"GAME_AUDIO_ENABLED": "true", "AUDIO_MEDIA_ROOT": "/private/media/.hls",
+                                "AUDIO_SIGNING_KEY_FILE": "/run/secrets/game_audio_signing_key"},
+                "volumes": [{"type": "bind", "source": str(self.directory / "gyaruinthemix/assets/music"),
+                             "target": "/private/media", "read_only": True, "bind": {"create_host_path": False}}],
+                "secrets": [{"source": module.AUDIO_SECRET, "target": "game_audio_signing_key"}],
+            }
+
+    def package_audio(self):
+        self.packages += 1
+        if self.fail_package:
+            raise module.UpdateError("Packaging failed")
+        if self.concurrent:
+            self.current[module.WEB] = "sha256:" + "f" * 64
 
     def docker(self, *args):
         if args == ("context", "inspect"):
@@ -51,7 +78,8 @@ class FakeUpdater(module.Updater):
         if args[0] == "inspect":
             return json.dumps([{"Image": self.current[args[1]], "State": {"Running": True, "Health": {"Status": "healthy" if self.healthy else "unhealthy"}}}])
         if args[:2] == ("image", "inspect"):
-            name = module.API if args[2] == module.REGISTRY + "api:main" else module.WEB
+            name = {module.REGISTRY + "api:main": module.API,
+                    module.REGISTRY + "game-audio:main": module.AUDIO}.get(args[2], module.WEB)
             return json.dumps([{"Id": self.desired[name], "Config": {"Labels": {
                 "org.opencontainers.image.source": self.source,
                 "org.opencontainers.image.revision": self.revisions[name],
@@ -64,10 +92,10 @@ class FakeUpdater(module.Updater):
             if self.image_override:
                 self.config["services"][module.WEB]["image"] = self.image_override
             return json.dumps(self.config)
-        if args[:3] == ("ps", "-q", module.WEB) or args[:3] == ("ps", "-q", module.API):
+        if args[:2] == ("ps", "-q") and args[2] in (module.WEB, module.API, module.AUDIO):
             return args[2] if args[2] in self.current else ""
         if args[0] == "ps":
-            return "\n".join(self.services + ([module.API] if self.extra_api else []))
+            return "\n".join(self.services + ([module.API] if self.extra_api else []) + ([module.AUDIO] if self.extra_audio else []))
         if args[0] == "up":
             self.activations.append((args, images.copy()))
             if self.fail_new and images == self.desired:

@@ -23,8 +23,14 @@ const service = 'gyaruinthemix-web';
 assert.deepEqual(
   docker('compose', 'ps', '--services', '--status', 'running')
     .trim()
-    .split('\n'),
-  [service],
+    .split('\n')
+    .sort(),
+  [
+    service,
+    ...(process.env.GAME_AUDIO_ENABLED === 'true'
+      ? ['gyaruinthemix-game-audio']
+      : []),
+  ].sort(),
 );
 const config = JSON.parse(docker('compose', 'config', '--format', 'json'));
 assert.ok(

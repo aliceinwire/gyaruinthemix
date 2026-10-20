@@ -80,12 +80,13 @@ export function createAudioHandler({
   key,
   origin,
   secureCookies = true,
+  enabled = false,
   now = () => Date.now(),
   ttlSeconds = 120,
   maxSessionsPerMinute = 120,
   onError = () => {},
 }) {
-  if (!Buffer.isBuffer(key) || key.length < 32)
+  if (enabled && (!Buffer.isBuffer(key) || key.length < 32))
     throw new Error('A separately provisioned signing key is required.');
   const site = new URL(origin);
   if (site.origin !== origin || (secureCookies && site.protocol !== 'https:'))
@@ -177,6 +178,14 @@ export function createAudioHandler({
       }
       if (path === `${BASE}/health` && req.method === 'GET') {
         send(res, 200, { ok: true });
+        return true;
+      }
+      if (path === `${BASE}/config` && req.method === 'GET') {
+        send(res, 200, { enabled: enabled === true });
+        return true;
+      }
+      if (enabled !== true) {
+        send(res, 404, { error: 'Unavailable' });
         return true;
       }
       if (path === `${BASE}/catalog` && req.method === 'GET') {

@@ -18,6 +18,8 @@
 !deploy/api-healthcheck.mjs
 !public/game-test/**
 !deploy/game-security-headers.conf
+!deploy/game-audio.conf
+!deploy/game-audio-proxy.conf
 
 !game-audio/server/app.mjs
 !game-audio/server/start.mjs

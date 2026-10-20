@@ -6,8 +6,8 @@ set -euo pipefail
 [[ ${GITHUB_REPOSITORY:-} == aliceinwire/gyaruinthemix ]]
 [[ ${GITHUB_SHA:-} =~ ^[0-9a-f]{40}$ ]]
 registry=ghcr.io/aliceinwire/gyaruinthemix
-names=(web web-api api)
-images=("gyaruinthemix-web:release-links-$GITHUB_SHA" "gyaruinthemix-web:release-api-$GITHUB_SHA" "gyaruinthemix-api:release-api-$GITHUB_SHA")
+names=(web web-api api game-audio)
+images=("gyaruinthemix-web:release-links-$GITHUB_SHA" "gyaruinthemix-web:release-api-$GITHUB_SHA" "gyaruinthemix-api:release-api-$GITHUB_SHA" "gyaruinthemix-game-audio:release-audio-$GITHUB_SHA")
 # Refuse any source mismatch before authenticating or moving a registry tag.
 for image in "${images[@]}"; do
   [[ $(docker image inspect "$image" --format '{{index .Config.Labels "org.opencontainers.image.revision"}}') == "$GITHUB_SHA" ]]
@@ -25,8 +25,8 @@ for index in "${!names[@]}"; do
   docker tag "${images[$index]}" "$destination:sha-$GITHUB_SHA"
   docker push "$destination:sha-$GITHUB_SHA"
 done
-# Moving tags is not atomic; API-mode updater checks both revision labels first.
-for index in 2 1 0; do
+# Moving tags is not atomic; the updater checks every enabled revision first.
+for index in 3 2 1 0; do
   destination="$registry-${names[$index]}"
   docker tag "${images[$index]}" "$destination:main"
   docker push "$destination:main"

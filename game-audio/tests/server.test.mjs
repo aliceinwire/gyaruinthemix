@@ -44,6 +44,7 @@ async function setup(t, opts = {}) {
     key: randomBytes(32),
     origin,
     secureCookies: false,
+    enabled: true,
     now: () => clock,
     ...opts,
   });
@@ -71,6 +72,41 @@ async function setup(t, opts = {}) {
   };
   return { request, issue, dir, origin, advance: (s) => (clock += s * 1000) };
 }
+test('runtime config exposes only an explicit enabled boolean, never keys or paths', async (t) => {
+  const f = await setup(t);
+  const response = await f.request('/game-audio/v1/config');
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { enabled: true });
+  assert.equal(
+    response.headers.get('cache-control'),
+    'private, no-store, max-age=0',
+  );
+  assert.equal(response.headers.get('set-cookie'), null);
+  for (const headers of [
+    { Origin: 'https://attacker.invalid' },
+    { 'Sec-Fetch-Site': 'cross-site' },
+  ])
+    assert.equal(
+      (await f.request('/game-audio/v1/config', { headers })).status,
+      403,
+    );
+});
+test('an explicitly disabled service needs no key and exposes no catalog or sessions', async (t) => {
+  const f = await setup(t, { enabled: false, key: null });
+  assert.deepEqual(await (await f.request('/game-audio/v1/config')).json(), {
+    enabled: false,
+  });
+  assert.equal((await f.request('/game-audio/v1/health')).status, 200);
+  assert.equal((await f.request('/game-audio/v1/catalog')).status, 404);
+  const session = await f.issue();
+  assert.equal(session.response.status, 404);
+  assert.equal(session.cookie, undefined);
+  assert.equal(
+    (await f.request(`/game-audio/v1/stream/${id}/unavailable/init.mp4`))
+      .status,
+    404,
+  );
+});
 test('catalog is metadata only and library originals are never routable', async (t) => {
   const f = await setup(t);
   const r = await f.request('/game-audio/v1/catalog'),

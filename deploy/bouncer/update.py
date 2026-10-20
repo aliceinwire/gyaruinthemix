@@ -7,6 +7,10 @@ import json
 import os
 from pathlib import Path
 import re
+import resource
+import shutil
+import signal
+import stat
 import socket
 import ssl
 import subprocess
@@ -18,6 +22,10 @@ SOURCE = "https://github.com/aliceinwire/gyaruinthemix"
 REGISTRY = "ghcr.io/aliceinwire/gyaruinthemix-"
 WEB = "gyaruinthemix-web"
 API = "gyaruinthemix-api"
+AUDIO = "gyaruinthemix-game-audio"
+AUDIO_PATH = "/usr/local/bin:/usr/bin:/bin"
+AUDIO_TIMEOUT = 600
+AUDIO_SECRET = "gyaruinthemix_game_audio_signing_key"
 
 
 class UpdateError(RuntimeError):
@@ -32,6 +40,7 @@ class Updater:
         # Ignore shell-level Compose overrides; use the installed file and .env.
         self.env = {k: v for k, v in os.environ.items()
                     if not k.startswith("COMPOSE_") and not k.startswith("GYARUINTHEMIX_")
+                    and not k.startswith("GAME_AUDIO_") and not k.startswith("AUDIO_")
                     and k not in ("CHECKOUT_MODE", "DOCKER_HOST", "DOCKER_CONTEXT")}
         self.compose_args = ["compose", "--project-directory", str(self.directory),
                              "--env-file", str(self.directory / ".env"),
@@ -68,6 +77,137 @@ class Updater:
         self.compose("up", "-d", "--no-deps", "--no-build", "--pull", "never",
                      "--wait", "--wait-timeout", "120", *images, images=images)
 
+    def validate_audio(self, config):
+        """Only the reviewed checkout library and a separate server-only key may mount."""
+        service = config["services"].get(AUDIO, {})
+        environment = service.get("environment", {})
+        if (service.get("profiles") != ["game-audio"] or
+                environment.get("GAME_AUDIO_ENABLED") != "true" or
+                environment.get("AUDIO_MEDIA_ROOT") != "/private/media/.hls" or
+                environment.get("AUDIO_SIGNING_KEY_FILE") != "/run/secrets/game_audio_signing_key"):
+            raise UpdateError("Review the canonical game-audio profile and environment before enabling audio updates.")
+        library = self.directory / "gyaruinthemix/assets/music"
+        mounts = service.get("volumes", [])
+        if (len(mounts) != 1 or mounts[0].get("type") != "bind" or
+                mounts[0].get("source") != str(library) or
+                mounts[0].get("target") != "/private/media" or
+                mounts[0].get("read_only") is not True or
+                mounts[0].get("bind", {}).get("create_host_path", False) is not False):
+            raise UpdateError("Audio updates require the fixed read-only gyaruinthemix/assets/music bind mount.")
+        # Older Compose releases omit false create_host_path values in JSON.
+        # Requiring this exact existing real directory prevents path creation
+        # regardless of that serialization detail, including during recovery.
+        if library.resolve() != library or not library.is_dir():
+            raise UpdateError("Audio requires the existing non-symlinked checkout assets/music directory.")
+        secrets = service.get("secrets", [])
+        if (len(secrets) != 1 or secrets[0].get("source") != AUDIO_SECRET or
+                secrets[0].get("target") != "game_audio_signing_key"):
+            raise UpdateError("Audio requires its separate reviewed signing-key secret.")
+        filename = config.get("secrets", {}).get(AUDIO_SECRET, {}).get("file", "")
+        key = Path(filename)
+        checkout = self.directory / "gyaruinthemix"
+        # Inspect only path metadata, never read or print key contents. Do not
+        # let a normalized path or symlink put this secret inside the checkout.
+        if (not key.is_absolute() or str(key) != filename or key.resolve() != key or
+                key == checkout or checkout in key.parents):
+            raise UpdateError("Audio signing-key file must be an absolute normalized path outside the checkout.")
+        try:
+            key_stat = key.stat()
+        except OSError:
+            raise UpdateError("Provision the separate game-audio signing-key file before audio updates.") from None
+        if not stat.S_ISREG(key_stat.st_mode) or key_stat.st_size < 32:
+            raise UpdateError("Audio signing-key file must be a regular file of at least 32 bytes.")
+
+    @staticmethod
+    def audio_limits():
+        # Linux bounds inherited by the serial Node/ffprobe/ffmpeg children.
+        # V8 needs virtual address reservations even with a small JS heap; the
+        # data limit bounds allocations separately. These are per-process limits,
+        # not a claim of an aggregate cgroup RSS cap. Nice/affinity limit contention.
+        # The updater journal remains private (0077); generated media must be
+        # readable by the operator-provisioned sidecar group via setgid .hls.
+        os.umask(0o027)
+        resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+        resource.setrlimit(resource.RLIMIT_AS, (768 * 1024 ** 2, 768 * 1024 ** 2))
+        resource.setrlimit(resource.RLIMIT_DATA, (128 * 1024 ** 2, 128 * 1024 ** 2))
+        resource.setrlimit(resource.RLIMIT_CPU, (300, 300))
+        os.sched_setaffinity(0, {min(os.sched_getaffinity(0))})
+        os.nice(10)
+
+    def audio_process(self, command, timeout=AUDIO_TIMEOUT):
+        # Do not inherit NODE_OPTIONS, LD_PRELOAD, FFREPORT or shell-selected
+        # executable paths. No configured commands, shell, keys or network input.
+        environment = {"PATH": AUDIO_PATH, "LANG": "C", "LC_ALL": "C",
+                       "UV_THREADPOOL_SIZE": "1", "OMP_NUM_THREADS": "1",
+                       "OPENBLAS_NUM_THREADS": "1"}
+        def interrupted(_signum, _frame):
+            raise UpdateError("Audio packaging interrupted; inspect its lock before retrying.")
+        handlers = {signum: signal.getsignal(signum) for signum in (signal.SIGINT, signal.SIGTERM)}
+        process = None
+        try:
+            for signum in handlers:
+                signal.signal(signum, interrupted)
+            process = subprocess.Popen(command, cwd=self.directory / "gyaruinthemix", env=environment,
+                                       stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                                       stderr=subprocess.DEVNULL, start_new_session=True,
+                                       preexec_fn=self.audio_limits)
+            try:
+                result = process.wait(timeout=timeout)
+            except subprocess.TimeoutExpired:
+                raise UpdateError("Audio packaging exceeded its 600-second limit; inspect its lock before retrying. No images were activated.") from None
+            if result:
+                raise UpdateError("Audio packaging failed; inspect the private library and packaging lock locally. No images were activated.")
+        except BaseException:
+            if process is not None:
+                try:
+                    os.killpg(process.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+                process.wait()
+            raise
+        finally:
+            for signum, handler in handlers.items():
+                signal.signal(signum, handler)
+
+    def package_audio(self):
+        checkout = self.directory / "gyaruinthemix"
+        library = checkout / "assets/music"
+        script = checkout / "game-audio/scripts/package-library.mjs"
+        for path in (checkout, library, script):
+            if path.resolve() != path:
+                raise UpdateError("Audio packaging refuses symlinked checkout, library or script paths.")
+        if not library.is_dir() or not script.is_file():
+            raise UpdateError("Audio packaging needs the installed checkout script and its assets/music directory.")
+        if not hasattr(os, "sched_setaffinity") or not hasattr(resource, "RLIMIT_DATA"):
+            raise UpdateError("Bounded audio packaging requires a Linux host with resource limits and CPU affinity.")
+        executables = {name: shutil.which(name, path=AUDIO_PATH) for name in ("node", "ffmpeg", "ffprobe")}
+        if not all(executables.values()):
+            raise UpdateError("Audio packaging requires operator-installed Node 24, ffmpeg and ffprobe on /usr/local/bin:/usr/bin:/bin.")
+        version = subprocess.run([executables["node"], "--version"], env={"PATH": AUDIO_PATH},
+                                 text=True, capture_output=True, check=False, timeout=10)
+        if version.returncode or not re.fullmatch(r"v24\.\d+\.\d+", version.stdout.strip()):
+            raise UpdateError("Audio packaging requires Node 24; no images were activated.")
+        # The packager is serial and content-addressed: unchanged files reuse
+        # packages, removed files leave the catalog, source files are never edited.
+        # Timeout may leave its own .hls lock, deliberately requiring inspection.
+        self.audio_process([executables["node"], "--jitless", "--max-old-space-size=64", str(script), str(library), "--strict"])
+        print("Enabled game-audio library refreshed with bounded serial packaging.")
+
+    def read_website_state(self, services):
+        state = json.loads(self.state_path.read_text()) if self.state_path.exists() else {}
+        if not isinstance(state, dict) or set(state) - {"previous", "pending", "current", "rejected", "revision"}:
+            raise UpdateError("Website recovery state is invalid; investigate locally.")
+        for field in ("previous", "pending", "current", "rejected"):
+            if field not in state:
+                continue
+            images = state[field]
+            if (not isinstance(images, dict) or not set(images).issubset({WEB, API, AUDIO}) or
+                    any(not isinstance(image, str) or not re.fullmatch(r"sha256:[0-9a-f]{64}", image) for image in images.values())):
+                raise UpdateError("Website recovery state contains an invalid service or image ID.")
+        if state.get("pending") and (set(state.get("previous", {})) != set(services) or set(state["pending"]) != set(services)):
+            raise UpdateError("Interrupted update has a different mode; restore its original configuration before recovery.")
+        return state
+
     def run(self):
         context = json.loads(self.docker("context", "inspect"))[0]
         if not context["Endpoints"]["docker"]["Host"].startswith("unix://"):
@@ -79,39 +219,51 @@ class Updater:
         mode = web.get("build", {}).get("args", {}).get("CHECKOUT_MODE", "payment_links")
         if mode not in ("payment_links", "api"):
             raise UpdateError("Unsupported CHECKOUT_MODE.")
+        audio_enabled = web.get("environment", {}).get("GAME_AUDIO_ENABLED", "false")
+        if audio_enabled not in ("true", "false"):
+            raise UpdateError("Installed GAME_AUDIO_ENABLED must be exactly true or false.")
         if mode == "api":
             self.compose_args += ["--profile", "checkout-api"]
+        if audio_enabled == "true":
+            self.compose_args += ["--profile", "game-audio"]
+        if mode == "api" or audio_enabled == "true":
             config = json.loads(self.compose("config", "--format", "json"))
         services = [WEB, API] if mode == "api" else [WEB]
         expected = {WEB: REGISTRY + ("web-api" if mode == "api" else "web") + ":main"}
         if mode == "api":
             expected[API] = REGISTRY + "api:main"
+        if audio_enabled == "true":
+            self.validate_audio(config)
+            services.append(AUDIO)
+            expected[AUDIO] = REGISTRY + "game-audio:main"
         for name in services:
             if config["services"][name]["image"] != expected[name]:
                 raise UpdateError("Auto-update requires the documented matching GHCR :main images; pause the timer for a pinned release.")
-        # Do not silently remove or leave an API behind during a mode migration.
-        if mode == "payment_links":
-            running = self.compose("ps", "--services", "--status", "running").split()
-            if API in running:
-                raise UpdateError("An API is still running. Finish the documented mode migration first.")
-        state = json.loads(self.state_path.read_text()) if self.state_path.exists() else {}
+        # Profiles only select updates; they do not silently stop old services.
+        running = self.compose("ps", "--services", "--status", "running").split()
+        if mode == "payment_links" and API in running:
+            raise UpdateError("An API is still running. Finish the documented mode migration first.")
+        if audio_enabled == "false" and AUDIO in running:
+            raise UpdateError("Game audio is still running. Finish its documented deactivation before disabling audio updates.")
+        state = self.read_website_state(services)
         if state.get("pending"):
             previous = state.get("previous", {})
-            if set(previous) != set(services):
-                raise UpdateError("Interrupted update has a different mode; restore its original configuration before recovery.")
             self.activate(previous)
             state["rejected"] = state.pop("pending")
             self.save(state)
             print("Recovered the previous images after an interrupted update.")
         previous = {}
+        baselines = {}
         for name in services:
             identifier = self.compose("ps", "-q", name).strip()
             if not identifier or "\n" in identifier:
                 raise UpdateError("Start one healthy instance of each website service before enabling updates.")
             container = json.loads(self.docker("inspect", identifier))[0]
-            if not container.get("State", {}).get("Running") or container["State"].get("Health", {}).get("Status") != "healthy":
+            if (not container.get("State", {}).get("Running") or container["State"].get("Restarting") or
+                    container["State"].get("Health", {}).get("Status") != "healthy"):
                 raise UpdateError("Each website service must be running and healthy before it can be a rollback baseline.")
             previous[name] = container["Image"]
+            baselines[name] = (identifier, container.get("RestartCount", 0), container["State"].get("StartedAt"))
         images = {}
         revisions = set()
         for name in services:
@@ -123,15 +275,29 @@ class Updater:
                 raise UpdateError("Image source/revision labels do not match the trusted release pipeline.")
             if name == WEB and labels.get("io.gyaruinthemix.checkout-mode") != mode:
                 raise UpdateError("Web image checkout mode does not match the host configuration.")
+            if not re.fullmatch(r"sha256:[0-9a-f]{64}", image.get("Id", "")):
+                raise UpdateError("Could not identify the prepared website image.")
             images[name] = image["Id"]
             revisions.add(revision)
         if len(revisions) != 1:
-            raise UpdateError("Image publication is incomplete; retry after the same revision is available for both services.")
+            raise UpdateError("Image publication is incomplete; retry after the same revision is available for every selected service.")
+        if images != previous and images == state.get("rejected") and not self.retry:
+            raise UpdateError("This release previously failed health checks; waiting for a new release (or an operator --retry).")
+        if audio_enabled == "true":
+            self.package_audio()
         if images == previous:
             print("Website already uses the current release.")
             return
-        if images == state.get("rejected") and not self.retry:
-            raise UpdateError("This release previously failed health checks; waiting for a new release (or an operator --retry).")
+        # A bounded packaging run may take minutes. Plain operator Docker
+        # commands do not acquire our lock, so recheck the rollback baseline.
+        for name in services:
+            identifier = self.compose("ps", "-q", name).strip()
+            container = json.loads(self.docker("inspect", identifier))[0] if identifier else {}
+            current = container.get("State", {})
+            if (container.get("Image") != previous[name] or not current.get("Running") or
+                    current.get("Restarting") or current.get("Health", {}).get("Status") != "healthy" or
+                    (identifier, container.get("RestartCount", 0), current.get("StartedAt")) != baselines[name]):
+                raise UpdateError("A website service changed while images or media were prepared; investigate before rerunning.")
         self.save({"previous": previous, "pending": images})
         try:
             self.activate(images)
@@ -142,6 +308,23 @@ class Updater:
             raise UpdateError("New website health checks failed. Previous images restored; this release is blocked.") from None
         self.save({"previous": previous, "current": images, "revision": revisions.pop()})
         print("Website updated and healthy; existing proxy, companion, ZNC and Limnoria were not reconciled.")
+
+
+class AudioPackager(Updater):
+    """Explicit first-catalog preparation, under the same lock and installed config."""
+
+    def run(self):
+        context = json.loads(self.docker("context", "inspect"))[0]
+        if not context["Endpoints"]["docker"]["Host"].startswith("unix://"):
+            raise UpdateError("Use a local Docker context on the bouncer host.")
+        config = json.loads(self.compose("config", "--format", "json"))
+        if config["services"][WEB].get("environment", {}).get("GAME_AUDIO_ENABLED", "false") != "true":
+            raise UpdateError("First enable GAME_AUDIO_ENABLED=true explicitly in the installed bouncer configuration.")
+        self.compose_args += ["--profile", "game-audio"]
+        config = json.loads(self.compose("config", "--format", "json"))
+        self.validate_audio(config)
+        self.package_audio()
+        print("Game-audio catalog prepared. No containers or images were changed; first activation remains an operator step.")
 
 
 SHARED_SERVICES = ("proxy", "letsencrypt-companion", "znc", "limnoria")
@@ -506,9 +689,16 @@ def main():
     modes = parser.add_mutually_exclusive_group()
     modes.add_argument("--shared", action="store_true", help="manually update only the four reviewed shared services; may briefly interrupt traffic")
     modes.add_argument("--znc-cert", action="store_true", help="validate/refresh only the ZNC certificate; restart ZNC only if changed")
+    modes.add_argument("--package-game-audio", action="store_true", help="prepare the enabled audio catalog under the normal lock; never change images or containers")
     args = parser.parse_args()
-    mode = "shared" if args.shared else "znc-cert" if args.znc_cert else "website"
-    updater_class = SharedUpdater if args.shared else CertificateUpdater if args.znc_cert else Updater
+    if args.shared:
+        mode, updater_class = "shared", SharedUpdater
+    elif args.znc_cert:
+        mode, updater_class = "znc-cert", CertificateUpdater
+    elif args.package_game_audio:
+        mode, updater_class = "game-audio-package", AudioPackager
+    else:
+        mode, updater_class = "website", Updater
     updater = updater_class(args.directory, retry=args.retry)
     os.umask(0o077)
     try:
@@ -520,7 +710,7 @@ def main():
                 return 0
             guard_pending(args.directory, mode)
             updater.run()
-    except (UpdateError, OSError, ValueError, KeyError, subprocess.TimeoutExpired) as error:
+    except (UpdateError, OSError, ValueError, KeyError, subprocess.SubprocessError) as error:
         print(f"Bouncer update stopped: {error if isinstance(error, UpdateError) else type(error).__name__}", file=sys.stderr)
         return 1
     return 0

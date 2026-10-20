@@ -84,5 +84,8 @@ test('www redirect ships in both web modes with a fixed destination and safe exc
     /^!deploy\/bouncer\/nginx-www-redirect\.conf$/m,
   );
   const ci = await read('scripts/ci-bouncer.mjs');
-  assert.equal(ci.match(/await checkWwwRedirect\(/g).length, 2);
+  assert.match(ci, /scripts\/ci-bouncer-http\.mjs/);
+  assert.equal((ci.match(/smoke\(\);\s+routeSmoke\(\);/g) || []).length, 2);
+  const httpSmoke = await read('scripts/ci-bouncer-http.mjs');
+  assert.equal((httpSmoke.match(/await checkWwwRedirect\(/g) || []).length, 1);
 });

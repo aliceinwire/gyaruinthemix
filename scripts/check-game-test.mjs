@@ -1,4 +1,26 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+
+export async function checkServedHlsModule(response) {
+  assert.equal(response.status, 200, 'HLS module must be served');
+  assert.match(
+    response.headers.get('content-type') || '',
+    /^(?:application|text)\/javascript(?:\s*;|$)/i,
+    'HLS module needs a JavaScript MIME type under nosniff',
+  );
+  assert.equal(response.headers.get('x-content-type-options'), 'nosniff');
+  const source = await response.text();
+  assert.doesNotMatch(source, /<(?:!doctype|html|head|body)\b/i);
+  assert.match(source, /export\s*\{[^}]*\bas default\b/);
+  // Parse only; never execute the received module or load media in this check.
+  execFileSync(process.execPath, ['--input-type=module', '--check'], {
+    input: source,
+    encoding: 'utf8',
+    stdio: 'pipe',
+    timeout: 15000,
+    maxBuffer: 1024 * 1024,
+  });
+}
 
 export async function checkGameTest(origin) {
   const get = (path) =>
@@ -24,12 +46,21 @@ export async function checkGameTest(origin) {
     /frame-src https:\/\/w.soundcloud.com;/,
   );
   assert.match(
+    page.headers.get('content-security-policy'),
+    /media-src 'self' blob:;/,
+  );
+  assert.match(
     await page.text(),
     /name="robots" content="noindex, nofollow, noarchive"/,
   );
   for (const path of [
     '/game-test/main.js',
     '/game-test/style.css',
+    '/game-test/car-stereo.css',
+    '/game-test/src/audio.js',
+    '/game-test/src/game-audio-config.js',
+    '/game-test/src/car-stereo.js',
+    '/game-test/src/stream-audio.js',
     '/game-test/src/journey.js',
     '/game-test/src/encounter-director.js',
     '/game-test/src/run-build.js',
@@ -44,10 +75,13 @@ export async function checkGameTest(origin) {
     assert.equal(resource.status, 200, path);
     assert.equal(resource.headers.get('x-content-type-options'), 'nosniff');
   }
+  await checkServedHlsModule(
+    await get('/game-test/src/vendor/hls.light.min.mjs'),
+  );
   const main = await get('/');
   assert.doesNotMatch(
     main.headers.get('content-security-policy'),
-    /soundcloud/,
+    /soundcloud|media-src|blob:/,
   );
   assert.doesNotMatch(await main.text(), /game-test/);
   assert.doesNotMatch(await (await get('/sitemap.xml')).text(), /game-test/);
