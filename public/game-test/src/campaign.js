@@ -1,3 +1,4 @@
+import { t, message, number } from './i18n.js';
 /** Campaign interludes. All coordinates are designed at 960 × 540. */
 import { ROUTES } from "./simulation.js";
 import { drawCarBody, drawCarWheels, getCarArtLayout } from "./car-art.js";
@@ -88,7 +89,7 @@ function text(
   ctx.fillStyle = color;
   ctx.textAlign = align;
   ctx.textBaseline = "middle";
-  ctx.fillText(str, x, y);
+  ctx.fillText(t(str), x, y);
 }
 
 function line(ctx, points, color, width = 2, dash = []) {
@@ -506,7 +507,7 @@ export function drawFinale(
   const fanCount = Math.max(0, Math.floor(Number(totalFans) || 0));
   text(
     ctx,
-    `${fanCount.toLocaleString("en-US")} 人のファンが来たで`,
+    message("{0} 人のファンが来たで", [number(fanCount, { useGrouping: true })]),
     480,
     23,
     15,
@@ -517,7 +518,7 @@ export function drawFinale(
   );
   text(
     ctx,
-    `${scoreValue.toLocaleString("en-US")} 点`,
+    message("{0} 点", [number(scoreValue, { useGrouping: true })]),
     928,
     23,
     16,

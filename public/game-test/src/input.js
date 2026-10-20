@@ -73,6 +73,7 @@ export function bindGameInput({
     listeners.push(() => node.removeEventListener(type, fn));
   };
   listen(win, "keydown", (event) => {
+    if (event.target?.closest?.("input,select,textarea,[contenteditable=true]")) return;
     if (isQuiz() && /^Digit[123]$/.test(event.code)) {
       event.preventDefault();
       onAnswer(Number(event.code.slice(-1)) - 1);

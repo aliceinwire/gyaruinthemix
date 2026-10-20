@@ -1,3 +1,4 @@
+import { t } from './i18n.js';
 import { getThreatSignals } from './road-feedback.js';
 import { drawCultureProp, drawRoutineHazard, drawLittleFind, drawFriendlyCat } from './street-culture-art.js';
 import { drawCabinCharacter, preloadCabinCharacters } from "./cabin-characters.js";
@@ -97,7 +98,7 @@ function poly(g, points, color) {
 function text(g, str, x, y, size = 12, color = "#fff1f5") {
   g.font = `bold ${size}px monospace`;
   g.fillStyle = color;
-  g.fillText(str, Math.round(x), Math.round(y));
+  g.fillText(t(str), Math.round(x), Math.round(y));
 }
 export function heartVisualPosition(state, shot) {
   const carId=getCarProfile(state).id;

@@ -120,7 +120,7 @@ small { color: var(--muted); line-height: 1.6; }
 .controls button.active { background: #fff0f8; color: #201122; border-color: #fff0f8; }
 .controls button.active small { color: #473346; }
 .controls button.suggested { outline: 2px solid var(--gold); outline-offset: 2px; }
-.controls button.suggested::after { content: "いまココ"; position: absolute; top: -9px; right: 5px; padding: 1px 5px; border-radius: 2px; background: var(--gold); color: #201122; font-size: 9px; font-weight: 850; }
+.controls button.suggested::after { content: attr(data-suggestion); position: absolute; top: -9px; right: 5px; padding: 1px 5px; border-radius: 2px; background: var(--gold); color: #201122; font-size: 9px; font-weight: 850; }
 .notification-rail { min-height: 24px; text-align: center; }
 .toast { padding: 2px 12px; color: var(--gold); font-size: 12px; line-height: 1.6; opacity: 0; transition: opacity .15s; pointer-events: none; }
 .toast.on { opacity: 1; }

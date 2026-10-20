@@ -12,6 +12,7 @@ import {
   normalizeRpg,
 } from '../../public/game-test/src/tour-rpg.js';
 import { SETTINGS_KEY } from '../../public/game-test/src/tour-settings.js';
+import { LANGUAGES } from '../../public/game-test/src/i18n.js';
 import { STORY_SAVE_KEY } from '../../public/game-test/src/tour-director.js';
 import { extname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -33,6 +34,36 @@ const mime = {
   '.json': 'application/json',
   '.svg': 'image/svg+xml',
 };
+async function checkLanguages(page, picker, selectors) {
+  const before = await page.evaluate(() =>
+    JSON.stringify(__HYPERDRIVE__.snapshot()),
+  );
+  const audio = await page.locator('#music audio').elementHandle();
+  for (const { code } of LANGUAGES) {
+    await page.locator(picker).selectOption(code);
+    await page.waitForFunction(
+      (code) => document.documentElement.lang === code,
+      code,
+    );
+    await assertFrameFits(page, selectors);
+    assert.equal(
+      await page.evaluate(() => JSON.stringify(__HYPERDRIVE__.snapshot())),
+      before,
+      'Changing language must not advance, reroll, or reset the tour',
+    );
+    assert.equal(
+      await audio.evaluate(
+        (node) => node === document.querySelector('#music audio'),
+      ),
+      true,
+      'The same audio element survives language changes',
+    );
+  }
+  await page.locator(picker).selectOption('ja');
+  await page.waitForFunction(() => document.documentElement.lang === 'ja');
+  await audio.dispose();
+}
+
 async function finishStory(page) {
   // Use the same reading/choice controls as players, including remembered
   // scenes that return immediately without opening a panel.
@@ -60,7 +91,10 @@ async function assertFrameFits(page, selectors) {
     for (const selector of selectors) {
       const el = document.querySelector(selector),
         box = el.getBoundingClientRect();
-      const bottom = selector === '.radio-dock' ? shell.bottom : radio.top;
+      const bottom =
+        selector === '.radio-dock' || el.closest('.modal')
+          ? shell.bottom
+          : radio.top;
       if (
         !box.width ||
         !box.height ||
@@ -167,6 +201,7 @@ try {
   ]) {
     const context = await browser.newContext({
       viewport: { width, height },
+      locale: 'ja-JP',
     });
     context.setDefaultTimeout(10000);
     const errors = [];
@@ -239,6 +274,11 @@ try {
     );
     assert.equal(await page.locator('iframe#music').count(), 0);
     assert.equal(await page.locator('#music audio').count(), 1);
+    await checkLanguages(page, '.settings select', [
+      '#story',
+      '.language-picker',
+      '.radio-dock',
+    ]);
     await page.locator('#story').click();
     assert.equal(await page.locator('#story-panel').isVisible(), true);
     assert.equal(
@@ -247,6 +287,9 @@ try {
     );
     assert.ok((await page.locator('#story-speaker').innerText()).length > 0);
     assert.ok((await page.locator('#story-text').innerText()).length > 0);
+    await checkLanguages(page, '#story-panel select', [
+      '#story-panel .modal-card',
+    ]);
     const openingState = (await page.evaluate(() => __HYPERDRIVE__.snapshot()))
       .state;
     await page.waitForTimeout(150);
@@ -288,6 +331,10 @@ try {
       ),
       fullPage: true,
     });
+    await checkLanguages(page, '.settings select', [
+      '#cars-ready',
+      '#style-options',
+    ]);
     await assertFrameFits(page, ['#cars-ready']);
     await page.locator('#car-select .frame-tabs button').nth(2).click();
     await assertFrameFits(page, ['#customization-apply', '#cars-ready']);
@@ -308,6 +355,12 @@ try {
     );
     await page.locator('#change-starting-car').click();
     await page.locator('#cars-ready').click();
+    await checkLanguages(page, '.settings select', [
+      '.map-origin',
+      '#destination-choices',
+      '.map-goal',
+      '#depart',
+    ]);
     const destinations = page.locator('.journey-map button');
     assert.equal(await destinations.count(), 3);
     for (const node of await destinations.all()) {
@@ -734,7 +787,7 @@ try {
       await page.waitForFunction(
         () =>
           document.querySelector('#music [data-stereo="status"]')
-            ?.textContent === 'NO DISC',
+            ?.textContent === '曲なし',
       );
       assert.equal(await page.locator('iframe#music').count(), 0);
       assert.equal(await page.locator('#music audio').count(), 1);
@@ -744,7 +797,7 @@ try {
       );
       assert.equal(
         await page.locator('#music [data-stereo="status"]').innerText(),
-        'NO DISC',
+        '曲なし',
       );
       await page.evaluate(() => {
         globalThis.fixtureAudio = document.querySelector('#music audio');

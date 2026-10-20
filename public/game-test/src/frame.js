@@ -1,10 +1,12 @@
+import { localizeAttribute, localizeText } from './localized-ui.js';
+import { message } from './i18n.js';
 /** Keep decisions in the cabinet: pages replace long, scrolling menus. */
 export function installFrame() {
   const $ = selector => document.querySelector(selector);
   function pages(host, groups, labels) {
     const nav = document.createElement('nav');
     nav.className = 'frame-tabs';
-    nav.setAttribute('aria-label', '準備のページ');
+    localizeAttribute(nav, 'aria-label', '準備のページ');
     const panels = groups.map((nodes, index) => {
       const panel = document.createElement('section');
       panel.className = 'frame-page';
@@ -12,7 +14,7 @@ export function installFrame() {
       for (const node of nodes.filter(Boolean)) panel.append(node);
       host.append(panel);
       const button = document.createElement('button');
-      button.textContent = labels[index];
+      localizeText(button, labels[index]);
       button.setAttribute('aria-controls', panel.id);
       button.addEventListener('click', () => show(index));
       nav.append(button);
@@ -40,16 +42,16 @@ export function installFrame() {
     const list = $(selector);
     const nav = document.createElement('nav');
     nav.className = 'card-pager';
-    nav.setAttribute('aria-label', 'カードを切り替える');
+    localizeAttribute(nav, 'aria-label', 'カードを切り替える');
     const prev = document.createElement('button'), next = document.createElement('button'), count = document.createElement('span');
-    prev.textContent = '← 前へ'; next.textContent = '次へ →';
+    localizeText(prev, '← 前へ'); localizeText(next, '次へ →');
     nav.append(prev, count, next); list.after(nav);
     let index = 0;
     function render() {
       const cards = [...list.children];
       index = Math.max(0, Math.min(index, cards.length - 1));
       cards.forEach((card, i) => { card.hidden = i !== index; });
-      count.textContent = `${cards.length ? index + 1 : 0} / ${cards.length}`;
+      localizeText(count, message("{0} / {1}", [cards.length ? index + 1 : 0, cards.length]));
       prev.disabled = index === 0; next.disabled = index >= cards.length - 1;
       nav.hidden = cards.length < 2;
     }

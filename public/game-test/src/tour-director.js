@@ -1,3 +1,5 @@
+import { localizeText } from './localized-ui.js';
+import { message } from './i18n.js';
 import { getStoryScene, normalizeStoryMemory, markStorySeen, chooseStoryOption, getStoryJournal, STORY_SPEAKERS } from './tour-story.js';
 
 export const STORY_SAVE_KEY = 'gyaruinthemix-tour-story-v1';
@@ -27,18 +29,18 @@ export function createStoryDirector({ root = document, storage, getState, onOpen
   function render() {
     if (!scene) return;
     const current = scene.lines[line];
-    $('#story-kicker').textContent = scene.kicker;
-    $('#story-speaker').textContent = STORY_SPEAKERS[current.speaker] || current.speaker || 'ツアーノート';
-    $('#story-text').textContent = current.text;
-    $('#story-progress').textContent = `${line + 1} / ${scene.lines.length}`;
+    localizeText($('#story-kicker'), scene.kicker);
+    localizeText($('#story-speaker'), STORY_SPEAKERS[current.speaker] || current.speaker || 'ツアーノート');
+    localizeText($('#story-text'), current.text);
+    localizeText($('#story-progress'), message("{0} / {1}", [line + 1, scene.lines.length]));
     const finalLine = line === scene.lines.length - 1;
     const choices = finalLine ? scene.choices || [] : [];
     const host = $('#story-choices');
     host.replaceChildren();
     for (const option of choices) {
       const button = root.createElement('button');
-      const title = root.createElement('strong'); title.textContent = option.label;
-      const detail = root.createElement('span'); detail.textContent = option.description || '';
+      const title = root.createElement('strong'); localizeText(title, option.label);
+      const detail = root.createElement('span'); localizeText(detail, option.description || '');
       button.append(title, detail);
       button.addEventListener('click', () => {
         if (!scene) return;
@@ -48,13 +50,13 @@ export function createStoryDirector({ root = document, storage, getState, onOpen
       host.append(button);
     }
     $('#story-next').hidden = choices.length > 0;
-    $('#story-next').textContent = finalLine ? (journal ? '記録を閉じる' : 'ほな、行こ →') : 'つづき →';
+    localizeText($('#story-next'), finalLine ? (journal ? '記録を閉じる' : 'ほな、行こ →') : 'つづき →');
     $('#story-skip').hidden = !journal && finalLine;
-    $('#story-skip').textContent = journal ? '記録を閉じる' : '会話を閉じる';
+    localizeText($('#story-skip'), journal ? '記録を閉じる' : '会話を閉じる');
     const history = $('#story-history');
     history.replaceChildren();
     for (const entry of getStoryJournal(memory).slice(-12)) {
-      const item = root.createElement('p'); item.textContent = `${entry.kicker} / ${entry.summary}`;
+      const item = root.createElement('p'); localizeText(item, message("{0} / {1}", [entry.kicker, entry.summary]));
       history.append(item);
     }
     (choices.length ? host.querySelector('button') : $('#story-next')).focus({ preventScroll: true });
