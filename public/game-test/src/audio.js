@@ -1,9 +1,84 @@
 import { createGameAudio as createSoundCloudAudio } from './audio-soundcloud.js';
-import { GAME_AUDIO_STREAMING_ENABLED } from './game-audio-config.js';
+import { loadGameAudioConfig } from './game-audio-config.js';
 import { createCarStereo } from './car-stereo.js';
-/** Drop-in bridge. Existing SoundCloud behavior is the unchanged default. */
-export function createGameAudio(options) {
-  if (!GAME_AUDIO_STREAMING_ENABLED) return createSoundCloudAudio(options);
+/**
+ * Synchronous bridge: SoundCloud works immediately while optional audio is
+ * detected. Never switch away after a deliberate audio interaction, and never
+ * replay a gesture asynchronously. Scene changes keep this one controller.
+ */
+export function createGameAudio({
+  loadConfig = loadGameAudioConfig,
+  soundCloudFactory = createSoundCloudAudio,
+  streamingFactory = createStreamingAudio,
+  documentRef = globalThis.document,
+  ...options
+}) {
+  const { music, button, onEnabledChange = () => {} } = options;
+  let destroyed = false,
+    selectionLocked = false,
+    active;
+  const lockSelection = () => {
+    selectionLocked = true;
+  };
+  const controllerOptions = {
+    ...options,
+    onEnabledChange(enabled) {
+      if (enabled) lockSelection();
+      onEnabledChange(enabled);
+    },
+  };
+  // Capture clicks before the provider listener so an early toggle is retained.
+  button.addEventListener('click', lockSelection, true);
+  music.addEventListener('focus', lockSelection);
+  active = soundCloudFactory(controllerOptions);
+  const removeSelectionListeners = () => {
+    button.removeEventListener('click', lockSelection, true);
+    music.removeEventListener('focus', lockSelection);
+  };
+  const ready = Promise.resolve()
+    .then(loadConfig)
+    .then((available) => {
+      if (
+        available !== true ||
+        destroyed ||
+        selectionLocked ||
+        active.enabled ||
+        documentRef.activeElement === music
+      )
+        return;
+      // An iframe is not a DOM mount for visible controls. Preserve its ID for
+      // styling/focus queries, but never put an audio element inside the iframe.
+      const mount = documentRef.createElement('div');
+      mount.id = music.id;
+      active.destroy();
+      music.replaceWith(mount);
+      try {
+        active = streamingFactory({ ...controllerOptions, music: mount });
+      } catch {
+        mount.replaceWith(music);
+        active = soundCloudFactory(controllerOptions);
+      }
+    })
+    .catch(() => {})
+    .finally(removeSelectionListeners);
+  return {
+    ready,
+    unlock: (...args) => active.unlock(...args),
+    pause: (...args) => active.pause(...args),
+    beep: (...args) => active.beep(...args),
+    get enabled() {
+      return active.enabled;
+    },
+    destroy() {
+      if (destroyed) return;
+      destroyed = true;
+      removeSelectionListeners();
+      active.destroy();
+    },
+  };
+}
+
+export function createStreamingAudio(options) {
   const {
     music,
     button,

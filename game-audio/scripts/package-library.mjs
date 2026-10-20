@@ -16,6 +16,14 @@ import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 const EXTENSIONS = /\.(mp3|wav|flac|m4a|aac|ogg|opus)$/i;
 const BRAND = 'ギャルインザミックス';
+// Local extensions are not proof of container type. Refuse playlist/concat
+// demuxers and network protocols, including playlists disguised as audio files.
+const INPUT_OPTIONS = [
+  '-protocol_whitelist',
+  'file,pipe',
+  '-format_whitelist',
+  'mp3,wav,flac,mov,aac,ogg',
+];
 async function run(command, args, timeout = 1800000) {
   return new Promise((done, fail) => {
     const p = spawn(command, args, { stdio: ['ignore', 'pipe', 'pipe'] });
@@ -51,6 +59,7 @@ export async function packageLibrary({
   maxBytes = 2 * 1024 ** 3,
   maxSeconds = 7200,
   excerpt = false,
+  strict = false,
 } = {}) {
   const root = await realpath(resolve(directory));
   if (basename(root) !== 'music' || basename(resolve(root, '..')) !== 'assets')
@@ -168,6 +177,7 @@ export async function packageLibrary({
             await run(
               'ffprobe',
               [
+                ...INPUT_OPTIONS,
                 '-v',
                 'error',
                 '-select_streams',
@@ -196,6 +206,7 @@ export async function packageLibrary({
             '-loglevel',
             'error',
             '-nostdin',
+            ...INPUT_OPTIONS,
             '-threads',
             '1',
             '-i',
@@ -299,12 +310,29 @@ export async function packageLibrary({
         title: `${BRAND} ${String(i + 1).padStart(2, '0')}`,
       })),
     };
+    // The bouncer updater uses strict mode: incomplete/invalid drops must not
+    // replace a live catalog before an update can safely proceed. Successfully
+    // cached packages remain reusable on the next run, but are not published.
+    if (strict && failures.length)
+      return {
+        directory: root,
+        packaged: tracks.length,
+        failures,
+        catalog,
+        catalogUpdated: false,
+      };
     const tempCatalog = join(out, `.catalog-${process.pid}.json`);
     await writeFile(tempCatalog, `${JSON.stringify(catalog, null, 2)}\n`, {
       mode: 0o640,
     });
     await rename(tempCatalog, join(out, 'catalog.json'));
-    return { directory: root, packaged: tracks.length, failures, catalog };
+    return {
+      directory: root,
+      packaged: tracks.length,
+      failures,
+      catalog,
+      catalogUpdated: true,
+    };
   } finally {
     await rm(lock, { force: true });
   }
@@ -316,10 +344,15 @@ if (
   const result = await packageLibrary({
     directory: process.argv[2] || 'assets/music',
     excerpt: process.argv.includes('--excerpt'),
+    strict: process.argv.includes('--strict'),
   });
   console.log(
     JSON.stringify(
-      { packaged: result.packaged, failures: result.failures },
+      {
+        packaged: result.packaged,
+        failures: result.failures,
+        catalogUpdated: result.catalogUpdated,
+      },
       null,
       2,
     ),

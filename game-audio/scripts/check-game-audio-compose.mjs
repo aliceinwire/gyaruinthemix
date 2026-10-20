@@ -245,13 +245,17 @@ export function assertGameAudioCompose({
     '/run/secrets/game_audio_signing_key',
   );
   assert.equal(audio.environment?.NODE_ENV, 'production');
+  assert.equal(audio.environment?.GAME_AUDIO_ENABLED, 'true');
   if (audio.environment.PORT !== undefined)
     assert.equal(audio.environment.PORT, expectedPort);
   if (audio.environment.AUDIO_PORT !== undefined)
     assert.equal(audio.environment.AUDIO_PORT, expectedPort);
   for (const key of Object.keys(audio.environment)) {
     assert.ok(
-      key === 'NODE_ENV' || key === 'PORT' || key.startsWith('AUDIO_'),
+      key === 'NODE_ENV' ||
+        key === 'PORT' ||
+        key === 'GAME_AUDIO_ENABLED' ||
+        key.startsWith('AUDIO_'),
       `Unreviewed audio environment option: ${key}`,
     );
   }

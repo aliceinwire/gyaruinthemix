@@ -72,6 +72,7 @@ function fixture({ audioEnabled = true, apiMode = false } = {}) {
       secrets: [{ source: SECRET, target: 'game_audio_signing_key' }],
       environment: {
         NODE_ENV: 'production',
+        GAME_AUDIO_ENABLED: 'true',
         AUDIO_MEDIA_ROOT: '/private/media/.hls',
         AUDIO_SIGNING_KEY_FILE: '/run/secrets/game_audio_signing_key',
       },
@@ -222,6 +223,12 @@ const mutations = {
   },
   'adds another secret': (f) => {
     f.config.services[AUDIO].secrets.push({ source: 'stripe_secret_key' });
+  },
+  'omits explicit audio enablement': (f) => {
+    delete f.config.services[AUDIO].environment.GAME_AUDIO_ENABLED;
+  },
+  'disables an enabled audio profile': (f) => {
+    f.config.services[AUDIO].environment.GAME_AUDIO_ENABLED = 'false';
   },
   'points public runtime at original library': (f) => {
     f.config.services[AUDIO].environment.AUDIO_MEDIA_ROOT =

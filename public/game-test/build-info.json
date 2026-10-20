@@ -1,7 +1,7 @@
 {
   "sourceRepository": "aliceinwire/gyaruinthemix_game",
   "baseSourceCommit": "67c32d11a563430ad85198ad5fcc6ca99af0ecc4",
-  "snapshotSha256": "cb8c0bdb5d929bc1955521c113b056245444c7acf1178585cb7d3e5052a619f5",
+  "snapshotSha256": "30e3e3d51174426ad0d8fc5bbd9eaf7c6c3b7cb50d9fdda7a6e566be79997932",
   "snapshotHashFormat": "SHA-256 of sorted UTF-8 lines: file SHA-256, two spaces, path relative to game-test, LF; excludes build-info.json.",
   "sourcePublication": "Local tested snapshot; these source changes have not been published to the game repository.",
   "version": "4.0.0",

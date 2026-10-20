@@ -1,8 +1,8 @@
 # Bouncer updater: automatic website and manual shared services
 
-This is the **only supported deployment**. Keep the existing `~/bouncer` Compose project and its proxy, certificate companion, ZNC and Limnoria. The added website has no published host ports and no Docker socket. Default Payment Links mode runs only `gyaruinthemix-web`, capped at 64 MiB. Optional API mode adds a 192 MiB cap and a private journal volume. These are provisional caps, not measured VPS usage.
+This is the **only supported deployment**. Keep the existing `~/bouncer` Compose project and its proxy, certificate companion, ZNC and Limnoria. The added website has no published host ports and no Docker socket. Default Payment Links mode runs only `gyaruinthemix-web`, capped at 64 MiB. Optional API mode adds a 192 MiB cap and a private journal volume; optional game audio adds a 96 MiB sidecar on the same private network. These are provisional caps, not measured VPS usage.
 
-After one-time activation, a merge into `main` runs CI, publishes tested website images to GHCR, and the host checks for them every five minutes. **This repository does not install the updater, change package visibility, connect to the VPS or deploy automatically until you activate it.** No SSH credential, webhook listener, new proxy or always-running updater container is needed. Website builds happen on GitHub-hosted runners, not the 1 GB VPS. Explicit manual `--shared` mode uses the existing local proxy/ZNC Dockerfiles with build caching; it is never scheduled by the supplied timer.
+After one-time activation, a merge into `main` runs CI, publishes tested website and audio images to GHCR, and the host checks for them every five minutes. **This repository does not install the updater, change package visibility, connect to the VPS or deploy automatically until you activate it.** No SSH credential, webhook listener, new proxy or always-running updater container is needed. Website builds happen on GitHub-hosted runners, not the 1 GB VPS. Explicit manual `--shared` mode uses the existing local proxy/ZNC Dockerfiles with build caching; it is never scheduled by the supplied timer.
 
 ## Website domain
 
@@ -11,12 +11,12 @@ The public domain is `gyaruinthemix.com`. Set `STORE_DOMAIN=gyaruinthemix.com` a
 ## Release and trust boundary
 
 - Pull requests run tests with read-only repository permissions and offline fixtures. They cannot publish images. Neither `pull_request_target` nor privileged `workflow_run` consumption is used.
-- Only a `push` to `main` in `aliceinwire/gyaruinthemix`, after source, secret scanning and both bouncer-mode gates pass, can enter the package-write job. Protect `main` with reviews and the CI checks; account/branch settings are owner-managed.
+- Only a `push` to `main` in `aliceinwire/gyaruinthemix`, after source, secret scanning and the bouncer checkout/audio-mode gates pass, can enter the package-write job. Protect `main` with reviews and the CI checks; account/branch settings are owner-managed.
 - That job builds and smoke-tests the **actual release configuration** again, then publishes those exact local images. Synthetic public Payment Links are never published. A superseded main commit is skipped before publication.
-- Images are `ghcr.io/aliceinwire/gyaruinthemix-web`, `gyaruinthemix-web-api` and `gyaruinthemix-api`. Each has `main` and `sha-<full-40-character-commit>` tags, source/revision labels, and a checkout-mode label on web images. Treat SHA tags as release names, not cryptographic immutability: package writers could overwrite tags. The host pins each activation to the pulled local content-addressed image ID.
-- The host accepts only the documented repository's matching `:main` images. API/web revisions must match, so interrupted publication cannot activate a mixed pair. Labels are consistency checks, not image signatures. Trust is the protected GitHub repository and GHCR package write access. Limit both to maintainers.
+- Images are `ghcr.io/aliceinwire/gyaruinthemix-web`, `gyaruinthemix-web-api`, `gyaruinthemix-api` and `gyaruinthemix-game-audio`. Each has `main` and `sha-<full-40-character-commit>` tags, source/revision labels, and a checkout-mode label on web images. Treat SHA tags as release names, not cryptographic immutability: package writers could overwrite tags. The host pins each activation to the pulled local content-addressed image ID.
+- The host accepts only the documented repository's matching `:main` images. All selected web/API/audio revisions must match, so interrupted publication cannot activate a mixed release. Labels are consistency checks, not image signatures. Trust is the protected GitHub repository and GHCR package write access. Limit both to maintainers.
 - Default website updates use `up --no-deps --no-build --pull never --wait` with an explicit website service list. This default mode never pulls, builds, reconciles or stops the four shared services. The existing proxy may perform its normal routing reload when website containers change.
-- Health failure restores the previous healthy website images and blocks that failed image pair until a new release or explicit `--retry`. A local lock prevents overlapping runs. Recorded pending state lets the next run recover an interrupted update. This is not zero-downtime deployment; a short website interruption is possible.
+- Health failure restores the previous healthy website images and blocks that failed image set until a new release or explicit `--retry`. A local lock prevents overlapping runs. Recorded pending state lets the next run recover an interrupted update. This is not zero-downtime deployment; a short website interruption is possible.
 
 ## 1. Prerequisites and read-only inspection
 
@@ -61,7 +61,7 @@ cp gyaruinthemix/deploy/bouncer/docker-compose.yml docker-compose.yml
 
 Edit the **existing** `~/bouncer/.env` using [`.env.example`](.env.example) as a checklist; preserve unrelated values and the established project name. Set `STORE_DOMAIN=gyaruinthemix.com` after DNS/TLS preparation and review `LETSENCRYPT_EMAIL`. Default mode is `CHECKOUT_MODE=payment_links`, with no `checkout-api` profile and no Stripe secret files. Do not enable sales just to deploy the artist website.
 
-The first successful trusted-main CI run creates the GHCR packages. GitHub initially makes new container packages private. After reviewing their contents, the owner can make the three release packages public in GitHub package settings so the VPS can pull without storing a token. **Changing package visibility is an owner action and is not performed by this change.** If public images are unsuitable, arrange narrowly scoped existing registry access separately; do not put tokens in this repository, `.env` or a cron command. Pull failure leaves the current site untouched.
+The first successful trusted-main CI run creates the GHCR packages. GitHub initially makes new container packages private. After reviewing their contents, the owner can make the release packages public in GitHub package settings so the VPS can pull without storing a token. **Changing package visibility is an owner action and is not performed by this change.** If public images are unsuitable, arrange narrowly scoped existing registry access separately; do not put tokens in this repository, `.env` or a cron command. Pull failure leaves the current site untouched.
 
 Once the first release is published and accessible:
 
@@ -113,7 +113,7 @@ Pause with `systemctl --user disable --now gyaruinthemix-update.timer`; resume w
 
 ## Manual maintenance with the same updater
 
-The existing five-minute timer remains **website-only**. Two explicit, mutually exclusive manual modes replace the old broad pull/build/down/up script. There is no new daemon, container running in the background, daily task or automatic shared-service/certificate schedule. All three modes use the same nonblocking lock. If one is running, another invocation exits without work; rerun a skipped manual command after it finishes. Plain Docker commands and the old script do not use that lock: retire the old script and avoid concurrent manual changes.
+The existing five-minute timer remains **website-only**, including explicitly enabled audio and its local packaging. Two explicit, mutually exclusive manual modes replace the old broad pull/build/down/up script. There is no new daemon, container running in the background, daily task or automatic shared-service/certificate schedule. All updater modes, including first-catalog preparation, use the same nonblocking lock. If one is running, another invocation exits without work; rerun a skipped manual command after it finishes. Plain Docker commands and the old script do not use that lock: retire the old script and avoid concurrent manual changes.
 
 Review/install this updater from an approved checkout before use; installing it does not require replacing your existing Compose definitions or changing the timer. Keep backups of ZNC/Limnoria data and enough free disk for old and new images. Run as the existing deployment user with its established Docker access.
 
@@ -151,7 +151,7 @@ This is a manual refresh, **not a renewal hook**. Keep the existing certificate 
 
 ## 4. Verify a merged update
 
-A merge is followed by the complete CI run and registry publication, then the next host check (normally within five minutes, with up to 30 seconds of timer jitter). A failed CI run leaves registry release tags unchanged. The host performs no Git pull and executes no new repository scripts automatically.
+A merge is followed by the complete CI run and registry publication, then the next host check (normally within five minutes, with up to 30 seconds of timer jitter). A failed CI run leaves registry release tags unchanged. The host performs no Git pull and executes no newly fetched repository scripts automatically. When audio is explicitly enabled, each check runs the already-installed bounded packager before considering image changes.
 
 Check the **Publish tested main images** job, then the host's cron logs or systemd journal. Inspect the running revision:
 
@@ -166,9 +166,9 @@ Compare it with the merged main commit. Recheck the changed page over public HTT
 
 ## Updates to infrastructure, checkout mode and rollback
 
-Only images auto-update. Changes to the merged Compose file, `.env`, secret paths, updater or timer need explicit review and manual installation from the approved commit. Do not replace shared infrastructure automatically; use the explicit manual mode above for reviewed image maintenance. Pause the scheduler, ensure no update is active, back up configuration, copy only the reviewed deployment changes, then revalidate/restart only website services. Preserve the API journal/current valid secrets. The running website image is authoritative for content; an old checkout on the VPS is not rebuilt by the updater.
+Only selected service images and an explicitly enabled local music catalog auto-update. Changes to the merged Compose file, `.env`, secret paths, updater or timer need explicit review and manual installation from the approved commit. Do not replace shared infrastructure automatically; use the explicit manual mode above for reviewed image maintenance. Pause the scheduler, ensure no update is active, back up configuration, copy only the reviewed deployment changes, then revalidate/restart only website services. Preserve the API journal/current valid secrets. The running website image is authoritative for website content; an old checkout on the VPS is not rebuilt by the updater. Audio packaging runs only the operator-installed packager from that reviewed checkout; updated packaging logic must be installed deliberately.
 
-For an intentional rollback, pause the scheduler first. Choose a verified earlier release SHA from GHCR/CI, set `GYARUINTHEMIX_WEB_IMAGE` to its `:sha-<commit>` tag in `~/bouncer/.env`, and in API mode pin `GYARUINTHEMIX_API_IMAGE` to the **same** commit too. Pull and activate only the selected services using the scoped first-start command. Validate health/public pages and the implications of old payment links or product configuration. Restore `:main` and resume scheduling only after the failed release is fixed. Pinned tags intentionally cause the updater to stop rather than silently override the operator's choice.
+For an intentional rollback, pause the scheduler first. Choose a verified earlier release SHA from GHCR/CI, set `GYARUINTHEMIX_WEB_IMAGE` to its `:sha-<commit>` tag in `~/bouncer/.env`, and pin every enabled optional image (`GYARUINTHEMIX_API_IMAGE` and/or `GYARUINTHEMIX_GAME_AUDIO_IMAGE`) to the **same** commit too. Pull and activate only the selected services using the scoped first-start command. Validate health/public pages and the implications of old payment links or product configuration. Restore `:main` and resume scheduling only after the failed release is fixed. Pinned tags intentionally cause the updater to stop rather than silently override the operator's choice.
 
 For an automatically rejected release, inspect website logs/resources and correct the cause. To deliberately retry that same release after investigation:
 
@@ -176,11 +176,11 @@ For an automatically rejected release, inspect website logs/resources and correc
 /usr/bin/python3 "$HOME/bouncer/gyaruinthemix/deploy/bouncer/update.py" --directory "$HOME/bouncer" --retry
 ```
 
-A different published image pair is tried normally. If both activation and rollback fail, pending state remains so the next run attempts recovery before any new update; inspect and repair the host rather than deleting state/journal files. No updater can guarantee recovery after host/storage failure. Retain previous image layers for rollback and monitor disk use. There is **no automatic global image/volume pruning**; do not use `docker system prune`, `docker volume prune`, `down -v`, `--remove-orphans` or blanket builds on this shared host.
+A different published image set is tried normally. If both activation and rollback fail, pending state remains so the next run attempts recovery before any new update; inspect and repair the host rather than deleting state/journal files. No updater can guarantee recovery after host/storage failure. Retain previous image layers for rollback and monitor disk use. There is **no automatic global image/volume pruning**; do not use `docker system prune`, `docker volume prune`, `down -v`, `--remove-orphans` or blanket builds on this shared host.
 
 ### Optional API mode
 
-Pause updates before changing mode. Set `CHECKOUT_MODE=api`, `COMPOSE_PROFILES=checkout-api`, and `GYARUINTHEMIX_WEB_IMAGE=ghcr.io/aliceinwire/gyaruinthemix-web-api:main` in `~/bouncer/.env`; keep `GYARUINTHEMIX_API_IMAGE=ghcr.io/aliceinwire/gyaruinthemix-api:main`. Set up restricted TEST credentials and settings using [the README](../../README.md#optional-custom-cart-api-mode) and [SECURITY.md](../../SECURITY.md). Sales remain false until deliberately reviewed.
+Pause updates before changing mode. Set `CHECKOUT_MODE=api`, add `checkout-api` to `COMPOSE_PROFILES` (preserve `game-audio` if already enabled), and `GYARUINTHEMIX_WEB_IMAGE=ghcr.io/aliceinwire/gyaruinthemix-web-api:main` in `~/bouncer/.env`; keep `GYARUINTHEMIX_API_IMAGE=ghcr.io/aliceinwire/gyaruinthemix-api:main`. Set up restricted TEST credentials and settings using [the README](../../README.md#optional-custom-cart-api-mode) and [SECURITY.md](../../SECURITY.md). Sales remain false until deliberately reviewed.
 
 For this first start, choose one successful published release's full commit SHA and set `RELEASE_SHA` in the shell. Pin both image names to that same release before pulling/activating, so a `:main` publication in progress cannot mix revisions:
 
@@ -199,7 +199,70 @@ unset GYARUINTHEMIX_WEB_IMAGE GYARUINTHEMIX_API_IMAGE
 
 Keep the matching `:main` settings in `~/bouncer/.env` for subsequent automatic checks. Verify both services are healthy afterward. Complete the account-specific TEST checkout/webhook procedure and resume updates. The API never joins the shared proxy network and no public API port is added.
 
-When returning to Payment Links, first reconcile pending API orders/webhooks and follow the [migration checklist](../PAYMENT-LINKS.md#updates-pausing-and-rollback). Stop/remove only the old website API container while its profile is still enabled; preserve the journal and any required backups. Then change the web image back to `gyaruinthemix-web:main`, set `CHECKOUT_MODE=payment_links`, remove the API profile, activate only web and verify API URLs return 404. Changing a profile alone does not stop a running API. The updater refuses a detected mixed-mode deployment rather than deciding this migration for you.
+When returning to Payment Links, first reconcile pending API orders/webhooks and follow the [migration checklist](../PAYMENT-LINKS.md#updates-pausing-and-rollback). Stop/remove only the old website API container while its profile is still enabled; preserve the journal and any required backups. Then change the web image back to `gyaruinthemix-web:main`, set `CHECKOUT_MODE=payment_links`, remove only the API profile, activate web (and retain explicitly enabled audio) and verify API URLs return 404. Changing a profile alone does not stop a running API. The updater refuses a detected mixed-mode deployment rather than deciding this migration for you.
+
+## Optional game audio
+
+Use this same bouncer file, project and updater. Do not add a Compose overlay or another deployment script. Music remains off until the operator completes this setup. No step below has been run on your VPS by this source change.
+
+### One-time activation
+
+1. Pause the existing updater schedule and wait for any current run to finish. Install the reviewed `deploy/bouncer/docker-compose.yml` as `~/bouncer/docker-compose.yml`, preserving local shared-service changes and the project name. Install the matching reviewed updater and `game-audio` code in the existing repository checkout; source/config updates are deliberately not automatic. Keep the existing checkout mode and unrelated services unchanged.
+2. Confirm Node **24**, `ffmpeg` and `ffprobe` are available in the deployment user's scheduled PATH. Inspect free disk and memory first. Packaging is serial and cached, pinned to one CPU with lower priority, with a 64 MiB Node heap, 768 MiB per-process virtual-address ceiling, 128 MiB per-process data ceiling and a ten-minute wall timeout. These process limits are not a combined RSS/cgroup memory guarantee. The serving container has a separate 96 MiB cap. Leave headroom for the existing proxy, IRC services and OS; do not enable music on an overloaded host.
+3. Keep originals only in `~/bouncer/gyaruinthemix/assets/music`. For example, `assets/music/ギャルインザミックス.mp3` is discovered without renaming it. Supported inputs are MP3, WAV, FLAC, M4A, AAC, OGG and Opus. The limits are 200 tracks, 2 GiB per file and two hours per track. Copy to a temporary hidden name first, then rename into place after the copy finishes. Never put music in `public/`, commit it or copy it into an image.
+4. Provision a separate random signing key of at least 32 bytes through your existing secure process, at `/srv/gyaruinthemix-secrets/game_audio_signing_key` or another absolute path outside the checkout/library. Do not paste it into `.env`, chat or logs. The service runs as UID/GID `10001:10001`; arrange private directory traversal and read access for that identity. Use restrictive ownership/modes, such as a `0750` key directory and `0640` key file with group `10001`. No key is generated by this repository.
+5. Arrange the library directory so the deployment user can write generated output and group `10001` can traverse/read `.hls`. Keep originals private to their owner; the serving process only needs `.hls`. Use a setgid `2750` output directory with group `10001` so later generated files retain that group. The updater uses umask `0027` for packaging. Do not solve access failures with world-readable permissions or privileged containers. If the deployment account cannot set the required group, have the operator establish narrowly scoped access before continuing.
+6. In the existing `~/bouncer/.env`, set `GAME_AUDIO_ENABLED=true`, add `game-audio` to `COMPOSE_PROFILES`, and keep `GYARUINTHEMIX_GAME_AUDIO_IMAGE=ghcr.io/aliceinwire/gyaruinthemix-game-audio:main`. Set `GAME_AUDIO_SIGNING_KEY_FILE` only if using another approved absolute path. For Payment Links, profiles are `game-audio`; if the API was already enabled, use `checkout-api,game-audio`. Do not enable checkout just to play music.
+
+Prepare the initial catalog through the same locked, bounded updater before starting the sidecar:
+
+```bash
+/usr/bin/python3 "$HOME/bouncer/gyaruinthemix/deploy/bouncer/update.py" --directory "$HOME/bouncer" --package-game-audio
+```
+
+This mode only prepares local generated media. It does not pull images or start, stop or recreate any container. It uses the installed configuration, refuses unsafe paths and requires the explicit enabled setting. Investigate any failure before continuing; do not remove locks or loosen permissions blindly.
+
+For first activation, choose a successful published correction release and pin all selected services to its same full SHA for the manual start. Keep their `:main` values in `.env` for later automatic updates. Run from the existing deployment user and project:
+
+```bash
+cd ~/bouncer
+: "${RELEASE_SHA:?Set the verified full release SHA first}"
+export GYARUINTHEMIX_WEB_IMAGE="ghcr.io/aliceinwire/gyaruinthemix-web:sha-$RELEASE_SHA"
+# If CHECKOUT_MODE=api is already configured, use this web image instead:
+# export GYARUINTHEMIX_WEB_IMAGE="ghcr.io/aliceinwire/gyaruinthemix-web-api:sha-$RELEASE_SHA"
+export GYARUINTHEMIX_API_IMAGE="ghcr.io/aliceinwire/gyaruinthemix-api:sha-$RELEASE_SHA"
+export GYARUINTHEMIX_GAME_AUDIO_IMAGE="ghcr.io/aliceinwire/gyaruinthemix-game-audio:sha-$RELEASE_SHA"
+services=(gyaruinthemix-web gyaruinthemix-game-audio)
+images=("$GYARUINTHEMIX_WEB_IMAGE" "$GYARUINTHEMIX_GAME_AUDIO_IMAGE")
+# Only if the API was already enabled, also select its matching image/service:
+# services+=(gyaruinthemix-api)
+# images+=("$GYARUINTHEMIX_API_IMAGE")
+docker compose config --quiet
+docker compose pull "${services[@]}"
+for image in "${images[@]}"; do
+  test "$(docker image inspect "$image" --format '{{index .Config.Labels "org.opencontainers.image.revision"}}')" = "$RELEASE_SHA" || exit 1
+done
+docker compose up -d --no-deps --no-build --pull never --wait --wait-timeout 120 "${services[@]}"
+unset GYARUINTHEMIX_WEB_IMAGE GYARUINTHEMIX_API_IMAGE GYARUINTHEMIX_GAME_AUDIO_IMAGE
+docker compose ps "${services[@]}"
+curl --fail https://gyaruinthemix.com/game-audio/v1/config
+```
+
+The config response should contain `{"enabled":true}` and no key or source path. Open `/game-test/`, tap Play and check the player on desktop and phone, including pause/resume and switching tracks. Originals must not be downloadable by filename. Recheck existing pages, checkout mode and shared-service IDs. The route and media policy are built into the web image, scoped to game audio; there is no Nginx file to install separately and no client-source flag to edit. If the sidecar is absent/disabled/unavailable, the game retains SoundCloud without delaying gameplay.
+
+Run the normal updater once and resume the existing schedule only after the selected services are healthy:
+
+```bash
+/usr/bin/python3 "$HOME/bouncer/gyaruinthemix/deploy/bouncer/update.py" --directory "$HOME/bouncer"
+```
+
+### Later additions, failures and disabling
+
+Drop finished tracks into the same `assets/music` directory. Each enabled updater check packages changed files before considering image changes, including when images are already current; unchanged audio uses its validated cache. The sidecar refreshes its catalog within 30 seconds. Removing a source removes it from the next successful catalog, but old content-addressed segments are not automatically deleted while playback sessions may still reference them. Monitor disk use; no broad pruning is performed.
+
+A packaging failure stops that update without activating new images and preserves the previous catalog. Correct the input/resource/permission problem and run the same updater again. A killed packager can leave a safety lock or temporary output; inspect and confirm no packaging process remains before any manual cleanup. Image rollback restores selected container images, not source media or catalog history. Back up originals independently.
+
+To disable music, pause scheduled updates, set `GAME_AUDIO_ENABLED=false`, and recreate only the audio service while its profile is still enabled so new playback is denied. Stop/remove only `gyaruinthemix-game-audio`, then remove only `game-audio` from `COMPOSE_PROFILES`; retain `checkout-api` if used. Refresh the game's page to return to SoundCloud, confirm default-off config, then resume the updater. Profile removal alone does not stop a running container. Preserve originals and the key unless deliberately retiring them through the operator's normal secure process.
 
 ## References
 

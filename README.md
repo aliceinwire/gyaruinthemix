@@ -54,8 +54,9 @@ Attempts created before v2 lack a Session ID/proof and cannot be verified retros
 
 ## Your VPS: deploy only from ~/bouncer
 
-[deploy/bouncer](deploy/bouncer/README.md) is the only deployment path. Install its [docker-compose.yml](deploy/bouncer/docker-compose.yml) as `~/bouncer/docker-compose.yml`, preserving the existing Compose project identity. It preserves the proxy, certificate companion, ZNC and Limnoria definitions and adds the static website. The API is behind the optional `checkout-api` profile. Put this repository at `~/bouncer/gyaruinthemix`, add [these settings](deploy/bouncer/.env.example) to `~/bouncer/.env`, and follow the [one-time setup and update instructions](deploy/bouncer/README.md). **No Stripe secret files are required for the default mode.**
+[deploy/bouncer](deploy/bouncer/README.md) is the only deployment path. Install its [docker-compose.yml](deploy/bouncer/docker-compose.yml) as `~/bouncer/docker-compose.yml`, preserving the existing Compose project identity. It preserves the proxy, certificate companion, ZNC and Limnoria definitions and adds the static website. The API is behind the optional `checkout-api` profile; music uses the optional `game-audio` profile in the same file. Put this repository at `~/bouncer/gyaruinthemix`, add [these settings](deploy/bouncer/.env.example) to `~/bouncer/.env`, and follow the [one-time setup and update instructions](deploy/bouncer/README.md). **No Stripe secret files are required for the default mode.**
 
+For private source music, place tracks in `~/bouncer/gyaruinthemix/assets/music` and follow the [one-time music activation steps](deploy/bouncer/README.md#optional-game-audio). The normal bouncer process handles later additions. There is no separate deployment stack, public original-file route, or client-side flag to edit; the feature stays off until the operator configures it.
 After completing that setup and confirming that the published GHCR image is accessible, start only the website:
 
 ```bash
@@ -64,9 +65,9 @@ docker compose pull gyaruinthemix-web
 docker compose up -d --no-deps --no-build --pull never --wait gyaruinthemix-web
 ```
 
-The website adds no host ports and uses the existing bouncer project. Website operations name only `gyaruinthemix-web` and, when enabled, `gyaruinthemix-api`; do not run an unscoped `up`, build or restart against the shared stack. The 1 GB VPS pulls prebuilt images rather than building the application.
+The website adds no host ports and uses the existing bouncer project. Website operations name only `gyaruinthemix-web` and the explicitly enabled `gyaruinthemix-api` / `gyaruinthemix-game-audio` services; do not run an unscoped `up`, build or restart against the shared stack. The 1 GB VPS pulls prebuilt images rather than building the application.
 
-The optional updater checks GHCR every five minutes through **either the existing cron service (including OpenRC hosts) or a systemd user timer**. Choose one scheduler using the [bouncer activation guide](deploy/bouncer/README.md#3-activate-automatic-checks-once). Only successful CI for a trusted `main` push in `aliceinwire/gyaruinthemix` can publish release images. The updater pulls without building, checks health and attempts rollback if a release fails. A failed release is remembered and requires `--retry` to attempt again. This is **image updating only**: Compose, updater, cron/systemd and other deployment/configuration changes still require deliberate manual review and installation. Nothing has been enabled or deployed to the VPS by this source change.
+The optional updater checks GHCR every five minutes through **either the existing cron service (including OpenRC hosts) or a systemd user timer**. Choose one scheduler using the [bouncer activation guide](deploy/bouncer/README.md#3-activate-automatic-checks-once). Only successful CI for a trusted `main` push in `aliceinwire/gyaruinthemix` can publish release images. The updater pulls without building, checks health and attempts rollback if a release fails. A failed release is remembered and requires `--retry` to attempt again. With music explicitly enabled, the same updater also prepares the ignored `assets/music` library with bounded resources. Compose, updater, cron/systemd and other deployment/configuration changes still require deliberate manual review and installation. Nothing has been enabled or deployed to the VPS by this source change.
 
 ## Checkout without keeping Stripe keys
 
@@ -315,21 +316,21 @@ The optional argument is the **bouncer directory**, not a proxy name. Inspect Do
 
 ### Resource plan to review before starting
 
-| Resource            | Added website resources                                                 |
-| ------------------- | ----------------------------------------------------------------------- |
-| Compose services    | `gyaruinthemix-web`; optional `gyaruinthemix-api`                       |
-| Images              | Published GHCR frontend and, for API mode, backend                      |
-| Network             | Website network `gyaruinthemix`; API stays off the shared proxy network |
-| Existing network    | Web joins the existing `proxy-tier` network (`nginx-proxy`)             |
-| Volume              | `gyaruinthemix_webhook_state`, optional API observation journal only    |
-| Host ports          | None added by either website service                                    |
-| Internal ports      | nginx 8080, API 3000                                                    |
-| Files               | Website source, bouncer `.env`, opt-in updater; API-only secret files   |
-| Unrelated workloads | Website commands never target them or delete their networks/volumes     |
+| Resource            | Added website resources                                                      |
+| ------------------- | ---------------------------------------------------------------------------- |
+| Compose services    | `gyaruinthemix-web`; optional API and game-audio services                    |
+| Images              | Published GHCR frontend, optional API and audio images                       |
+| Network             | Website network `gyaruinthemix`; API/audio stay off the shared proxy network |
+| Existing network    | Web joins the existing `proxy-tier` network (`nginx-proxy`)                  |
+| Volume              | `gyaruinthemix_webhook_state`, optional API observation journal only         |
+| Host ports          | None added by website services                                               |
+| Internal ports      | nginx 8080, API 3000, audio 3001                                             |
+| Files               | Source, bouncer `.env`, opt-in updater; optional private API/audio files     |
+| Unrelated workloads | Website commands never target them or delete their networks/volumes          |
 
 Network/volume names are Compose keys; Docker resource names depend on the **existing bouncer project**. Discover them through Compose instead of assuming fixed container or volume names.
 
-The 64 MiB nginx / 192 MiB Node memory limits are **provisional caps**, not measured idle usage. Node heap cap is 112 MiB, leaving headroom for buffers/native allocations. Inspect `free -m` and `docker stats` before accepting these caps; preserve host, proxy and IRC headroom. The VPS pulls CI-built images; do not build Astro on a loaded 1 GB server. Build-time memory is not constrained by service `mem_limit`. No swap/firewall/host configuration changes are performed by this project.
+The 64 MiB nginx / 192 MiB API / 96 MiB audio memory limits are **provisional caps**, not measured idle usage. API Node heap cap is 112 MiB, leaving headroom for buffers/native allocations. Inspect `free -m` and `docker stats` before accepting these caps; preserve host, proxy and IRC headroom. The VPS pulls CI-built images; do not build Astro on a loaded 1 GB server. Build-time memory is not constrained by service `mem_limit`. No swap/firewall/host configuration changes are performed by this project.
 
 ## 5. Domain, proxy and TLS
 

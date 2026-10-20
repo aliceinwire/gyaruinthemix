@@ -4,7 +4,7 @@ The standalone game snapshot is served at `/game-test/`. It is absent from site 
 
 The game runtime is vendored under `public/game-test/`, including its original license notice. `build-info.json` records the base source commit and the SHA-256 of the immutable tested snapshot manifest. The current graphics and gameplay snapshot has not been published to the game repository; the base commit does not include these changes. The snapshot hash covers every runtime file except build-info.json, using sorted UTF-8 lines containing each file SHA-256, two spaces, its game-relative path and a newline. There is no cross-repository build download or new deployment credential. Existing shop, fanclub, news, API and bilingual routes are unchanged.
 
-Only this route permits SoundCloud scripts and frames from `https://w.soundcloud.com`. All other security directives and the website's global policy remain unchanged. The public SoundCloud profile provides streaming music through its official widget; browser autoplay restrictions and provider availability still apply.
+Only this route permits SoundCloud scripts and frames from `https://w.soundcloud.com`, plus same-origin and blob media for the optional stereo. All other security directives and the website's global policy remain unchanged. The public SoundCloud profile provides streaming music through its official widget; browser autoplay restrictions and provider availability still apply.
 
 ## Current game changes
 
@@ -12,7 +12,7 @@ The twelve-road tour now includes readable encounter behaviors, four-slot curren
 
 ## Optional audio
 
-The code includes a default-off segmented-audio service and car-stereo controls. Existing SoundCloud playback remains the default. No audio, packaged chunks or signing keys are included in Git or Docker images. The optional Compose and Nginx files are not activated by this change; activation requires a separately approved deployment and the route-scoped media policy described in game-audio/README.md. The global security policy is unchanged.
+The code includes a default-off segmented-audio service and car-stereo controls. Existing SoundCloud playback remains the default. No audio, packaged chunks or signing keys are included in Git or Docker images. The audio sidecar, route-scoped media policy and updater are integrated into the single bouncer deployment. Explicit operator activation is described in `deploy/bouncer/README.md#optional-game-audio`; no separate Compose or Nginx overlay is installed. The global security policy is unchanged.
 
 ## Validation
 

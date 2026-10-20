@@ -10,10 +10,16 @@ import {
   writeFile,
 } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { checkWwwRedirect } from './check-www-redirect.mjs';
 import { checkGameTest } from './check-game-test.mjs';
+import { createGameAudioFixtures } from './ci-game-audio-fixtures.mjs';
+import { checkGameAudioRuntime } from './check-game-audio-runtime.mjs';
+import {
+  assertGameAudioCompose,
+  GAME_AUDIO_SERVICE,
+} from '../game-audio/scripts/check-game-audio-compose.mjs';
 
 assert.equal(process.env.GITHUB_ACTIONS, 'true');
 assert.equal(process.env.RUNNER_ENVIRONMENT, 'github-hosted');
@@ -22,13 +28,26 @@ assert.match(
   /^gyaruinthemix-ci-\d+-\d+$/,
 );
 const apiMode = process.env.CHECKOUT_MODE === 'api';
+assert.ok(
+  ['false', 'true'].includes(process.env.GAME_AUDIO_ENABLED || 'false'),
+);
+const audioEnabled = process.env.GAME_AUDIO_ENABLED === 'true';
+const configOnly = process.argv.includes('--config-only');
+const noBuild = process.argv.includes('--no-build');
+const buildAudioOnly = process.argv.includes('--build-audio-only');
+assert.ok(!(noBuild && buildAudioOnly));
+assert.ok(!buildAudioOnly || audioEnabled);
 const root = fileURLToPath(new URL('../', import.meta.url));
 const temporary = await mkdtemp(join(tmpdir(), 'gyaru-merged-'));
 const directory = join(temporary, 'bouncer');
 const project = `${process.env.COMPOSE_PROJECT_NAME}-bouncer`;
 const env = {
   ...process.env,
-  COMPOSE_PROFILES: apiMode ? 'checkout-api' : '',
+  COMPOSE_PROFILES: [apiMode && 'checkout-api', audioEnabled && 'game-audio']
+    .filter(Boolean)
+    .join(','),
+  GAME_AUDIO_ENABLED: String(audioEnabled),
+  GAME_AUDIO_SIGNING_KEY_FILE: join(temporary, 'ci_audio_signing_fixture'),
   CHECKOUT_MODE: apiMode ? 'api' : 'payment_links',
   COMPOSE_PROJECT_NAME: project,
   COMPOSE_FILE: join(directory, 'docker-compose.yml'),
@@ -38,6 +57,7 @@ const env = {
   LETSENCRYPT_EMAIL: 'ci@example.test',
   GYARUINTHEMIX_WEB_IMAGE: `gyaruinthemix-web:${process.env.IMAGE_TAG}`,
   GYARUINTHEMIX_API_IMAGE: `gyaruinthemix-api:${process.env.IMAGE_TAG}`,
+  GYARUINTHEMIX_GAME_AUDIO_IMAGE: `gyaruinthemix-game-audio:${process.env.GAME_AUDIO_IMAGE_TAG || process.env.IMAGE_TAG}`,
   STRIPE_MODE: 'test',
   SALES_ENABLED: 'false',
   CI_LAYOUT: 'bouncer',
@@ -50,6 +70,7 @@ const docker = (...args) =>
     maxBuffer: 4 * 1024 * 1024,
   });
 let started = false;
+let audioFixtures;
 try {
   await mkdir(directory);
   await symlink(root, join(directory, 'gyaruinthemix'), 'dir');
@@ -73,9 +94,21 @@ try {
   const original = render(join(root, 'tests/fixtures/bouncer.original.yml'));
   const merged = render(env.COMPOSE_FILE);
   const oldServices = ['proxy', 'letsencrypt-companion', 'znc', 'limnoria'];
-  const appServices = apiMode
-    ? ['gyaruinthemix-api', 'gyaruinthemix-web']
-    : ['gyaruinthemix-web'];
+  const appServices = [
+    ...(apiMode ? ['gyaruinthemix-api'] : []),
+    ...(audioEnabled ? [GAME_AUDIO_SERVICE] : []),
+    'gyaruinthemix-web',
+  ];
+  assertGameAudioCompose({
+    original,
+    config: merged,
+    audioEnabled,
+    apiMode,
+    checkoutRoot: join(directory, 'gyaruinthemix'),
+    expectedMediaSource: join(directory, 'gyaruinthemix/assets/music'),
+    expectedSecretFile: env.GAME_AUDIO_SIGNING_KEY_FILE,
+    expectedImage: env.GYARUINTHEMIX_GAME_AUDIO_IMAGE,
+  });
   assert.deepEqual(
     Object.keys(merged.services).sort(),
     [...oldServices, ...appServices].sort(),
@@ -127,6 +160,21 @@ try {
   env.STORE_DOMAIN = 'gyaruinthemix.example';
   env.STORE_HOSTS = '';
 
+  assert.equal(web.environment.GAME_AUDIO_ENABLED, String(audioEnabled));
+  if (audioEnabled) {
+    const audio = merged.services[GAME_AUDIO_SERVICE];
+    assert.equal(audio.environment.GAME_AUDIO_ENABLED, 'true');
+    assert.equal(
+      audio.environment.AUDIO_ORIGIN,
+      'https://gyaruinthemix.example',
+    );
+    assert.deepEqual(audio.build.labels, {
+      'org.opencontainers.image.source':
+        'https://github.com/aliceinwire/gyaruinthemix',
+      'org.opencontainers.image.revision':
+        process.env.GYARUINTHEMIX_REVISION || 'local',
+    });
+  }
   assert.equal(web.environment.VIRTUAL_PORT, '8080');
   assert.equal(web.environment.HTTPS_METHOD, 'redirect');
   assert.ok(!web.depends_on);
@@ -163,7 +211,12 @@ try {
   console.log(
     'PASS merged Compose: four original services/networks/volumes preserved, website paths, secret targets, API alias and isolation',
   );
-  if (!process.argv.includes('--config-only')) {
+  if (!configOnly) {
+    if (audioEnabled)
+      audioFixtures = await createGameAudioFixtures({
+        checkoutRoot: resolve(root),
+        secretFile: env.GAME_AUDIO_SIGNING_KEY_FILE,
+      });
     // Only the runner gets a private test port and uniquely named proxy network.
     // No proxy, companion, ZNC or Limnoria image is built or started in this test.
     const override = join(directory, 'ci.yaml');
@@ -172,7 +225,27 @@ try {
       `services:\n  gyaruinthemix-web:\n    ports: ["127.0.0.1:8089:8080"]\nnetworks:\n  proxy-tier:\n    name: ${project}-proxy\n`,
     );
     env.COMPOSE_FILE += `:${override}`;
-    docker('compose', 'build', '--pull', ...appServices);
+    if (!noBuild)
+      docker(
+        'compose',
+        'build',
+        '--pull',
+        ...(buildAudioOnly ? [GAME_AUDIO_SERVICE] : appServices),
+      );
+    // Reused release images are never rebuilt between their smoke test and push.
+    for (const service of appServices) {
+      const [image] = JSON.parse(
+        docker('image', 'inspect', merged.services[service].image),
+      );
+      assert.equal(
+        image.Config.Labels['org.opencontainers.image.source'],
+        'https://github.com/aliceinwire/gyaruinthemix',
+      );
+      assert.equal(
+        image.Config.Labels['org.opencontainers.image.revision'],
+        process.env.GYARUINTHEMIX_REVISION || 'local',
+      );
+    }
     started = true;
     docker(
       'compose',
@@ -210,7 +283,48 @@ try {
           },
         ),
       );
+    const audioSmoke = async () => {
+      await checkGameAudioRuntime('http://127.0.0.1:8089', {
+        enabled: audioEnabled,
+      });
+      if (!audioEnabled) return;
+      const [container] = JSON.parse(
+        docker(
+          'inspect',
+          docker('compose', 'ps', '-q', GAME_AUDIO_SERVICE).trim(),
+        ),
+      );
+      assert.equal(container.State.Health.Status, 'healthy');
+      assert.equal(container.State.OOMKilled, false);
+      assert.equal(container.Config.User, '10001:10001');
+      assert.equal(container.HostConfig.ReadonlyRootfs, true);
+      assert.equal(container.HostConfig.Privileged, false);
+      assert.deepEqual(container.HostConfig.CapDrop, ['ALL']);
+      assert.ok(
+        container.HostConfig.SecurityOpt.includes('no-new-privileges:true'),
+      );
+      assert.ok(
+        container.HostConfig.Memory >= 32 * 1024 * 1024 &&
+          container.HostConfig.Memory <= 192 * 1024 * 1024,
+      );
+      assert.ok(
+        container.HostConfig.NanoCpus > 0 &&
+          container.HostConfig.NanoCpus <= 750000000,
+      );
+      assert.ok(
+        container.HostConfig.PidsLimit > 0 &&
+          container.HostConfig.PidsLimit <= 64,
+      );
+      assert.deepEqual(container.HostConfig.PortBindings || {}, {});
+      assert.equal(Object.keys(container.NetworkSettings.Networks).length, 1);
+      assert.deepEqual(
+        container.Mounts.map((mount) => mount.Destination).sort(),
+        ['/private/media', '/run/secrets/game_audio_signing_key'],
+      );
+      assert.ok(container.Mounts.every((mount) => mount.RW === false));
+    };
     smoke();
+    await audioSmoke();
     await checkWwwRedirect('http://127.0.0.1:8089');
     await checkGameTest('http://127.0.0.1:8089');
     docker('compose', 'restart', ...appServices);
@@ -227,8 +341,27 @@ try {
       ...appServices,
     );
     smoke();
+    await audioSmoke();
     await checkWwwRedirect('http://127.0.0.1:8089');
     await checkGameTest('http://127.0.0.1:8089');
+    if (audioEnabled) {
+      docker('compose', 'stop', GAME_AUDIO_SERVICE);
+      await checkGameAudioRuntime('http://127.0.0.1:8089', { enabled: false });
+      await checkGameTest('http://127.0.0.1:8089');
+      docker(
+        'compose',
+        'up',
+        '--no-build',
+        '--no-deps',
+        '--pull',
+        'never',
+        '--wait',
+        '--wait-timeout',
+        '120',
+        GAME_AUDIO_SERVICE,
+      );
+      await audioSmoke();
+    }
     console.log(
       'PASS merged website startup and restart; existing services were never started',
     );
@@ -263,6 +396,10 @@ try {
         '20',
       );
   } finally {
-    await rm(temporary, { recursive: true, force: true });
+    try {
+      if (audioFixtures) await audioFixtures.cleanup();
+    } finally {
+      await rm(temporary, { recursive: true, force: true });
+    }
   }
 }

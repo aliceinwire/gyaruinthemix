@@ -92,6 +92,8 @@ services:
       LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL:-alicef@alicef.me}
       HTTPS_METHOD: redirect
       ENABLE_HTTP_ON_MISSING_CERT: 'false'
+      # Resolved by the installed updater; no client-side source toggle is needed.
+      GAME_AUDIO_ENABLED: ${GAME_AUDIO_ENABLED:-false}
     networks:
       - proxy-tier
       - gyaruinthemix
@@ -165,6 +167,60 @@ services:
         max-size: '5m'
         max-file: '3'
 
+  # Optional private music, maintained by the same bouncer updater.
+  gyaruinthemix-game-audio:
+    profiles: [game-audio]
+    image: ${GYARUINTHEMIX_GAME_AUDIO_IMAGE:-ghcr.io/aliceinwire/gyaruinthemix-game-audio:main}
+    build:
+      context: ./gyaruinthemix
+      dockerfile: Dockerfile.game-audio
+      labels:
+        org.opencontainers.image.source: https://github.com/aliceinwire/gyaruinthemix
+        org.opencontainers.image.revision: ${GYARUINTHEMIX_REVISION:-local}
+    restart: unless-stopped
+    init: true
+    read_only: true
+    user: '10001:10001'
+    cap_drop: [ALL]
+    security_opt: ['no-new-privileges:true']
+    tmpfs:
+      - /tmp:size=8m,mode=1777,noexec,nosuid,nodev
+    mem_limit: 96m
+    cpus: '0.35'
+    pids_limit: 40
+    stop_grace_period: 15s
+    expose: ['3001']
+    networks:
+      gyaruinthemix:
+        aliases: [game-audio]
+    volumes:
+      - type: bind
+        source: ./gyaruinthemix/assets/music
+        target: /private/media
+        read_only: true
+        bind:
+          create_host_path: false
+    secrets:
+      - source: gyaruinthemix_game_audio_signing_key
+        target: game_audio_signing_key
+    environment:
+      NODE_ENV: production
+      GAME_AUDIO_ENABLED: ${GAME_AUDIO_ENABLED:-false}
+      AUDIO_ORIGIN: https://${STORE_DOMAIN:?Set STORE_DOMAIN in bouncer/.env}
+      AUDIO_MEDIA_ROOT: /private/media/.hls
+      AUDIO_SIGNING_KEY_FILE: /run/secrets/game_audio_signing_key
+    healthcheck:
+      test: ['CMD', 'node', '/app/healthcheck.mjs']
+      interval: 30s
+      timeout: 3s
+      start_period: 10s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: '5m'
+        max-file: '3'
+
 volumes:
   certs:
   vhost.d:
@@ -182,3 +238,5 @@ secrets:
     file: ./gyaruinthemix/secrets/stripe_secret_key
   gyaruinthemix_stripe_webhook_secret:
     file: ./gyaruinthemix/secrets/stripe_webhook_secret
+  gyaruinthemix_game_audio_signing_key:
+    file: ${GAME_AUDIO_SIGNING_KEY_FILE:-/srv/gyaruinthemix-secrets/game_audio_signing_key}

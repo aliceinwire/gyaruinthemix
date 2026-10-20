@@ -19,6 +19,7 @@ COPY deploy/nginx.conf /etc/nginx/nginx.conf
 COPY deploy/bouncer/nginx-www-redirect.conf /etc/nginx/www-redirect.conf
 COPY deploy/security-headers.conf /etc/nginx/security-headers.conf
 COPY deploy/game-security-headers.conf /etc/nginx/game-security-headers.conf
+COPY deploy/game-audio.conf deploy/game-audio-proxy.conf /etc/nginx/
 COPY --from=build /build/checkout-location.conf /etc/nginx/checkout-location.conf
 COPY --from=build /build/dist /usr/share/nginx/html
 USER 101:101

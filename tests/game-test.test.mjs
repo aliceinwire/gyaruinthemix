@@ -16,7 +16,7 @@ test('game test stays outside navigation and public sitemap', async () => {
   );
 });
 
-test('game Docker context and scoped SoundCloud security policy are included', async () => {
+test('game Docker context and scoped audio security policy are included', async () => {
   assert.match(await read('.dockerignore'), /!public\/game-test\/\*\*/);
   assert.match(
     await read('Dockerfile.web'),
@@ -29,8 +29,54 @@ test('game Docker context and scoped SoundCloud security policy are included', a
   const game = await read('deploy/game-security-headers.conf');
   assert.match(game, /script-src 'self' https:\/\/w.soundcloud.com;/);
   assert.match(game, /frame-src https:\/\/w.soundcloud.com;/);
+  assert.match(game, /media-src 'self' blob:;/);
   assert.doesNotMatch(game, /unsafe-inline|unsafe-eval|https:\/\/\*/);
-  assert.doesNotMatch(await read('deploy/security-headers.conf'), /soundcloud/);
+  assert.doesNotMatch(
+    await read('deploy/security-headers.conf'),
+    /soundcloud|blob:|media-src/,
+  );
+});
+
+test('canonical web image includes optional audio proxy and clean absent-service config', async () => {
+  const dockerfile = await read('Dockerfile.web'),
+    context = await read('.dockerignore'),
+    locations = await read('deploy/game-audio.conf'),
+    proxy = await read('deploy/game-audio-proxy.conf');
+  assert.match(
+    dockerfile,
+    /COPY deploy\/game-audio.conf deploy\/game-audio-proxy.conf \/etc\/nginx\//,
+  );
+  assert.match(context, /!deploy\/game-audio.conf/);
+  assert.match(context, /!deploy\/game-audio-proxy.conf/);
+  assert.match(
+    await read('deploy/nginx.conf'),
+    /include \/etc\/nginx\/game-audio.conf;/,
+  );
+  assert.match(locations, /location = \/game-audio\/v1\/config/);
+  assert.match(locations, /error_page 502 503 504 = @game_audio_disabled;/);
+  assert.match(locations, /return 200 '\{"enabled":false\}';/);
+  assert.match(locations, /location \^~ \/game-audio\//);
+  assert.match(proxy, /set \$game_audio_backend http:\/\/game-audio:3001;/);
+  assert.match(proxy, /proxy_pass \$game_audio_backend;/);
+  assert.match(proxy, /proxy_cache off;/);
+  assert.match(proxy, /private, no-store, max-age=0/);
+  assert.doesNotMatch(locations + proxy, /alias |root |assets\/music/);
+});
+
+test('Nginx extends its standard MIME map for the lazy HLS JavaScript module', async () => {
+  const nginx = await read('deploy/nginx.conf');
+  assert.match(
+    nginx,
+    /http\s*\{\s*include \/etc\/nginx\/mime\.types;[\s\S]*?types\s*\{\s*application\/javascript mjs;\s*\}/,
+  );
+  assert.match(
+    await read('public/game-test/src/stream-audio.js'),
+    /import\('\.\/vendor\/hls\.light\.min\.mjs'\)/,
+  );
+  assert.match(
+    await read('tests/browser/game-test.mjs'),
+    /'\.mjs': 'application\/javascript'/,
+  );
 });
 
 test('game runtime is a self-contained static snapshot without private audio', async () => {

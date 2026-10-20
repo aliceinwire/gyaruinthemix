@@ -2,14 +2,19 @@ import { createServer } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
 import { createAudioHandler, loadCatalog } from './app.mjs';
 const mediaRoot = process.env.AUDIO_MEDIA_ROOT || '/private/media/.hls';
-const tracks = await loadCatalog(mediaRoot);
-const key = await readFile(
-  process.env.AUDIO_SIGNING_KEY_FILE || '/run/secrets/game_audio_signing_key',
-);
+const enabled = process.env.GAME_AUDIO_ENABLED === 'true';
+const tracks = enabled ? await loadCatalog(mediaRoot) : new Map();
+const key = enabled
+  ? await readFile(
+      process.env.AUDIO_SIGNING_KEY_FILE ||
+        '/run/secrets/game_audio_signing_key',
+    )
+  : null;
 const handler = createAudioHandler({
   tracks,
   key,
   origin: process.env.AUDIO_ORIGIN,
+  enabled,
 });
 const server = createServer(async (req, res) => {
   if (!(await handler(req, res))) {
@@ -25,9 +30,11 @@ server.listen(3001, '0.0.0.0', () =>
   console.log(JSON.stringify({ event: 'audio_ready', tracks: tracks.size })),
 );
 let refreshing = false,
-  lastModified = (await stat(`${mediaRoot}/catalog.json`)).mtimeMs;
+  lastModified = enabled
+    ? (await stat(`${mediaRoot}/catalog.json`)).mtimeMs
+    : 0;
 const refresh = setInterval(async () => {
-  if (refreshing) return;
+  if (!enabled || refreshing) return;
   refreshing = true;
   try {
     const modified = (await stat(`${mediaRoot}/catalog.json`)).mtimeMs;
