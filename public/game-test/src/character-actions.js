@@ -266,12 +266,24 @@ function drawWeatherAccessories(
   }
 }
 
-/**
- * Draw one expressive upper-body portrait, with top-left x/y and an explicit
- * box. action may be a single action, a shared event, or { arisu, chana }.
- * Frame changes animate the hands, eyes, head and props inside the illustration;
- * any small weather sway below is secondary, never a substitute for animation.
- */
+/** Shared semantic action and keyframe for portrait and cabin perspective art. */
+export function resolveCharacterPose(options = {}) {
+  const { character = "arisu", action, time = 0, animate = true } = options;
+  const name = character === "chana" ? "chana" : "arisu";
+  const resolved = resolveCrewActions(options);
+  const localAction =
+    typeof action === "string" &&
+    (CHARACTER_ACTION_SHEETS[name].actions.includes(action) || action === "rush" || (name === "chana" && action === "hearts"))
+      ? action
+      : resolved[name];
+  const frame = CHARACTER_ACTION_SHEETS[name].actions.indexOf(localAction);
+  const gestureElapsed = Number.isFinite(options.rushGestureTime)
+    ? Math.max(0, 0.75 - options.rushGestureTime) * 4 / 0.75
+    : Math.max(0, 2 - (options.rushTime ?? 2)) * 2.4;
+  const animationFrame = localAction === "rush" ? (animate ? Math.min(3, Math.floor(gestureElapsed)) : 0) : characterMotionFrame(localAction, time, animate);
+  return { name, resolved, localAction, frame, animationFrame };
+}
+
 export function drawCharacter(ctx, options = {}) {
   const {
     character = "arisu",
@@ -285,18 +297,7 @@ export function drawCharacter(ctx, options = {}) {
     season = "summer",
     animate = true,
   } = options;
-  const name = character === "chana" ? "chana" : "arisu";
-  const resolved = resolveCrewActions(options);
-  const localAction =
-    typeof action === "string" &&
-    (CHARACTER_ACTION_SHEETS[name].actions.includes(action) || action === "rush" || (name === "chana" && action === "hearts"))
-      ? action
-      : resolved[name];
-  const frame = CHARACTER_ACTION_SHEETS[name].actions.indexOf(localAction);
-  const gestureElapsed = Number.isFinite(options.rushGestureTime)
-    ? Math.max(0, 0.75 - options.rushGestureTime) * 4 / 0.75
-    : Math.max(0, 2 - (options.rushTime ?? 2)) * 2.4;
-  const animationFrame = localAction === "rush" ? (animate ? Math.min(3, Math.floor(gestureElapsed)) : 0) : characterMotionFrame(localAction, time, animate);
+  const { name, resolved, localAction, frame, animationFrame } = resolveCharacterPose(options);
   const heartSending=name==="chana"&&localAction==="hearts";
   const img=images[localAction === "rush" ? `${name}-rush` : heartSending?"chana-hearts":name];
   if(!img)return false;
