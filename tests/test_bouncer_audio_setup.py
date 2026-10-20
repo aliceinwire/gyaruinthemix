@@ -8,6 +8,7 @@ import json
 import os
 from pathlib import Path
 import stat
+import subprocess
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -687,7 +688,7 @@ class SetupTests(unittest.TestCase):
                 return str(fixture.checkout) + "\n"
             if args == ("rev-parse", "HEAD"):
                 return "a" * 40 + "\n"
-            if args == ("ls-tree", "-r", "-z", "--full-tree", "HEAD"):
+            if args == ("ls-tree", "-r", "-z", "--full-tree", "a" * 40):
                 return "".join(f"100644 blob {blob}\t{name}\0" for name, blob in tracked.items())
             if args == ("ls-files", "--stage", "-z"):
                 return "".join(f"100644 {blob} 0\t{name}\0" for name, blob in tracked.items())
@@ -721,6 +722,374 @@ class SetupTests(unittest.TestCase):
         path.write_bytes(path.read_bytes().replace(b"\n", b"\r\n"))
         fixture.apply(fixture.plan())
         self.assertNotIn(b"\n", path.read_bytes().replace(b"\r\n", b""))
+
+
+class PermissionPreparationTests(unittest.TestCase):
+    """Real Git, but only disposable synthetic files and mocked terminal approval."""
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.home = Path(self.temporary.name)
+        self.directory = self.home / "bouncer"
+        self.checkout = self.directory / "gyaruinthemix"
+        self.checkout.mkdir(parents=True)
+        self.names = (*setup.REVIEWED, ".gitignore", "src/nested/file.js", "assets/site.svg")
+        for name in self.names:
+            path = self.checkout / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("/assets/music/\n" if name == ".gitignore" else "synthetic reviewed fixture\n")
+            path.chmod(0o644)
+        self.run_git("init", "-q")
+        self.run_git("add", "--", *self.names)
+        self.run_git("-c", "user.name=Synthetic Test", "-c", "user.email=fixture@example.invalid",
+                     "-c", "core.hooksPath=/dev/null", "commit", "-qm", "Synthetic fixture")
+        self.fixture = setup.AudioSetup(self.directory)
+        self.library = self.checkout / "assets/music"
+        self.library.mkdir()
+        (self.library / "original.wav").write_bytes(b"synthetic original, not media")
+        (self.library / "original.wav").chmod(0o600)
+        (self.checkout / "untracked/nested").mkdir(parents=True)
+        (self.checkout / "untracked/nested/keep").write_text("untracked fixture")
+        self.targets = [self.checkout / name for name in ("deploy", "game-audio", "src", "assets", "deploy/bouncer", "game-audio/scripts", "src/nested")]
+        for path in self.targets:
+            path.chmod(0o775)
+        # These excluded directories are deliberately writable; never scan or fix them.
+        for path in (self.library, self.checkout / "untracked", self.checkout / ".git"):
+            path.chmod(0o775)
+        self.file_patch = patch.object(setup, "__file__", str(self.checkout / setup.REVIEWED[0]))
+        self.file_patch.start()
+        self.addCleanup(self.file_patch.stop)
+        self.output = io.StringIO()
+        self.stdout = contextlib.redirect_stdout(self.output)
+        self.stdout.__enter__()
+        self.addCleanup(self.stdout.__exit__, None, None, None)
+
+    def run_git(self, *args):
+        return subprocess.run(["git", "-C", str(self.checkout), *args], check=True,
+                              capture_output=True, text=True).stdout
+
+    def snapshot(self):
+        return {str(path.relative_to(self.home)): (path.lstat().st_mode, path.lstat().st_uid,
+                path.lstat().st_gid, path.read_bytes() if path.is_file() and not path.is_symlink() else None)
+                for path in self.home.rglob("*")}
+
+    def test_read_only_plan_lists_all_targets_and_missing_gid_without_docker(self):
+        before = self.snapshot()
+        with patch.object(setup.os, "urandom", side_effect=AssertionError("key generation")), \
+                patch.object(self.fixture, "docker", side_effect=AssertionError("Docker called")), \
+                patch.object(setup, "AudioSetup", return_value=self.fixture), \
+                patch.object(setup.os, "getgroups", return_value=[]), \
+                patch.object(setup.os, "getegid", return_value=1000):
+            self.assertEqual(setup.main(["--directory", str(self.directory), "--prepare-permissions"]), 0)
+        self.assertEqual(self.snapshot(), before)
+        text = self.output.getvalue()
+        for path in self.targets:
+            self.assertIn(repr(str(path)) + ": 0775 -> 0755", text)
+        self.assertIn("GID 10001: MISSING", text)
+        self.assertIn("Runtime files:", text)
+        self.assertIn("Key/media:", text)
+        self.assertFalse((self.directory / setup.LOCK).exists())
+
+    def test_apply_exact_finite_directories_preserves_files_groups_and_is_idempotent(self):
+        before = self.snapshot()
+        plan = self.fixture.permission_plan()
+        self.assertEqual({item["path"] for item in plan["changes"]}, {str(path) for path in self.targets})
+        self.fixture.apply_permissions(plan)
+        after = self.snapshot()
+        for name, old in before.items():
+            target = self.home / name
+            expected = ((old[0] & ~0o020), *old[1:]) if target in self.targets else old
+            self.assertEqual(after[name], expected, name)
+        self.assertEqual(self.fixture.permission_plan()["changes"], [])
+        with patch.object(setup, "AudioSetup", return_value=self.fixture), patch.object(setup, "confirm") as confirm:
+            self.assertEqual(setup.main(["--directory", str(self.directory), "--prepare-permissions", "--apply"]), 0)
+            confirm.assert_not_called()
+        self.assertFalse((self.directory / setup.LOCK).exists())
+
+    def test_directory_setgid_is_preserved_for_existing_member(self):
+        target = self.targets[0]
+        target.chmod(0o2775)
+        self.fixture.apply_permissions(self.fixture.permission_plan())
+        self.assertEqual(stat.S_IMODE(target.stat().st_mode), 0o2755)
+
+    def test_setgid_foreign_group_is_rejected_before_mutation(self):
+        target = self.targets[0]
+        target.chmod(0o2775)
+        original = os.fstat
+        inode = target.stat().st_ino
+        def foreign_group(descriptor):
+            info = original(descriptor)
+            if info.st_ino == inode:
+                fields = list(info)
+                fields[5] = 54321
+                return os.stat_result(fields)
+            return info
+        with patch.object(setup.os, "fstat", foreign_group), self.assertRaisesRegex(setup.Error, "Cannot preserve setgid"):
+            self.fixture.permission_plan()
+        self.assertEqual(stat.S_IMODE(target.stat().st_mode), 0o2775)
+
+    def test_world_write_foreign_owner_and_symlink_targets_stop_whole_plan(self):
+        target = self.targets[-1]
+        for mode in (0o777, 0o757):
+            target.chmod(mode)
+            with self.assertRaisesRegex(setup.Error, "not world writable"):
+                self.fixture.permission_plan()
+            self.assertEqual(stat.S_IMODE(self.targets[0].stat().st_mode), 0o775)
+        target.chmod(0o775)
+        original = os.fstat
+        inode = target.stat().st_ino
+        def foreign_owner(descriptor):
+            info = original(descriptor)
+            if info.st_ino == inode:
+                fields = list(info)
+                fields[4] += 1
+                return os.stat_result(fields)
+            return info
+        with patch.object(setup.os, "fstat", foreign_owner), self.assertRaisesRegex(setup.Error, "deployment-user-owned"):
+            self.fixture.permission_plan()
+        target.rename(target.with_name("moved"))
+        target.symlink_to(target.with_name("moved"), target_is_directory=True)
+        with self.assertRaises(OSError):
+            self.fixture.permission_plan()
+
+    def test_unknown_bytes_staged_edits_and_unsafe_tracked_entries_are_rejected(self):
+        source = self.checkout / "src/nested/file.js"
+        source.write_text("unknown edit")
+        with self.assertRaisesRegex(setup.Error, "differ from HEAD"):
+            self.fixture.permission_plan()
+        self.run_git("add", "--", "src/nested/file.js")
+        with self.assertRaisesRegex(setup.Error, "staged edits"):
+            self.fixture.permission_plan()
+        for name in ("../outside", "/outside", "x//y", "x/./y", ".git/index", "assets/music/private.wav", "x\\y", "x\nname"):
+            with self.subTest(name=name), self.assertRaises(setup.Error):
+                setup.tracked_name(name)
+
+    def test_file_symlink_and_hardlink_refused_without_chmod(self):
+        source = self.checkout / "src/nested/file.js"
+        sibling = source.with_name("untracked-copy")
+        sibling.write_bytes(source.read_bytes())
+        source.unlink()
+        source.symlink_to(sibling)
+        with self.assertRaises(OSError):
+            self.fixture.permission_plan()
+        source.unlink()
+        os.link(sibling, source)
+        with self.assertRaisesRegex(setup.Error, "singly linked non-symlink"):
+            self.fixture.permission_plan()
+
+    def test_git_metadata_modes_are_trusted_but_symlinks_and_alternates_are_refused(self):
+        config = self.checkout / ".git/config"
+        config.chmod(0o664)
+        self.fixture.permission_plan()
+        real = config.with_name("saved-config")
+        config.rename(real)
+        config.symlink_to(real)
+        with self.assertRaisesRegex(setup.Error, "Git metadata"):
+            self.fixture.permission_plan()
+        config.unlink()
+        real.rename(config)
+        (self.checkout / ".git/objects/info/alternates").write_text("/synthetic/unsupported")
+        with self.assertRaisesRegex(setup.Error, "alternate"):
+            self.fixture.permission_plan()
+
+    def test_apply_requires_confirmation_and_uses_existing_lock(self):
+        with patch.object(setup, "AudioSetup", return_value=self.fixture), \
+                patch.object(setup, "confirm") as confirm, patch.object(setup.fcntl, "flock", side_effect=BlockingIOError):
+            self.assertEqual(setup.main(["--directory", str(self.directory), "--prepare-permissions", "--apply"]), 1)
+        confirm.assert_called_once_with("PREPARE PERMISSIONS " + self.run_git("rev-parse", "HEAD").strip()[:12], permissions=True)
+        self.assertTrue(all(stat.S_IMODE(path.stat().st_mode) == 0o775 for path in self.targets))
+
+    def test_confirmation_changes_invalidate_entire_plan_before_chmod(self):
+        def changed(*args, **kwargs):
+            self.targets[-1].chmod(0o770)
+        with patch.object(setup, "AudioSetup", return_value=self.fixture), patch.object(setup, "confirm", side_effect=changed):
+            self.assertEqual(setup.main(["--directory", str(self.directory), "--prepare-permissions", "--apply"]), 1)
+        self.assertEqual(stat.S_IMODE(self.targets[0].stat().st_mode), 0o775)
+
+    def test_every_path_is_rechecked_before_first_chmod_and_files_never_changed(self):
+        plan = self.fixture.permission_plan()
+        self.targets[-1].chmod(0o770)
+        with patch.object(setup.os, "fchmod") as chmod, self.assertRaisesRegex(setup.Error, "changed after planning"):
+            self.fixture.apply_permissions(plan)
+        chmod.assert_not_called()
+        self.targets[-1].chmod(0o775)
+        plan = self.fixture.permission_plan()
+        (self.checkout / "src/nested/file.js").write_text("concurrent edit")
+        with patch.object(setup.os, "fchmod") as chmod, self.assertRaisesRegex(setup.Error, "tracked file changed"):
+            self.fixture.apply_permissions(plan)
+        chmod.assert_not_called()
+
+    def test_partial_failure_reports_changed_paths_and_safe_retry(self):
+        plan = self.fixture.permission_plan()
+        real_chmod = os.fchmod
+        changed = []
+        def fail_second(descriptor, mode):
+            if changed:
+                raise OSError("synthetic failure")
+            changed.append(descriptor)
+            return real_chmod(descriptor, mode)
+        error = io.StringIO()
+        with patch.object(setup.os, "fchmod", side_effect=fail_second), contextlib.redirect_stderr(error), self.assertRaises(OSError):
+            self.fixture.apply_permissions(plan)
+        self.assertIn(repr(plan["changes"][0]["path"]), error.getvalue())
+        retry = self.fixture.permission_plan()
+        self.assertEqual(len(retry["changes"]), len(plan["changes"]) - 1)
+        self.fixture.apply_permissions(retry)
+        self.assertFalse(self.fixture.permission_plan()["changes"])
+
+    def test_planning_fifo_swap_is_nonblocking_and_rejected_before_hashing(self):
+        source = self.checkout / "src/nested/file.js"
+        original = os.open
+        def fifo_swap(path, flags, *args, **kwargs):
+            if path == "file.js":
+                self.assertTrue(flags & os.O_NONBLOCK)
+                self.assertIsNotNone(kwargs.get("dir_fd"))
+                source.unlink()
+                os.mkfifo(source)
+            return original(path, flags, *args, **kwargs)
+        with patch.object(setup.os, "open", side_effect=fifo_swap), self.assertRaisesRegex(setup.Error, "ordinary"):
+            self.fixture.permission_plan()
+        self.assertEqual(stat.S_IMODE(self.targets[0].stat().st_mode), 0o775)
+
+    def test_planning_ancestor_swap_is_detected_without_following_symlink(self):
+        source = self.checkout / "src"
+        moved = self.home / "moved-src"
+        original = os.open
+        def ancestor_swap(path, flags, *args, **kwargs):
+            if path == "nested":
+                source.rename(moved)
+                source.symlink_to(moved, target_is_directory=True)
+            return original(path, flags, *args, **kwargs)
+        with patch.object(setup.os, "open", side_effect=ancestor_swap), self.assertRaisesRegex(setup.Error, "changed after planning"):
+            self.fixture.permission_plan()
+        self.assertEqual(stat.S_IMODE(moved.stat().st_mode), 0o775)
+
+    def test_revision_is_pinned_and_rechecked_at_end_of_snapshot(self):
+        original = self.fixture.git
+        heads = []
+        commands = []
+        def change_revision(*args):
+            commands.append(args)
+            if args == ("rev-parse", "HEAD"):
+                heads.append(True)
+                if len(heads) > 1:
+                    return "f" * 40 + "\n"
+            return original(*args)
+        with patch.object(self.fixture, "git", side_effect=change_revision), self.assertRaisesRegex(setup.Error, "revision/index changed"):
+            self.fixture.permission_plan()
+        tree_command = next(command for command in commands if command[0] == "ls-tree")
+        self.assertNotEqual(tree_command[-1], "HEAD")
+        self.assertEqual(len(tree_command[-1]), 40)
+
+    def test_apply_detects_rename_after_first_change_without_chmodding_moved_target(self):
+        plan = self.fixture.permission_plan()
+        source = self.checkout / "src/nested"
+        moved = self.home / "moved-nested"
+        original = os.fchmod
+        calls = []
+        def mutate_after_first(descriptor, mode):
+            original(descriptor, mode)
+            calls.append(descriptor)
+            source.rename(moved)
+            source.symlink_to(moved, target_is_directory=True)
+        with patch.object(setup.os, "fchmod", side_effect=mutate_after_first), self.assertRaisesRegex(setup.Error, "changed after planning"):
+            self.fixture.apply_permissions(plan)
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(stat.S_IMODE(moved.stat().st_mode), 0o775)
+
+    def test_keyboard_interrupt_after_chmod_reports_partial_progress_and_closes_fds(self):
+        plan = self.fixture.permission_plan()
+        original = os.fchmod
+        used = []
+        def interrupt_after_change(descriptor, mode):
+            original(descriptor, mode)
+            used.append(descriptor)
+            raise KeyboardInterrupt()
+        error = io.StringIO()
+        with patch.object(setup.os, "fchmod", side_effect=interrupt_after_change), contextlib.redirect_stderr(error), self.assertRaises(KeyboardInterrupt):
+            self.fixture.apply_permissions(plan)
+        self.assertIn(repr(plan["changes"][0]["path"]), error.getvalue())
+        with self.assertRaises(OSError):
+            os.fstat(used[0])
+        self.assertEqual(len(self.fixture.permission_plan()["changes"]), len(plan["changes"]) - 1)
+
+    def test_unsafe_critical_source_modes_are_reported_without_changing_files(self):
+        source = self.checkout / setup.REVIEWED[0]
+        source.chmod(0o664)
+        plan = self.fixture.permission_plan()
+        self.fixture.show_permission_plan(plan)
+        text = self.output.getvalue()
+        self.assertIn("Source-file access review: " + repr(str(source)), text)
+        self.assertIn("mode=0664", text)
+        self.fixture.apply_permissions(plan)
+        self.assertEqual(stat.S_IMODE(source.stat().st_mode), 0o664)
+
+    def test_pending_audio_transaction_blocks_preparation_before_changes(self):
+        (self.directory / setup.JOURNAL).write_text('{"pending":true}')
+        with self.assertRaisesRegex(setup.Error, "Interrupted audio setup"):
+            self.fixture.permission_plan()
+        self.assertEqual(stat.S_IMODE(self.targets[0].stat().st_mode), 0o775)
+
+    def test_modes_cannot_be_combined_and_key_argument_is_rejected(self):
+        for extra in (("--recover",), ("--key-file", "/synthetic/key")):
+            with self.subTest(extra=extra), self.assertRaises(SystemExit):
+                setup.main(["--prepare-permissions", *extra])
+
+
+class SafePathTests(unittest.TestCase):
+    @contextlib.contextmanager
+    def synthetic_ancestry(self, path, overrides):
+        """Model metadata only; never read content or change host permissions."""
+        def synthetic_stat(component, *args, **kwargs):
+            self.assertIn(component, (path, *path.parents))
+            uid, mode = overrides.get(component, (0, 0o755))
+            kind = stat.S_IFREG if component == path else stat.S_IFDIR
+            return os.stat_result((kind | mode, 0, 0, 1, uid, 1000, 0, 0, 0, 0))
+        with patch.object(Path, "stat", synthetic_stat), \
+                patch.object(setup.os, "geteuid", return_value=1000), \
+                patch.object(Path, "open", side_effect=AssertionError("path content accessed")), \
+                patch.object(setup.os, "chmod", side_effect=AssertionError("permissions changed")), \
+                patch.object(setup.os, "chown", side_effect=AssertionError("ownership changed")):
+            yield
+
+    def test_owner_mismatch_names_exact_escaped_ancestor_and_expected_owner(self):
+        path = Path("/synthetic/home\n\t\x1b/deployment/key")
+        ancestor = path.parent.parent
+        for mode in (0o755, 0o1755):
+            with self.subTest(mode=mode), self.synthetic_ancestry(path, {ancestor: (2000, mode)}), \
+                    self.assertRaises(setup.Error) as raised:
+                setup.safe_path(path, exists=True)
+            message = str(raised.exception)
+            self.assertIn(f"Offending ancestor: {str(ancestor)!r};", message)
+            self.assertIn("owner UID=2000;", message)
+            self.assertIn(f"mode={mode:04o};", message)
+            self.assertIn("expected owner UID=0 (root) or 1000 (deployment user)", message)
+            self.assertFalse(any(character in message for character in "\n\t\x1b"))
+            self.assertNotIn(repr(str(path)), message)
+
+    def test_group_or_world_write_names_exact_component_even_with_allowed_owner(self):
+        path = Path("/synthetic/home/deployment/key")
+        for ancestor in (path.parent.parent, path.parent):
+            for uid in (0, 1000):
+                for mode in (0o775, 0o757, 0o777, 0o2775):
+                    with self.subTest(ancestor=ancestor, uid=uid, mode=mode), \
+                            self.synthetic_ancestry(path, {ancestor: (uid, mode)}), \
+                            self.assertRaises(setup.Error) as raised:
+                        setup.safe_path(path, exists=True)
+                    message = str(raised.exception)
+                    self.assertIn(f"Offending ancestor: {str(ancestor)!r};", message)
+                    self.assertIn(f"owner UID={uid}; mode={mode:04o};", message)
+                    self.assertIn("not group/world writable", message)
+
+    def test_root_owned_sticky_directory_exception_is_preserved(self):
+        path = Path("/synthetic/home/deployment/key")
+        ancestor = path.parent.parent
+        with self.synthetic_ancestry(path, {ancestor: (0, 0o1777)}):
+            self.assertEqual(setup.safe_path(path, exists=True), path)
+        for uid in (1000, 2000):
+            with self.subTest(uid=uid), self.synthetic_ancestry(path, {ancestor: (uid, 0o1777)}), \
+                    self.assertRaises(setup.Error):
+                setup.safe_path(path, exists=True)
 
 
 class PureHelperTests(unittest.TestCase):

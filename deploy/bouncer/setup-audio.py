@@ -3,7 +3,9 @@
 
 Uses existing Python 3.9+, Git and Docker with Compose; no host Node or FFmpeg.
 No installation, Git pull, scheduler editing, privilege escalation or source-file
-permission changes. Run only from an operator-reviewed, clean checkout.
+permission changes. Normal preview is read-only; --prepare-permissions can
+remove group-write from reviewed tracked-checkout directories only. Run only from an
+operator-reviewed, clean checkout; this is not hostile-local-user isolation.
 """
 import argparse
 import copy
@@ -58,7 +60,11 @@ def safe_path(path, *, exists=False, directory=False):
             info = component.stat()
             sticky_root = info.st_uid == 0 and info.st_mode & stat.S_ISVTX
             if info.st_uid not in (0, os.geteuid()) or (info.st_mode & 0o022 and not sticky_root):
-                raise Error("Deployment/key/media ancestry must be root- or deployment-user-owned and not group/world writable.")
+                raise Error(
+                    "Deployment/key/media ancestry must be root- or deployment-user-owned and not group/world writable. "
+                    f"Offending ancestor: {str(component)!r}; owner UID={info.st_uid}; "
+                    f"mode={stat.S_IMODE(info.st_mode):04o}; "
+                    f"expected owner UID=0 (root) or {os.geteuid()} (deployment user).")
     if exists and not path.exists():
         raise Error("A required deployment path is missing.")
     if path.exists() and (not path.is_dir() if directory else not path.is_file()):
@@ -194,6 +200,21 @@ def merge_compose(installed, canonical):
     return result.replace("\n", newline)
 
 
+def fingerprint(info):
+    """Identity and metadata for detecting operator edits or replacement races."""
+    return (info.st_dev, info.st_ino, info.st_mode, info.st_uid, info.st_gid,
+            info.st_nlink, info.st_size, info.st_mtime_ns, info.st_ctime_ns)
+
+
+def tracked_name(filename):
+    parts = filename.split("/")
+    if (not filename or any(part in ("", ".", "..") or part.casefold() == ".git" for part in parts)
+            or "\\" in filename or any(ord(char) < 32 or ord(char) == 127 for char in filename)
+            or parts[:2] == ["assets", "music"]):
+        raise Error("Unsafe tracked path or tracked private music; review the checkout before setup.")
+    return filename
+
+
 def metadata(path):
     info = path.stat()
     return {"mode": stat.S_IMODE(info.st_mode), "uid": info.st_uid, "gid": info.st_gid}
@@ -252,53 +273,217 @@ class AudioSetup(update.Updater):
         return result.stdout
 
     def git(self, *args):
-        return self.command(["git", "--no-optional-locks", "-c", "core.fsmonitor=false", "-C", str(self.checkout), *args],
+        return self.command(["git", "--no-optional-locks", "--no-replace-objects", "-c", "core.fsmonitor=false", "-C", str(self.checkout), *args],
                             environment={"PATH": TOOL_PATH, "LANG": "C", "LC_ALL": "C"})
 
-    def reviewed_checkout(self):
+    def reviewed_checkout(self, preparation=None):
         safe_path(self.checkout, exists=True, directory=True)
         if self.git("rev-parse", "--show-toplevel").strip() != str(self.checkout):
             raise Error("The reviewed checkout must be the existing bouncer/gyaruinthemix repository.")
         revision = self.git("rev-parse", "HEAD").strip()
         if not re.fullmatch(r"[0-9a-f]{40}", revision):
             raise Error("Cannot identify the reviewed checkout revision.")
-        # Do not use status/diff: configured clean/process filters can execute
-        # arbitrary local helpers even during a nominally read-only inspection.
+        # Raw objects/index only: status/diff can execute configured clean filters.
         tracked = {}
-        for item in self.git("ls-tree", "-r", "-z", "--full-tree", "HEAD").split("\0"):
+        for item in self.git("ls-tree", "-r", "-z", "--full-tree", revision).split("\0"):
             if not item:
                 continue
             header, filename = item.split("\t", 1)
             mode, kind, blob = header.split()
             if mode not in ("100644", "100755") or kind != "blob":
                 raise Error("This setup supports ordinary tracked files only, not symlinks or submodules.")
+            tracked_name(filename)
+            if filename in tracked or not re.fullmatch(r"[0-9a-f]{40}", blob):
+                raise Error("Duplicate or unsupported tracked Git entry; review the checkout.")
             tracked[filename] = (mode, blob)
         index = {}
-        for item in self.git("ls-files", "--stage", "-z").split("\0"):
+        raw_index = self.git("ls-files", "--stage", "-z")
+        for item in raw_index.split("\0"):
             if not item:
                 continue
             header, filename = item.split("\t", 1)
             mode, blob, stage = header.split()
             if stage != "0" or filename in index:
                 raise Error("Resolve the checkout index before setup.")
+            tracked_name(filename)
             index[filename] = (mode, blob)
         if index != tracked or not set(REVIEWED).issubset(tracked):
             raise Error("The reviewed checkout has staged edits or missing setup files; commit/review them first.")
-        for filename, (mode, expected) in tracked.items():
-            path = safe_path(self.checkout / filename, exists=True)
-            size = path.stat().st_size
-            checksum = hashlib.sha1(b"blob " + str(size).encode() + b"\0")
-            with path.open("rb") as content:
-                for chunk in iter(lambda: content.read(1024 * 1024), b""):
-                    checksum.update(chunk)
-            if checksum.hexdigest() != expected or bool(path.stat().st_mode & 0o111) != (mode == "100755"):
-                raise Error("Tracked checkout bytes/modes differ from HEAD (including filters/line-ending conversions); review them before setup.")
+        descriptors = {}
+        try:
+            if preparation is not None:
+                directories = {self.checkout}
+                for filename in tracked:
+                    directories.update(parent for parent in (self.checkout / filename).parents
+                                       if parent == self.checkout or self.checkout in parent.parents)
+                preparation["directories"] = {}
+                for path in sorted(directories, key=lambda item: (len(item.parts), str(item))):
+                    descriptor = os.open(path if path == self.checkout else path.name,
+                                         os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
+                                         **({} if path == self.checkout else {"dir_fd": descriptors[str(path.parent)]}))
+                    descriptors[str(path)] = descriptor
+                    info = os.fstat(descriptor)
+                    mode = stat.S_IMODE(info.st_mode)
+                    if info.st_uid != os.geteuid() or mode & 0o002:
+                        raise Error(f"Tracked directory must already be deployment-user-owned and not world writable: {str(path)!r}; owner UID={info.st_uid}; mode={mode:04o}.")
+                    if path == self.checkout and mode & 0o020:
+                        raise Error(f"Provision safe checkout-root permissions separately: {str(path)!r}; mode={mode:04o}. No ancestors or checkout root are changed.")
+                    if mode & 0o020 and mode & stat.S_ISGID and info.st_gid not in (os.getegid(), *os.getgroups()):
+                        raise Error(f"Cannot preserve setgid on {str(path)!r} without membership in its existing group {info.st_gid}; ask the operator to provision it.")
+                    preparation["directories"][str(path)] = fingerprint(info)
+                preparation["files"] = {}
+            for filename, (mode, expected) in tracked.items():
+                path = self.checkout / filename
+                if preparation is None:
+                    path = safe_path(path, exists=True)
+                parent = descriptors.get(str(path.parent))
+                descriptor = os.open(path if parent is None else path.name,
+                                     os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK,
+                                     **({} if parent is None else {"dir_fd": parent}))
+                with os.fdopen(descriptor, "rb") as content:
+                    info = os.fstat(content.fileno())
+                    if not stat.S_ISREG(info.st_mode) or (preparation is not None and info.st_nlink != 1):
+                        raise Error("Tracked files must be ordinary, singly linked non-symlink files before permission preparation.")
+                    before = fingerprint(info)
+                    checksum = hashlib.sha1(b"blob " + str(info.st_size).encode() + b"\0")
+                    for chunk in iter(lambda: content.read(1024 * 1024), b""):
+                        checksum.update(chunk)
+                    named = (path.lstat() if parent is None else
+                             os.stat(path.name, dir_fd=parent, follow_symlinks=False))
+                    if fingerprint(os.fstat(content.fileno())) != before or fingerprint(named) != before:
+                        raise Error("Tracked file changed during permission planning; review a fresh plan.")
+                    if checksum.hexdigest() != expected or bool(info.st_mode & 0o111) != (mode == "100755"):
+                        raise Error("Tracked checkout bytes/modes differ from HEAD (including filters/line-ending conversions); review them before setup.")
+                    if preparation is not None:
+                        preparation["files"][filename] = before
+            if preparation is not None:
+                self.verify_permission_snapshot(preparation, descriptors)
+            if (self.git("rev-parse", "HEAD").strip() != revision or
+                    self.git("ls-files", "--stage", "-z") != raw_index):
+                raise Error("Checkout revision/index changed during inspection; review a fresh plan.")
+        finally:
+            for descriptor in descriptors.values():
+                os.close(descriptor)
         if Path(__file__).absolute() != self.checkout / "deploy/bouncer/setup-audio.py":
             raise Error("Run the setup command from this deployment's reviewed checkout, not a copied script.")
         if self.git("ls-files", "--", "assets/music").strip():
             raise Error("Private music must not be tracked in Git.")
         self.git("check-ignore", "--no-index", "assets/music/.setup-ignore-check")
         return revision
+
+    def verify_permission_snapshot(self, plan, descriptors):
+        for name, before in plan["directories"].items():
+            path = Path(name)
+            named = (path.lstat() if path == self.checkout else
+                     os.stat(path.name, dir_fd=descriptors[str(path.parent)], follow_symlinks=False))
+            if fingerprint(named) != before or fingerprint(os.fstat(descriptors[name])) != before:
+                raise Error("A tracked directory changed after planning; review a fresh permission plan.")
+        for filename, before in plan["files"].items():
+            path = self.checkout / filename
+            info = os.stat(path.name, dir_fd=descriptors[str(path.parent)], follow_symlinks=False)
+            if fingerprint(info) != before:
+                raise Error("A tracked file changed after planning; no unreviewed changes are accepted.")
+
+    def permission_plan(self):
+        """Finite tracked-checkout ancestry only; never scan untracked/media/Git trees."""
+        if sys.version_info < (3, 9) or sys.platform != "linux":
+            raise Error("Use existing Python 3.9+ on Linux; nothing is installed automatically.")
+        self.validate_packaging_user()
+        if not shutil.which("git", path=TOOL_PATH):
+            raise Error("Existing git is required; nothing is installed automatically.")
+        # Require safe host/checkout ancestry, but do not broaden what may be chmodded.
+        safe_path(self.checkout / ".git", exists=True, directory=True)
+        update.guard_pending(self.directory, "permission-preparation")
+        gitdir = self.checkout / ".git"
+        # Git metadata remains operator-trusted (including its existing modes).
+        # Refuse redirections, linked worktrees, alternate object stores and symlinks.
+        for relative, directory in (("", True), ("HEAD", False), ("config", False),
+                                    ("index", False), ("objects", True), ("refs", True)):
+            path = gitdir / relative
+            info = path.lstat()
+            if not (stat.S_ISDIR(info.st_mode) if directory else stat.S_ISREG(info.st_mode)) or (not directory and info.st_nlink != 1):
+                raise Error(f"Permission preparation requires ordinary local Git metadata, not symlinks or redirects: {str(path)!r}.")
+        for relative in ("commondir", "gitdir", "objects/info/alternates", "info/grafts", "refs/replace"):
+            path = gitdir / relative
+            for ancestor in (path, *path.parents):
+                if ancestor == gitdir:
+                    break
+                if ancestor.is_symlink():
+                    raise Error("Symlinked Git metadata is unsupported for permission preparation.")
+            if path.exists():
+                raise Error("Linked/alternate/replaced Git storage is unsupported for permission preparation; review locally.")
+        if Path(self.git("rev-parse", "--absolute-git-dir").strip()) != gitdir:
+            raise Error("Permission preparation requires the checkout's ordinary local .git directory.")
+        plan = {}
+        plan["revision"] = self.reviewed_checkout(preparation=plan)
+        plan["changes"] = [{"path": path, "before": stat.S_IMODE(info[2]),
+                            "after": stat.S_IMODE(info[2]) & ~0o020,
+                            "uid": info[3], "gid": info[4]}
+                           for path, info in plan["directories"].items() if info[2] & 0o020]
+        plan["group_access"] = GROUP in (os.getegid(), *os.getgroups())
+        return plan
+
+    def show_permission_plan(self, plan):
+        print(f"Read-only tracked-directory permission plan for checkout: {str(self.checkout)!r}")
+        print(f"Reviewed revision: {plan['revision']}")
+        print("All proposed directory changes (remove group-write only; keep owner/group and every other mode bit):")
+        for change in plan["changes"]:
+            print(f"  {change['path']!r}: {change['before']:04o} -> {change['after']:04o}; UID={change['uid']}; GID={change['gid']}")
+        if not plan["changes"]:
+            print("  None. Tracked checkout directory permissions already satisfy this preparation step.")
+        print("No recursion, file chmod, ownership/group changes, keys, installs, pulls or deployment. The private assets/music subtree, .git, untracked/unrelated directories and host ancestors are excluded. Tracked site-image directory ancestors may be listed; no asset/media file is changed.")
+        print("Remaining audio prerequisites (not provisioned or fully checked by this directory-only plan):")
+        print("  Host: safe root/home/deployment/checkout ancestry and private backup home outside Git; existing Python 3.9+, Git, local rootful amd64 Docker/Compose and sufficient resources.")
+        for filename in REVIEWED[:3]:  # Host setup/updater/Compose, not the image-only packager.
+            info = plan["files"][filename]
+            if info[2] & 0o022 or info[3] != os.geteuid():
+                print(f"  Source-file access review: {str(self.checkout / filename)!r}; owner UID={info[3]}; mode={stat.S_IMODE(info[2]):04o}. Operator trust review only, not an enforced leaf-mode blocker; file permissions are NOT changed.")
+        print("  Runtime files: installed .env/Compose and existing updater state/catalog must already have safe owner, group and non-group/world-writable modes; no runtime file permissions are changed.")
+        print("  Key/media: dedicated private key directory outside Git (0750), valid private key (typically 0640), library (0750) and generated .hls (2750), with group 10001 access; originals stay private.")
+        print("  GID 10001: " + ("current account has membership; normal setup still validates actual access." if plan["group_access"] else "MISSING from current account. An operator must provision group/access prerequisites before audio setup can create a key or adjust dedicated directory groups; this command never changes accounts."))
+        print("The running entrypoint and Git metadata must already be operator-reviewed/trusted; this preparation is not hostile-local-user isolation.")
+        print("Run normal setup preview afterward for the full host/runtime/key/media checks. No permissions have changed in this plan.")
+
+    def apply_permissions(self, plan):
+        """Use anchored no-follow descriptors; preserve bytes, owner/group and file modes."""
+        descriptors = {}
+        expected = dict(plan["directories"])
+        changed = []
+        attempted = []
+        def verify():
+            self.verify_permission_snapshot({**plan, "directories": expected}, descriptors)
+        try:
+            for name in expected:
+                path = Path(name)
+                descriptor = os.open(path if path == self.checkout else path.name,
+                                     os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
+                                     **({} if path == self.checkout else {"dir_fd": descriptors[str(path.parent)]}))
+                descriptors[name] = descriptor
+            verify()  # Validate every path before changing even the first one.
+            for change in plan["changes"]:  # Shallowest first: secure parents before children.
+                verify()
+                descriptor = descriptors[change["path"]]
+                attempted.append(change["path"])
+                os.fchmod(descriptor, change["after"])
+                changed.append(change["path"])
+                info = os.fstat(descriptor)
+                if (info.st_uid, info.st_gid, stat.S_IMODE(info.st_mode)) != (change["uid"], change["gid"], change["after"]):
+                    raise Error("Could not preserve the approved directory owner/group/mode; inspect it locally.")
+                expected[change["path"]] = fingerprint(info)
+                os.fsync(descriptor)
+            verify()
+        except BaseException:
+            # A signal may arrive between fchmod and bookkeeping. Inspect held FDs
+            # so the partial-progress report includes every observed mode change.
+            changed = [item["path"] for item in plan["changes"]
+                       if item["path"] in attempted and item["path"] in descriptors and
+                       stat.S_IMODE(os.fstat(descriptors[item["path"]]).st_mode) != item["before"]]
+            print("Permission preparation stopped. Already changed directories: " + (", ".join(repr(path) for path in changed) or "none") + ". Safe completed changes are retained; inspect and rerun the read-only plan.", file=sys.stderr)
+            raise
+        finally:
+            for descriptor in descriptors.values():
+                os.close(descriptor)
+        print(f"Prepared {len(changed)} tracked checkout directories only. File bytes/modes and owner/group are unchanged. Run normal setup preview next; audio is not enabled.")
 
     def dependencies(self):
         if sys.version_info < (3, 9) or sys.platform != "linux":
@@ -784,10 +969,13 @@ class AudioSetup(update.Updater):
         print("Verify /game-test/ playback and existing checkout over HTTPS. Keep private backups until verified.")
 
 
-def confirm(token):
+def confirm(token, *, permissions=False):
     if not sys.stdin.isatty() or not sys.stdout.isatty():
         raise Error("Apply/recovery requires an interactive terminal and explicit confirmation; there is no --yes mode.")
-    print("This changes private key/access settings, installed configuration and selected running containers; website/audio may briefly restart.")
+    if permissions:
+        print("This removes group-write ONLY from the exact displayed tracked checkout directories, preserving owner/group and all other mode bits. It does not enable audio or change file permissions.")
+    else:
+        print("This changes private key/access settings, installed configuration and selected running containers; website/audio may briefly restart.")
     print("Only continue after reviewing this checkout and the displayed plan.")
     print("Only the normal reviewed deploy/bouncer/update.py schedule is coordinated automatically.")
     print("Pause any older copied updater, custom cron/systemd deployment or plain Docker operation separately before continuing.")
@@ -802,14 +990,24 @@ def main(argv=None):
     parser.add_argument("--key-file", help="absolute key path in a dedicated directory outside the checkout; never the key itself")
     parser.add_argument("--apply", action="store_true", help="interactively approve and apply the plan")
     parser.add_argument("--dry-run", action="store_true", help="explicit read-only plan (the default)")
-    parser.add_argument("--recover", action="store_true", help="plan recovery of this setup's interrupted transaction")
+    modes = parser.add_mutually_exclusive_group()
+    modes.add_argument("--recover", action="store_true", help="plan recovery of this setup's interrupted transaction")
+    modes.add_argument("--prepare-permissions", action="store_true", help="plan narrowly scoped tracked-directory group-write removal; use --apply for interactive confirmation")
     args = parser.parse_args(argv)
     if args.apply and args.dry_run:
         parser.error("--apply and --dry-run are mutually exclusive")
+    if args.prepare_permissions and args.key_file:
+        parser.error("--key-file does not apply to tracked-directory permission preparation")
     os.umask(0o077)
     try:
         setup = AudioSetup(args.directory, args.key_file)
-        if args.recover:
+        if args.prepare_permissions:
+            plan = setup.permission_plan()
+            setup.show_permission_plan(plan)
+            if not plan["changes"]:
+                return 0
+            token = "PREPARE PERMISSIONS " + plan["revision"][:12]
+        elif args.recover:
             state = setup.read_journal()
             if not state["pending"]:
                 print("No audio setup recovery is pending.")
@@ -825,7 +1023,10 @@ def main(argv=None):
             token = "ENABLE AUDIO " + plan["revision"][:12]
         if not args.apply:
             return 0
-        confirm(token)
+        if args.prepare_permissions:
+            confirm(token, permissions=True)
+        else:
+            confirm(token)
         lock_path = safe_path(setup.directory / LOCK)
         descriptor = os.open(lock_path, os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600)
         with os.fdopen(descriptor, "a") as lock:
@@ -836,7 +1037,12 @@ def main(argv=None):
             except BlockingIOError:
                 raise Error("Another bouncer update is running; rerun after it finishes. No setup changes made.") from None
             update.guard_pending(setup.directory, "game-audio-setup")
-            if args.recover:
+            if args.prepare_permissions:
+                current = setup.permission_plan()
+                if current != plan:
+                    raise Error("The permission plan changed while awaiting confirmation; review and confirm a fresh plan.")
+                setup.apply_permissions(current)
+            elif args.recover:
                 setup.local_docker()
                 current = setup.read_journal()
                 if not current["pending"] or current != state:

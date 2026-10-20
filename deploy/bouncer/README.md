@@ -219,6 +219,24 @@ python3 "$HOME/bouncer/gyaruinthemix/deploy/bouncer/setup-audio.py" --directory 
 
 It detects the current checkout mode, retains the API profile when present, and reports missing prerequisites or unrecognized managed Compose changes rather than overwriting them. Keep your track at `~/bouncer/gyaruinthemix/assets/music/ギャルインザミックス.mp3`; do not move it to `public/` or commit it. Only Python 3.9+, Git and the existing nonroot deployment account’s local rootful amd64 Docker/Compose access are required on the host. Node, `ffmpeg` and `ffprobe` are bundled in the short-lived packager image; do not install them on the VPS for this setup. Rootless Docker and user-namespace remapping are refused because the private mount uses UID/GID `10001`. Read any resource/access prerequisite in the plan before proceeding. `--directory` identifies the deployment root containing `docker-compose.yml` and `.env`, normally `~/bouncer`; it is not the music directory. The plan separately shows the fixed library at `~/bouncer/gyaruinthemix/assets/music`.
 
+If the normal preview reports group-writable tracked checkout directory ancestors, preview all eligible directory changes together instead of fixing one reported path at a time:
+
+```bash
+python3 "$HOME/bouncer/gyaruinthemix/deploy/bouncer/setup-audio.py" --directory "$HOME/bouncer" --prepare-permissions
+```
+
+This separate mode requires only existing Python and Git, not Docker, Node or FFmpeg. Its default is read-only: it lists each exact directory path, owner/group and old/new mode, then reports the remaining host, runtime-file, key/media and group `10001` prerequisites. Missing group `10001` membership does not prevent this independent preparation, but preparation does not grant it or make audio setup ready. Review the running script and its Git metadata before using it; this is a trusted operator entrypoint, not isolation from a hostile local writer. Unsafe critical host source-file modes are reported for separate operator trust review, not as a new enforced leaf-mode check, and are never automatically changed.
+
+After reviewing the complete directory list, apply only those changes with a distinct interactive `PREPARE PERMISSIONS <revision>` confirmation:
+
+```bash
+python3 "$HOME/bouncer/gyaruinthemix/deploy/bouncer/setup-audio.py" --directory "$HOME/bouncer" --prepare-permissions --apply
+```
+
+Preparation removes only group-write (`0020`, for example `0775` to `0755`) from existing deployment-user-owned directory ancestors of reviewed tracked files strictly inside the checkout. It preserves owner, group and every other permission bit, and never changes any file's bytes or mode. Tracked site-image directory ancestors can be included; the private `assets/music` subtree, `.git`, untracked/unrelated directories, checkout root and host/home/deployment ancestors are excluded. It does not recursively traverse them, create keys, install software, change accounts, pull images or activate containers. Existing world-writable/foreign-owned directories, symlinks, unsupported Git redirects/alternates, staged or unknown tracked edits, and setgid modes the current account cannot preserve require separate operator review. Git metadata's existing modes remain operator-trusted, not a new automatic permission target.
+
+The common updater lock coordinates apply. The complete revision/index/file/directory snapshot is rechecked after confirmation, and no-follow directory descriptors recheck exact identities before shallowest-first mode changes. Observed drift stops the command. If interrupted after some directories changed, their safer modes are retained and reported; rerun the read-only preparation plan rather than weakening them. Successful reruns are no-ops. Do not combine this mode with `--recover` or `--key-file`. Run the normal preview again afterward: dedicated group `10001` access and safe installed runtime files, private key/media paths and Docker prerequisites still need to pass before audio can be enabled.
+
 When the plan matches the intended host, run the same command with `--apply` from an interactive terminal:
 
 ```bash
