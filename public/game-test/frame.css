@@ -445,6 +445,23 @@ html:not(:lang(ja)) .destination-kind { letter-spacing: .02em; }
  .language-picker select { min-height: 30px; font-size: 11px; }
  .language-picker-modal { top: 6px; }
  .modal-card > .eyebrow:first-child { min-height: 24px; }
+ .new-car-picker { display: grid; grid-template-columns: minmax(0,1fr) minmax(240px,1fr); align-content: start; column-gap: 12px; }
+ .new-car-picker > :is(.frame-tabs,.frame-page) { grid-column: 1 / -1; width: 100%; }
+ #car-select-wallet { grid-column: 1; grid-row: 3; align-self: center; }
+ #cars-ready { grid-column: 2; grid-row: 3; }
+ #car-save-warning { grid-column: 1 / -1; grid-row: 4; }
+ #route-content { grid-template-columns: minmax(0,1fr) 310px; }
+ .route-actions #change-starting-car { flex: 1; min-width: 0; }
+ .map-stop, .destination-kind, .destination-option strong { line-height: 1.35; }
+ .destination-kind { font-size: 10px; }
+ .destination-status, .map-stop-label { line-height: 1.25; }
+ .journey-map { padding-block: 3px; }
+ .map-branch-label { height: 4px; }
+ #destination-choices { padding-block: 4px; }
+ .destination-option::before, .destination-option::after { height: 5px; }
+ .map-origin::after { height: 9px; }
+ .map-goal { margin-top: 4px; }
+ .map-goal::before { height: 5px; }
 }
 @media (max-width: 680px) and (max-height: 740px) {
  .style-options button :is(span,small) { line-height: 1.4; }

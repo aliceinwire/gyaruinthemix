@@ -361,12 +361,6 @@ try {
     );
     await page.locator('#change-starting-car').click();
     await page.locator('#cars-ready').click();
-    await checkLanguages(page, '.settings select', [
-      '.map-origin',
-      '#destination-choices',
-      '.map-goal',
-      '#depart',
-    ]);
     const destinations = page.locator('.journey-map button');
     assert.equal(await destinations.count(), 3);
     for (const node of await destinations.all()) {
@@ -379,6 +373,12 @@ try {
       );
       await node.click();
       assert.equal(await node.getAttribute('aria-pressed'), 'true');
+      await checkLanguages(page, '.settings select', [
+        '.map-origin',
+        '#destination-choices',
+        '.map-goal',
+        '#depart',
+      ]);
       await assertFrameFits(page, [
         '.map-origin',
         '#destination-choices',
