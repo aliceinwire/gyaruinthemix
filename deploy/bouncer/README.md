@@ -207,12 +207,46 @@ When returning to Payment Links, first reconcile pending API orders/webhooks and
 
 Use this same bouncer file, project and updater. Do not add a Compose overlay or another deployment script. Music remains off until the operator completes this setup. No step below has been run on your VPS by this source change.
 
+### Guided setup
+
+Use the reviewed setup command for an existing bouncer installation. It uses this same Compose file, project, updater lock and image lifecycle; it is not a second deployment system. First update the existing clean repository checkout through your normal reviewed Git workflow to the merged setup release, and wait for that exact release's image publication to finish. The command does not fetch code, install dependencies, invoke `sudo` or change account/group membership.
+
+Preview the plan without changing deployment files, keys, permissions or containers:
+
+```bash
+python3 "$HOME/bouncer/gyaruinthemix/deploy/bouncer/setup-audio.py" --directory "$HOME/bouncer"
+```
+
+It detects the current checkout mode, retains the API profile when present, and reports missing prerequisites or unrecognized managed Compose changes rather than overwriting them. Keep your track at `~/bouncer/gyaruinthemix/assets/music/ギャルインザミックス.mp3`; do not move it to `public/` or commit it. Python 3.9+, Node 24, `ffmpeg`, `ffprobe` and the existing local rootful amd64 Docker access must already be available. Rootless Docker and user-namespace remapping are refused because the private mount uses UID/GID `10001`. Read any resource/access prerequisite in the plan before proceeding.
+
+When the plan matches the intended host, run the same command with `--apply` from an interactive terminal:
+
+```bash
+python3 "$HOME/bouncer/gyaruinthemix/deploy/bouncer/setup-audio.py" --directory "$HOME/bouncer" --apply
+```
+
+The command asks for explicit confirmation before making the displayed changes. A missing signing key is normal on first setup: it offers to create a random server-only key locally, outside the repository, without displaying its value. An existing valid key is reused, never silently replaced. It preserves an existing configured key path; otherwise the default is `~/.gyaruinthemix-secrets/game_audio_signing_key`. Use `--key-file /absolute/private/path` only for a deliberately chosen alternative. The key and private backups must be outside all Git working trees, including a parent bouncer repository. No key belongs in `.env`, Git, chat or logs. The current account must already be able to provision the narrow group `10001` read access; the command stops with prerequisites instead of escalating privileges or making files public.
+
+Apply preserves unrelated `.env` lines and shared-service Compose blocks, prepares private backups under `~/.bouncer-audio-backup-<transaction>/` and recovery state in the bouncer directory, installs only the recognized audio integration, packages the ignored library through the bounded updater, and starts only the selected web/API/audio services. It requires their published SHA-tag images and source/revision labels to match the clean reviewed checkout, then uses local immutable image IDs. It never builds on the VPS or restarts the proxy, certificate companion, ZNC or Limnoria.
+
+The normal updater schedule remains installed. Its common lock prevents overlap and its pending-setup guard stops a half-finished setup from being treated as a normal update. Any older custom deployment script or scheduler that bypasses this updater must be paused separately before applying. Do not run plain Docker deployment commands concurrently.
+
+If setup reports interrupted work, inspect the message and request its guarded recovery rather than deleting locks, backups or state. Recovery stops for local inspection if it cannot distinguish its own work from later operator changes:
+
+```bash
+python3 "$HOME/bouncer/gyaruinthemix/deploy/bouncer/setup-audio.py" --directory "$HOME/bouncer" --recover --apply
+```
+
+Recovery restores the prior configuration, selected images, updater state and catalog only when recorded fingerprints and container ownership still match. It retains the private key, generated cache, provisioned directory access and private backups for safe retry. A crash before a new catalog fingerprint is recorded can require local inspection; the pending journal keeps the normal updater blocked until recovery is resolved.
+
+After successful setup, check `https://gyaruinthemix.com/game-audio/v1/config` returns `{"enabled":true}`, then open `/game-test/` and try playback. Later tracks placed in `assets/music` are picked up by the existing updater. The manual steps below remain the reference for prerequisites and deliberate operator-managed installation.
+
 ### One-time activation
 
 1. Pause the existing updater schedule and wait for any current run to finish. Install the reviewed `deploy/bouncer/docker-compose.yml` as `~/bouncer/docker-compose.yml`, preserving local shared-service changes and the project name. Install the matching reviewed updater and `game-audio` code in the existing repository checkout; source/config updates are deliberately not automatic. Keep the existing checkout mode and unrelated services unchanged.
 2. Confirm Node **24**, `ffmpeg` and `ffprobe` are available in the deployment user's scheduled PATH. Inspect free disk and memory first. Packaging is serial and cached, pinned to one CPU with lower priority, with a 64 MiB Node heap, 768 MiB per-process virtual-address ceiling, 128 MiB per-process data ceiling and a ten-minute wall timeout. These process limits are not a combined RSS/cgroup memory guarantee. The serving container has a separate 96 MiB cap. Leave headroom for the existing proxy, IRC services and OS; do not enable music on an overloaded host.
 3. Keep originals only in `~/bouncer/gyaruinthemix/assets/music`. For example, `assets/music/ギャルインザミックス.mp3` is discovered without renaming it. Supported inputs are MP3, WAV, FLAC, M4A, AAC, OGG and Opus. The limits are 200 tracks, 2 GiB per file and two hours per track. Copy to a temporary hidden name first, then rename into place after the copy finishes. Never put music in `public/`, commit it or copy it into an image.
-4. Provision a separate random signing key of at least 32 bytes through your existing secure process, at `/srv/gyaruinthemix-secrets/game_audio_signing_key` or another absolute path outside the checkout/library. Do not paste it into `.env`, chat or logs. The service runs as UID/GID `10001:10001`; arrange private directory traversal and read access for that identity. Use restrictive ownership/modes, such as a `0750` key directory and `0640` key file with group `10001`. No key is generated by this repository.
+4. Provision a separate random signing key of at least 32 bytes through your existing secure process, at `/srv/gyaruinthemix-secrets/game_audio_signing_key` or another absolute path outside the checkout/library. Do not paste it into `.env`, chat or logs. The service runs as UID/GID `10001:10001`; arrange private directory traversal and read access for that identity. Use restrictive ownership/modes, such as a `0750` key directory and `0640` key file with group `10001`. No key is bundled or generated in CI; the guided setup creates one locally only after operator confirmation.
 5. Arrange the library directory so the deployment user can write generated output and group `10001` can traverse/read `.hls`. Keep originals private to their owner; the serving process only needs `.hls`. Use a setgid `2750` output directory with group `10001` so later generated files retain that group. The updater uses umask `0027` for packaging. Do not solve access failures with world-readable permissions or privileged containers. If the deployment account cannot set the required group, have the operator establish narrowly scoped access before continuing.
 6. In the existing `~/bouncer/.env`, set `GAME_AUDIO_ENABLED=true`, add `game-audio` to `COMPOSE_PROFILES`, and keep `GYARUINTHEMIX_GAME_AUDIO_IMAGE=ghcr.io/aliceinwire/gyaruinthemix-game-audio:main`. Set `GAME_AUDIO_SIGNING_KEY_FILE` only if using another approved absolute path. For Payment Links, profiles are `game-audio`; if the API was already enabled, use `checkout-api,game-audio`. Do not enable checkout just to play music.
 

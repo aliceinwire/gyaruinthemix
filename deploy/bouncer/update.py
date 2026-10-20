@@ -54,13 +54,14 @@ class Updater:
             raise UpdateError(f"Docker {args[0]} failed; inspect the host locally.")
         return result.stdout
 
-    def compose(self, *args, images=None):
+    def compose(self, *args, images=None, labels=None):
         command = list(self.compose_args)
         if images is None:
             return self.docker(*command, *args)
         # JSON is valid YAML. Immutable local IDs prevent a moving :main tag race.
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", dir=self.directory) as file:
-            json.dump({"services": {name: {"image": image} for name, image in images.items()}}, file)
+            json.dump({"services": {name: {"image": image, **({"labels": labels} if labels else {})}
+                                    for name, image in images.items()}}, file)
             file.flush()
             return self.docker(*command, "-f", file.name, *args)
 
@@ -73,9 +74,9 @@ class Updater:
             temporary = file.name
         os.replace(temporary, self.state_path)
 
-    def activate(self, images):
+    def activate(self, images, labels=None):
         self.compose("up", "-d", "--no-deps", "--no-build", "--pull", "never",
-                     "--wait", "--wait-timeout", "120", *images, images=images)
+                     "--wait", "--wait-timeout", "120", *images, images=images, **({"labels": labels} if labels else {}))
 
     def validate_audio(self, config):
         """Only the reviewed checkout library and a separate server-only key may mount."""
@@ -667,7 +668,8 @@ class CertificateUpdater(SharedUpdater):
 def guard_pending(directory, mode):
     """Do not mix another workflow with a transaction needing explicit recovery."""
     paths = {"website": ".gyaruinthemix-update.json", "shared": ".bouncer-shared-update.json",
-             "znc-cert": ".bouncer-znc-certificate-update.json"}
+             "znc-cert": ".bouncer-znc-certificate-update.json",
+             "game-audio-setup": ".bouncer-game-audio-setup.json"}
     for owner, filename in paths.items():
         if owner == mode:
             continue
@@ -678,6 +680,8 @@ def guard_pending(directory, mode):
                 raise UpdateError("Updater state is invalid; inspect it before continuing.")
             pending = any(isinstance(v, dict) and v.get("pending") for v in state.values()) if owner == "shared" else state.get("pending")
             if pending:
+                if owner == "game-audio-setup":
+                    raise UpdateError("Interrupted audio setup needs setup-audio.py --recover, then interactive --recover --apply; do not delete its journal.")
                 instruction = "without a mode flag" if owner == "website" else f"with --{owner}"
                 raise UpdateError(f"An interrupted {owner} transaction needs recovery; run the updater {instruction} first.")
 
