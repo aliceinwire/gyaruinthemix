@@ -275,7 +275,6 @@ footer { display: flex; justify-content: space-between; gap: 20px; padding: 26px
 footer span:first-child { letter-spacing: .08em; }
 .music-panel { max-width: 1100px; margin: 8px auto 18px; padding: 14px 20px; border: 1px solid #46546c; border-radius: 9px; background: #101b2a; }
 .music-panel summary { cursor: pointer; min-height: 44px; padding-block: 10px; font-weight: 750; font-size: 13px; }
-.music-panel iframe { display: block; width: 100%; border: 0; border-radius: 5px; }
 .music-panel p, .music-panel a { color: var(--muted); font-size: 12px; line-height: 1.8; }
 .music-panel a { display: inline-block; min-height: 44px; padding-block: 10px; }
 #music-close { margin-right: 8px; }

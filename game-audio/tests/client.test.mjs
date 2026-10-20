@@ -330,3 +330,45 @@ test('stale rejected play promise cannot cancel a newer deliberate replay', asyn
   assert.equal(audio.state.playing, true);
   audio.destroy();
 });
+
+test('disabled discovery cannot request a catalog, session, or media even after Play', async () => {
+  const media = new Media(),
+    calls = [];
+  const controller = createStreamAudio({
+    media,
+    documentRef: new EventTarget(),
+    loadAvailability: async () => false,
+    fetchImpl: async (url) => {
+      calls.push(url);
+      throw Error('unexpected request');
+    },
+  });
+  assert.deepEqual(await controller.loadCatalog(), []);
+  assert.equal(await controller.play({ userGesture: true }), false);
+  assert.deepEqual(calls, []);
+  assert.equal(media.plays, 0);
+  assert.equal(controller.state.enabled, false);
+  assert.equal(controller.state.status, 'unavailable');
+  controller.destroy();
+});
+test('destroy during delayed discovery prevents all late requests', async () => {
+  let ready;
+  const calls = [],
+    controller = createStreamAudio({
+      media: new Media(),
+      documentRef: new EventTarget(),
+      loadAvailability: () =>
+        new Promise((resolve) => {
+          ready = resolve;
+        }),
+      fetchImpl: async (url) => {
+        calls.push(url);
+        throw Error('unexpected request');
+      },
+    });
+  const loading = controller.loadCatalog();
+  controller.destroy();
+  ready(true);
+  assert.deepEqual(await loading, []);
+  assert.deepEqual(calls, []);
+});

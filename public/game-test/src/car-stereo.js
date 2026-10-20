@@ -21,6 +21,7 @@ export function createCarStereo({
   mount,
   onState = () => {},
   canPlay = () => true,
+  loadAvailability,
   controllerFactory = createStreamAudio,
 } = {}) {
   mount.classList.add('car-stereo');
@@ -93,7 +94,7 @@ export function createCarStereo({
     mount.dataset.playing = String(state.playing);
     onState(state);
   };
-  controller = controllerFactory({ media, onState: render, canPlay });
+  controller = controllerFactory({ media, onState: render, canPlay, loadAvailability });
   listen($('[data-action="play"]'), 'click', () => controller.toggle());
   listen($('[data-action="previous"]'), 'click', () =>
     controller.previous({ userGesture: true }),

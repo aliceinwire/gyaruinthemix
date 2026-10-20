@@ -79,7 +79,7 @@ export function bindGameInput({
       return;
     }
     const interactive = event.target?.closest?.(
-      "button,a,input,select,textarea,[contenteditable=true]",
+      "button,a,input,select,textarea,[role=slider],[contenteditable=true]",
     );
     if (
       Object.hasOwn(KEY_ACTIONS, event.code) &&

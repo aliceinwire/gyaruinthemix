@@ -1,4 +1,4 @@
-// Offline subpath/CSP integration; SoundCloud's actual playback remains provider-dependent.
+// Offline subpath/CSP integration with the persistent built-in radio.
 import assert from 'node:assert/strict';
 import { readFile, mkdir, writeFile } from 'node:fs/promises';
 import {
@@ -46,6 +46,38 @@ async function finishStory(page) {
     else await page.locator('#story-next').click();
   }
   assert.fail('Story did not finish through its reading controls');
+}
+async function assertFrameFits(page, selectors) {
+  const faults = await page.evaluate((selectors) => {
+    const shell = document.querySelector('.shell').getBoundingClientRect();
+    const radio = document.querySelector('.radio-dock').getBoundingClientRect();
+    const faults = [];
+    if (
+      document.documentElement.scrollHeight > innerHeight + 1 ||
+      document.documentElement.scrollWidth > innerWidth + 1
+    )
+      faults.push('page scroll');
+    for (const selector of selectors) {
+      const el = document.querySelector(selector),
+        box = el.getBoundingClientRect();
+      const bottom = selector === '.radio-dock' ? shell.bottom : radio.top;
+      if (
+        !box.width ||
+        !box.height ||
+        box.top < shell.top ||
+        box.left < shell.left ||
+        box.right > shell.right + 1 ||
+        box.bottom > bottom + 1
+      )
+        faults.push(selector);
+    }
+    return faults;
+  }, selectors);
+  assert.deepEqual(
+    faults,
+    [],
+    'All actions must fit inside the frame without overlapping the radio',
+  );
 }
 async function assertWorldUncovered(page) {
   const overlaps = await page.evaluate(() => {
@@ -126,9 +158,15 @@ const browser = await chromium.launch({
     : {}),
 });
 try {
-  for (const width of [320, 390, 768, 1440]) {
+  for (const [width, height] of [
+    [320, 740],
+    [390, 667],
+    [768, 1000],
+    [844, 390],
+    [1440, 1000],
+  ]) {
     const context = await browser.newContext({
-      viewport: { width, height: 1000 },
+      viewport: { width, height },
     });
     context.setDefaultTimeout(10000);
     const errors = [];
@@ -141,17 +179,6 @@ try {
     });
     await context.route('**/*', async (route) => {
       const url = new URL(route.request().url());
-      if (url.origin === 'https://w.soundcloud.com') {
-        if (url.pathname.endsWith('api.js'))
-          return route.fulfill({
-            contentType: 'application/javascript',
-            body: '/* offline provider fixture */',
-          });
-        return route.fulfill({
-          contentType: 'text/html',
-          body: '<!doctype html><button>Offline SoundCloud fixture</button>',
-        });
-      }
       if (url.origin !== origin) return route.abort();
       if (url.pathname.endsWith('.mjs')) moduleRequests.push(url.pathname);
       if (url.pathname === '/game-audio/v1/config') {
@@ -210,8 +237,8 @@ try {
     await page.waitForFunction(
       () => globalThis.__HYPERDRIVE__?.snapshot().ready,
     );
-    assert.equal(await page.locator('iframe#music').count(), 1);
-    assert.equal(await page.locator('#music audio').count(), 0);
+    assert.equal(await page.locator('iframe#music').count(), 0);
+    assert.equal(await page.locator('#music audio').count(), 1);
     await page.locator('#story').click();
     assert.equal(await page.locator('#story-panel').isVisible(), true);
     assert.equal(
@@ -240,10 +267,7 @@ try {
       .story;
     assert.equal(openingMemory.choices['tour:opening'], 'crew');
     assert.ok(openingMemory.seen.includes('tour:opening'));
-    assert.equal(
-      await page.locator('#starting-customization').isVisible(),
-      true,
-    );
+    assert.equal(await page.locator('#car-select').isVisible(), true);
     const styles = page.locator('#style-options button');
     assert.equal(await styles.count(), 3);
     await page.locator('#style-options [data-style="guardian"]').click();
@@ -264,6 +288,9 @@ try {
       ),
       fullPage: true,
     });
+    await assertFrameFits(page, ['#cars-ready']);
+    await page.locator('#car-select .frame-tabs button').nth(2).click();
+    await assertFrameFits(page, ['#customization-apply', '#cars-ready']);
     assert.ok((await page.locator('#custom-paint option').count()) > 1);
     assert.equal(await page.locator('#customization-apply').isDisabled(), true);
     await page.screenshot({
@@ -289,10 +316,18 @@ try {
       assert.ok(
         await node
           .locator('strong')
-          .evaluate((el) => parseFloat(getComputedStyle(el).fontSize) >= 18),
+          .evaluate((el) => parseFloat(getComputedStyle(el).fontSize) >= 12),
       );
       await node.click();
       assert.equal(await node.getAttribute('aria-pressed'), 'true');
+      await assertFrameFits(page, [
+        '.map-origin',
+        '#destination-choices',
+        '.map-goal',
+        '#route-mission-preview',
+        '#change-starting-car',
+        '#depart',
+      ]);
     }
     await destinations.first().focus();
     await page.keyboard.press('Enter');
@@ -321,7 +356,14 @@ try {
       path: resolve(root, `artifacts/browser/game-test/${width}-map.png`),
       fullPage: true,
     });
+    await assertFrameFits(page, [
+      '.map-origin',
+      '#destination-choices',
+      '.map-goal',
+      '#depart',
+    ]);
     await page.locator('#garage-tab').click();
+    await assertFrameFits(page, ['#garage-done']);
     assert.equal(await page.locator('#garage-content').isVisible(), true);
     assert.ok((await page.locator('#shop button').count()) >= 8);
     await page.screenshot({
@@ -433,8 +475,9 @@ try {
       'Closing the journal with Escape must not also toggle the global pause off',
     );
     await page.locator('#resume').click();
-    await page.locator('#music-open').click();
-    assert.equal(await page.locator('#music-panel').isVisible(), true);
+    assert.equal(await page.locator('.radio-dock').isVisible(), true);
+    assert.equal(await page.locator('#music-open, #sound').count(), 0);
+    await assertFrameFits(page, ['.controls', '.radio-dock']);
     assert.deepEqual(await page.evaluate(() => globalThis.cspViolations), []);
     assert.deepEqual(errors, []);
     await mkdir(resolve(root, 'artifacts/browser/game-test'), {
@@ -490,6 +533,19 @@ try {
         await page.locator('#draft-panel').getAttribute('aria-modal'),
         'true',
       );
+      const draftPager = page.locator('#draft-options + .card-pager');
+      assert.equal(
+        await page.locator('#draft-options button:visible').count(),
+        1,
+      );
+      await draftPager
+        .getByRole('button', { name: '次へ →', exact: true })
+        .click();
+      assert.equal(await draftOptions.nth(1).isVisible(), true);
+      await draftPager
+        .getByRole('button', { name: '← 前へ', exact: true })
+        .click();
+      assert.equal(await draftOptions.first().isVisible(), true);
       assert.equal(await page.locator('#pause').isDisabled(), true);
       assert.equal(await page.locator('#run-journal').isDisabled(), true);
       const frozenDraft = (await page.evaluate(() => __HYPERDRIVE__.snapshot()))
@@ -624,7 +680,14 @@ try {
         await page.locator('#route-mission-preview').innerText(),
         /目標/,
       );
+      await assertFrameFits(page, [
+        '.map-origin',
+        '#destination-choices',
+        '.map-goal',
+        '#depart',
+      ]);
       await page.locator('#garage-tab').click();
+      await assertFrameFits(page, ['#garage-done']);
       assert.match(await page.locator('#build-summary').innerText(), /4 \/ 4/);
       const card = page.locator('.build-card').first();
       assert.equal(await card.locator('button').isDisabled(), true);
@@ -673,7 +736,6 @@ try {
           document.querySelector('#music [data-stereo="status"]')
             ?.textContent === 'NO DISC',
       );
-      await page.locator('#music-open').click();
       assert.equal(await page.locator('iframe#music').count(), 0);
       assert.equal(await page.locator('#music audio').count(), 1);
       assert.equal(
@@ -688,7 +750,6 @@ try {
         globalThis.fixtureAudio = document.querySelector('#music audio');
       });
       await page.locator('#music [data-action="play"]').click();
-      await page.locator('#music-close').click();
       await page.locator('#story').click();
       await finishStory(page);
       assert.equal(
@@ -700,7 +761,6 @@ try {
         await page.evaluate(() => __HYPERDRIVE__.snapshot().screen),
         'map',
       );
-      await page.locator('#music-open').click();
       assert.equal(
         await page.evaluate(
           () =>
@@ -755,19 +815,16 @@ try {
         fullPage: true,
       });
 
-      // A failed discovery request stays on the original provider, and does
+      // A failed discovery request leaves the radio unavailable, and does
       // not turn into a missing-asset exception or a gameplay startup failure.
       audioEnabled = false;
       audioConfigStatus = 503;
       await reloadWithoutCampaign(page);
-      assert.equal(await page.locator('iframe#music').count(), 1);
-      assert.equal(await page.locator('#music audio').count(), 0);
+      assert.equal(await page.locator('iframe#music').count(), 0);
+      assert.equal(await page.locator('#music audio').count(), 1);
       await page.locator('#story').click();
       await finishStory(page);
-      assert.equal(
-        await page.locator('#starting-customization').isVisible(),
-        true,
-      );
+      assert.equal(await page.locator('#car-select').isVisible(), true);
       assert.deepEqual(await page.evaluate(() => globalThis.cspViolations), []);
       assert.deepEqual(errors, []);
     }

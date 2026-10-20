@@ -304,7 +304,7 @@ docker compose ps "${services[@]}"
 curl --fail https://gyaruinthemix.com/game-audio/v1/config
 ```
 
-The config response should contain `{"enabled":true}` and no key or source path. Open `/game-test/`, tap Play and check the player on desktop and phone, including pause/resume and switching tracks. Originals must not be downloadable by filename. Recheck existing pages, checkout mode and shared-service IDs. The route and media policy are built into the web image, scoped to game audio; there is no Nginx file to install separately and no client-source flag to edit. If the sidecar is absent/disabled/unavailable, the game retains SoundCloud without delaying gameplay.
+The config response should contain `{"enabled":true}` and no key or source path. Open `/game-test/`, tap Play and check the player on desktop and phone, including pause/resume and switching tracks. Originals must not be downloadable by filename. Recheck existing pages, checkout mode and shared-service IDs. The route and media policy are built into the web image, scoped to game audio; there is no Nginx file to install separately and no client-source flag to edit. If the sidecar is absent/disabled/unavailable, the car radio shows OFFLINE without delaying gameplay.
 
 Run the normal updater once and resume the existing schedule only after the selected services are healthy:
 
@@ -318,7 +318,7 @@ Drop finished tracks into the same `assets/music` directory. Each enabled update
 
 A packaging failure stops that update without activating new images and preserves the previous catalog. Correct the input/resource/permission problem and run the same updater again. On timeout or a catchable interruption the updater attempts ownership-checked cleanup of only its own one-shot helper. An independent in-container deadline stops packaging if the updater disappears; an exited helper may remain after an uncatchable termination or host/daemon failure. A killed packager can leave a safety lock or temporary output; inspect and confirm no packaging container remains before any manual cleanup. Image rollback restores selected container images, not source media or catalog history. Back up originals independently.
 
-To disable music, pause scheduled updates, set `GAME_AUDIO_ENABLED=false`, and recreate only the audio service while its profile is still enabled so new playback is denied. Stop/remove only `gyaruinthemix-game-audio`, then remove only `game-audio` from `COMPOSE_PROFILES`; retain `checkout-api` if used. Refresh the game's page to return to SoundCloud, confirm default-off config, then resume the updater. Profile removal alone does not stop a running container. Preserve originals and the key unless deliberately retiring them through the operator's normal secure process.
+To disable music, pause scheduled updates, set `GAME_AUDIO_ENABLED=false`, and recreate only the audio service while its profile is still enabled so new playback is denied. Stop/remove only `gyaruinthemix-game-audio`, then remove only `game-audio` from `COMPOSE_PROFILES`; retain `checkout-api` if used. Refresh the game's page to confirm the radio is unavailable and config is default-off, then resume the updater. Profile removal alone does not stop a running container. Preserve originals and the key unless deliberately retiring them through the operator's normal secure process.
 
 ## References
 

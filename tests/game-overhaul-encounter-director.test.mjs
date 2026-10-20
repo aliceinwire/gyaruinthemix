@@ -6,39 +6,31 @@ import {
   getEncounterPhase,
   ENCOUNTER_RULES,
 } from '../public/game-test/src/encounter-director.js';
+import {
+  createState,
+  ROUTE_OPTIONS,
+} from '../public/game-test/src/simulation.js';
+import { DRIVING_PACE } from '../public/game-test/src/pace.js';
 import { getJourneyChoices } from '../public/game-test/src/journey.js';
 
 const METRES_PER_SECOND = ENCOUNTER_RULES.maximumSupportedSpeed / 3.6;
 const RADII = { salaryman: 15, cone: 21, barrier: 27, pothole: 21 };
-const CITY_LENGTHS = [1680, 1750, 1820, 1880, 1940, 2020];
 const near = (a, b, epsilon = 1e-7) =>
   assert.ok(Math.abs(a - b) <= epsilon, `${a} should equal ${b}`);
 function routeOptions(stage, seed, kindIndex = 1) {
   const node = getJourneyChoices(stage, seed)[kindIndex];
-  const scenic = node.routeOption === 'scenic';
-  const city = CITY_LENGTHS[Math.floor(stage / 2)];
-  const base = Math.round(city * (stage % 2 ? 0.88 : 0.76));
-  const routeLength = Math.round(
-    base * (scenic ? 1 : 0.8) * node.lengthMultiplier,
-  );
-  const stations = [];
-  for (
-    let distance = 300;
-    distance < routeLength - 120;
-    distance += (scenic ? 360 : 510) * node.stationSpacingMultiplier
-  )
-    stations.push(distance);
-  if (
-    !stations.some((distance) => Math.abs(distance - (routeLength - 170)) < 140)
-  )
-    stations.push(routeLength - 170);
+  const state = createState({
+    routeIndex: stage,
+    seed,
+    journeyNodeId: node.nodeId,
+  });
   return {
     seed,
     routeIndex: stage,
-    routeLength,
+    routeLength: state.routeLength,
     node,
-    stations,
-    stationRadius: scenic ? 72 : 60,
+    stations: state._stations,
+    stationRadius: ROUTE_OPTIONS[state.routeOption].stationRadius,
   };
 }
 function actorFor(behavior, details = {}) {
@@ -111,9 +103,9 @@ test('first road has a visible stationary heart lesson before an isolated lift l
     for (let kind = 0; kind < 3; kind++) {
       const plan = createEncounterPlan(routeOptions(0, seed, kind));
       assert.equal(plan[0].type, 'salaryman');
-      assert.equal(plan[0].distance, 80);
+      assert.equal(plan[0].distance, 80 * DRIVING_PACE.speedMultiplier);
       assert.equal(plan[1].type, 'pothole');
-      assert.equal(plan[1].distance, 185);
+      assert.equal(plan[1].distance, 185 * DRIVING_PACE.speedMultiplier);
       assert.ok(
         (plan[0].distance - RADII.salaryman) / METRES_PER_SECOND >=
           ENCOUNTER_RULES.minimumCounterTime,
@@ -288,7 +280,11 @@ test('charger preserves full anticipation and a counter window even at top rush 
   const startTime = trigger / METRES_PER_SECOND;
   updateEncounterActor(
     actor,
-    { elapsed: startTime, distance: trigger, speed: 180 },
+    {
+      elapsed: startTime,
+      distance: trigger,
+      speed: ENCOUNTER_RULES.maximumSupportedSpeed,
+    },
     1 / 120,
   );
   assert.equal(actor.behaviorPhase, 'tell');
@@ -298,7 +294,7 @@ test('charger preserves full anticipation and a counter window even at top rush 
     {
       elapsed: startTime + actor.anticipation - 0.001,
       distance: trigger + METRES_PER_SECOND * (actor.anticipation - 0.001),
-      speed: 180,
+      speed: ENCOUNTER_RULES.maximumSupportedSpeed,
     },
     0.1,
   );
@@ -319,7 +315,7 @@ test('charger preserves full anticipation and a counter window even at top rush 
       {
         elapsed: startTime + age,
         distance: trigger + METRES_PER_SECOND * age,
-        speed: 180,
+        speed: ENCOUNTER_RULES.maximumSupportedSpeed,
       },
       0.01,
     );
@@ -336,11 +332,23 @@ test('charger threshold interpolation and all actor movement are frame-partition
   for (const behavior of ['steady', 'sway', 'charger', 'shield']) {
     const run = (step) => {
       const actor = actorFor(behavior);
-      updateEncounterActor(actor, { elapsed: 0, distance: 0, speed: 180 }, 0);
+      updateEncounterActor(
+        actor,
+        {
+          elapsed: 0,
+          distance: 0,
+          speed: ENCOUNTER_RULES.maximumSupportedSpeed,
+        },
+        0,
+      );
       for (let elapsed = step; elapsed < 7 + step / 2; elapsed += step)
         updateEncounterActor(
           actor,
-          { elapsed, distance: elapsed * 50, speed: 180 },
+          {
+            elapsed,
+            distance: elapsed * METRES_PER_SECOND,
+            speed: ENCOUNTER_RULES.maximumSupportedSpeed,
+          },
           step,
         );
       return actor;
@@ -358,14 +366,22 @@ test('charger threshold interpolation and all actor movement are frame-partition
 
 test('shield advertises guarded/open phases and cannot close on the final response window', () => {
   const actor = actorFor('shield');
-  updateEncounterActor(actor, { elapsed: 0, distance: 0, speed: 180 }, 0);
+  updateEncounterActor(
+    actor,
+    { elapsed: 0, distance: 0, speed: ENCOUNTER_RULES.maximumSupportedSpeed },
+    0,
+  );
   assert.equal(actor.shielded, true);
   assert.equal(actor.vulnerable, false);
   const trigger = 400 - actor.warningDistance;
-  const start = trigger / 50;
+  const start = trigger / METRES_PER_SECOND;
   updateEncounterActor(
     actor,
-    { elapsed: start, distance: trigger, speed: 180 },
+    {
+      elapsed: start,
+      distance: trigger,
+      speed: ENCOUNTER_RULES.maximumSupportedSpeed,
+    },
     0.01,
   );
   assert.equal(actor.behaviorPhase, 'guard');
@@ -385,8 +401,8 @@ test('shield advertises guarded/open phases and cannot close on the final respon
       actor,
       {
         elapsed: start + age,
-        distance: 400 - RADII.salaryman - 50 * 1.75,
-        speed: 180,
+        distance: 400 - RADII.salaryman - METRES_PER_SECOND * 1.75,
+        speed: ENCOUNTER_RULES.maximumSupportedSpeed,
       },
       0.07,
     );

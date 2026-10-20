@@ -1,4 +1,5 @@
 import { getThreatSignals } from './road-feedback.js';
+import { drawCultureProp, drawRoutineHazard, drawLittleFind, drawFriendlyCat } from './street-culture-art.js';
 import { drawCabinCharacter, preloadCabinCharacters } from "./cabin-characters.js";
 import { preloadUmbrellaArt, drawUmbrellaArt } from "./umbrella-art.js";
 import { preloadRoadSurfaceArt, drawRoadSurface } from "./road-surface.js";
@@ -253,6 +254,8 @@ export function drawSignalHeadliner(g, actor, x, y, time = 0) {
 
 function entity(g, e, x, y, time, state) {
   if (e.headliner) { drawSignalHeadliner(g, e, x, y, time); return true; }
+  if (drawRoutineHazard(g, e, x, y, time) || drawLittleFind(g, e, x, y, time)) return true;
+  if (e.type === 'ev') drawFriendlyCat(g, x, y - 68, time);
   if (drawRoadsideObject(g, { type: e.type, x, y, time, weather: state.weather, season: state.season, charging: state.charging })) return true;
   if (
     drawStreetCharacter(g, {
@@ -265,6 +268,7 @@ function entity(g, e, x, y, time, state) {
       id: e.id,
     })
   ) {
+    drawCultureProp(g, e, x, y + streetCharacterBob({ type: e.type, id: e.id, time }), time);
     if (e.type === "salaryman" && ["rain","storm"].includes(state.weather))
       drawUmbrellaArt(g,{type:e.type,x:Math.round(x),y:Math.round(y)+streetCharacterBob({type:e.type,id:e.id,time})});
     if (e.type === "fan") text(g, "話そ", x - 21, y - 96, 11, "#fff3d7");

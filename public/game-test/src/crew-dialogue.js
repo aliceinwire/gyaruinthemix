@@ -6,6 +6,15 @@ import { resolveCrewActions } from './character-actions.js';
  */
 export const CREW_DIALOGUE_BUCKET_SECONDS = 8;
 const SPEAKERS = { arisu: 'DJありねぇ / ドライバー', chana: 'DJちゃな / ナビ担当' };
+const CREATIVE = [
+  '同じ服、同じ作業、同じ顔。うちらの夜までコピーせんでええねん。',
+  'でっかい会社の広告より、うちらの一枚で目ぇ引いたろ。',
+  '次の撮影、ポーズ考えた？ ふたりで並んだら、そこがランウェイや。',
+  'DJもテレビもイベントも、うちららしく出たいな。見つけてくれる人、もっと増やそ！',
+  'ファンと撮った写真、あとで見返すん好き。今日のフロアでも思い出つくろ。',
+  'EVのそば、ねこ休んでる。遠くからそっと見守ろな。',
+  'ちっちゃい花とか、かわいいシールとか。小さい好きも、ちゃんと連れてこ。',
+];
 const CITY = {
   nakano: ['中野から一本目の音、録りにいこ。地図も準備できたで。', '中野の看板、気になる店多すぎ。寄り道はあとやな。', '中野、角を曲がるたび景色変わるな。ナビ任せてや。'],
   shinjuku: ['新宿のネオン、うちのラメとええ勝負やん。', '新宿、看板多いな。目的地まで見失わへんで。', '新宿のビル、背ぇ高いなあ。地図は上向けても伸びへんか。'],
@@ -53,6 +62,7 @@ const EVENTS = {
   'rush-stop': { priority: 60, lines: ['息ぴったりやったな。ほな、いつものペースでいこ。'] },
   boost: { priority: 55, speaker: 'arisu', lines: ['浮くで！ 前の道、しっかり見とくな。'] },
   'jump-clear': { priority: 50, speaker: 'arisu', lines: ['段差、越えたで。着地も落ち着いていこ。'] },
+  'little-find': { priority: 48, lines: ['ちいさな好き、またひとつ増えた！'] },
   convert: { priority: 45, lines: ['招待に返事くれた！ 遊びに来てくれるん、うれしいな。', 'そのノリええやん。好きな格好のままで、フロアでも会おな！'] },
   shoot: { priority: 40, lines: ACTION.hearts },
 };
@@ -83,6 +93,7 @@ export function selectCrewDialogue(context = {}) {
     [`weather:${weather || 'sunny'}`, WEATHER[weather] || WEATHER.sunny],
     [`season:${key(context.season) || 'summer'}`, SEASON[key(context.season)] || SEASON.summer],
     [`action:${action}`, ACTION[action] || ACTION.map],
+    ['creative', CREATIVE],
   ];
   const [group, lines] = groups[bucket % groups.length];
   return makeLine(group, lines, Math.floor(bucket / groups.length), options);
@@ -99,6 +110,11 @@ export function selectCrewEvent(events, context = {}) {
   }
   if (!winner) return null;
   const config = EVENTS[winner];
+  const source = list.find(event => event?.type === winner);
+  if (winner === 'convert' && source?.streetRole?.welcome)
+    return makeLine(`event:welcome:${source.streetRole.id}`, [source.streetRole.welcome], 0, config);
+  if (winner === 'little-find' && source?.find?.line)
+    return makeLine(`event:find:${source.find.id}`, [source.find.line], 0, config);
   const index = Math.floor(seconds(context.time ?? context.elapsed) / 2);
   return makeLine(`event:${winner}`, config.lines, index, { ...config, previousId: context.previousId });
 }

@@ -9,6 +9,7 @@
     <title>ギャルインザミックス / NIGHTFALL TOUR</title>
     <link rel="stylesheet" href="./style.css" />
     <link rel="stylesheet" href="./car-stereo.css" />
+    <link rel="stylesheet" href="./frame.css" />
   </head>
   <body data-screen="menu" data-map-panel="route">
     <main class="shell">
@@ -20,8 +21,6 @@
         <p class="app-caption">街をつないで、うちらの音に。</p>
         <div class="settings">
           <button id="run-journal" aria-controls="story-panel" disabled>旅の記録</button>
-          <button id="music-open" aria-label="公式音楽プレイヤーを開く" aria-controls="music-panel" aria-expanded="false">音楽</button>
-          <button id="sound" aria-pressed="false" aria-label="効果音をオン">音：おやすみ</button>
         </div>
       </header>
 
@@ -125,10 +124,13 @@
               <div class="map-stop map-goal"><span class="map-stop-label">NEXT / 次のサウンドチェック</span><strong id="map-next-club">中野 / BEAT BASE 175</strong><span id="map-club-distance" class="map-stop-hint">あと2本の道でクラブ到着</span></div>
             </div>
             <p id="map-selected-route" class="selected-route" aria-live="polite"></p>
+            <p id="map-route-detail" class="map-route-detail"></p>
             <div id="route-mission-preview" class="route-mission-preview"></div>
             <p class="route-note">どの分岐も同じクラブへ。道の長さ・充電所・出会いが変わるで。</p>
-            <button id="change-starting-car" hidden>出発前のくるま選びに戻ろ</button>
-            <button id="depart" class="primary departure">この道で、次の音へ</button>
+            <div class="route-actions">
+              <button id="change-starting-car" hidden>くるまを選び直す</button>
+              <button id="depart" class="primary departure">この道で、次の音へ</button>
+            </div>
           </div>
           <div id="garage-content" hidden>
             <div class="shop-heading"><h2>うちらのガレージ</h2><span>稼いだコインで、この旅だけの走りをつくろ。</span></div>
@@ -168,19 +170,12 @@
         </div>
       </section>
       <section id="quiz" class="quiz-overlay modal" hidden role="dialog" aria-modal="true" aria-labelledby="quiz-question" tabindex="-1">
-        <div class="quiz-card modal-card"><p class="eyebrow">ROADSIDE / ギャルトーク</p><h2 id="quiz-question"></h2><p class="quiz-tip">音楽の話で、街の仲間とつながろ。</p><div id="quiz-choices"></div><p id="quiz-feedback" aria-live="polite"></p><a id="quiz-source" target="_blank" rel="noopener noreferrer" hidden>答えの出典を見る</a><button id="quiz-continue" class="primary" hidden>ほな、クラブ目指そ</button></div>
+        <div class="quiz-card modal-card"><p class="eyebrow">ROADSIDE / ギャルトーク</p><h2 id="quiz-question"></h2><p class="quiz-tip">うちらの音と平成ギャル、どこまで知ってる？</p><div id="quiz-choices"></div><p id="quiz-feedback" aria-live="polite"></p><a id="quiz-source" target="_blank" rel="noopener noreferrer" hidden>答えの出典を見る</a><button id="quiz-continue" class="primary" hidden>ほな、クラブ目指そ</button></div>
       </section>
-      <footer><span>GYARUINTHEMIX / NIGHTFALL TOUR</span><span>ありねぇが運転。ちゃながハート。音は、うちら全員で。</span></footer>
-    </main>
-    <details id="music-panel" class="music-panel" open>
-      <summary id="music-heading">公式SoundCloudで音出そ</summary>
-      <button id="music-close" hidden>ゲームに戻ろ</button>
-      <button id="music-toggle" hidden>音楽と効果音をオン</button>
-      <p id="music-status" role="status">音をオンにして、プレイヤーの再生をタップしてな。</p>
-      <iframe id="music" title="GYARUINTHEMIX SoundCloud 公式プレイヤー" src="https://w.soundcloud.com/player/?url=https%3A%2F%2Fsoundcloud.com%2Fgyaruinthemix&amp;auto_play=false&amp;show_user=true&amp;show_artwork=true" allow="autoplay" height="166" loading="lazy"></iframe>
-      <a href="https://soundcloud.com/gyaruinthemix" target="_blank" rel="noopener noreferrer">ギャルインザミックス公式 · SoundCloudで聴こ</a>
-    </details>
+
+    <section class="radio-dock" aria-label="カーステレオ"><div id="music" aria-label="ギャルインザミックス 音楽プレイヤー"></div></section>
     <small class="game-copyright">copyright 2026 ギャルインザミックス. all rights reserved.</small>
+    </main>
     <script type="module" src="./main.js"></script>
   </body>
 </html>
