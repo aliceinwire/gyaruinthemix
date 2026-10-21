@@ -212,6 +212,13 @@ async function assertWorldUncovered(page) {
       );
     });
   });
+  if (overlaps.length) {
+    await page.screenshot({ path: resolve(root, `artifacts/browser/game-test/${page.viewportSize().width}-layout-overlap.png`), fullPage: true });
+    console.log('Road layout bounds', await page.evaluate(() => Object.fromEntries(['.shell', '.workspace', '.cabinet', '.viewport', '#game', '.below-stage', '.crew', '.controls', '.radio-dock', '.topline', '.rpg-status', '.road-status', '.dashboard'].map(selector => {
+      const el = document.querySelector(selector);
+      return [selector, { box: el.getBoundingClientRect().toJSON(), rows: getComputedStyle(el).gridTemplateRows, height: getComputedStyle(el).height }];
+    }))));
+  }
   assert.deepEqual(
     overlaps,
     [],
