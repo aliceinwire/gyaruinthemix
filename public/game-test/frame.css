@@ -402,6 +402,12 @@ body[data-screen="map"] .notification-rail { display: none; }
    beneath the controls in a short landscape frame. */
 @media (min-width: 540px) and (max-height: 600px) {
  body:is([data-screen="playing"], [data-screen="finale"]) .cabinet { grid-template-rows: 32px 22px minmax(40px,1fr) auto; }
+ body:is([data-screen="playing"], [data-screen="finale"]) .viewport { grid-column: 1; grid-row: 1 / 5; }
+ body:is([data-screen="playing"], [data-screen="finale"]) :is(.topline,.rpg-status,.road-status,.dashboard) { grid-column: 2; }
+ body:is([data-screen="playing"], [data-screen="finale"]) .topline { grid-row: 1; }
+ body:is([data-screen="playing"], [data-screen="finale"]) .rpg-status { grid-row: 2; }
+ body:is([data-screen="playing"], [data-screen="finale"]) .road-status { grid-row: 3; }
+ body:is([data-screen="playing"], [data-screen="finale"]) .dashboard { grid-row: 4; }
  body:is([data-screen="playing"], [data-screen="finale"]) .rpg-status { min-height: 22px; padding: 2px 5px; flex-wrap: nowrap; }
  body:is([data-screen="playing"], [data-screen="finale"]) .road-status { min-height: 40px; gap: 2px; padding: 2px 5px; }
  body:is([data-screen="playing"], [data-screen="finale"]) #road-cue { font-size: 9px; line-height: 1.3; }
