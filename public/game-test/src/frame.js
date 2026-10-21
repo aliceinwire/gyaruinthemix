@@ -47,13 +47,17 @@ export function installFrame() {
     localizeText(prev, '← 前へ'); localizeText(next, '次へ →');
     nav.append(prev, count, next); list.after(nav);
     let index = 0;
+    const comparison = window.matchMedia("(min-width: 760px)");
+    if (selector === "#draft-options") comparison.addEventListener("change", render);
     function render() {
       const cards = [...list.children];
       index = Math.max(0, Math.min(index, cards.length - 1));
-      cards.forEach((card, i) => { card.hidden = i !== index; });
+      const compare = selector === "#draft-options" && comparison.matches;
+      if (selector === "#draft-options") list.dataset.compare = String(compare);
+      cards.forEach((card, i) => { card.hidden = !compare && i !== index; });
       localizeText(count, message("{0} / {1}", [cards.length ? index + 1 : 0, cards.length]));
       prev.disabled = index === 0; next.disabled = index >= cards.length - 1;
-      nav.hidden = cards.length < 2;
+      nav.hidden = compare || cards.length < 2;
     }
     prev.addEventListener('click', () => { index--; render(); });
     next.addEventListener('click', () => { index++; render(); });

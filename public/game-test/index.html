@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="./style.css" />
     <link rel="stylesheet" href="./car-stereo.css" />
     <link rel="stylesheet" href="./frame.css" />
+    <link rel="stylesheet" href="./survival.css" />
   </head>
   <body data-screen="menu" data-map-panel="route">
     <main class="shell">
@@ -74,9 +75,10 @@
             <p class="tagline">今夜の音は、うちらがつくる。</p>
             <div class="tour-ticket"><span>6 CITIES</span><span>6 TAPES</span><span>ONE FINAL SHOW</span></div>
             <p class="menu-copy">6つの街のサウンドチェックテープを集めて、最後のフロアへ。<br />走りも、出会いも、毎回ちがう。ふたりなら、どこまで行ける？</p>
-            <div class="menu-actions"><button id="story" class="primary">新しい夜をはじめる</button><button id="resume-tour" hidden>この旅のつづきから</button></div>
+            <div class="menu-actions"><button id="survival" class="primary">ネオンサバイバルに挑戦</button><button id="story">新しい夜をはじめる</button><button id="resume-tour" hidden>この旅のつづきから</button></div>
+            <p id="survival-record" class="survival-record"></p>
             <button id="retry-art" hidden>もう一回読み込むで</button>
-            <p class="menu-guide">運転は自動。飛ぶ・ハート・充電・加速の4つで、道を切り開こ。</p>
+            <p class="menu-guide">サバイバルは1ライフ・自動ハート・同じ日なら同じシード。終了すると最初から。ツアーのセーブは別やで。</p>
             <div id="loading" class="loading" role="status">街の灯り、つけてるで…</div>
           </div>
           <div class="road-status" id="road-status"><span id="road-phase">出発準備</span><strong id="road-cue">ハートで街をつなご</strong><span id="next-ev">次のEV</span></div>
