@@ -45,6 +45,26 @@ async function checkLanguages(page, picker, selectors) {
       (code) => document.documentElement.lang === code,
       code,
     );
+    if (await page.locator('#menu').isVisible()) {
+      const catalog = JSON.parse(
+        await readFile(
+          resolve(root, `public/game-test/locales/${code}.json`),
+          'utf8',
+        ),
+      );
+      assert.equal(
+        await page.locator('#menu h1').textContent(),
+        catalog.NIGHTFALL + catalog.TOUR,
+      );
+      assert.equal(
+        await page.locator('#menu > .eyebrow').textContent(),
+        catalog['A GYARUINTHEMIX ROAD ROGUELITE'],
+      );
+      assert.equal(
+        await page.title(),
+        catalog['ギャルインザミックス / NIGHTFALL TOUR'],
+      );
+    }
     await assertFrameFits(page, selectors);
     assert.equal(
       await page.evaluate(() => JSON.stringify(__HYPERDRIVE__.snapshot())),
@@ -286,6 +306,8 @@ try {
     assert.equal(await page.locator('iframe#music').count(), 0);
     assert.equal(await page.locator('#music audio').count(), 1);
     await checkLanguages(page, '.settings select', [
+      '#menu h1',
+      '#menu > .eyebrow',
       '#story',
       '.language-picker',
       '.radio-dock',
