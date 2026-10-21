@@ -25,7 +25,7 @@ const INPUT_OPTIONS = [
   'mp3,wav,flac,mov,aac,ogg',
 ];
 // Only the display title is public; other source tags and full paths stay private.
-export function trackTitle(tags, filename, streamTags) {
+export function trackTitle(tags, streamTags) {
   const clean = (value) =>
     typeof value === 'string'
       ? value
@@ -39,9 +39,9 @@ export function trackTitle(tags, filename, streamTags) {
         ([key]) => key.toLowerCase() === 'title',
       )?.[1],
     );
-    if (tagged && tagged !== BRAND) return tagged;
+    if (tagged) return tagged;
   }
-  return clean(basename(filename).replace(EXTENSIONS, '')) || 'Untitled';
+  return '';
 }
 async function run(command, args, timeout = 1800000) {
   return new Promise((done, fail) => {
@@ -156,11 +156,8 @@ export async function packageLibrary({
           duration > maxSeconds
         )
           throw new Error('Missing audio stream or duration exceeds limit.');
-        const title = trackTitle(
-          info.format?.tags,
-          entry.name,
-          info.streams[0]?.tags,
-        );
+        const title = trackTitle(info.format?.tags, info.streams[0]?.tags);
+        if (!title) continue;
         const target = join(out, id);
         let track;
         try {

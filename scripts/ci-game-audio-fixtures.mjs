@@ -6,6 +6,7 @@ import { isAbsolute, join, relative, resolve } from 'node:path';
 export const AUDIO_FIXTURE_KEY =
   'CI_ONLY_NOT_A_SECRET_SYNTHETIC_AUDIO_FIXTURE_2026';
 export const AUDIO_FIXTURE_SOURCE = 'ci-synthetic-tone.wav';
+export const AUDIO_FIXTURE_TITLE = 'Synthetic Radio Song';
 
 // Creating PCM samples needs no host encoder. All actual packaging runs in the
 // exact release packager image, through the real bouncer updater's confinement.
@@ -31,7 +32,15 @@ export function syntheticWave(seconds = 8) {
       Math.round(8192 * Math.sin((2 * Math.PI * 440 * sample) / sampleRate)),
       44 + sample * 2,
     );
-  return wave;
+  const title = Buffer.from(`${AUDIO_FIXTURE_TITLE}\0`, 'utf8');
+  const info = Buffer.alloc(20 + title.length + (title.length % 2));
+  info.write('LIST', 0);
+  info.writeUInt32LE(info.length - 8, 4);
+  info.write('INFOINAM', 8);
+  info.writeUInt32LE(title.length, 16);
+  title.copy(info, 20);
+  wave.writeUInt32LE(wave.length + info.length - 8, 4);
+  return Buffer.concat([wave, info]);
 }
 
 export async function createGameAudioFixtures({ checkoutRoot, secretFile }) {

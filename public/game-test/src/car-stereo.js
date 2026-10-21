@@ -27,9 +27,9 @@ export function createCarStereo({
   controllerFactory = createStreamAudio,
 } = {}) {
   mount.classList.add('car-stereo');
-  localizeHTML(mount, `<div class="stereo-topline"><span class="stereo-brand">ギャルインザミックス</span><span class="stereo-model">GT-MIX / DIGITAL AUDIO</span></div>
+  localizeHTML(mount, `<div class="stereo-topline"><span class="stereo-brand">ギャルインザミックス</span><span class="stereo-model">GT-MIX / CAR AUDIO</span></div>
     <div class="stereo-core"><div class="stereo-volume"><div class="stereo-knob" role="slider" tabindex="0" aria-label="Volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="70"><span></span></div><span class="stereo-knob-label">VOLUME</span></div>
-    <div class="stereo-screen"><div class="stereo-display-top"><span data-stereo="status" role="status">STANDBY</span><span data-stereo="disc">DISC —</span></div><strong data-stereo="title" translate="no">ギャルインザミックス</strong><div class="stereo-display-bottom"><span data-stereo="format">HLS / DIGITAL</span><output data-stereo="time">00:00 / 00:00</output></div></div></div>
+    <div class="stereo-screen"><div class="stereo-display-top"><span data-stereo="status" role="status">STANDBY</span><span class="stereo-equalizer" aria-hidden="true" translate="no">▂▅▃▇▅</span><span data-stereo="disc">TRACK —</span></div><strong data-stereo="title" translate="no"></strong><div class="stereo-display-bottom"><span data-stereo="format">MUSIC</span><output data-stereo="time">00:00 / 00:00</output></div></div></div>
     <div class="stereo-seek"><input type="range" min="0" max="1" step="0.1" value="0" aria-label="Playback position" disabled></div>
     <div class="stereo-controls"><button type="button" data-action="previous" aria-label="Previous track">◀◀<small>PREV</small></button><button type="button" class="stereo-play" data-action="play" aria-label="Play music">▶<small>PLAY</small></button><button type="button" data-action="next" aria-label="Next track">▶▶<small>NEXT</small></button><button type="button" data-action="mute" aria-label="Mute music" aria-pressed="false">ATT<small>MUTE</small></button><button type="button" data-action="list" aria-label="Show playlist" aria-expanded="false">LIST<small>TRACKS</small></button></div>
     <div class="stereo-playlist" hidden><label>SELECT TRACK<select aria-label="Select music track"></select></label><p>Private library · tap play to listen</p></div><audio preload="none" playsinline></audio>`);
@@ -50,12 +50,12 @@ export function createCarStereo({
   };
   const render = (state) => {
     localizeText($('[data-stereo="status"]'), statuses[state.status] || 'READY');
-    $('[data-stereo="title"]').textContent = state.track?.title || 'ギャルインザミックス';
-    localizeText($('[data-stereo="disc"]'), message("DISC {0}", [state.track ? String(state.catalog.findIndex((t) => t.id === state.track.id) + 1).padStart(2, '0') : '—']));
+    $('[data-stereo="title"]').textContent = state.track?.title || '';
+    localizeText($('[data-stereo="disc"]'), message("TRACK {0}", [state.track ? String(state.catalog.findIndex((t) => t.id === state.track.id) + 1).padStart(2, '0') : '—']));
     localizeText($('[data-stereo="time"]'), message("{0} / {1}", [time(state.currentTime), time(state.duration)]));
     localizeText($('[data-stereo="format"]'), state.track?.excerpt
       ? 'PREVIEW EXCERPT'
-      : 'HLS / DIGITAL');
+      : 'MUSIC');
     const signature = state.catalog.map((t) => t.id).join(',');
     if (signature !== lastCatalog) {
       select.replaceChildren(

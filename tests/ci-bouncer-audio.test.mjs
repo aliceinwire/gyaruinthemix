@@ -16,6 +16,7 @@ import { fileURLToPath } from 'node:url';
 import {
   AUDIO_FIXTURE_KEY,
   AUDIO_FIXTURE_SOURCE,
+  AUDIO_FIXTURE_TITLE,
   createGameAudioFixtures,
   syntheticWave,
 } from '../scripts/ci-game-audio-fixtures.mjs';
@@ -44,7 +45,13 @@ test('CI creates deterministic bounded PCM without host packaging tools', async 
   assert.equal(wave.toString('ascii', 8, 16), 'WAVEfmt ');
   assert.equal(wave.readUInt16LE(20), 1);
   assert.equal(wave.readUInt32LE(24), 48000);
-  assert.equal(wave.length, 44 + 8 * 48000 * 2);
+  assert.equal(wave.readUInt32LE(40), 8 * 48000 * 2);
+  assert.equal(wave.readUInt32LE(4), wave.length - 8);
+  assert.ok(
+    wave
+      .subarray(44 + 8 * 48000 * 2)
+      .includes(Buffer.from(AUDIO_FIXTURE_TITLE)),
+  );
   assert.deepEqual(wave, syntheticWave());
   assert.throws(() => syntheticWave(13));
   await assert.rejects(access(join(fixture.library, '.hls')), {

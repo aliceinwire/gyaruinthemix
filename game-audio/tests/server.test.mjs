@@ -2,7 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { randomBytes } from 'node:crypto';
-import { mkdtemp, mkdir, writeFile, rm, symlink } from 'node:fs/promises';
+import {
+  mkdtemp,
+  mkdir,
+  writeFile,
+  readFile,
+  rm,
+  symlink,
+} from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createAudioHandler, loadCatalog } from '../server/app.mjs';
@@ -274,4 +281,17 @@ test('symlink packages and runtime replacement cannot expose outside files', asy
     404,
   );
   await assert.rejects(loadCatalog(f.dir), /Unsafe media/);
+});
+
+test('catalog entries without a metadata title are not served', async (t) => {
+  const f = await setup(t);
+  const path = join(f.dir, 'catalog.json');
+  const catalog = JSON.parse(await readFile(path, 'utf8'));
+  for (const value of [undefined, '', ' \u0000 ']) {
+    catalog.tracks[0].title = value;
+    await writeFile(path, JSON.stringify(catalog));
+    const tracks = await loadCatalog(f.dir);
+    assert.equal(tracks.has(id), false);
+    assert.equal(tracks.get(other).title, 'Second Song');
+  }
 });

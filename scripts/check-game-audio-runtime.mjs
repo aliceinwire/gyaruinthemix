@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {
   AUDIO_FIXTURE_KEY,
   AUDIO_FIXTURE_SOURCE,
+  AUDIO_FIXTURE_TITLE,
 } from './ci-game-audio-fixtures.mjs';
 
 export async function assertPrivateAudioDenied(response, path) {
@@ -66,7 +67,7 @@ export async function checkGameAudioRuntime(
   const { tracks } = JSON.parse(metadata);
   assert.equal(tracks.length, 1, 'Only the synthetic CI track is permitted');
   assert.match(tracks[0].id, /^t-[a-f0-9]{24}$/);
-  assert.equal(tracks[0].title, AUDIO_FIXTURE_SOURCE.replace(/\.wav$/, ''));
+  assert.equal(tracks[0].title, AUDIO_FIXTURE_TITLE);
   assert.equal(tracks[0].artist, 'ギャルインザミックス');
   assert.deepEqual(Object.keys(tracks[0]).sort(), [
     'artist',

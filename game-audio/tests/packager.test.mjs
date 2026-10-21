@@ -9,6 +9,7 @@ import {
   symlink,
   stat,
   rename,
+  readdir,
 } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -160,7 +161,10 @@ test('supported local containers package while a disguised playlist cannot repla
     ]);
   const ready = await packageLibrary({ directory: root, strict: true });
   assert.deepEqual(ready.failures, []);
-  assert.equal(ready.packaged, variants.length);
+  assert.equal(
+    ready.packaged,
+    variants.filter(([extension]) => extension !== 'aac').length,
+  );
   assert.equal(
     ready.catalog.tracks.filter((track) => track.title === 'Synthetic Song')
       .length,
@@ -184,31 +188,23 @@ test('supported local containers package while a disguised playlist cannot repla
   assert.equal((await stat(catalog)).mtimeMs, modified);
 });
 
-test('display titles prefer title tags and fall back to the audio filename', () => {
+test('display titles use metadata only and leave missing titles empty', () => {
+  assert.equal(trackTitle({ title: ' 夜のドライブ ' }), '夜のドライブ');
+  assert.equal(trackTitle({ TITLE: 'Club Mix' }), 'Club Mix');
   assert.equal(
-    trackTitle({ title: ' 夜のドライブ ' }, 'other.mp3'),
-    '夜のドライブ',
+    trackTitle({ title: 'ギャルインザミックス' }),
+    'ギャルインザミックス',
   );
-  assert.equal(trackTitle({ TITLE: 'Club Mix' }, 'other.flac'), 'Club Mix');
+  assert.equal(trackTitle({ title: '  ' }), '');
+  assert.equal(trackTitle({}), '');
+  for (const tags of [{}, { title: ' ' }])
+    assert.equal(trackTitle(tags, { TITLE: 'Stream Title' }), 'Stream Title');
   assert.equal(
-    trackTitle({ title: 'ギャルインザミックス' }, '本当の曲名.mp3'),
-    '本当の曲名',
-  );
-  assert.equal(trackTitle({ title: '  ' }, 'Bounce.MP3'), 'Bounce');
-  assert.equal(trackTitle({}, 'No Tags.wav'), 'No Tags');
-  for (const tags of [{}, { title: ' ' }, { title: 'ギャルインザミックス' }])
-    assert.equal(
-      trackTitle(tags, 'fallback.ogg', { TITLE: 'Stream Title' }),
-      'Stream Title',
-    );
-  assert.equal(
-    trackTitle({ title: 'Format Title' }, 'fallback.ogg', {
-      title: 'Stream Title',
-    }),
+    trackTitle({ title: 'Format Title' }, { title: 'Stream Title' }),
     'Format Title',
   );
-  assert.equal(trackTitle({ title: 'a\u0000b\u202ec' }, 'other.wav'), 'abc');
-  assert.equal(trackTitle({ title: 'x'.repeat(300) }, 'other.wav').length, 160);
+  assert.equal(trackTitle({ title: 'a\u0000b\u202ec' }), 'abc');
+  assert.equal(trackTitle({ title: 'x'.repeat(300) }).length, 160);
 });
 
 test('existing anonymous packages gain real titles without re-encoding audio', async (t) => {
@@ -224,12 +220,12 @@ test('existing anonymous packages gain real titles without re-encoding audio', a
     '-i',
     'sine=frequency=440:duration=1',
     '-metadata',
-    'title=ギャルインザミックス',
+    'title=メタデータの曲名',
     join(root, '本当の曲名.wav'),
   ]);
   const first = await packageLibrary({ directory: root });
   const track = first.catalog.tracks[0];
-  assert.equal(track.title, '本当の曲名');
+  assert.equal(track.title, 'メタデータの曲名');
   const init = join(root, '.hls', track.id, 'init.mp4');
   const before = await readFile(init),
     modified = (await stat(init)).mtimeMs;
@@ -239,12 +235,54 @@ test('existing anonymous packages gain real titles without re-encoding audio', a
   await writeFile(cachedPath, JSON.stringify(cached));
   await rename(join(root, '本当の曲名.wav'), join(root, '新しい曲名.wav'));
   const refreshed = await packageLibrary({ directory: root });
-  assert.equal(refreshed.catalog.tracks[0].title, '新しい曲名');
+  assert.equal(refreshed.catalog.tracks[0].title, 'メタデータの曲名');
   assert.equal(refreshed.catalog.tracks[0].id, track.id);
   assert.deepEqual(await readFile(init), before);
   assert.equal((await stat(init)).mtimeMs, modified);
   assert.equal(
     (await loadCatalog(join(root, '.hls'))).get(track.id).title,
-    '新しい曲名',
+    'メタデータの曲名',
   );
+});
+
+test('titleless files are skipped without encoding or blocking valid tracks', async (t) => {
+  const dir = await mkdtemp(join(tmpdir(), 'ga-title-required-'));
+  const root = join(dir, 'assets/music');
+  await mkdir(root, { recursive: true });
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  for (const [filename, title] of [
+    ['private-name.wav', null],
+    ['blank.wav', '   '],
+    ['different-filename.wav', '本当の曲名'],
+  ]) {
+    execFileSync('ffmpeg', [
+      '-v',
+      'error',
+      '-f',
+      'lavfi',
+      '-i',
+      'sine=frequency=440:duration=1',
+      ...(title === null ? [] : ['-metadata', `title=${title}`]),
+      join(root, filename),
+    ]);
+  }
+  const result = await packageLibrary({ directory: root, strict: true });
+  assert.deepEqual(result.failures, []);
+  assert.equal(result.catalogUpdated, true);
+  assert.equal(result.packaged, 1);
+  assert.equal(result.catalog.tracks[0].title, '本当の曲名');
+  assert.deepEqual(
+    (await readdir(join(root, '.hls'))).filter((name) => name.startsWith('t-')),
+    [result.catalog.tracks[0].id],
+  );
+  assert.doesNotMatch(
+    JSON.stringify(result.catalog),
+    /private-name|blank|different-filename/,
+  );
+  await rm(join(root, 'different-filename.wav'));
+  const empty = await packageLibrary({ directory: root, strict: true });
+  assert.deepEqual(empty.failures, []);
+  assert.equal(empty.catalogUpdated, true);
+  assert.deepEqual(empty.catalog.tracks, []);
+  assert.equal((await loadCatalog(join(root, '.hls'))).size, 0);
 });

@@ -1029,6 +1029,26 @@ try {
             ?.textContent === '曲なし',
       );
       assert.equal(await page.locator('iframe#music').count(), 0);
+      assert.equal(await page.locator('#music [data-stereo="format"]').innerText(), 'MUSIC');
+      assert.doesNotMatch(await page.locator('#music').innerText(), /HLS|DIGITAL/i);
+      assert.equal(await page.locator('#music [data-stereo="title"]').innerText(), '');
+      assert.equal(await page.locator('#music .stereo-knob').getAttribute('role'), 'slider');
+      const deckBounds = await page.locator('#music').boundingBox();
+      assert.ok(deckBounds.x >= 0 && deckBounds.x + deckBounds.width <= width);
+      for (const [radioWidth, radioHeight] of [[320, 740], [390, 667], [667, 375], [1440, 1000]]) {
+        await page.setViewportSize({ width: radioWidth, height: radioHeight });
+        const bounds = await page.locator('#music').boundingBox();
+        assert.ok(bounds.x >= 0 && bounds.x + bounds.width <= radioWidth);
+        assert.ok(bounds.y >= 0 && bounds.y + bounds.height <= radioHeight);
+        for (const button of await page.locator('#music .stereo-controls button').all()) {
+          const target = await button.boundingBox();
+          assert.ok(target.width >= 24 && target.height >= 24);
+        }
+        await page.screenshot({ path: resolve(root, `artifacts/browser/game-test/${radioWidth}-radio.png`) });
+      }
+      await page.setViewportSize({ width, height });
+
+
       assert.equal(await page.locator('#music audio').count(), 1);
       assert.equal(
         await page.locator('#music [data-action="play"]').isVisible(),

@@ -179,38 +179,33 @@ body[data-music-open="true"] .music-panel { margin: 0; padding: 20px; }
 }
 /* The physical radio is the only music control and never leaves the cabinet. */
 .radio-dock { flex: none; position: relative; z-index: 3; padding: 4px 8px; border-top: 1px solid var(--line); background: #151921; }
-.radio-dock .car-stereo { display: grid; grid-template-columns: minmax(200px, 1fr) minmax(250px, .8fr); gap: 3px 12px; max-width: 960px; padding: 6px 10px; margin: 0 auto; border-radius: 9px; }
+.radio-dock .car-stereo { display: grid; grid-template-columns: 64px minmax(0,1fr); gap: 2px 10px; max-width: 760px; padding: 7px 12px; margin: 0 auto; border-radius: 9px; }
 .radio-dock .stereo-topline { display: none; }
-.radio-dock .stereo-core { grid-column: 1; grid-row: 1 / 3; grid-template-columns: 42px minmax(0,1fr); gap: 8px; }
-.radio-dock .stereo-knob { width: 40px; height: 40px; border-width: 2px; }
-.radio-dock .stereo-knob:before { inset: 6px; }
-.radio-dock .stereo-knob span { inset: 5px; }
-.radio-dock .stereo-knob-label { font-size: 6px; }
-.radio-dock .stereo-screen { padding: 4px 8px; }
-.radio-dock .stereo-screen strong { font-size: 12px; margin: 3px 0; }
+.radio-dock .stereo-core { display: contents; }
+.radio-dock .stereo-volume { grid-column: 1; grid-row: 1 / 4; align-self: center; }
+.radio-dock .stereo-knob { width: 60px; height: 60px; border-width: 2px; }
+.radio-dock .stereo-knob:before { inset: 7px; }
+.radio-dock .stereo-knob span { inset: 8px; }
+.radio-dock .stereo-knob-label { font-size: 7px; }
+.radio-dock .stereo-screen { grid-column: 2; grid-row: 1; padding: 4px 10px; }
+.radio-dock .stereo-screen strong { font-size: 15px; margin: 2px 0; }
 .radio-dock .stereo-display-top { font-size: 8px; }
 .radio-dock .stereo-display-bottom output { font-size: 10px; }
-.radio-dock .stereo-display-bottom > span { font-size: 6px; }
-.radio-dock .stereo-seek { grid-column: 2; grid-row: 1; margin: 0; }
-.radio-dock .stereo-seek input { min-height: 16px; }
-.radio-dock .stereo-controls { grid-column: 2; grid-row: 2; gap: 5px; }
-.radio-dock .stereo-controls button { min-height: 38px; padding: 3px; gap: 4px; font-size: 11px; }
+.radio-dock .stereo-display-bottom > span { font-size: 7px; }
+.radio-dock .stereo-seek { grid-column: 2; grid-row: 2; margin: 0; }
+.radio-dock .stereo-seek input { min-height: 12px; height: 12px; }
+.radio-dock .stereo-controls { grid-column: 2; grid-row: 3; gap: 3px; }
+.radio-dock .stereo-controls button { min-height: 26px; padding: 2px; gap: 4px; font-size: 10px; border-radius: 2px; }
 .radio-dock .stereo-controls small { font-size: 7px; }
 .radio-dock .stereo-playlist { position: absolute; right: 12px; bottom: calc(100% - 2px); width: min(400px, calc(100% - 24px)); margin: 0; box-shadow: 0 -8px 30px #0008; }
 @media (max-width: 680px) {
  .radio-dock { padding: 3px 5px; }
- .radio-dock .car-stereo { grid-template-columns: minmax(0,1fr); padding: 5px; gap: 3px; }
- .radio-dock .stereo-core { grid-column: 1; grid-row: 1; grid-template-columns: 36px minmax(0,1fr); }
- .radio-dock .stereo-knob { width: 34px; height: 34px; }
- .radio-dock .stereo-volume { gap: 0; }
- .radio-dock .stereo-knob-label, .radio-dock .stereo-display-bottom > span { display: none; }
- .radio-dock .stereo-screen { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 2px 6px; }
- .radio-dock .stereo-display-top { grid-column: 1 / -1; }
- .radio-dock .stereo-screen strong { margin: 0; font-size: 11px; }
- .radio-dock .stereo-seek { grid-column: 1; grid-row: 2; }
- .radio-dock .stereo-seek input { min-height: 12px; }
- .radio-dock .stereo-controls { grid-column: 1; grid-row: 3; }
- .radio-dock .stereo-controls button { flex-direction: row; min-height: 32px; }
+.radio-dock .car-stereo { grid-template-columns: 46px minmax(0,1fr); padding: 5px; gap: 2px 6px; }
+ .radio-dock .stereo-knob { width: 44px; height: 44px; }
+ .radio-dock .stereo-volume { gap: 4px; }
+ .radio-dock .stereo-screen { padding: 3px 6px; }
+ .radio-dock .stereo-screen strong { font-size: 12px; }
+ .radio-dock .stereo-controls button { flex-direction: row; min-height: 34px; }
  .radio-dock .stereo-controls small { display: none; }
  .screen-menu h1 { font-size: 36px; }
  .screen-menu :is(.menu-copy,.menu-guide) { font-size: 11px; margin: 6px 0; }
@@ -297,7 +292,7 @@ body[data-music-open="true"] .music-panel { margin: 0; padding: 20px; }
  .map-tabs { padding-bottom: 4px; margin-bottom: 4px; }
  .map-tabs button { min-height: 34px; }
  .departure { min-height: 36px; padding: 5px; margin-top: 2px; font-size: 12px; }
- .radio-dock .car-stereo { padding: 3px 8px; }
+.radio-dock .car-stereo { padding: 3px 8px; }
  body:is([data-screen="playing"], [data-screen="finale"]) .below-stage { padding: 4px 8px; }
  body:is([data-screen="playing"], [data-screen="finale"]) .cabinet { grid-template-columns: minmax(0,1fr) 210px; }
  body:is([data-screen="playing"], [data-screen="finale"]) .topline { display: flex; padding: 2px 5px; min-height: 32px; }
