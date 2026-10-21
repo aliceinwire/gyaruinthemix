@@ -81,19 +81,32 @@ export const CAR_ART = Object.freeze({
 });
 
 export const CAR_WHEEL_ART = Object.freeze({ src: assetUrl('chrome-wheel'), sourceWidth: 128, sourceHeight: 128, crop: { x: 0, y: 0, width: 128, height: 128 } });
-// Roof mounts use the original body's art coordinates, then map into the same
-// normalized runtime grid as its crew/body. A split at the metal cap preserves
-// a slim roof edge while giving the chibi crew clear headroom behind the glass.
+// Hardtop fittings are measured on each 600px body sprite. Reuse its windshield
+// and, on Rocket Gal, its rear pillar. Only the missing cap/support is added;
+// the illustrated roof's unrelated front pillar must never replace the car's.
 export const CAR_ROOF_ART = Object.freeze({
   'mix-175': Object.freeze({
     id: 'mix-175-roof', src: assetUrl('mix-175-roof'), sourceWidth: 600, sourceHeight: 180,
     crop: { x: 0, y: 0, width: 600, height: 180 },
-    mount: { x: 480, y: -243, width: 1055, height: 513 }, capSourceHeight: 70, capHeight: 102,
+    cap: { source: { x: 70, y: 0, width: 454, height: 74 }, body: { x: 200, y: -14, width: 138, height: 24 } },
+    rearPillar: {
+      source: { x: 0, y: 70, width: 90, height: 110 }, thicknessScale: .6,
+      sourceTop: { x: 47, y: 80 }, sourceFoot: { x: 13, y: 177 },
+      // Follow the rear quarter's rising shoulder into a rounded hardtop.
+      // The foot overlaps the original outline at (162, 30); its tangent
+      // continues the body curve rather than forming an upright step.
+      top: { x: 207, y: 2 }, controlTop: { x: 190, y: 4 },
+      controlFoot: { x: 184, y: 22 }, foot: { x: 162, y: 32 },
+    },
+    windshield: { top: { x: 334, y: 2 }, foot: { x: 408, y: 51 } },
+    snow: { x: 220, y: -14, width: 96 },
   }),
   'rocket-gal': Object.freeze({
     id: 'rocket-gal-roof', src: assetUrl('rocket-gal-roof'), sourceWidth: 600, sourceHeight: 149,
     crop: { x: 0, y: 0, width: 600, height: 149 },
-    mount: { x: 610, y: -191, width: 1010, height: 501 }, capSourceHeight: 43, capHeight: 88,
+    cap: { source: { x: 58, y: 0, width: 442, height: 48 }, body: { x: 217, y: -7, width: 115, height: 20 } },
+    windshield: { top: { x: 326, y: 8 }, foot: { x: 413, y: 53 } },
+    snow: { x: 236, y: -7, width: 76 },
   }),
 });
 const PAINTS = Object.freeze({ pink: '#ff4f9b', mint: '#55dcc8', purple: '#a77aff', gold: '#ffc452', blue: '#5395ff', black: '#424457' });
@@ -125,6 +138,19 @@ export function getCarArtLayout({ carId = 'mix-175', x = 0, y = 0, width, height
     wheels: art.wheels.map((p) => ({ ...point(p), radius: p.radius * sy })),
     cabins: art.cabins.map(rect), seats: art.seats.map(point), logo: rect(art.logo),
     scaleX: sx, scaleY: sy,
+  };
+}
+
+/** Roof fittings share the body's scale and ground anchor. */
+export function getCarRoofLayout(options = {}) {
+  const body = getCarArtLayout(options), roof = CAR_ROOF_ART[body.carId];
+  if (!roof) return null;
+  const point = p => ({ x: body.body.x + p.x * body.scaleX, y: body.body.y + p.y * body.scaleY });
+  const rect = p => ({ ...point(p), width: p.width * body.scaleX, height: p.height * body.scaleY });
+  return {
+    cap: rect(roof.cap.body),
+    windshield: { top: point(roof.windshield.top), foot: point(roof.windshield.foot) },
+    snow: { ...point(roof.snow), width: roof.snow.width * body.scaleX },
   };
 }
 
@@ -236,16 +262,37 @@ export function drawCarRoof(ctx, options = {}) {
   if (!roof) return false;
   const img = images.get(roof.id); if (!img) return false;
   const layout = getCarArtLayout(options);
-  const sx = art.sourceScaleX * layout.scaleX, sy = art.sourceScaleY * layout.scaleY;
-  const x = layout.body.x + (roof.mount.x - art.originalCrop.x) * sx;
-  const y = layout.body.y + (roof.mount.y - art.originalCrop.y) * sy;
-  const width = roof.mount.width * sx, height = roof.mount.height * sy, capHeight = roof.capHeight * sy;
   const roofPalette = { ...art, id: roof.id, crop: roof.crop, protectedPaint: [] };
-  const source = paintSource(roofPalette, img, options.paint), c = source.crop;
+  const source = paintSource(roofPalette, img, options.paint);
   ctx.save(); ctx.imageSmoothingEnabled = false;
-  const dx = Math.round(x), dy = Math.round(y), dw = Math.round(width), cap = Math.round(capHeight), dh = Math.round(height);
-  ctx.drawImage(source.image, c.x, c.y, c.width, roof.capSourceHeight, dx, dy, dw, cap);
-  ctx.drawImage(source.image, c.x, c.y + roof.capSourceHeight, c.width, c.height - roof.capSourceHeight, dx, dy + cap, dw, dh - cap);
+  ctx.translate(layout.body.x, layout.body.y);
+  ctx.scale(layout.scaleX, layout.scaleY);
+  const pillar = roof.rearPillar;
+  if (pillar) {
+    // Bend thin strips of the existing painted/chrome texture along the rear
+    // body contour. A single affine shear can only produce a straight post.
+    const { sourceTop: top, sourceFoot: foot, source: c } = pillar;
+    const at = (y) => {
+      const t = (y - top.y) / (foot.y - top.y), u = 1 - t;
+      return {
+        x: u*u*u*pillar.top.x + 3*u*u*t*pillar.controlTop.x + 3*u*t*t*pillar.controlFoot.x + t*t*t*pillar.foot.x,
+        y: u*u*u*pillar.top.y + 3*u*u*t*pillar.controlTop.y + 3*u*t*t*pillar.controlFoot.y + t*t*t*pillar.foot.y,
+        sourceX: top.x + t * (foot.x - top.x),
+      };
+    };
+    for (let y = c.y; y < c.y + c.height; y += 2) {
+      const height = Math.min(2, c.y + c.height - y), start = at(y), end = at(y + height);
+      const a = pillar.thicknessScale;
+      const d = (end.y - start.y) / height;
+      const skew = (end.x - start.x - a * (end.sourceX - start.sourceX)) / height;
+      ctx.save();
+      ctx.transform(a, 0, skew, d, start.x - a * start.sourceX - skew * y, start.y - d * y);
+      ctx.drawImage(source.image, c.x, y, c.width, height, c.x, y, c.width, height);
+      ctx.restore();
+    }
+  }
+  const c = roof.cap.source, b = roof.cap.body;
+  ctx.drawImage(source.image, c.x, c.y, c.width, c.height, b.x, b.y, b.width, b.height);
   ctx.restore(); return true;
 }
 

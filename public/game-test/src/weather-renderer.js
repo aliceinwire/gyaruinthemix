@@ -30,7 +30,6 @@ export function drawCarWeather(
   {
     weather = "sunny",
     season = "summer",
-    roofClosed = false,
     snowRoof = null,
     mudAmount = 0,
     time = 0,
@@ -38,40 +37,6 @@ export function drawCarWeather(
     speed = 0,
   } = {},
 ) {
-  if (roofClosed) {
-    // Closed hardtop and glass; the transparent cabin still reveals both DJs.
-    g.globalAlpha = 0.14;
-    px(g, -59, -100, 102, 57, "#94dceb");
-    g.globalAlpha = 1;
-    px(g, -64, -106, 98, 5, "#3b2348");
-    px(g, -60, -111, 90, 5, "#dd6fae");
-    px(g, -57, -113, 83, 2, "#ffc1e0");
-    px(g, -65, -104, 5, 61, "#a95b93");
-    g.fillStyle = "#a95b93";
-    g.beginPath();
-    g.moveTo(30, -106);
-    g.lineTo(37, -104);
-    g.lineTo(59, -42);
-    g.lineTo(52, -42);
-    g.closePath();
-    g.fill();
-    px(g, -11, -103, 3, 60, "#6a426c");
-    px(g, -58, -102, 5, 2, "#d8f5f6");
-    px(g, 37, -87, 3, 15, "#bce3ef");
-    // Wiper is a visible moving state, not a static weather recolor.
-    const wx = 43 + Math.sin(time * 5) * 9;
-    g.strokeStyle = "#251e38";
-    g.lineWidth = 2;
-    g.beginPath();
-    g.moveTo(53, -43);
-    g.lineTo(wx, -75);
-    g.stroke();
-    if (weather === "snow" || season === "winter") {
-      px(g, -60, -115, 87, 3, "#e4ecf4");
-      px(g, -57, -118, 22, 3, "#eef4f8");
-      px(g, -11, -117, 35, 2, "#eef4f8");
-    }
-  }
   if (snowRoof && (weather === "snow" || season === "winter")) {
     const {x,y,width} = snowRoof;
     px(g, x, y-2, width, 2, "#e4ecf4");

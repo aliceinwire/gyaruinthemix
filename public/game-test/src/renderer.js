@@ -6,7 +6,7 @@ import { drawCabinCharacter, preloadCabinCharacters } from "./cabin-characters.j
 import { preloadUmbrellaArt, drawUmbrellaArt } from "./umbrella-art.js";
 import { preloadRoadSurfaceArt, drawRoadSurface } from "./road-surface.js";
 import { preloadRoadsideArt, drawRoadsideObject } from "./roadside-art.js";
-import { preloadCarArt, getCarArt, CAR_ROOF_ART, getCarArtLayout, drawCarBody, drawCarWheels, drawCarRoof } from "./car-art.js";
+import { preloadCarArt, getCarArtLayout, getCarRoofLayout, drawCarBody, drawCarWheels, drawCarRoof } from "./car-art.js";
 import { getCarProfile, getCarAppearance } from "./garage.js";
 import {
   preloadStreetCharacters,
@@ -103,7 +103,8 @@ function text(g, str, x, y, size = 12, color = "#fff1f5") {
 }
 export function heartVisualPosition(state, shot) {
   const carId=getCarProfile(state).id;
-  const layout=getCarArtLayout({carId,x:190+(state.windOffset||0),y:469-(state.jumpHeight||0)*95,...(carId==="heart-limo"?{height:62}:{})});
+  const options={carId,x:190+(state.windOffset||0),y:469-(state.jumpHeight||0)*95,...(carId==="heart-limo"?{height:62}:{})};
+  const layout=getCarArtLayout(options);
   const passenger=getCrewSeatLayout(layout)[0];
   const startX=passenger.x+passenger.width*.75;
   const startY=passenger.y+passenger.height*.65;
@@ -115,13 +116,15 @@ export function heartVisualPosition(state, shot) {
 
 /** Side view: both front seats share a row, with the far passenger behind the driver. */
 export function getCrewSeatLayout(layout) {
+  const enclosed = !layout.openTop;
   const cabin = layout.cabins.at(-1);
   const driverSeat = layout.seats.at(-1);
-  const size = layout.openTop ? 37 : Math.min(cabin.width + 3, cabin.height + 6);
+  const size = enclosed ? Math.min(cabin.width + 3, cabin.height + 6) : 37;
   const center = layout.openTop ? driverSeat.x : cabin.x + cabin.width * .57;
-  const bottom = layout.openTop ? driverSeat.y + 6 : cabin.y + cabin.height + 2;
+  const bottom = enclosed ? cabin.y + cabin.height + 2 : driverSeat.y + 6;
+  const depth = 5;
   return [
-    { character: "chana", x: center + size * .13 - size * .90 / 2, y: bottom - size * .90 - 5, width: size * .90, height: size * .90, cabin },
+    { character: "chana", x: center + size * .13 - size * .90 / 2, y: bottom - size * .90 - depth, width: size * .90, height: size * .90, cabin },
     { character: "arisu", x: center - size / 2, y: bottom - size, width: size, height: size, cabin },
   ];
 }
@@ -149,6 +152,7 @@ export function drawCar(g, x, y, {
   }
   const layoutOptions = {carId, x:0, y:4, ...(carId === "heart-limo" ? {height:62} : {})};
   const layout = getCarArtLayout(layoutOptions);
+  const roof = roofClosed ? getCarRoofLayout(layoutOptions) : null;
   if (boost || jump > .15) {
     for (let i=0;i<3;i++) {
       const flame = 12 + Math.round((Math.sin(time * 28 + i) + 1) * 7);
@@ -158,6 +162,9 @@ export function drawCar(g, x, y, {
     }
   }
   drawCarWheels(g, {...layoutOptions, rotation:time*speed/12, wheels:appearance.wheels});
+  // The convertible roof sits behind the crew. Keep their original scale and
+  // seat anchors, allowing the big hair to extend above the closed hardtop.
+  if (roof) drawCarRoof(g,{...layoutOptions,paint:appearance.paint});
   const visual = crewVisuals || { time, action: resolveCrewActions({time,boosting:boost,shooting,charging,damage,weather,rushing,rushGestureTime}), weather, season, rushing, rushTime, rushGestureTime };
   for (const {character, x, y, width, height, cabin} of getCrewSeatLayout(layout)) {
     g.save();
@@ -184,21 +191,17 @@ export function drawCar(g, x, y, {
   if (damage && Math.floor(time*12)%2===0) {
     for (let i=0;i<4;i++) { const angle=time*4+i*Math.PI/2; text(g,"✦",Math.round(Math.cos(angle)*36),Math.round(layout.body.y-7+Math.sin(angle)*7),9,"#fff0bd"); }
   }
-  if (roofClosed && layout.openTop) {
-    drawCarRoof(g,{...layoutOptions,paint:appearance.paint});
-    const front=layout.cabins.at(-1);
+  if (roof) {
+    const {top,foot}=roof.windshield;
     g.strokeStyle="#242234";g.lineWidth=1;g.beginPath();
-    g.moveTo(front.x+front.width,front.y+front.height);
-    g.lineTo(front.x+front.width-12+Math.sin(time*5)*7,front.y+4);g.stroke();
+    g.moveTo(foot.x,foot.y);
+    g.lineTo(foot.x+(top.x-foot.x)*.65+Math.sin(time*5)*layout.scaleX*4,foot.y+(top.y-foot.y)*.65);g.stroke();
   }
-  // Snow sits on the actual car-specific roof, independently of legacy canopy drawing.
+  // Accumulation uses the same fitted cap as the hardtop artwork.
   let snowRoof = null;
   if (!layout.openTop) snowRoof = {x:layout.cabins[0].x-3,y:layout.body.y,width:layout.cabins.at(-1).x+layout.cabins.at(-1).width-layout.cabins[0].x+6};
-  else if (roofClosed) {
-    const art = getCarArt(carId), roof = CAR_ROOF_ART[art.id];
-    if (roof) snowRoof = {x:layout.body.x+(roof.mount.x-art.originalCrop.x)*art.sourceScaleX*layout.scaleX,y:layout.body.y+(roof.mount.y-art.originalCrop.y)*art.sourceScaleY*layout.scaleY,width:roof.mount.width*art.sourceScaleX*layout.scaleX};
-  }
-  drawCarWeather(g,{weather,season,roofClosed:false,snowRoof,mudAmount,time,jump,speed});
+  else if (roof) snowRoof = roof.snow;
+  drawCarWeather(g,{weather,season,snowRoof,mudAmount,time,jump,speed});
   g.restore();
 }
 
