@@ -29,6 +29,18 @@ const ART = {
     'mmt.kpkkkkpk.tmm', '.mt.kkmttmkk.tm.', '.mt.kkmwwmkk.tm.', '.m..kkmttmkk..m.',
     '....kpkkkkpk....', '....kppppppk....', '....kkkkkkkk....', '................',
   ],
+  phone: [
+    '.....kkkkkk.....', '....kppppppk....', '....kpgwwgpk....', '....kpkmmkpk....',
+    '....kpkmmkpk....', '....kpgwwgpk....', '.....kkkkkk.....', '.....kssssk.....',
+    '....kppppppk....', '....kpwhwppk....', '....kpkpkppk....', '....kpwkwppk....',
+    '....kpkpkppk.k..', '....kppppppkgpk.', '.....kkkkkk.kpk.', '.............k..',
+  ],
+  md: [
+    '................', '..kkkkkkkkkkk...', '.kvvvvvvvvvvvk..', '.kvwwwwwwvvvsk..',
+    '.kvwpwwwwvsvsk..', '.kvwwwwwwvvvsk..', '.kvvvvvvvvvvvk..', '.kvvkkkkkkkvvk..',
+    '.kvkssssssskvk..', '.kvksmwwmsskvk..', '.kvkswmmwsskvk..', '.kvkssssssskvk..',
+    '.kvkkkkkkkkkvk..', '.kvvvvvvvvvvvk..', '..kkkkkkkkkkk...', '................',
+  ],
   battery: [
     '................', '......kkkk......', '......kssk......', '....kkkkkkkk....',
     '...kmmmmmmmmk...', '...kmwmmmggmk...', '...kmwmmggmmk...', '...kmmmggmmmk...',
@@ -108,6 +120,9 @@ define(['heart', 'hearts'], 'heart');
 define(['flash'], 'camera');
 define(['vinyl'], 'vinyl');
 define(['bass'], 'bass');
+define(['phone'], 'phone');
+define(['md'], 'md');
+define(['hotline'], 'phone', undefined, 'chain');
 define(['battery'], 'battery');
 define(['glide', 'air', 'air-control'], 'feather');
 define(['armor', 'guardian', 'charge-shield', 'sanctuary'], 'shield');

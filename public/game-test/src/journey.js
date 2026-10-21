@@ -1,4 +1,4 @@
-/** Destination graph for the twelve-road, six-city club tour. Pure data and immutable progress helpers. */
+/** Destination graph for the twelve-road, six-stop club tour. Pure data and immutable progress helpers. */
 import { DISTRICT_CATALOG } from './district-catalog.js';
 
 export const JOURNEY_VERSION = 1;
@@ -8,7 +8,7 @@ const freeze = value => {
   if (value && typeof value === 'object') { Object.values(value).forEach(freeze); Object.freeze(value); }
   return value;
 };
-// Authored alternatives use real, completed district artwork. Each city has an
+// Authored alternatives use real, completed district artwork. Each stop has an
 // approach road and a club road; all alternatives reconverge at the next stop.
 const CITY_PLANS = [
   { city: '中野', club: 'BEAT BASE 175', legs: [

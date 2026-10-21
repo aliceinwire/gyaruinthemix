@@ -10,6 +10,8 @@ export const SURVIVAL_UPGRADES = Object.freeze([
   { id: 'flash', kind: 'weapon', name: 'フォトフラッシュ', family: 'CAMERA', description: 'カメラが前方をまとめてフラッシュ。Lv.3と電池Lv.2でガードも貫くフラッシュモブに進化。' },
   { id: 'vinyl', kind: 'weapon', name: 'レコードオービット', family: 'VINYL', description: '回るレコードが近くの相手へ自動攻撃。Lv.3と浮力Lv.2でアンコールオービットに進化。' },
   { id: 'bass', kind: 'weapon', name: 'ベースウェーブ', family: 'BASS', description: '近くへ重低音の波を自動で放つ。Lv.3と熱狂Lv.2で、ガードを抜くアフターパーティーに進化。' },
+  { id: 'phone', kind: 'weapon', name: 'デコ電リンク', family: 'PHONE', description: 'デコ電で前方の2人へ招待を送る。Lv.3とMDリピートLv.2でホットラインに進化。' },
+  { id: 'md', name: 'MDリピート', family: 'SUPPORT', description: '数秒ごとに自動攻撃を録音し、少し遅れて半分の威力で1回リピート。連続録音や再録音はしない。' },
   { id: 'battery', name: 'ときめき電池', family: 'SUPPORT', description: '招待するたびに電池を回復。XPを引き寄せる範囲もレベルごとに広がる。' },
   { id: 'glide', name: 'フェザー浮力', family: 'SUPPORT', description: 'レベルごとに浮力の電池消費を12%減らす。ジャンプ成功でも電池を回復。' },
   { id: 'armor', name: 'ネオンアーマー', family: 'SUPPORT', description: '今すぐ耐久+12。レベルごとに受けるダメージを12%減らす。' },
@@ -21,6 +23,7 @@ export const SURVIVAL_EVOLUTIONS = Object.freeze([
   { id: 'heartstorm', name: 'ハートストーム', weapon: 'heart', support: 'relay' },
   { id: 'flashmob', name: 'フラッシュモブ', weapon: 'flash', support: 'battery' },
   { id: 'encore', name: 'アンコールオービット', weapon: 'vinyl', support: 'glide' },
+  { id: 'hotline', name: 'ホットライン', weapon: 'phone', support: 'md' },
   { id: 'afterparty', name: 'アフターパーティー', weapon: 'bass', support: 'hype' },
 ].map(Object.freeze));
 const hash = value => { let n = 2166136261; for (const char of String(value)) n = Math.imul(n ^ char.charCodeAt(0), 16777619) >>> 0; return n; };
@@ -36,7 +39,7 @@ export function createSurvival(day = '', startingWeapon = 'heart') {
   return { version: SURVIVAL_VERSION, day, startingWeapon: weapon, xp: 0, level: 0, upgrades: { [weapon]: 1 }, evolutions: [],
     quizRoads: [], heat: 0, fever: 0, sinceHit: 0, seconds: 0, wave: 0, waveStats: Array.from({ length: 6 }, () => ({ kills: 0, hits: 0 })), settledWaves: [],
     cleanWaves: 0, kills: 0, elites: 0, bestMultiplier: 1, gems: [], receipts: [],
-    flashClock: 0, vinylClock: 0, bassClock: 0, bestNotified: false };
+    flashClock: 0, vinylClock: 0, bassClock: 0, phoneClock: 0, mdClock: 0, repeat: null, bestNotified: false };
 }
 /** Only durable run progress crosses the between-road save boundary. */
 export function normalizeSurvivalSave(value) {
@@ -81,7 +84,7 @@ export function survivalOffers(state) {
   if (!isSurvival(state)) return [];
   const s = state.survival;
   if (s.level >= SURVIVAL_MAX_LEVEL || s.xp < survivalXpCost(s.level)) return [];
-  const pool = SURVIVAL_UPGRADES.filter(item => (s.upgrades[item.id] || 0) < 3)
+  const pool = SURVIVAL_UPGRADES.filter(item => (s.upgrades[item.id] || 0) < 3 && (item.id !== 'relay' || s.upgrades.heart > 0))
     .sort((a,b) => hash(`${state.seed}:${s.level}:${a.id}`) - hash(`${state.seed}:${s.level}:${b.id}`));
   // Always expose an offensive choice and a support while both remain available.
   const picks = [pool.find(item => item.kind === 'weapon'), pool.find(item => item.kind === 'support')].filter(Boolean);
@@ -89,9 +92,8 @@ export function survivalOffers(state) {
   return picks.map(item => {
     const level = (s.upgrades[item.id] || 0) + 1;
     const effects = { heart: `AUTO ×${(1 / (1 - level * .16)).toFixed(2)}`, relay: `CHAIN ${level} / ${40 + level * 16}m`,
-      flash: `${level} DMG / ${50 + level * 15}m / ${(4 - level * .35).toFixed(2)}s`,
-      vinyl: `${level} DMG / ${35 + level * 8}m / ${(2.4 - level * .25).toFixed(2)}s`,
-      bass: `${level + 1} DMG / ${38 + level * 10}m / ${(3.5 - level * .3).toFixed(2)}s`,
+      ...Object.fromEntries(['flash', 'vinyl', 'bass', 'phone'].map(id => { const p = survivalWeaponProfile(id, level); return [id, `${p.damage} DMG / ${p.radius}m / ${p.cooldown.toFixed(2)}s`]; })),
+      md: `リピート50% / ${7 - level}秒`,
       battery: `+${level} EV / XP ${48 + level * 25}m`, glide: `EV −${level * 12}% / JUMP +${level * 2} EV`,
       armor: `DMG −${level * 12}% / +12 HP`, hype: `HEAT +${9 + level * 3} / FEVER ${6 + level}s` };
     const evolution = SURVIVAL_EVOLUTIONS.find(recipe => recipe.weapon === item.id || recipe.support === item.id);
@@ -135,7 +137,7 @@ export function chooseSurvivalUpgrade(state, id) {
 export function applySurvivalModifiers(state) {
   if (!isSurvival(state)) return;
   const u = state.survival.upgrades, m = state.buildModifiers;
-  m.heartPierce = Math.max(m.heartPierce, state.survival.evolutions.includes('heartstorm') ? 3 : 1);
+  m.heartPierce = Math.max(m.heartPierce, state.survival.evolutions.includes('heartstorm') ? 3 : u.heart >= 2 ? 1 : 0);
   m.heartChain = Math.max(m.heartChain, u.relay || 0);
   m.heartChainRange = Math.max(m.heartChainRange, 40 + (u.relay || 0) * 16);
   m.conversionEnergy += u.battery || 0;
@@ -171,7 +173,26 @@ export function recordSurvivalEvent(state, event) {
   s.gems.push({ distance: event.distance ?? state.distance, xp: event.elite || event.headliner ? 24 : event.type === 'convert' ? 8 : 5 });
   if (s.gems.length > 96) { const overflow = s.gems.shift(); s.xp += overflow.xp; }
 }
-export function survivalStep(state, dt, strike) {
+/** Each weapon trades reach, coverage, target count and recovery for its role. */
+export function survivalWeaponProfile(kind, level = 1, evolved = false) {
+  const n = Math.max(1, Math.min(3, level));
+  const profiles = {
+    heart: { radius: 120 + n * 10, behind: 0, damage: evolved ? 2 : 1, limit: evolved ? 3 : 1, cooldown: .8, pierce: false },
+    flash: { radius: evolved ? 140 : 85 + n * 15, behind: 0, damage: evolved ? 4 : n, limit: 16, cooldown: evolved ? 1.5 : 2 - n * .2, pierce: evolved },
+    vinyl: { radius: evolved ? 85 : 35 + n * 8, behind: evolved ? 65 : 35 + n * 8, damage: evolved ? 4 : n, limit: evolved ? 4 : 2, cooldown: evolved ? .65 : 1.1 - n * .15, pierce: false },
+    bass: { radius: evolved ? 95 : 48 + n * 10, behind: evolved ? 65 : 35, damage: evolved ? 5 : n + 1, limit: evolved ? 8 : 4, cooldown: evolved ? 1.8 : 2.3 - n * .2, pierce: evolved },
+    phone: { radius: evolved ? 190 : 125 + n * 15, behind: 0, damage: evolved ? 3 : n, limit: evolved ? 4 : 2, cooldown: evolved ? 1.2 : 2.15 - n * .15, pierce: false },
+  };
+  return profiles[kind];
+}
+/** One bounded delayed sample; a repeat can never record another repeat. */
+export function queueSurvivalRepeat(state, kind, profile = survivalWeaponProfile(kind, state.survival?.upgrades[kind])) {
+  if (!isSurvival(state) || !state.survival.upgrades.md || state.survival.repeat || state.survival.mdClock > 0 || !profile) return;
+  const s = state.survival;
+  s.repeat = { kind, delay: .35, profile: { ...profile, damage: profile.damage / 2 } };
+  s.mdClock = 7 - s.upgrades.md;
+}
+export function survivalStep(state, dt, strike, repeatHeart) {
   if (!isSurvival(state)) return;
   const s = state.survival, u = s.upgrades;
   s.seconds += dt; s.sinceHit += dt;
@@ -187,21 +208,37 @@ export function survivalStep(state, dt, strike) {
   const range = s.fever > 0 ? 500 : 48 + (u.battery || 0) * 25;
   for (const gem of s.gems) if (gem.distance <= state.distance + range) { s.xp += gem.xp; gem.collected = true; }
   s.gems = s.gems.filter(gem => !gem.collected);
-  const fireArea = (kind, radius, damage, pierce, limit = 16, behind = 12) => {
-    const targets = state.entities.filter(e => ['salaryman', 'cone', 'barrier'].includes(e.type) && !e.resolved && !e.converted && !e.cleared && e.distance >= state.distance - behind && e.distance <= state.distance + radius).slice(0, limit);
+  s.mdClock = Math.max(0, (s.mdClock || 0) - dt);
+  const fireArea = (kind, profile, repeat = false) => {
+    const { radius, damage, pierce, limit, behind } = profile;
+    const targets = state.entities.filter(e => ['salaryman', 'cone', 'barrier'].includes(e.type) && !e.resolved && !e.converted && !e.cleared && e.distance >= state.distance - behind && e.distance <= state.distance + radius)
+      .sort((a, b) => Math.abs(a.distance - state.distance) - Math.abs(b.distance - state.distance) || a.id - b.id).slice(0, limit);
     if (!targets.length) return false;
-    for (const target of targets) strike(target, damage, false, pierce);
-    state.events.push({ type: 'survival-attack', kind, radius, distance: state.distance });
+    const targetDistances = [];
+    for (const target of targets) {
+      const hp = target.hp;
+      if (strike(target, damage, false, pierce) || target.hp !== hp) targetDistances.push(target.distance);
+    }
+    state.events.push({ type: 'survival-attack', kind, radius, distance: state.distance, targetDistances, repeat });
+    if (!repeat) queueSurvivalRepeat(state, kind, profile);
     return true;
   };
-  s.bassClock = Math.max(0, s.bassClock - dt);
-  s.flashClock = Math.max(0, s.flashClock - dt);
-  s.vinylClock = Math.max(0, s.vinylClock - dt);
-  const afterparty = s.evolutions.includes('afterparty');
-  if (u.bass && !s.bassClock && fireArea('bass', afterparty ? 110 : 38 + u.bass * 10, afterparty ? 5 : u.bass + 1, afterparty, 24, afterparty ? 80 : 35)) s.bassClock = afterparty ? 1.8 : 3.5 - u.bass * .3;
-  const flashmob = s.evolutions.includes('flashmob'), encore = s.evolutions.includes('encore');
-  if (u.flash && !s.flashClock && fireArea('flash', flashmob ? 125 : 50 + u.flash * 15, flashmob ? 4 : u.flash, flashmob)) s.flashClock = flashmob ? 2.6 : 4 - u.flash * .35;
-  if (u.vinyl && !s.vinylClock && fireArea('vinyl', encore ? 85 : 35 + u.vinyl * 8, encore ? 4 : u.vinyl, false, encore ? 4 : 2)) s.vinylClock = encore ? 1.2 : 2.4 - u.vinyl * .25;
+  if (s.repeat) {
+    s.repeat.delay -= dt;
+    if (s.repeat.delay <= 0) {
+      const sample = s.repeat; s.repeat = null;
+      if (sample.kind === 'heart' && repeatHeart) repeatHeart(sample.profile.damage);
+      else fireArea(sample.kind, sample.profile, true);
+    }
+  }
+  for (const kind of ['flash', 'vinyl', 'bass', 'phone']) {
+    const clock = `${kind}Clock`;
+    s[clock] = Math.max(0, (s[clock] || 0) - dt);
+    if (!u[kind] || s[clock]) continue;
+    const evolution = SURVIVAL_EVOLUTIONS.find(recipe => recipe.weapon === kind);
+    const profile = survivalWeaponProfile(kind, u[kind], s.evolutions.includes(evolution.id));
+    if (fireArea(kind, profile)) s[clock] = profile.cooldown;
+  }
 }
 export function finishSurvivalWave(state, wave = state.survival?.wave) {
   if (!isSurvival(state)) return;

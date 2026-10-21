@@ -308,7 +308,7 @@ export function drawMap(ctx, {
   setCanvas(ctx, width, height);
   mapBackground(ctx, time);
   text(ctx, "今夜は、どの街角を走る？", 32, 31, 24, C.ink, "left", 900);
-  text(ctx, "東京から関西へ · 6つの街を12本の道でつなぐで", 34, 59, 11, C.muted, "left", 700);
+  text(ctx, "東京から関西へ · 6つのクラブを12本の道でつなぐで", 34, 59, 11, C.muted, "left", 700);
   panel(ctx, 731, 20, 197, 44, C.pink, "#2c1933");
   text(ctx, `道のり ${String(index + 1).padStart(2, "0")} / 12`, 829, 42, 19, "#ffc2e4", "center", 900);
   drawTour(ctx, index);
@@ -413,12 +413,17 @@ function avatar(ctx, key, centerX, time, phase) {
   );
 }
 
+export function finaleCrowdCount(totalFans) {
+  return Number.isFinite(totalFans) ? Math.min(56, Math.max(0, Math.floor(totalFans))) : 0;
+}
+
 function crowd(ctx, time, totalFans) {
+  const visible = finaleCrowdCount(totalFans);
   const energy = Math.min(1, Math.log2(totalFans + 1) / 7);
   for (let row = 0; row < 2; row++) {
-    const count = Math.round((row ? 18 : 14) + energy * 12);
+    const count = row ? Math.floor(visible / 2) : Math.ceil(visible / 2);
     for (let i = 0; i < count; i++) {
-      const x = -12 + i * (984 / (count - 1)) + (row ? 11 : 0);
+      const x = count === 1 ? 480 + row * 30 : 24 + i * (912 / (count - 1)) + (row ? 11 : 0);
       const hop = Math.round(
         Math.max(0, Math.sin(time * 6.8 + i * 0.57)) * (4 + energy * 8),
       );
@@ -460,7 +465,7 @@ function crowd(ctx, time, totalFans) {
 /** Animated two-DJ set for each club and the final shared mix. */
 export function drawFinale(
   ctx,
-  { time = 0, score = 0, totalFans = 0, converted = 0, performance = null, club = '', complete = true, width = W, height = H } = {},
+  { time = 0, score = 0, totalFans = 0, performance = null, club = '', complete = true, width = W, height = H } = {},
 ) {
   setCanvas(ctx, width, height);
   rect(ctx, 0, 0, W, H, "#0c1023");
@@ -549,9 +554,9 @@ export function drawFinale(
       [C.pink, C.cyan, C.gold, "#b78ffa"][i % 4],
     );
   }
-  crowd(ctx, time, fanCount + Math.min(120, converted) + Math.round(setEnergy * 80));
+  crowd(ctx, time, fanCount);
   panel(ctx, 259, 489, 442, 35, "#a5659c", "#201329");
-  text(ctx, performance?.phase || "6つの街、全員ぶちアゲ！", 480, 507, 20, performance?.color || "#fff0fd", "center", 900);
+  text(ctx, performance?.phase || "6つのフロア、みんなでぶちアゲ！", 480, 507, 20, performance?.color || "#fff0fd", "center", 900);
   if (performance?.energy > .2) {
     for (let i = 0; i < 8; i++) {
       const x = 98 + i * 108, h = (12 + Math.sin(time*4+i)*8) * performance.energy;

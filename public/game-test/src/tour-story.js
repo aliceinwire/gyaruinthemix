@@ -21,7 +21,7 @@ function register(id, kicker, summary, lines, extra = {}) {
 }
 
 register('tour:opening', 'NIGHTFALL MIX / 好きな音で、街をひらこ。',
-  'DJありねぇとDJちゃなは、平成ギャルのスタイルとオリジナル曲を六つの街のクラブへ届ける。', [
+  'DJありねぇとDJちゃなは、平成ギャルのスタイルとオリジナル曲を、東京の四つの街角と大阪、京都にある六つのクラブへ届ける。', [
     c('街じゅう会社の広告、服も音も「指定どおり」やって。うちらの夜まで、決められてたまるか！'),
     a('中野から京都まで、六つのクラブでDJする。平成ギャルの盛りと、うちらのハードバウンスを持ってな。都市間は別の日に移動やで。'),
     c('オリジナル曲、175 BPMで鳴らそ！ 各街のサウンドチェックも録って、最後はみんなの声をつないだセットや！'),
@@ -42,7 +42,7 @@ const DEPARTURES = [
   [c('LANTERN BASSの飾り、職人さんが一個ずつ色変えてくれたで。どれも主役やな！'), a('音もそうしよ。うちらのハードバウンスに、この街の手拍子を重ねる。ねこは静かな場所で休ませとこな。')],
   [a('移動と休息をはさんで大阪へ。工場の終業ベルのあとまで、ノルマの通知が追いかけてくるんか。'), c('今夜はBASS TAKOYAKIの出番や！ 仕事終わりの時間は、自分の好きに使お！')],
   [c('イベント係まで数字の報告ばっか。うちらの出演、笑った顔で覚えてもらいたいわ！'), a('BASS TAKOYAKIでええセットにしよ。撮りたい人も、踊りたい人も、それぞれ楽しめるようにな。')],
-  [a('大阪の夜を終えて京都へ。最後のGALAXY FLOORには、出演許可の書類が山積みや。'), c('五つの街で仲間できたやん。うちらだけで抱えんと、みんなで今夜のフロア開こ！')],
+  [a('大阪の夜を終えて京都へ。最後のGALAXY FLOORには、出演許可の書類が山積みや。'), c('五つのクラブで仲間できたやん。うちらだけで抱えんと、みんなで今夜のフロア開こ！')],
   [c('GALAXY FLOOR、最後の一本道！ 各街から「聴くで」って連絡きてる！'), a('残量見て、最後まで落ち着いて。六つ目の録音を重ねて、うちらの曲で自由な夜をつなご。')],
 ];
 const ARRIVALS = [
@@ -57,7 +57,7 @@ const ARRIVALS = [
   [c('大阪の街角や！ 通知切って遊びに行くって。さっきまで締切追ってた人やんな？'), a('休む時間も自分のもんや。BASS TAKOYAKI、来たい人にええ音を返そ。')],
   [a('BASS TAKOYAKI、無事にプレイできた。大阪のサウンドチェックで五本目。'), c('「また来て」って言われたで！ 撮影もイベントも、数字よりこの顔やな。次の京都まで、今日は休も！')],
   [a('京都の街角に到着。入口の準備、各街で出会った仲間も手伝ってくれとる。'), c('服の承認印はいらんで。GALAXY FLOOR、好きな自分で入れるフロアにしよ！')],
-  [c('京都のサウンドチェックも録れた！ 六つの街の声と、うちらの曲、全部ここにある！'), a('十二本の道、完走や。クラブの扉は開いた。ほな、最後のセットを始めよか。')],
+  [c('京都のサウンドチェックも録れた！ 六つのクラブの声と、うちらの曲、全部ここにある！'), a('十二本の道、完走や。クラブの扉は開いた。ほな、最後のセットを始めよか。')],
 ];
 
 for (let route = 0; route < 12; route++) {
@@ -79,9 +79,9 @@ for (let route = 0; route < 12; route++) {
     ]);
 }
 
-register('tour:finale', 'FINAL MIX / 六つの街、ひとつの夜。',
-  '六つの街で届けたオリジナル曲と出会った人の声が、京都の自由なフロアでつながった。', [
-    c('中野、新宿、渋谷、浅草、大阪、京都！ うちらの曲に、六つの街の声が重なった！'),
+register('tour:finale', 'FINAL MIX / 六つのクラブ、つながる夜。',
+  '六つのクラブで届けたオリジナル曲と出会った人の声が、京都の自由なフロアでつながった。', [
+    c('中野、新宿、渋谷、浅草、大阪、京都！ うちらの曲に、六つのクラブの声が重なった！'),
     a('会社のルールが全部なくなったわけやない。でも、好きに踊れる場所は六つ、ちゃんとつながった。'),
     c('平成ギャルも、初めてクラブ来た人も！ 明日の自分まで誰かに決めさせんと、今夜は好きに楽しも！'),
     a('DJちゃな、準備ええな。ギャルインザミックス、175 BPM。うちらの音、鳴らすで。'),
@@ -117,7 +117,20 @@ export function normalizeStoryMemory(value = {}) {
     const chosen = value.choices && Object.hasOwn(value.choices, id) ? value.choices[id] : null;
     if (scene.choices?.some(choice => choice.id === chosen)) choices[id] = chosen;
   }
-  return { version: STORY_VERSION, seen, choices, history: list(value.history).filter(knownId).slice(-48) };
+  return { version: STORY_VERSION, seen, choices, history: list(value.history).filter(knownId).slice(-48),
+    ...(typeof value.runId === 'string' && value.runId.length > 0 && value.runId.length <= 200 ? { runId: value.runId } : {}) };
+}
+
+/** Story choices and recordings belong to one tour, including a resumed tour.
+ * A new run must not inherit visited clubs or suppress its own opening. */
+export function storyMemoryForRun(memory, runId, routeIndex = 0) {
+  const current = normalizeStoryMemory(memory);
+  if (typeof runId !== 'string' || !runId || runId.length > 200) return current;
+  if (current.runId === runId) return current;
+  // Older saves have no identity. Adopt their journal only when resuming beyond
+  // the opening road; starting a new tour must still reset old choices.
+  if (!current.runId && Number.isInteger(routeIndex) && routeIndex > 0 && routeIndex < 12) return { ...current, runId };
+  return { ...normalizeStoryMemory(), runId };
 }
 
 /** Record display only after the player has actually seen a scene. */

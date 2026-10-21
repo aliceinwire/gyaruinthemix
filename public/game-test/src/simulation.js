@@ -1,4 +1,4 @@
-import { isSurvival, createSurvival, SURVIVAL_WEAPONS, normalizeSurvivalSave, applySurvivalModifiers, recordSurvivalEvent, survivalStep, openSurvivalDraft, survivalEncounterPlan, finishSurvivalWave } from './survival.js';
+import { isSurvival, createSurvival, SURVIVAL_WEAPONS, normalizeSurvivalSave, applySurvivalModifiers, recordSurvivalEvent, survivalStep, openSurvivalDraft, survivalEncounterPlan, finishSurvivalWave, survivalWeaponProfile, queueSurvivalRepeat } from './survival.js';
 import { createEncounterPlan, updateEncounterActor, getEncounterPhase } from './encounter-director.js';
 import { DRIVING_PACE } from './pace.js';
 import { littleFindAt } from './street-culture.js';
@@ -128,7 +128,7 @@ const CITY_ROUTES = Object.freeze(
       accent: "#d899fc",
       difficulty: 3,
       intro: "ちゃな「ラストは京都！ うちらのミックス、届けるで！」",
-      win: "ありねぇ「6つの街、全部つないだな。DJセット、始めよか！」",
+      win: "ありねぇ「6つのクラブ、全部つないだな。DJセット、始めよか！」",
     },
   ].map((route) =>
     Object.freeze({ ...route, meters: route.distance, deadline: null }),
@@ -545,6 +545,7 @@ export function chooseStartingWeapon(state, id) {
 }
 function convert(state, target) {
   if (target.converted || target.type !== "salaryman") return;
+  target.originalType = target.type;
   target.converted = true;
   target.type = "gyaru";
   target.convertedAt = state.elapsed;
@@ -577,7 +578,7 @@ function convert(state, target) {
     streetRole: target.streetRole || null,
   });
 }
-function fire(state) {
+function fire(state, repeatDamage = null) {
   const evolved = isSurvival(state) && state.survival.evolutions.includes("heartstorm");
   const heights = evolved ? [.18, .42, .65] : [.18 + state.jumpHeight * .85];
   for (const height of heights) state.projectiles.push({
@@ -589,10 +590,13 @@ function fire(state) {
     resolved: false,
     hitIds: [],
     pierceLeft: (state.buildModifiers?.heartPierce || 0) + (state.buildModifiers?.shieldPiercing && state.buildRuntime.shield > 0 ? state.buildModifiers.guardedHeartPierce ?? 1 : 0),
-    damage: 1 + (evolved ? 1 : 0) + (state.buildRuntime.chargedShot || 0),
+    damage: repeatDamage ?? (1 + (evolved ? 1 : 0) + (state.buildRuntime.chargedShot || 0)),
   });
-  state.buildRuntime.chargedShot = 0;
-  state.shotCooldown = state.shotInterval * (isSurvival(state) ? Math.max(.36, 1 - (state.survival.upgrades.heart || 0) * .16) * (state.survival.fever > 0 ? .55 : 1) : 1);
+  if (repeatDamage === null) {
+    state.buildRuntime.chargedShot = 0;
+    state.shotCooldown = state.shotInterval * (isSurvival(state) ? Math.max(.36, 1 - (state.survival.upgrades.heart || 0) * .16) * (state.survival.fever > 0 ? .55 : 1) : 1);
+    if (isSurvival(state)) queueSurvivalRepeat(state, "heart", survivalWeaponProfile("heart", state.survival.upgrades.heart, evolved));
+  }
   emit(state, "shoot");
 }
 function hitTarget(state, target, damage = 1, chain = true, bypassGuard = false) {
@@ -622,6 +626,7 @@ function projectilesStep(state, dt) {
   for (const heart of state.projectiles) {
     if (heart.resolved) continue;
     const previous = heart.distance;
+    if (isSurvival(state) && heart.distance - state.distance > survivalWeaponProfile("heart", state.survival.upgrades.heart).radius) { heart.resolved = true; continue; }
     heart.distance += (state.speed / 3.6 + 100) * dt; heart.age += dt;
     heart.hitIds ??= [];
     for (const target of state.entities) {
@@ -790,7 +795,7 @@ function step(state, input, dt) {
   state.score += movement * 0.3;
   populate(state);
   moveEnemies(state, dt);
-  survivalStep(state, dt, (target, damage, chain, bypass) => hitTarget(state, target, damage, chain, bypass));
+  survivalStep(state, dt, (target, damage, chain, bypass) => hitTarget(state, target, damage, chain, bypass), damage => fire(state, damage));
   projectilesStep(state, dt);
   for (const item of state.entities) {
     if (item.type !== 'little-find' || item.resolved || state.altitude > 36) continue;
@@ -908,6 +913,7 @@ export function answerQuiz(state, correct) {
   return true;
 }
 export function upgradePrice(state, id) {
+  if (isSurvival(state) && ["hearts", "heartReach"].includes(id) && !state.survival.upgrades.heart) return null;
   const item = UPGRADE_CATALOG.find((upgrade) => upgrade.id === id);
   if (!item) return null;
   const level = state.upgrades[id] ?? 0;
@@ -952,7 +958,7 @@ export function nextRoute(state, routeOption = "scenic", journeyNodeId = null) {
   });
   restoreSnapshot(next, snapshot(state));
   next.assistMode = state.assistMode === true;
-  if (isSurvival(next)) { next.survival.wave = 0; next.survival.waveStats = Array.from({ length: 6 }, () => ({ kills: 0, hits: 0 })); next.survival.settledWaves = []; next.survival.gems = []; next.survival.receipts = []; }
+  if (isSurvival(next)) { next.survival.wave = 0; next.survival.waveStats = Array.from({ length: 6 }, () => ({ kills: 0, hits: 0 })); next.survival.settledWaves = []; next.survival.gems = []; next.survival.receipts = []; next.survival.repeat = null; }
   next.stageSignals = 0;
   next.locationIndex = getJourneyNode(next.journeyNodeId).locationIndex;
   next.energy = next.energyCapacity;
@@ -1182,12 +1188,14 @@ const CAMPAIGN_WEATHER_WEIGHTS = Object.freeze({
  */
 export function campaignEnvironment(seed = 175, routeIndex = 0) {
   const index = clamp(Math.trunc(Number(routeIndex) || 0), 0, ROUTES.length - 1);
-  let mixed = (seedNumber(seed) ^ Math.imul(index + 1, 0x9e3779b9)) >>> 0;
+  let mixed = (seedNumber(seed) ^ 0x9e3779b9) >>> 0;
   // Avalanche sequential numeric seeds before drawing the first season.
   mixed = Math.imul(mixed ^ (mixed >>> 16), 0x21f0aaad);
   mixed = Math.imul(mixed ^ (mixed >>> 15), 0x735a2d97);
   const rng = { _rng: (mixed ^ (mixed >>> 15)) >>> 0 || 1 };
   const season = CAMPAIGN_SEASONS[Math.floor(random(rng) * CAMPAIGN_SEASONS.length)];
+  // Keep one season throughout the tour; only road weather advances.
+  for (let road = 0; road < index; road++) random(rng);
   const weights = Object.entries(CAMPAIGN_WEATHER_WEIGHTS[season]);
   let roll = random(rng) * weights.reduce((sum, [, weight]) => sum + weight, 0);
   for (const [weather, weight] of weights) {
