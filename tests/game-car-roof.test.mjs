@@ -169,7 +169,7 @@ test('closing the roof preserves the body and its movement at every car scale', 
       }
 });
 
-test('MIX 175 rear roof joint lands on the raised body frame, not the trunk', () => {
+test('MIX 175 rear roof follows the rising body shoulder with a curved profile', () => {
   for (const options of [
     { width: 600 },
     { width: 194, x: 85, y: 250 },
@@ -177,15 +177,34 @@ test('MIX 175 rear roof joint lands on the raised body frame, not the trunk', ()
   ]) {
     const g = context();
     drawCarRoof(g, { carId: 'mix-175', ...options });
-    const pillar = g.draws[0];
-    assert.deepEqual(pillar.args.slice(0, 4), [0, 70, 90, 110]);
-    const [a, b, c, d, e, f] = pillar.matrix;
-    // Source roof's rear foot is (13, 177). The original body frame's top
-    // joint is (199, 29) on mix-175.png; the trunk at (148, 50) is behind it.
-    const joint = { x: a * 13 + c * 177 + e, y: b * 13 + d * 177 + f };
     const body = getCarArtLayout({ carId: 'mix-175', ...options });
-    assert.ok(Math.abs(joint.x - (body.body.x + 199 * body.scaleX)) < 1e-9);
-    assert.ok(Math.abs(joint.y - (body.body.y + 29 * body.scaleY)) < 1e-9);
+    const point = (y) => {
+      const strip = g.draws.find(
+        (draw) => draw.args[1] <= y && draw.args[1] + draw.args[3] > y,
+      );
+      assert.ok(strip);
+      const [a, b, c, d, e, f] = strip.matrix;
+      // Measured center line of the original rear-post texture.
+      const x = 47 + ((y - 80) * (13 - 47)) / (177 - 80);
+      return {
+        x: (a * x + c * y + e - body.body.x) / body.scaleX,
+        y: (b * x + d * y + f - body.body.y) / body.scaleY,
+      };
+    };
+    const top = point(80),
+      middle = point(128.5),
+      foot = point(177),
+      nearFoot = point(173);
+    // The body rises through (155, 33), (160, 31), (165, 29), (170, 27).
+    // Join that shoulder with a small overlap so the body conceals the seam.
+    assert.ok(Math.abs(foot.x - 162) < 0.02);
+    assert.ok(Math.abs(foot.y - 32) < 0.02);
+    const slope = (foot.y - nearFoot.y) / (nearFoot.x - foot.x);
+    assert.ok(slope > 0.3 && slope < 0.6, 'rear edge follows the body slope');
+    assert.ok(
+      middle.y < (top.y + foot.y) / 2 - 2,
+      'rounded sweep, not a straight support',
+    );
   }
 });
 

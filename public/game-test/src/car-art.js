@@ -88,16 +88,18 @@ export const CAR_ROOF_ART = Object.freeze({
   'mix-175': Object.freeze({
     id: 'mix-175-roof', src: assetUrl('mix-175-roof'), sourceWidth: 600, sourceHeight: 180,
     crop: { x: 0, y: 0, width: 600, height: 180 },
-    cap: { source: { x: 0, y: 0, width: 524, height: 74 }, body: { x: 180, y: -14, width: 158, height: 24 } },
+    cap: { source: { x: 70, y: 0, width: 454, height: 74 }, body: { x: 200, y: -14, width: 138, height: 24 } },
     rearPillar: {
-      source: { x: 0, y: 70, width: 90, height: 110 }, thicknessScale: .4,
+      source: { x: 0, y: 70, width: 90, height: 110 }, thicknessScale: .6,
       sourceTop: { x: 47, y: 80 }, sourceFoot: { x: 13, y: 177 },
-      // Extend the existing raised rear frame (199, 29), rather than landing
-      // on the flat trunk behind it and leaving that frame inside the window.
-      top: { x: 194, y: 8 }, foot: { x: 199, y: 29 },
+      // Follow the rear quarter's rising shoulder into a rounded hardtop.
+      // The foot overlaps the original outline at (162, 30); its tangent
+      // continues the body curve rather than forming an upright step.
+      top: { x: 207, y: 2 }, controlTop: { x: 190, y: 4 },
+      controlFoot: { x: 184, y: 22 }, foot: { x: 162, y: 32 },
     },
     windshield: { top: { x: 334, y: 2 }, foot: { x: 408, y: 51 } },
-    snow: { x: 202, y: -14, width: 114 },
+    snow: { x: 220, y: -14, width: 96 },
   }),
   'rocket-gal': Object.freeze({
     id: 'rocket-gal-roof', src: assetUrl('rocket-gal-roof'), sourceWidth: 600, sourceHeight: 149,
@@ -267,16 +269,27 @@ export function drawCarRoof(ctx, options = {}) {
   ctx.scale(layout.scaleX, layout.scaleY);
   const pillar = roof.rearPillar;
   if (pillar) {
-    // Match the existing rear deck and cap joints without stretching a second
-    // windshield over the original. Preserve the source's shading/chrome.
+    // Bend thin strips of the existing painted/chrome texture along the rear
+    // body contour. A single affine shear can only produce a straight post.
     const { sourceTop: top, sourceFoot: foot, source: c } = pillar;
-    const a = pillar.thicknessScale;
-    const d = (pillar.foot.y - pillar.top.y) / (foot.y - top.y);
-    const skew = (pillar.foot.x - pillar.top.x - a * (foot.x - top.x)) / (foot.y - top.y);
-    ctx.save();
-    ctx.transform(a, 0, skew, d, pillar.top.x - a * top.x - skew * top.y, pillar.top.y - d * top.y);
-    ctx.drawImage(source.image, c.x, c.y, c.width, c.height, c.x, c.y, c.width, c.height);
-    ctx.restore();
+    const at = (y) => {
+      const t = (y - top.y) / (foot.y - top.y), u = 1 - t;
+      return {
+        x: u*u*u*pillar.top.x + 3*u*u*t*pillar.controlTop.x + 3*u*t*t*pillar.controlFoot.x + t*t*t*pillar.foot.x,
+        y: u*u*u*pillar.top.y + 3*u*u*t*pillar.controlTop.y + 3*u*t*t*pillar.controlFoot.y + t*t*t*pillar.foot.y,
+        sourceX: top.x + t * (foot.x - top.x),
+      };
+    };
+    for (let y = c.y; y < c.y + c.height; y += 2) {
+      const height = Math.min(2, c.y + c.height - y), start = at(y), end = at(y + height);
+      const a = pillar.thicknessScale;
+      const d = (end.y - start.y) / height;
+      const skew = (end.x - start.x - a * (end.sourceX - start.sourceX)) / height;
+      ctx.save();
+      ctx.transform(a, 0, skew, d, start.x - a * start.sourceX - skew * y, start.y - d * y);
+      ctx.drawImage(source.image, c.x, y, c.width, height, c.x, y, c.width, height);
+      ctx.restore();
+    }
   }
   const c = roof.cap.source, b = roof.cap.body;
   ctx.drawImage(source.image, c.x, c.y, c.width, c.height, b.x, b.y, b.width, b.height);
