@@ -81,19 +81,32 @@ export const CAR_ART = Object.freeze({
 });
 
 export const CAR_WHEEL_ART = Object.freeze({ src: assetUrl('chrome-wheel'), sourceWidth: 128, sourceHeight: 128, crop: { x: 0, y: 0, width: 128, height: 128 } });
-// Roof mounts use the original body's art coordinates, then map into the same
-// normalized runtime grid as its crew/body. A split at the metal cap preserves
-// a slim roof edge while giving the chibi crew clear headroom behind the glass.
+// Hardtop fittings are measured on each 600px body sprite. Reuse its windshield
+// and, on Rocket Gal, its rear pillar. Only the missing cap/support is added;
+// the illustrated roof's unrelated front pillar must never replace the car's.
 export const CAR_ROOF_ART = Object.freeze({
   'mix-175': Object.freeze({
     id: 'mix-175-roof', src: assetUrl('mix-175-roof'), sourceWidth: 600, sourceHeight: 180,
     crop: { x: 0, y: 0, width: 600, height: 180 },
-    mount: { x: 480, y: -243, width: 1055, height: 513 }, capSourceHeight: 70, capHeight: 102,
+    cap: { source: { x: 0, y: 0, width: 524, height: 74 }, body: { x: 169, y: -14, width: 169, height: 24 } },
+    rearPillar: {
+      source: { x: 0, y: 70, width: 90, height: 110 }, thicknessScale: .4,
+      sourceTop: { x: 47, y: 80 }, sourceFoot: { x: 13, y: 177 },
+      top: { x: 177, y: 8 }, foot: { x: 148, y: 50 },
+    },
+    window: [{ x: 181, y: 10 }, { x: 334, y: 5 }, { x: 401, y: 50 }, { x: 155, y: 50 }],
+    cabin: { x: 208, y: 6, width: 126, height: 44 },
+    windshield: { top: { x: 334, y: 2 }, foot: { x: 408, y: 51 } },
+    snow: { x: 190, y: -14, width: 126 },
   }),
   'rocket-gal': Object.freeze({
     id: 'rocket-gal-roof', src: assetUrl('rocket-gal-roof'), sourceWidth: 600, sourceHeight: 149,
     crop: { x: 0, y: 0, width: 600, height: 149 },
-    mount: { x: 610, y: -191, width: 1010, height: 501 }, capSourceHeight: 43, capHeight: 88,
+    cap: { source: { x: 58, y: 0, width: 442, height: 48 }, body: { x: 217, y: -7, width: 115, height: 20 } },
+    window: [{ x: 237, y: 15 }, { x: 327, y: 13 }, { x: 402, y: 49 }, { x: 237, y: 49 }],
+    cabin: { x: 242, y: 14, width: 85, height: 35 },
+    windshield: { top: { x: 326, y: 8 }, foot: { x: 413, y: 53 } },
+    snow: { x: 236, y: -7, width: 76 },
   }),
 });
 const PAINTS = Object.freeze({ pink: '#ff4f9b', mint: '#55dcc8', purple: '#a77aff', gold: '#ffc452', blue: '#5395ff', black: '#424457' });
@@ -125,6 +138,19 @@ export function getCarArtLayout({ carId = 'mix-175', x = 0, y = 0, width, height
     wheels: art.wheels.map((p) => ({ ...point(p), radius: p.radius * sy })),
     cabins: art.cabins.map(rect), seats: art.seats.map(point), logo: rect(art.logo),
     scaleX: sx, scaleY: sy,
+  };
+}
+
+/** Roof, glazing and occupants all share the body's scale and ground anchor. */
+export function getCarRoofLayout(options = {}) {
+  const body = getCarArtLayout(options), roof = CAR_ROOF_ART[body.carId];
+  if (!roof) return null;
+  const point = p => ({ x: body.body.x + p.x * body.scaleX, y: body.body.y + p.y * body.scaleY });
+  const rect = p => ({ ...point(p), width: p.width * body.scaleX, height: p.height * body.scaleY });
+  return {
+    cap: rect(roof.cap.body), cabin: rect(roof.cabin), window: roof.window.map(point),
+    windshield: { top: point(roof.windshield.top), foot: point(roof.windshield.foot) },
+    snow: { ...point(roof.snow), width: roof.snow.width * body.scaleX },
   };
 }
 
@@ -236,16 +262,26 @@ export function drawCarRoof(ctx, options = {}) {
   if (!roof) return false;
   const img = images.get(roof.id); if (!img) return false;
   const layout = getCarArtLayout(options);
-  const sx = art.sourceScaleX * layout.scaleX, sy = art.sourceScaleY * layout.scaleY;
-  const x = layout.body.x + (roof.mount.x - art.originalCrop.x) * sx;
-  const y = layout.body.y + (roof.mount.y - art.originalCrop.y) * sy;
-  const width = roof.mount.width * sx, height = roof.mount.height * sy, capHeight = roof.capHeight * sy;
   const roofPalette = { ...art, id: roof.id, crop: roof.crop, protectedPaint: [] };
-  const source = paintSource(roofPalette, img, options.paint), c = source.crop;
+  const source = paintSource(roofPalette, img, options.paint);
   ctx.save(); ctx.imageSmoothingEnabled = false;
-  const dx = Math.round(x), dy = Math.round(y), dw = Math.round(width), cap = Math.round(capHeight), dh = Math.round(height);
-  ctx.drawImage(source.image, c.x, c.y, c.width, roof.capSourceHeight, dx, dy, dw, cap);
-  ctx.drawImage(source.image, c.x, c.y + roof.capSourceHeight, c.width, c.height - roof.capSourceHeight, dx, dy + cap, dw, dh - cap);
+  ctx.translate(layout.body.x, layout.body.y);
+  ctx.scale(layout.scaleX, layout.scaleY);
+  const pillar = roof.rearPillar;
+  if (pillar) {
+    // Match the existing rear deck and cap joints without stretching a second
+    // windshield over the original. Preserve the source's shading/chrome.
+    const { sourceTop: top, sourceFoot: foot, source: c } = pillar;
+    const a = pillar.thicknessScale;
+    const d = (pillar.foot.y - pillar.top.y) / (foot.y - top.y);
+    const skew = (pillar.foot.x - pillar.top.x - a * (foot.x - top.x)) / (foot.y - top.y);
+    ctx.save();
+    ctx.transform(a, 0, skew, d, pillar.top.x - a * top.x - skew * top.y, pillar.top.y - d * top.y);
+    ctx.drawImage(source.image, c.x, c.y, c.width, c.height, c.x, c.y, c.width, c.height);
+    ctx.restore();
+  }
+  const c = roof.cap.source, b = roof.cap.body;
+  ctx.drawImage(source.image, c.x, c.y, c.width, c.height, b.x, b.y, b.width, b.height);
   ctx.restore(); return true;
 }
 
