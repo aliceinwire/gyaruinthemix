@@ -6,6 +6,8 @@ import {
   update,
   exportCampaignSave,
   exportNightfallSave,
+  UPGRADE_CATALOG,
+  upgradePrice,
 } from '../../public/game-test/src/simulation.js';
 import {
   SAVE_KEY,
@@ -484,7 +486,11 @@ try {
     await page.locator('#garage-tab').click();
     await assertFrameFits(page, ['#garage-done']);
     assert.equal(await page.locator('#garage-content').isVisible(), true);
-    assert.ok((await page.locator('#shop button').count()) >= 8);
+    const shopState = await page.evaluate(() => __HYPERDRIVE__.snapshot().state);
+    const eligibleUpgrades = UPGRADE_CATALOG.filter(item => upgradePrice(shopState, item.id) !== null);
+    assert.equal(await page.locator('#shop button').count(), eligibleUpgrades.length);
+    assert.equal(shopState.survival.upgrades.heart || 0, 0);
+    assert.equal(eligibleUpgrades.some(item => ['hearts', 'heartReach'].includes(item.id)), false);
     await page.screenshot({
       path: resolve(root, `artifacts/browser/game-test/${width}-garage.png`),
       fullPage: true,
