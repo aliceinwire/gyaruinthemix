@@ -1,4 +1,4 @@
-/** Four-action input. Each pointer is independent; all transitions release it. */
+/** Three-action input. Each pointer is independent; all transitions release it. */
 export const KEY_ACTIONS = Object.freeze({
   ShiftLeft: "rush",
   ShiftRight: "rush",
@@ -6,8 +6,6 @@ export const KEY_ACTIONS = Object.freeze({
   Space: "boost",
   ArrowUp: "boost",
   KeyW: "boost",
-  KeyZ: "shoot",
-  KeyJ: "shoot",
   KeyE: "charge",
   KeyC: "charge",
 });
@@ -35,7 +33,7 @@ export function createInputState(onChange = () => {}) {
       sync();
     },
     pointerDown(id, action) {
-      if (Object.hasOwn(input, action)) {
+      if (["boost", "charge", "rush"].includes(action)) {
         pointers.set(id, action);
         sync();
       }

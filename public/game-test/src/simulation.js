@@ -1,4 +1,4 @@
-import { isSurvival, createSurvival, applySurvivalModifiers, recordSurvivalEvent, survivalStep, openSurvivalDraft, survivalEncounterPlan, finishSurvivalWave } from './survival.js';
+import { isSurvival, createSurvival, SURVIVAL_WEAPONS, normalizeSurvivalSave, applySurvivalModifiers, recordSurvivalEvent, survivalStep, openSurvivalDraft, survivalEncounterPlan, finishSurvivalWave } from './survival.js';
 import { createEncounterPlan, updateEncounterActor, getEncounterPhase } from './encounter-director.js';
 import { DRIVING_PACE } from './pace.js';
 import { littleFindAt } from './street-culture.js';
@@ -388,6 +388,7 @@ function restoreSnapshot(state, saved) {
 export function createState({
   mode = "story",
   survivalDay = "",
+  startingWeapon = "heart",
   routeIndex = 0,
   routeOption = "scenic",
   seed = 175,
@@ -429,7 +430,7 @@ export function createState({
     windOffset: 0,
     landingRecovery: 0,
     mode: mode === "survival" ? "survival" : "story",
-    survival: mode === "survival" ? createSurvival(survivalDay) : null,
+    survival: mode === "survival" ? createSurvival(survivalDay, startingWeapon) : null,
     status: "playing",
     reason: null,
     routeIndex: index,
@@ -532,6 +533,16 @@ export function createState({
   state._stageStart = snapshot(state);
   return state;
 }
+/** Starting equipment is chosen once in the garage, before the run begins. */
+export function chooseStartingWeapon(state, id) {
+  if (!isSurvival(state) || !SURVIVAL_WEAPONS.some(item => item.id === id) || state.status !== "playing" || state.campaignStarted || state.routeIndex !== 0 || state.distance !== 0 || state.elapsed !== 0 || state.survival.level !== 0 || state.survival.xp !== 0) return false;
+  state.survival = createSurvival(state.survival.day, id);
+  state.projectiles = [];
+  state.shotCooldown = 0;
+  state.shooting = false;
+  state._stageStart = snapshot(state);
+  return true;
+}
 function convert(state, target) {
   if (target.converted || target.type !== "salaryman") return;
   target.converted = true;
@@ -581,7 +592,7 @@ function fire(state) {
     damage: 1 + (evolved ? 1 : 0) + (state.buildRuntime.chargedShot || 0),
   });
   state.buildRuntime.chargedShot = 0;
-  state.shotCooldown = state.shotInterval * (isSurvival(state) ? Math.max(.36, 1 - (state.survival.upgrades.heart || 0) * .16) * (state.survival.fever > 0 ? .55 : 1) * (state.focusing ? .72 : 1) : 1);
+  state.shotCooldown = state.shotInterval * (isSurvival(state) ? Math.max(.36, 1 - (state.survival.upgrades.heart || 0) * .16) * (state.survival.fever > 0 ? .55 : 1) : 1);
   emit(state, "shoot");
 }
 function hitTarget(state, target, damage = 1, chain = true, bypassGuard = false) {
@@ -720,9 +731,7 @@ function step(state, input, dt) {
   const wasCharging = state.charging;
   state.charging = Boolean(chargeIntent && state.altitude < 12);
   state.boosting = Boolean(input.boost && !chargeIntent && state.energy > 0);
-  state.focusing = Boolean(isSurvival(state) && input.shoot && !chargeIntent && state.energy >= 8);
-  if (state.focusing) state.energy = Math.max(0, state.energy - 8 * dt);
-  state.shooting = Boolean((input.shoot || isSurvival(state)) && !chargeIntent);
+  state.shooting = Boolean((isSurvival(state) ? state.survival.upgrades.heart > 0 : input.shoot) && !chargeIntent);
   if (state.charging) {
     const previous = state.energy;
     state.energy = Math.min(
@@ -860,11 +869,22 @@ export function update(state, input = {}, dt = 0) {
   }
   return state;
 }
+/** Club quizzes are optional stops after the road is already safely complete. */
+export function beginClubQuiz(state) {
+  if (!isSurvival(state) || state.status !== "won" || !getJourneyNode(state.journeyNodeId)?.clubStop || state.survival.quizRoads.includes(state.routeIndex)) return false;
+  state._quizAnswered = false;
+  state.pendingQuiz = { id: `club-${state.routeIndex}-fan`, entityId: `club-${state.routeIndex}`, routeIndex: state.routeIndex, cityId: state.route.cityId, club: true };
+  state.status = "quiz";
+  state.events = [];
+  emit(state, "quiz", { ...state.pendingQuiz });
+  return true;
+}
 /** Question text and answer checking belong to the UI. One answer per encounter. */
 export function answerQuiz(state, correct) {
   if (state.status !== "quiz" || !state.pendingQuiz || state._quizAnswered)
     return false;
-  const { entityId } = state.pendingQuiz;
+  const { entityId, club } = state.pendingQuiz;
+  const clubQuiz = club === true && isSurvival(state);
   const succeeded = correct === true;
   if (succeeded) {
     state.totalFans++;
@@ -878,7 +898,8 @@ export function answerQuiz(state, correct) {
   }
   state._quizAnswered = true;
   state.pendingQuiz = null;
-  state.status = "playing";
+  if (clubQuiz && !state.survival.quizRoads.includes(state.routeIndex)) state.survival.quizRoads.push(state.routeIndex);
+  state.status = clubQuiz ? "won" : "playing";
   emit(state, "quiz-result", {
     correct: succeeded,
     entityId,
@@ -895,7 +916,7 @@ export function upgradePrice(state, id) {
 }
 /** Current-car upgrades and repairs spend campaign coins at club stops only. */
 export function buyUpgrade(state, id) {
-  if (state.status !== "won" || isSurvival(state)) return false;
+  if (state.status !== "won") return false;
   const price = upgradePrice(state, id);
   if (price === null || !Number.isFinite(state.money) || state.money < price) return false;
   if (id === "repair" && state.integrity >= state.integrityCapacity) return false;
@@ -1079,6 +1100,49 @@ export function restoreCampaignSave(value) {
   updateEnvironment(next, 0);
   return next;
 }
+/** Map-only checkpoints. The persistence owner consumes them before departure. */
+export function exportNightfallSave(state) {
+  if (!isSurvival(state) || state.campaignComplete || !(state.status === "won" || state.status === "playing" && state.distance === 0 && state.elapsed === 0)) return null;
+  const survival = normalizeSurvivalSave(state.survival);
+  if (!survival) return null;
+  const checkpoint = normalizeCheckpoint(snapshot(state), snapshot(state));
+  // The legacy exporter only rejects recognized survival states. Its format is
+  // reused so journey validation and old-save migration remain in one place.
+  const campaign = exportCampaignSave({ ...state, mode: "story", _stageStart: checkpoint });
+  return { ...campaign, mode: "survival", nightfallVersion: 1, survival };
+}
+export function restoreNightfallSave(value) {
+  let saved = value;
+  if (typeof saved === "string") {
+    try { saved = JSON.parse(saved); } catch { return null; }
+  }
+  if (!saved || typeof saved !== "object" || Array.isArray(saved) || saved.mode !== "survival" || saved.nightfallVersion !== 1 || saved.version !== CAMPAIGN_SAVE_VERSION || !["playing", "won"].includes(saved.status)) return null;
+  const survival = normalizeSurvivalSave(saved.survival);
+  if (!survival) return null;
+  const campaign = restoreCampaignSave({ ...saved, mode: "story" });
+  if (!campaign || campaign.campaignComplete || survival.quizRoads.some(road => road > campaign.routeIndex || road === campaign.routeIndex && campaign.status !== "won")) return null;
+  const next = createState({
+    mode: "survival", survivalDay: survival.day, startingWeapon: survival.startingWeapon,
+    routeIndex: campaign.routeIndex, journeyNodeId: campaign.journeyNodeId,
+    journey: campaign.status === "won" ? null : campaign.journey,
+    routeOption: campaign.routeOption, seed: campaign.seed, runId: campaign.runId,
+    campaignStarted: campaign.campaignStarted, season: campaign.season, weather: campaign.weather,
+  });
+  restoreSnapshot(next, { ...snapshot(campaign), survival });
+  next.journey = campaign.journey;
+  next.pendingJourneyNodeId = campaign.pendingJourneyNodeId;
+  if (campaign.status === "won") {
+    next.status = "won";
+    next.reason = "club";
+    next.distance = next.routeDistance = next.routeLength;
+    next.survival.wave = 5;
+    next.survival.settledWaves = [0, 1, 2, 3, 4, 5];
+  }
+  next._stageStart = snapshot(next);
+  updateEnvironment(next, 0);
+  return next;
+}
+
 /** Retune a departure/resumed checkpoint without resetting its wallet or garage. */
 export function changeRouteBeforeStart(state, routeOption = "scenic", environment = {}) {
   if (state.status !== "playing" || state.distance !== 0 || state.elapsed !== 0) return state;

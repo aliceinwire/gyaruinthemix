@@ -9,7 +9,7 @@ export function captureRoadFeedback(feedback, events, distance = 0) {
   for (const event of events || []) {
     let label = '', color = '#ffadd9', kind = 'ring';
     if (event.type === 'convert') { label = event.headliner || event.elite ? 'SIGNAL CLEAR' : `+${Math.max(0, finite(event.survivalPoints, event.reward))}`; kind = event.headliner || event.elite ? 'signal' : 'heart'; }
-    else if (event.type === 'survival-attack') { label = event.kind === 'flash' ? 'FLASH' : 'VINYL'; color = event.kind === 'flash' ? '#fff1b8' : '#c5a6ff'; kind = event.kind; }
+    else if (event.type === 'survival-attack') { label = event.kind === 'flash' ? 'FLASH' : event.kind === 'bass' ? 'BASS' : 'VINYL'; color = event.kind === 'flash' ? '#fff1b8' : event.kind === 'bass' ? '#8cf0db' : '#c5a6ff'; kind = event.kind; }
     else if (event.type === 'collision') { label = `−${event.damage}`; color = '#ffd29a'; }
     else if (event.type === 'jump-clear') { label = 'NICE!'; color = '#a6f6e5'; }
     else if (event.type === 'destroy') { label = 'CLEAR'; color = '#d4b7ff'; }
@@ -37,9 +37,13 @@ export function drawRoadFeedback(ctx, feedback, state, { reducedMotion = false }
     const p = effect.age / effect.duration, x = 190 + (effect.distance - state.distance) * 3, y = 300 - (reducedMotion ? 0 : p * 24);
     if (x < -90 || x > 1050) continue;
     ctx.save(); ctx.globalAlpha = Math.min(1, (1 - p) * 2);
-    if (effect.kind === 'flash' || effect.kind === 'vinyl') {
+    if (['flash', 'vinyl', 'bass'].includes(effect.kind)) {
       ctx.strokeStyle = effect.color; ctx.lineWidth = reducedMotion ? 2 : 3;
-      ctx.beginPath(); ctx.ellipse(x + 50, 415, reducedMotion ? 65 : 30 + p * 120, 24 + p * 12, 0, 0, Math.PI * 2); ctx.stroke();
+      const center = effect.kind === 'bass' ? x : x + 50;
+      ctx.beginPath(); ctx.ellipse(center, 415, reducedMotion ? 65 : 30 + p * 120, 24 + p * 12, 0, 0, Math.PI * 2); ctx.stroke();
+      if (effect.kind === 'bass' && !reducedMotion) {
+        ctx.beginPath(); ctx.ellipse(center, 415, 15 + p * 90, 12 + p * 8, 0, 0, Math.PI * 2); ctx.stroke();
+      }
     }
     ctx.font = '800 18px system-ui, sans-serif'; ctx.textAlign = 'center';
     ctx.lineWidth = 4; ctx.strokeStyle = '#20152e'; ctx.strokeText(t(effect.label), x, y, 260);
@@ -80,6 +84,10 @@ export function getThreatSignals(state = {}) {
       else if (actor.type === 'cone') label = 'コーンはハートか、短く浮いてかわそ';
       else if (actor.behavior === 'sway') label = 'ゆれる人波。ハートをつないでこ';
       else label = 'ハートでフロアに誘お';
+      if (state.mode === 'survival') {
+        action = actor.type === 'pothole' || actor.shielded ? 'boost' : null;
+        label = actor.type === 'pothole' ? '穴や！ 飛んでかわそ' : actor.shielded ? 'ガード中。飛ぶか、開くのを待とう' : actor.behavior === 'charger' ? '前に動くで！ 距離を見て浮上' : '武器は自動。近づく人波は浮いてかわそ';
+      }
       if (actor.routineHazard) label = `${actor.routineHazard.name}：${actor.routineHazard.advice}`;
       else if (actor.streetRole) label = `${actor.streetRole.name}：${label}`;
       return { actor, id: actor.id ?? actor.encounterId, label, action, phase,
@@ -97,7 +105,8 @@ export function getRoadCue(state) {
   if (upcoming && (!state.atStation || upcoming.seconds < 2)) return { label: upcoming.label, action: upcoming.action, urgency: upcoming.urgency };
   if (state.energy < 15 && !state.atStation) return { label: 'でんち少なめ。EVまで地上で行こ', action: 'charge', urgency: 'low' };
   if (state.atStation) return { label: state.altitude > 12 ? 'EVや！ 地面に降りて充電しよ' : 'EV到着。充電を長押しや', action: 'charge', urgency: 'safe' };
-  if (state.routeIndex === 0 && state.distance < 145 * DRIVING_PACE.speedMultiplier) return { label: '運転は自動やで。ハートを長押ししてみよ', action: 'shoot', urgency: 'learn' };
+  if (state.mode === 'survival') return { label: '武器は自動。飛ぶ・充電・加速で道をつなご。', action: null, urgency: 'calm' };
+  if (state.routeIndex === 0 && state.distance < 145 * DRIVING_PACE.speedMultiplier) return { label: '運転もハートも自動。段差は飛んでかわそ。', action: 'boost', urgency: 'learn' };
   if (state.routeIndex === 0 && state.distance > 390 * DRIVING_PACE.speedMultiplier && state.distance < 540 * DRIVING_PACE.speedMultiplier) return { label: '加速は無敵。でんちを残して、ここぞで使お', action: 'rush', urgency: 'learn' };
   return { label: state.combo >= 3 ? `${state.combo}連続！ この調子で街をつなご` : 'ハートで誘って、段差は飛んでいこ', action: null, urgency: 'calm' };
 }

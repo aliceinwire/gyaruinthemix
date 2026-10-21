@@ -45,6 +45,26 @@ test('all nine translated catalogs cover every source and preserve interpolation
   }
 });
 
+test('Japanese branding uses katakana and survives language switching', async () => {
+  const translator = createTranslator({ loadCatalog: readCatalog });
+  const branding = {
+    'ギャルインザミックス / NIGHTFALL TOUR':
+      'ギャルインザミックス / ナイトフォールツアー',
+    'NIGHTFALL TOUR / 175 BPM': 'ナイトフォールツアー / 175 BPM',
+    'NIGHTFALL TOUR': 'ナイトフォールツアー',
+    'A GYARUINTHEMIX ROAD ROGUELITE':
+      'ギャルインザミックスのロードローグライト',
+    NIGHTFALL: 'ナイトフォール',
+    TOUR: 'ツアー',
+  };
+  for (const code of ['ja', 'en', 'ja']) {
+    await translator.setLanguage(code);
+    const expected = code === 'ja' ? branding : await readCatalog(code);
+    for (const key of Object.keys(branding))
+      assert.equal(translator.t(key), expected[key]);
+  }
+});
+
 test('language preference accepts regional aliases and uses URL, saved choice, then browser', () => {
   for (const [input, expected] of [
     ['it-IT', 'it'],

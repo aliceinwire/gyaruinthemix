@@ -19,4 +19,4 @@ description = "Public localStorage identifier for Neon Survival personal records
 condition = "AND"
 paths = ['''^public/game-test/src/survival\.js$''']
 regexTarget = "secret"
-regexes = ['''^gyaruinthemix-survival-records-v1$''']
+regexes = ['''^gyaruinthemix-survival-records-v[12]$''']

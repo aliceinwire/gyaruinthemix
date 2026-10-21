@@ -2,7 +2,7 @@ import { localizeText } from './localized-ui.js';
 import { message } from './i18n.js';
 import { getStoryScene, normalizeStoryMemory, markStorySeen, chooseStoryOption, getStoryJournal, STORY_SPEAKERS } from './tour-story.js';
 
-export const STORY_SAVE_KEY = 'gyaruinthemix-tour-story-v1';
+export const STORY_SAVE_KEY = 'gyaruinthemix-tour-story-v2';
 
 /** Narrative owns its text and reading pace; the host owns simulation transitions. */
 export function createStoryDirector({ root = document, storage, getState, onOpen, onSaveError = () => {} }) {

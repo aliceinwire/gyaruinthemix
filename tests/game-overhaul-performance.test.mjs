@@ -20,11 +20,11 @@ import {
   restoreCampaignSave,
 } from '../public/game-test/src/simulation.js';
 
-test('optional encore uses the same four actions and never needs an exact rhythm', () => {
+test('optional encore uses the same three actions and never needs an exact rhythm', () => {
   const set = createPerformance();
   assert.deepEqual(
     [...new Set(PERFORMANCE_PHRASES.map((p) => p.action))].sort(),
-    ['boost', 'charge', 'rush', 'shoot'],
+    ['boost', 'charge', 'rush'],
   );
   for (let t = 0; t < PERFORMANCE_LENGTH + 2; t += 1 / 60)
     updatePerformance(

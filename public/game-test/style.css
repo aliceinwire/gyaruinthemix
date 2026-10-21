@@ -110,7 +110,7 @@ small { color: var(--muted); line-height: 1.6; }
 .dialogue { min-width: 0; }
 .dialogue span { font-size: 11px; font-weight: 750; color: var(--pink); }
 .dialogue p { font-size: 12px; margin: 5px 0; line-height: 1.65; }
-.controls { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px; }
+.controls { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
 .controls button { position: relative; min-height: 70px; padding: 10px 6px; border-width: 1px; border-bottom-width: 3px; font-size: 13px; touch-action: none; user-select: none; -webkit-user-select: none; }
 .controls small { display: block; font-size: 9px; font-weight: 500; margin-top: 6px; }
 .controls .boost { border-color: #76bcb7; background: #193b44; }

@@ -1,11 +1,11 @@
-/** Optional, deterministic encore. Uses the same four controls, never gates tour credit. */
+/** Optional, deterministic encore. Uses the same three controls, never gates tour credit. */
 export const PERFORMANCE_PHRASES = Object.freeze([
-  { action: 'shoot', label: 'ハートでフロアに挨拶や！', name: 'WELCOME', color: '#ff9ed3' },
+  { action: 'boost', label: '手ぇ上げて、フロアに挨拶や！', name: 'WELCOME', color: '#ff9ed3' },
   { action: 'charge', label: '低音ためて、じわっと上げよ', name: 'BUILD UP', color: '#97f5df' },
   { action: 'boost', label: '手ぇ上げて！ みんなでジャンプ', name: 'HANDS UP', color: '#d1b2ff' },
   { action: 'rush', label: 'ここでドロップ！ 一気に行くで', name: 'DROP', color: '#ffda91' },
-  { action: 'shoot', label: '街で会った仲間にもハート！', name: 'ONE CREW', color: '#ff9ed3' },
-  { action: 'boost', label: '6つの街を、ひとつにしよ', name: 'ALL TOGETHER', color: '#d1b2ff' },
+  { action: 'charge', label: '街で会った仲間と、低音ためよ！', name: 'ONE CREW', color: '#ff9ed3' },
+  { action: 'boost', label: 'このフロアを、ひとつにしよ', name: 'ALL TOGETHER', color: '#d1b2ff' },
   { action: 'charge', label: 'ラストの低音、しっかりためよ', name: 'ONE MORE', color: '#97f5df' },
   { action: 'rush', label: 'うちらのラスト！ 全員ぶちアゲ！', name: 'FINALE', color: '#ffda91' },
 ]);
@@ -40,7 +40,7 @@ export function performanceView(set) {
   const phrase = PERFORMANCE_PHRASES[set?.phraseIndex];
   const done = Boolean(set?.done);
   return {
-    title: done ? (set.hits >= 6 ? '最高のフロア、できたで！' : '一緒に走ってくれて、ありがとう！') : phrase?.label || 'ツアー完走！ ここからは、うちらの時間や。',
+    title: done ? (set.hits >= 6 ? '最高のフロア、できたで！' : '一緒に走ってくれて、ありがとう！') : phrase?.label || 'クラブ到着！ ここからは、うちらの時間や。',
     phase: done ? 'ENCORE' : phrase?.name || 'WELCOME HOME',
     action: done ? null : phrase?.action || null,
     color: phrase?.color || '#ff9ed3',

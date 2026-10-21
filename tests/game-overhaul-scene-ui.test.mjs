@@ -78,7 +78,7 @@ test('replacement shell has unique stable IDs, safe-area viewport and genuine lo
     assert.ok(ids.includes(id));
   assert.match(html, /viewport-fit=cover/);
   assert.match(html, /id="game"\s+width="960"\s+height="540"/);
-  assert.equal((html.match(/data-control=/g) || []).length, 4);
+  assert.equal((html.match(/data-control=/g) || []).length, 3);
   const css = readFileSync(
     new URL('../public/game-test/style.css', import.meta.url),
     'utf8',

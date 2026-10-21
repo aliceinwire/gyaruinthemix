@@ -150,6 +150,22 @@ test('new hazards use their advertised counters in the real simulation', () => {
   }
 });
 
+test('the opening survival road mixes corporate pressures while keeping the original suits', () => {
+  for (const seed of [1, 42, 175, 2026]) {
+    const state = createState({ mode: 'survival', seed });
+    const roles = new Set(
+      state._encounterPlan.map((actor) => actor.streetRole?.id).filter(Boolean),
+    );
+    assert.ok(roles.has('salaryman'), `${seed}: original business suit`);
+    assert.ok(roles.has('notification-clerk'), `${seed}: notifications`);
+    assert.ok(roles.has('brand-rep'), `${seed}: corporate advertising`);
+    assert.ok(roles.size >= 3);
+    assert.ok(
+      state._encounterPlan.every((actor) => !/cat|dog|animal/.test(actor.type)),
+    );
+  }
+});
+
 test('people become creative fans once and their dialogue follows their role', () => {
   for (const role of STREET_ROLES) {
     const state = emptyRoad();
@@ -237,4 +253,33 @@ test('new pixel props draw bounded finite primitives, including friendly non-tar
       ),
     ),
   );
+});
+
+test('corporate roles have distinct props and visibly turn into creative fan kits', () => {
+  function drawing(role, converted) {
+    const calls = [],
+      colors = {};
+    const ctx = new Proxy(colors, {
+      get: (target, key) =>
+        key in target
+          ? target[key]
+          : (...args) => {
+              calls.push([key, target.fillStyle, ...args]);
+            },
+    });
+    drawCultureProp(ctx, { streetRole: role, converted }, 500, 465, 3);
+    assert.ok(calls.length <= 30, `${role.id}: bounded per-character artwork`);
+    return JSON.stringify(calls);
+  }
+  const corporate = new Set(),
+    fanKits = new Map();
+  for (const role of STREET_ROLES) {
+    const before = drawing(role, false),
+      after = drawing(role, true);
+    assert.notEqual(after, before, `${role.id}: conversion changes the prop`);
+    corporate.add(before);
+    fanKits.set(role.fan, after);
+  }
+  assert.equal(corporate.size, STREET_ROLES.length);
+  assert.equal(new Set(fanKits.values()).size, 6);
 });

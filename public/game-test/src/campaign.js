@@ -457,10 +457,10 @@ function crowd(ctx, time, totalFans) {
   }
 }
 
-/** The final, animated two-DJ set after all six clubs have been cleared. */
+/** Animated two-DJ set for each club and the final shared mix. */
 export function drawFinale(
   ctx,
-  { time = 0, score = 0, totalFans = 0, converted = 0, performance = null, width = W, height = H } = {},
+  { time = 0, score = 0, totalFans = 0, converted = 0, performance = null, club = '', complete = true, width = W, height = H } = {},
 ) {
   setCanvas(ctx, width, height);
   rect(ctx, 0, 0, W, H, "#0c1023");
@@ -472,7 +472,7 @@ export function drawFinale(
       i % 2 ? "#61f2eb0d" : "#ff50bd10");
   }
   rect(ctx, 20, 8, 920, 30, "#0c1023c9");
-  text(ctx, "ツアー完走や！", 32, 23, 18, C.gold, "left", 900, true);
+  text(ctx, complete ? "ツアー完走や！" : club, 32, 23, 18, C.gold, "left", 900, true);
   const scoreValue = Math.max(0, Math.round(Number(score) || 0));
   const fanCount = Math.max(0, Math.floor(Number(totalFans) || 0));
   text(
