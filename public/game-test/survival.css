@@ -43,7 +43,7 @@ body[data-run-mode="survival"] #run-journal { display: none; }
  .screen-menu :is(.menu-copy,.tour-ticket) { display: none; }
  .screen-menu .menu-guide { max-width: 540px; }
  .screen-menu h1 { font-size: 30px !important; }
- #route-content { grid-template-columns: minmax(0,1fr) 190px; }
+ #route-content { grid-template-columns: minmax(0,1fr) clamp(240px,38vw,310px); }
  .destination-option img { display: none; }
  .map-origin, .map-goal { display: grid; }
  .map-stop-label { max-width: none; text-align: center; }

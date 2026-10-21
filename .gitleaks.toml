@@ -13,3 +13,10 @@ keywords = ["sk_", "rk_", "whsec_"]
 [[allowlists]]
 description = "Exact nonfunctional offline fixtures, including historical fixtures; never whole test files"
 regexes = ['''^(?:(?:sk|rk)_(?:test|live)_UNITTESTONLY|(?:sk|rk)_test_(?:FIXTUREONLY|CIPlaceholderNotARealKey)|whsec_(?:UNITTESTONLY|FIXTUREONLY|CIPlaceholderNotARealSecret))$''']
+
+[[allowlists]]
+description = "Public localStorage identifier for Neon Survival personal records"
+condition = "AND"
+paths = ['''^public/game-test/src/survival\.js$''']
+regexTarget = "secret"
+regexes = ['''^gyaruinthemix-survival-records-v1$''']
