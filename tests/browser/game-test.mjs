@@ -924,7 +924,8 @@ try {
         (key) => JSON.parse(localStorage.getItem(key)),
         STORY_SAVE_KEY,
       );
-      assert.equal(memoryBeforeReload.choices['tour:opening'], 'crew');
+      assert.equal(memoryBeforeReload.runId, draftFixture.runId);
+      assert.equal(memoryBeforeReload.choices['tour:opening'], undefined, 'A different tour cannot inherit the opening choice');
       assert.ok(memoryBeforeReload.seen.includes('departure:1'));
       // The document can load before asynchronous language initialization finishes.
       languageBootDelay = 150;
