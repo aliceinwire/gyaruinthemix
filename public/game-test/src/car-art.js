@@ -88,23 +88,21 @@ export const CAR_ROOF_ART = Object.freeze({
   'mix-175': Object.freeze({
     id: 'mix-175-roof', src: assetUrl('mix-175-roof'), sourceWidth: 600, sourceHeight: 180,
     crop: { x: 0, y: 0, width: 600, height: 180 },
-    cap: { source: { x: 0, y: 0, width: 524, height: 74 }, body: { x: 169, y: -14, width: 169, height: 24 } },
+    cap: { source: { x: 0, y: 0, width: 524, height: 74 }, body: { x: 180, y: -14, width: 158, height: 24 } },
     rearPillar: {
       source: { x: 0, y: 70, width: 90, height: 110 }, thicknessScale: .4,
       sourceTop: { x: 47, y: 80 }, sourceFoot: { x: 13, y: 177 },
-      top: { x: 177, y: 8 }, foot: { x: 148, y: 50 },
+      // Extend the existing raised rear frame (199, 29), rather than landing
+      // on the flat trunk behind it and leaving that frame inside the window.
+      top: { x: 194, y: 8 }, foot: { x: 199, y: 29 },
     },
-    window: [{ x: 181, y: 10 }, { x: 334, y: 5 }, { x: 401, y: 50 }, { x: 155, y: 50 }],
-    cabin: { x: 208, y: 6, width: 126, height: 44 },
     windshield: { top: { x: 334, y: 2 }, foot: { x: 408, y: 51 } },
-    snow: { x: 190, y: -14, width: 126 },
+    snow: { x: 202, y: -14, width: 114 },
   }),
   'rocket-gal': Object.freeze({
     id: 'rocket-gal-roof', src: assetUrl('rocket-gal-roof'), sourceWidth: 600, sourceHeight: 149,
     crop: { x: 0, y: 0, width: 600, height: 149 },
     cap: { source: { x: 58, y: 0, width: 442, height: 48 }, body: { x: 217, y: -7, width: 115, height: 20 } },
-    window: [{ x: 237, y: 15 }, { x: 327, y: 13 }, { x: 402, y: 49 }, { x: 237, y: 49 }],
-    cabin: { x: 242, y: 14, width: 85, height: 35 },
     windshield: { top: { x: 326, y: 8 }, foot: { x: 413, y: 53 } },
     snow: { x: 236, y: -7, width: 76 },
   }),
@@ -141,14 +139,14 @@ export function getCarArtLayout({ carId = 'mix-175', x = 0, y = 0, width, height
   };
 }
 
-/** Roof, glazing and occupants all share the body's scale and ground anchor. */
+/** Roof fittings share the body's scale and ground anchor. */
 export function getCarRoofLayout(options = {}) {
   const body = getCarArtLayout(options), roof = CAR_ROOF_ART[body.carId];
   if (!roof) return null;
   const point = p => ({ x: body.body.x + p.x * body.scaleX, y: body.body.y + p.y * body.scaleY });
   const rect = p => ({ ...point(p), width: p.width * body.scaleX, height: p.height * body.scaleY });
   return {
-    cap: rect(roof.cap.body), cabin: rect(roof.cabin), window: roof.window.map(point),
+    cap: rect(roof.cap.body),
     windshield: { top: point(roof.windshield.top), foot: point(roof.windshield.foot) },
     snow: { ...point(roof.snow), width: roof.snow.width * body.scaleX },
   };

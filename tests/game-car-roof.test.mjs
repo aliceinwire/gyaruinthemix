@@ -5,6 +5,7 @@ import {
   CAR_ART,
   getCarArtLayout,
   getCarRoofLayout,
+  drawCarRoof,
   preloadCarArt,
 } from '../public/game-test/src/car-art.js';
 import { preloadCabinCharacters } from '../public/game-test/src/cabin-characters.js';
@@ -153,8 +154,8 @@ test('closing the roof preserves the body and its movement at every car scale', 
           );
         assert.equal(
           closed.clips.length,
-          2,
-          'each occupant is clipped inside the fitted window',
+          0,
+          'closing a convertible does not clip the crew or their hair',
         );
         assert.equal(
           open.clips.length,
@@ -168,36 +169,69 @@ test('closing the roof preserves the body and its movement at every car scale', 
       }
 });
 
-test('closed-roof crew keeps both DJs in the front row and below the cap', () => {
-  for (const carId of Object.keys(windshields)) {
-    const layout = getCarArtLayout({ carId }),
-      roof = getCarRoofLayout({ carId });
-    const wet = getCrewSeatLayout(layout, { roofClosed: true, roof }),
-      dry = getCrewSeatLayout(layout);
-    assert.deepEqual(
-      wet.map((p) => p.character),
-      ['chana', 'arisu'],
-    );
-    for (const [i, seat] of wet.entries()) {
-      assert.ok(
-        seat.width < dry[i].width,
-        'occupants fit the real cabin instead of raising its roof',
-      );
-      // Cabin artwork is fitted to 314x238, with feet anchored at the seat bottom.
-      assert.ok(
-        seat.y + seat.height - (seat.width * 238) / 314 >=
-          Math.min(...roof.window.map((p) => p.y)),
-      );
-      assert.equal(seat.cabin, roof.cabin);
-    }
-    assert.ok(
-      Math.abs(wet[0].x + wet[0].width / 2 - wet[1].x - wet[1].width / 2) <
-        wet[1].width * 0.2,
-    );
+test('MIX 175 rear roof joint lands on the raised body frame, not the trunk', () => {
+  for (const options of [
+    { width: 600 },
+    { width: 194, x: 85, y: 250 },
+    { width: 400, height: 110, x: -30, y: 100 },
+  ]) {
+    const g = context();
+    drawCarRoof(g, { carId: 'mix-175', ...options });
+    const pillar = g.draws[0];
+    assert.deepEqual(pillar.args.slice(0, 4), [0, 70, 90, 110]);
+    const [a, b, c, d, e, f] = pillar.matrix;
+    // Source roof's rear foot is (13, 177). The original body frame's top
+    // joint is (199, 29) on mix-175.png; the trunk at (148, 50) is behind it.
+    const joint = { x: a * 13 + c * 177 + e, y: b * 13 + d * 177 + f };
+    const body = getCarArtLayout({ carId: 'mix-175', ...options });
+    assert.ok(Math.abs(joint.x - (body.body.x + 199 * body.scaleX)) < 1e-9);
+    assert.ok(Math.abs(joint.y - (body.body.y + 29 * body.scaleY)) < 1e-9);
   }
 });
 
-test('kiss hearts follow the fitted passenger when the roof is closed', () => {
+test('both DJs keep identical size, seat positions and action frames when the roof closes', () => {
+  const poses = [
+    {},
+    { shooting: true },
+    { charging: true },
+    { boost: true },
+    { damage: true },
+    { rushing: true, rushGestureTime: 0.5 },
+  ];
+  for (const carId of Object.keys(windshields))
+    for (const weather of ['rain', 'storm', 'snow'])
+      for (const pose of poses)
+        for (const scale of [0.65, 1, 2.8]) {
+          const open = context(),
+            closed = context();
+          const options = {
+            carId,
+            weather,
+            ...pose,
+            scale,
+            time: 0.4,
+            jump: 0.3,
+          };
+          drawCar(open, 190, 465, options);
+          drawCar(closed, 190, 465, { ...options, roofClosed: true });
+          const isCrew = (d) => d.url.includes('/characters/motion/');
+          const crew = (g) => g.draws.filter(isCrew);
+          assert.equal(crew(closed).length, 2);
+          assert.deepEqual(crew(closed), crew(open));
+          assert.deepEqual(
+            closed.clips,
+            open.clips,
+            'no roof clipping on the hair',
+          );
+          assert.ok(
+            closed.draws.findLastIndex((d) => d.url.endsWith('-roof.png')) <
+              closed.draws.findIndex(isCrew),
+            'roof is behind the crew so it cannot cut across their faces',
+          );
+        }
+});
+
+test('kiss hearts keep the same passenger origin with the roof open or closed', () => {
   for (const carId of Object.keys(windshields)) {
     const state = {
       garage: { equipped: carId },
@@ -207,9 +241,8 @@ test('kiss hearts follow the fitted passenger when the roof is closed', () => {
       distance: 100,
     };
     const options = { carId, x: 193, y: 469 - 0.5 * 95 };
-    const layout = getCarArtLayout(options),
-      roof = getCarRoofLayout(options);
-    const passenger = getCrewSeatLayout(layout, { roofClosed: true, roof })[0];
+    const layout = getCarArtLayout(options);
+    const passenger = getCrewSeatLayout(layout)[0];
     const heart = heartVisualPosition(state, {
       age: 0,
       distance: 100,
@@ -219,5 +252,16 @@ test('kiss hearts follow the fitted passenger when the roof is closed', () => {
       x: passenger.x + passenger.width * 0.75,
       y: passenger.y + passenger.height * 0.65,
     });
+    assert.deepEqual(
+      heart,
+      heartVisualPosition(
+        { ...state, roofClosed: false },
+        {
+          age: 0,
+          distance: 100,
+          height: 0.5,
+        },
+      ),
+    );
   }
 });

@@ -104,8 +104,8 @@ function text(g, str, x, y, size = 12, color = "#fff1f5") {
 export function heartVisualPosition(state, shot) {
   const carId=getCarProfile(state).id;
   const options={carId,x:190+(state.windOffset||0),y:469-(state.jumpHeight||0)*95,...(carId==="heart-limo"?{height:62}:{})};
-  const layout=getCarArtLayout(options), roof=state.roofClosed ? getCarRoofLayout(options) : null;
-  const passenger=getCrewSeatLayout(layout,{roof,roofClosed:state.roofClosed})[0];
+  const layout=getCarArtLayout(options);
+  const passenger=getCrewSeatLayout(layout)[0];
   const startX=passenger.x+passenger.width*.75;
   const startY=passenger.y+passenger.height*.65;
   const progress=Math.max(0,Math.min(1,(shot.age||0)/.28));
@@ -115,14 +115,14 @@ export function heartVisualPosition(state, shot) {
 }
 
 /** Side view: both front seats share a row, with the far passenger behind the driver. */
-export function getCrewSeatLayout(layout, { roofClosed = false, roof = null } = {}) {
-  const enclosed = !layout.openTop || (roofClosed && roof);
-  const cabin = roofClosed && roof ? roof.cabin : layout.cabins.at(-1);
+export function getCrewSeatLayout(layout) {
+  const enclosed = !layout.openTop;
+  const cabin = layout.cabins.at(-1);
   const driverSeat = layout.seats.at(-1);
   const size = enclosed ? Math.min(cabin.width + 3, cabin.height + 6) : 37;
-  const center = roofClosed && roof ? Math.min(driverSeat.x, cabin.x + cabin.width - size * .45) : layout.openTop ? driverSeat.x : cabin.x + cabin.width * .57;
+  const center = layout.openTop ? driverSeat.x : cabin.x + cabin.width * .57;
   const bottom = enclosed ? cabin.y + cabin.height + 2 : driverSeat.y + 6;
-  const depth = roofClosed && roof ? Math.min(5, size * .1) : 5;
+  const depth = 5;
   return [
     { character: "chana", x: center + size * .13 - size * .90 / 2, y: bottom - size * .90 - depth, width: size * .90, height: size * .90, cabin },
     { character: "arisu", x: center - size / 2, y: bottom - size, width: size, height: size, cabin },
@@ -162,14 +162,13 @@ export function drawCar(g, x, y, {
     }
   }
   drawCarWheels(g, {...layoutOptions, rotation:time*speed/12, wheels:appearance.wheels});
+  // The convertible roof sits behind the crew. Keep their original scale and
+  // seat anchors, allowing the big hair to extend above the closed hardtop.
+  if (roof) drawCarRoof(g,{...layoutOptions,paint:appearance.paint});
   const visual = crewVisuals || { time, action: resolveCrewActions({time,boosting:boost,shooting,charging,damage,weather,rushing,rushGestureTime}), weather, season, rushing, rushTime, rushGestureTime };
-  for (const {character, x, y, width, height, cabin} of getCrewSeatLayout(layout, {roofClosed,roof})) {
+  for (const {character, x, y, width, height, cabin} of getCrewSeatLayout(layout)) {
     g.save();
-    if (roof) {
-      g.beginPath();
-      roof.window.forEach((p,i)=>i ? g.lineTo(p.x,p.y) : g.moveTo(p.x,p.y));
-      g.closePath();g.clip();
-    } else if (!layout.openTop) { g.beginPath();g.rect(cabin.x-1,cabin.y-1,cabin.width+2,cabin.height+2);g.clip(); }
+    if (!layout.openTop) { g.beginPath();g.rect(cabin.x-1,cabin.y-1,cabin.width+2,cabin.height+2);g.clip(); }
     drawCabinCharacter(g, {...visual, character, x, y, width, height});
     g.restore();
   }
@@ -193,7 +192,6 @@ export function drawCar(g, x, y, {
     for (let i=0;i<4;i++) { const angle=time*4+i*Math.PI/2; text(g,"✦",Math.round(Math.cos(angle)*36),Math.round(layout.body.y-7+Math.sin(angle)*7),9,"#fff0bd"); }
   }
   if (roof) {
-    drawCarRoof(g,{...layoutOptions,paint:appearance.paint});
     const {top,foot}=roof.windshield;
     g.strokeStyle="#242234";g.lineWidth=1;g.beginPath();
     g.moveTo(foot.x,foot.y);
