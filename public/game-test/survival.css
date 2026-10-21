@@ -45,9 +45,6 @@ body[data-run-mode="survival"] #run-journal { display: none; }
  .screen-menu h1 { font-size: 30px !important; }
  #route-content { grid-template-columns: minmax(0,1fr) clamp(240px,38vw,310px); }
  .destination-option img { display: none; }
- .map-origin, .map-goal { display: grid; }
- .map-stop-label { max-width: none; text-align: center; }
- .map-stop strong { text-align: center; }
  body:is([data-screen="playing"],[data-screen="finale"]) .viewport { grid-column:1; grid-row:1 / 5; }
  body:is([data-screen="playing"],[data-screen="finale"]) :is(.topline,.rpg-status,.road-status,.dashboard) { grid-column:2; }
  body:is([data-screen="playing"],[data-screen="finale"]) .road-status { grid-row:3; }
