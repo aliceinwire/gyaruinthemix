@@ -22,6 +22,7 @@ for (const path of publicPaths) {
     path,
   );
   assert.doesNotMatch(html, /name="robots" content="noindex/);
+  assert.match(html, /name="robots" content="noarchive"/);
   assert.ok(
     html.includes(`<html lang="${getLocale(path)}"`),
     `${path}: document language`,

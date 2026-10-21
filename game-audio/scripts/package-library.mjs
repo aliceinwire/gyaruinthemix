@@ -24,6 +24,25 @@ const INPUT_OPTIONS = [
   '-format_whitelist',
   'mp3,wav,flac,mov,aac,ogg',
 ];
+// Only the display title is public; other source tags and full paths stay private.
+export function trackTitle(tags, filename, streamTags) {
+  const clean = (value) =>
+    typeof value === 'string'
+      ? value
+          .replace(/[\p{Cc}\p{Cf}]/gu, '')
+          .trim()
+          .slice(0, 160)
+      : '';
+  for (const candidate of [tags, streamTags]) {
+    const tagged = clean(
+      Object.entries(candidate || {}).find(
+        ([key]) => key.toLowerCase() === 'title',
+      )?.[1],
+    );
+    if (tagged && tagged !== BRAND) return tagged;
+  }
+  return clean(basename(filename).replace(EXTENSIONS, '')) || 'Untitled';
+}
 async function run(command, args, timeout = 1800000) {
   return new Promise((done, fail) => {
     const p = spawn(command, args, { stdio: ['ignore', 'pipe', 'pipe'] });
@@ -111,6 +130,37 @@ export async function packageLibrary({
         const hash = await hashFile(source),
           id = `t-${hash.slice(0, 24)}`;
         if (tracks.some((t) => t.id === id)) continue;
+        const info = JSON.parse(
+          await run(
+            'ffprobe',
+            [
+              ...INPUT_OPTIONS,
+              '-v',
+              'error',
+              '-select_streams',
+              'a:0',
+              '-show_entries',
+              'stream=codec_type:format=duration:format_tags=title:stream_tags=title',
+              '-of',
+              'json',
+              source,
+            ],
+            30000,
+          ),
+        );
+        const duration = Number(info.format?.duration);
+        if (
+          !info.streams?.length ||
+          !Number.isFinite(duration) ||
+          duration <= 0 ||
+          duration > maxSeconds
+        )
+          throw new Error('Missing audio stream or duration exceeds limit.');
+        const title = trackTitle(
+          info.format?.tags,
+          entry.name,
+          info.streams[0]?.tags,
+        );
         const target = join(out, id);
         let track;
         try {
@@ -173,32 +223,6 @@ export async function packageLibrary({
           /* New, corrupt or changed package is rebuilt atomically below. */
         }
         if (!track) {
-          const info = JSON.parse(
-            await run(
-              'ffprobe',
-              [
-                ...INPUT_OPTIONS,
-                '-v',
-                'error',
-                '-select_streams',
-                'a:0',
-                '-show_entries',
-                'stream=codec_type:format=duration',
-                '-of',
-                'json',
-                source,
-              ],
-              30000,
-            ),
-          );
-          const duration = Number(info.format?.duration);
-          if (
-            !info.streams?.length ||
-            !Number.isFinite(duration) ||
-            duration <= 0 ||
-            duration > maxSeconds
-          )
-            throw new Error('Missing audio stream or duration exceeds limit.');
           temporary = join(out, `.building-${id}-${process.pid}`);
           await mkdir(temporary, { mode: 0o750 });
           await run('ffmpeg', [
@@ -269,7 +293,7 @@ export async function packageLibrary({
             throw new Error('Unexpected segment duration.');
           track = {
             id,
-            title: BRAND,
+            title,
             excerpt,
             duration: chunks.reduce((n, c) => n + c.duration, 0),
             sourceHash: hash,
@@ -294,7 +318,13 @@ export async function packageLibrary({
           }
           temporary = undefined;
         }
-        tracks.push(track);
+        const after = await lstat(source);
+        if (before.size !== after.size || before.mtimeMs !== after.mtimeMs)
+          throw new Error(
+            'Source changed during packaging; retry after copy completes.',
+          );
+        // Refresh titles even when older audio segments remain safely reusable.
+        tracks.push({ ...track, title, artist: BRAND });
       } catch (e) {
         failures.push({ file: entry.name, error: e.message });
         if (temporary) await rm(temporary, { recursive: true, force: true });
@@ -305,10 +335,7 @@ export async function packageLibrary({
     const catalog = {
       version: 1,
       brand: BRAND,
-      tracks: tracks.map((t, i) => ({
-        ...t,
-        title: `${BRAND} ${String(i + 1).padStart(2, '0')}`,
-      })),
+      tracks,
     };
     // The bouncer updater uses strict mode: incomplete/invalid drops must not
     // replace a live catalog before an update can safely proceed. Successfully

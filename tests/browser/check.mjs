@@ -298,7 +298,7 @@ async function inspect(page, pathname, width) {
     if (publicPaths.includes(base)) {
       check(
         data.canonical === 'https://gyaruinthemix.com' + pathname &&
-          !data.robots,
+          data.robots === 'noarchive',
         label + ' canonical/indexability',
         data.canonical,
       );

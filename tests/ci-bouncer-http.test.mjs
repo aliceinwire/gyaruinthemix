@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import {
   AUDIO_FIXTURE_KEY,
+  AUDIO_FIXTURE_SOURCE,
   createGameAudioFixtures,
 } from '../scripts/ci-game-audio-fixtures.mjs';
 import { createAudioHandler, loadCatalog } from '../game-audio/server/app.mjs';
@@ -55,7 +56,7 @@ test('each HTTP phase has a fresh process across restart, audio stop and recover
       tracks: [
         {
           id,
-          title: 'Synthetic HTTP fixture',
+          title: AUDIO_FIXTURE_SOURCE.replace(/\.wav$/, ''),
           init: 'init.mp4',
           duration: 4,
           chunks: [{ file: 'seg-00000.m4s', duration: 4 }],

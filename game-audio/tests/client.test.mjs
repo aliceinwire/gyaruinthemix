@@ -39,8 +39,18 @@ function fixture({ delay = false, native = true, blocked = false } = {}) {
   let calls = [],
     states = [],
     resolveSession,
-    playable = true;
-  const timers = { setTimeout: () => 1, clearTimeout: () => {} };
+    playable = true,
+    sessionId = 'x'.repeat(32),
+    nextTimer = 0;
+  const scheduled = new Map();
+  const timers = {
+    setTimeout: (fn) => {
+      const id = ++nextTimer;
+      scheduled.set(id, fn);
+      return id;
+    },
+    clearTimeout: (id) => scheduled.delete(id),
+  };
   if (!native) media.canPlayType = () => '';
   if (blocked)
     media.play = async () => {
@@ -63,7 +73,7 @@ function fixture({ delay = false, native = true, blocked = false } = {}) {
     const result = {
       ok: true,
       json: async () => ({
-        sessionId: 'x'.repeat(32),
+        sessionId,
         trackId: JSON.parse(opts.body).trackId,
         expiresAt: Date.now() + 120000,
         renewAfterMs: 40000,
@@ -110,6 +120,14 @@ function fixture({ delay = false, native = true, blocked = false } = {}) {
     calls,
     states,
     release: () => resolveSession(),
+    setSessionId: (value) => {
+      sessionId = value;
+    },
+    renew: async () => {
+      const [id, fn] = scheduled.entries().next().value;
+      scheduled.delete(id);
+      await fn();
+    },
     setPlayable: (v) => (playable = v),
     imports: () => imports,
   };
@@ -180,7 +198,7 @@ test('track switching while paused does not start music, next while playing cont
   assert.equal(f.audio.state.track.id, a);
   f.audio.destroy();
 });
-test('volume, mute, seeking, visibility pause and deliberate resume', async () => {
+test('volume, mute, seeking and background playback preserve manual pause', async () => {
   const f = fixture();
   await f.audio.loadCatalog();
   await f.audio.play({ userGesture: true });
@@ -194,10 +212,14 @@ test('volume, mute, seeking, visibility pause and deliberate resume', async () =
   assert.equal(f.media.currentTime, 48);
   f.doc.hidden = true;
   f.doc.dispatchEvent(new Event('visibilitychange'));
-  assert.equal(f.audio.enabled, false);
-  assert.equal(f.media.paused, true);
+  assert.equal(f.audio.enabled, true);
+  assert.equal(f.media.paused, false);
+  await f.renew();
+  assert.equal(f.calls.filter((c) => c.url.endsWith('/session')).length, 2);
+  f.audio.pause();
   f.doc.hidden = false;
   f.doc.dispatchEvent(new Event('visibilitychange'));
+  await settle();
   assert.equal(f.media.paused, true);
   await f.audio.play({ userGesture: true });
   assert.equal(f.media.paused, false);
@@ -371,4 +393,50 @@ test('destroy during delayed discovery prevents all late requests', async () => 
   ready(true);
   assert.deepEqual(await loading, []);
   assert.deepEqual(calls, []);
+});
+
+test('returning to a throttled tab renews its session at the current position', async () => {
+  const f = fixture();
+  await f.audio.play({ userGesture: true });
+  f.media.currentTime = 17;
+  f.doc.hidden = true;
+  f.doc.dispatchEvent(new Event('visibilitychange'));
+  f.setSessionId('y'.repeat(32));
+  f.doc.hidden = false;
+  f.doc.dispatchEvent(new Event('visibilitychange'));
+  await settle();
+  assert.equal(f.media.currentTime, 17);
+  assert.equal(f.media.paused, false);
+  assert.equal(f.media.loads, 2);
+  f.audio.destroy();
+});
+test('manual pause during return renewal prevents a late restart', async () => {
+  const f = fixture({ delay: true });
+  const playing = f.audio.play({ userGesture: true });
+  await settle();
+  f.release();
+  await playing;
+  f.doc.hidden = true;
+  f.doc.dispatchEvent(new Event('visibilitychange'));
+  f.doc.hidden = false;
+  f.doc.dispatchEvent(new Event('visibilitychange'));
+  await settle();
+  f.audio.pause();
+  f.release();
+  await settle();
+  assert.equal(f.media.plays, 1);
+  assert.equal(f.media.paused, true);
+  assert.equal(f.audio.enabled, false);
+  f.audio.destroy();
+});
+test('the next track continues while the tab is hidden', async () => {
+  const f = fixture();
+  await f.audio.play({ userGesture: true });
+  f.doc.hidden = true;
+  f.doc.dispatchEvent(new Event('visibilitychange'));
+  f.media.dispatchEvent(new Event('ended'));
+  await settle();
+  assert.equal(f.audio.state.track.id, b);
+  assert.equal(f.media.paused, false);
+  f.audio.destroy();
 });
