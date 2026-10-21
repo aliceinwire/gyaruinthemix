@@ -12,6 +12,66 @@ import {
   selectCrewDialogue,
   selectCrewEvent,
 } from '../public/game-test/src/crew-dialogue.js';
+import { getJourneyStage } from '../public/game-test/src/journey.js';
+
+test('the club tour carries original hard bounce and Heisei gyaru culture through all six cities', () => {
+  const opening = getStoryScene({ mode: 'survival' }, 'opening');
+  const premise = opening.lines.map((line) => line.text).join(' ');
+  for (const theme of [
+    '会社',
+    '平成ギャル',
+    'ハードバウンス',
+    'オリジナル曲',
+    '175 BPM',
+  ])
+    assert.ok(premise.includes(theme), theme);
+  for (let routeIndex = 1; routeIndex < 12; routeIndex += 2) {
+    const stage = getJourneyStage(routeIndex);
+    const arrival = getStoryScene(
+      { routeIndex, status: 'won', mode: 'survival' },
+      'arrival',
+    );
+    const text = arrival.lines.map((line) => line.text).join(' ');
+    assert.ok(arrival.kicker.includes(stage.club));
+    assert.ok(text.includes(stage.cityName));
+    assert.match(text, /サウンドチェック|録音/);
+    assert.match(text, /踊|跳|セット|手拍子|プレイ/);
+  }
+  const finale = getStoryScene(
+    { routeIndex: 11, status: 'won', mode: 'survival' },
+    'finale',
+  );
+  assert.match(
+    finale.lines.map((line) => line.text).join(' '),
+    /六つ.*つながった/,
+  );
+});
+
+test('one-life runs never offer legacy road-retry dialogue', () => {
+  assert.equal(
+    getStoryScene({ routeIndex: 3, status: 'lost', mode: 'survival' }, 'retry'),
+    null,
+  );
+  assert.ok(
+    getStoryScene({ routeIndex: 3, status: 'lost', mode: 'story' }, 'retry'),
+  );
+});
+
+test('automatic weapons leave room for ambient dialogue while urgent events retain priority', () => {
+  const context = {
+    mode: 'survival',
+    shooting: true,
+    time: 0,
+    cityId: 'nakano',
+  };
+  assert.match(selectCrewDialogue(context).id, /^city:nakano:/);
+  assert.equal(selectCrewEvent([{ type: 'shoot' }], context), null);
+  assert.match(
+    selectCrewEvent([{ type: 'shoot' }, { type: 'collision' }], context).id,
+    /event:collision/,
+  );
+  assert.match(selectCrewEvent('shoot', { mode: 'story' }).id, /event:shoot/);
+});
 
 test('opening is optional, coherent, and shown once without consuming it during selection', () => {
   const state = Object.freeze({ routeIndex: 0, status: 'playing', seed: 175 });

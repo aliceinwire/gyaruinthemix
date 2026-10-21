@@ -2,6 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   createState,
+  chooseStartingWeapon,
+  beginCampaign,
+  exportNightfallSave,
+  restoreNightfallSave,
+  beginClubQuiz,
+  answerQuiz,
   update,
   nextRoute,
   retryRoute,
@@ -25,6 +31,10 @@ import {
   survivalMultiplier,
   finishSurvivalWave,
   SURVIVAL_RECORD_KEY,
+  SURVIVAL_UPGRADES,
+  SURVIVAL_WEAPONS,
+  SURVIVAL_MAX_LEVEL,
+  survivalView,
 } from '../public/game-test/src/survival.js';
 import { getJourneyChoices } from '../public/game-test/src/journey.js';
 
@@ -111,7 +121,7 @@ test('daily seed changes at Japan midnight and all map choices reproduce their e
     }
 });
 
-test('automatic hearts deliver real hits; holding hearts increases rate and spends battery', () => {
+test('automatic hearts deliver real hits without manual fire or battery drain', () => {
   const auto = quiet(),
     focus = quiet();
   const a = enemy(auto, 800, 60),
@@ -120,9 +130,109 @@ test('automatic hearts deliver real hits; holding hearts increases rate and spen
   update(focus, { shoot: true }, 0.3);
   assert.equal(a.converted, true);
   assert.equal(b.converted, true);
-  assert.ok(focus.energy < auto.energy);
-  assert.ok(focus._nextProjectileId > auto._nextProjectileId);
+  assert.equal(focus.energy, auto.energy);
+  assert.equal(focus._nextProjectileId, auto._nextProjectileId);
+  assert.deepEqual(focus.survival, auto.survival);
   assert.ok(auto.survival.xp > 0 || auto.survival.gems.length > 0);
+});
+
+test('every starting weapon attacks automatically, and hearts require acquisition', () => {
+  for (const weapon of SURVIVAL_WEAPONS) {
+    const s = createState({ mode: 'survival', startingWeapon: weapon.id });
+    s.entities = [];
+    s._stations = [];
+    s._nextEncounter = 1e9;
+    const target = enemy(s, 700, 30);
+    update(s, { shoot: true }, 0.15);
+    assert.equal(target.converted, true, weapon.id);
+    assert.deepEqual(s.survival.upgrades, { [weapon.id]: 1 });
+    if (weapon.id !== 'heart') {
+      assert.equal(
+        s._nextProjectileId,
+        1,
+        'Manual fire cannot summon an unowned weapon',
+      );
+      assert.equal(s.shooting, false);
+      s.survival.xp = 0;
+      draft(s, 'heart');
+      s.survival.xp = 0;
+      update(s, {}, 0.01);
+      assert.ok(s._nextProjectileId > 1, 'Acquired hearts fire without input');
+    }
+  }
+});
+
+test('starting weapon choices close at departure and cannot reset an earned build', () => {
+  const s = fresh();
+  assert.equal(chooseStartingWeapon(s, 'unknown'), false);
+  assert.equal(chooseStartingWeapon(s, 'bass'), true);
+  assert.deepEqual(s.survival.upgrades, { bass: 1 });
+  changeRouteBeforeStart(s, 'express');
+  assert.deepEqual(s.survival.upgrades, { bass: 1 });
+  assert.equal(s.survival.startingWeapon, 'bass');
+  beginCampaign(s);
+  assert.equal(chooseStartingWeapon(s, 'heart'), false);
+  const progressed = fresh();
+  draft(progressed, 'armor');
+  assert.equal(chooseStartingWeapon(progressed, 'heart'), false);
+  assert.equal(progressed.survival.upgrades.armor, 1);
+});
+
+test('bass reaches behind the car and its evolution pierces guards', () => {
+  const s = quiet();
+  chooseStartingWeapon(s, 'bass');
+  const behind = enemy(s, 730, -25, { hp: 2 });
+  const guard = enemy(s, 731, 45, { hp: 5, shielded: true });
+  update(s, {}, 0.01);
+  assert.equal(behind.converted, true);
+  assert.equal(guard.converted, undefined);
+  assert.equal(guard.hp, 5);
+  draft(s, 'bass');
+  draft(s, 'bass');
+  draft(s, 'hype');
+  draft(s, 'hype');
+  s.survival.bassClock = 0;
+  s.survival.xp = 0;
+  update(s, {}, 0.01);
+  assert.equal(guard.converted, true);
+  assert.ok(
+    s.events.some(
+      (event) => event.type === 'survival-attack' && event.kind === 'bass',
+    ),
+  );
+});
+
+test('upgrade offers reveal evolution ingredients and exhaust at the actual build cap', () => {
+  const s = fresh();
+  while (s.survival.level < SURVIVAL_MAX_LEVEL) {
+    s.survival.xp = survivalXpCost(s.survival.level);
+    const offers = survivalOffers(s);
+    assert.ok(offers.length > 0 && offers.length <= 3);
+    for (const offer of offers) {
+      assert.equal(offer.icon, offer.id);
+      if (offer.evolution) {
+        const next = {
+          ...s.survival.upgrades,
+          [offer.id]: (s.survival.upgrades[offer.id] || 0) + 1,
+        };
+        assert.equal(
+          offer.evolutionReady,
+          !s.survival.evolutions.includes(offer.evolution.id) &&
+            next[offer.evolution.weapon] >= 3 &&
+            next[offer.evolution.support] >= 2,
+        );
+      }
+    }
+    assert.equal(openSurvivalDraft(s), true);
+    assert.equal(chooseSurvivalUpgrade(s, offers[0].id), true);
+  }
+  assert.equal(s.survival.level, 26);
+  assert.ok(
+    SURVIVAL_UPGRADES.every((item) => s.survival.upgrades[item.id] === 3),
+  );
+  assert.deepEqual(survivalOffers(s), []);
+  assert.equal(survivalView(s).nextXp, null);
+  assert.equal(survivalView(s).progress, 1);
 });
 
 test('distinct attack and support offers spend XP once, stop time, and exclude maxed upgrades', () => {
@@ -149,14 +259,15 @@ test('distinct attack and support offers spend XP once, stop time, and exclude m
   assert.ok(survivalOffers(s).every((item) => item.id !== id));
 });
 
-test('all three evolutions require both ingredients and change live attacks', () => {
+test('all four evolutions require both ingredients and change live attacks', () => {
   for (const [weapon, support, evolution] of [
     ['heart', 'relay', 'heartstorm'],
     ['flash', 'battery', 'flashmob'],
     ['vinyl', 'glide', 'encore'],
+    ['bass', 'hype', 'afterparty'],
   ]) {
     const s = quiet();
-    for (let i = 0; i < 3; i++) draft(s, weapon);
+    while ((s.survival.upgrades[weapon] || 0) < 3) draft(s, weapon);
     assert.equal(s.survival.evolutions.includes(evolution), false);
     draft(s, support);
     draft(s, support);
@@ -166,7 +277,7 @@ test('all three evolutions require both ingredients and change live attacks', ()
     s.projectiles = [];
     s.shotCooldown = 0;
     const target = enemy(s, 900, 45, { hp: 4, shielded: weapon === 'flash' });
-    s.survival.flashClock = s.survival.vinylClock = 0;
+    s.survival.flashClock = s.survival.vinylClock = s.survival.bassClock = 0;
     update(s, {}, 0.01);
     if (weapon === 'heart') assert.equal(s.projectiles.length, 3);
     else assert.equal(target.converted, true);
@@ -306,7 +417,186 @@ test('one life preserves builds across map branches, never restores hull or a de
   assert.equal(exportCampaignSave(s), null);
   s.status = 'won';
   s.money = 10000;
-  assert.equal(buyUpgrade(s, 'repair'), false);
+  assert.equal(buyUpgrade(s, 'repair'), true);
+  assert.equal(s.integrity, 53);
+  assert.ok(s.money < 10000);
+});
+
+test('club quizzes happen only on arrival and cannot repeat rewards after a reload', () => {
+  const s = fresh();
+  assert.equal(beginClubQuiz(s), false);
+  clearRoad(s);
+  assert.equal(
+    beginClubQuiz(s),
+    false,
+    'Approach roads do not interrupt with club quizzes',
+  );
+  nextRoute(s);
+  clearRoad(s);
+  assert.equal(beginClubQuiz(s), true);
+  assert.equal(s.status, 'quiz');
+  assert.equal(s.pendingQuiz.club, true);
+  const score = s.score;
+  const distance = s.distance;
+  update(s, { boost: true, rush: true }, 30);
+  assert.equal(s.distance, distance);
+  assert.equal(beginClubQuiz(s), false);
+  assert.equal(answerQuiz(s, true), true);
+  assert.equal(s.status, 'won');
+  assert.equal(s.score, score + 300);
+  assert.deepEqual(s.survival.quizRoads, [1]);
+  assert.equal(answerQuiz(s, true), false);
+  assert.equal(beginClubQuiz(s), false);
+  const restored = restoreNightfallSave(exportNightfallSave(s));
+  assert.equal(restored.score, s.score);
+  assert.deepEqual(restored.survival.quizRoads, [1]);
+  assert.equal(beginClubQuiz(restored), false);
+  nextRoute(restored);
+  clearRoad(restored);
+  nextRoute(restored);
+  clearRoad(restored);
+  assert.equal(beginClubQuiz(restored), true);
+  const beforeWrongAnswer = restored.score;
+  assert.equal(answerQuiz(restored, false), true);
+  assert.equal(restored.status, 'won');
+  assert.equal(restored.score, beforeWrongAnswer);
+  assert.deepEqual(restored.survival.quizRoads, [1, 3]);
+  assert.equal(beginClubQuiz(restored), false);
+});
+
+test('club purchases spend run currency and survive the next map checkpoint', () => {
+  const s = fresh();
+  s.money = 10000;
+  assert.equal(buyUpgrade(s, 'battery'), false);
+  clearRoad(s);
+  const capacity = s.energyCapacity;
+  assert.equal(buyUpgrade(s, 'battery'), true);
+  assert.ok(s.energyCapacity > capacity);
+  const restored = restoreNightfallSave(exportNightfallSave(s));
+  assert.equal(restored.upgrades.battery, 1);
+  assert.equal(restored.energyCapacity, s.energyCapacity);
+  assert.equal(restored.money, s.money);
+  nextRoute(restored);
+  assert.equal(restored.energyCapacity, s.energyCapacity);
+});
+
+test('between-road saves preserve the chosen weapon, build, resources and branch', () => {
+  const s = fresh();
+  chooseStartingWeapon(s, 'flash');
+  const departure = exportNightfallSave(s);
+  const ready = restoreNightfallSave(JSON.stringify(departure));
+  assert.equal(ready.mode, 'survival');
+  assert.deepEqual(ready.survival.upgrades, { flash: 1 });
+  assert.equal(ready.survival.day, '2026-10-21');
+  assert.equal(ready.distance, 0);
+  assert.equal(ready.campaignStarted, false);
+  beginCampaign(s);
+  draft(s, 'flash');
+  draft(s, 'flash');
+  draft(s, 'battery');
+  draft(s, 'battery');
+  s.survival.seconds = 180;
+  s.survival.kills = 16;
+  s.survival.cleanWaves = 3;
+  s.integrity = 23;
+  s.energy = 44;
+  clearRoad(s);
+  s.pendingJourneyNodeId = getJourneyChoices(1, s.seed)[2].nodeId;
+  const saved = exportNightfallSave(s);
+  const restored = restoreNightfallSave(saved);
+  assert.equal(restored.status, 'won');
+  assert.equal(restored.distance, restored.routeLength);
+  assert.equal(restored.score, s.score);
+  assert.equal(restored.integrity, s.integrity);
+  assert.equal(restored.energy, s.energy);
+  assert.equal(restored.survival.seconds, s.survival.seconds);
+  assert.equal(restored.survival.kills, 16);
+  assert.equal(restored.survival.cleanWaves, s.survival.cleanWaves);
+  assert.deepEqual(restored.survival.upgrades, s.survival.upgrades);
+  assert.deepEqual(restored.survival.evolutions, ['flashmob']);
+  assert.deepEqual(restored.journey, s.journey);
+  assert.equal(restored.pendingJourneyNodeId, s.pendingJourneyNodeId);
+  const score = restored.score;
+  finishSurvivalWave(restored, 5);
+  assert.equal(
+    restored.score,
+    score,
+    'Reloading an arrival cannot reward a wave twice',
+  );
+  nextRoute(restored);
+  assert.equal(restored.journeyNodeId, s.pendingJourneyNodeId);
+  assert.equal(restored.integrity, s.integrity);
+  assert.deepEqual(restored.survival.upgrades, s.survival.upgrades);
+  assert.equal(chooseStartingWeapon(restored, 'heart'), false);
+});
+
+test('nightfall saves reject active or ended roads and corrupt progression', () => {
+  const s = fresh();
+  const valid = exportNightfallSave(s);
+  update(s, {}, 0.01);
+  assert.equal(exportNightfallSave(s), null);
+  s.status = 'lost';
+  assert.equal(exportNightfallSave(s), null);
+  s.status = 'won';
+  s.campaignComplete = true;
+  assert.equal(exportNightfallSave(s), null);
+  assert.equal(exportNightfallSave(createState()), null);
+  assert.equal(restoreNightfallSave(exportCampaignSave(createState())), null);
+  assert.equal(restoreNightfallSave('{bad'), null);
+  for (const mutate of [
+    (save) => {
+      save.nightfallVersion = 99;
+    },
+    (save) => {
+      save.status = 'lost';
+    },
+    (save) => {
+      save.survival.version = 1;
+    },
+    (save) => {
+      save.survival.day = '2026-02-31';
+    },
+    (save) => {
+      save.survival.startingWeapon = 'unknown';
+    },
+    (save) => {
+      save.survival.upgrades.heart = 4;
+    },
+    (save) => {
+      save.survival.upgrades.heart = 0;
+    },
+    (save) => {
+      save.survival.level = 12;
+    },
+    (save) => {
+      save.survival.xp = Infinity;
+    },
+    (save) => {
+      save.journeyNodeId = 'invalid';
+    },
+    (save) => {
+      save.survival.quizRoads = [2];
+    },
+    (save) => {
+      save.survival.quizRoads = [11];
+    },
+  ]) {
+    const corrupt = structuredClone(valid);
+    mutate(corrupt);
+    assert.equal(restoreNightfallSave(corrupt), null);
+  }
+  const optional = structuredClone(valid);
+  optional.survival.evolutions = ['flashmob'];
+  optional.survival.seconds = Infinity;
+  optional.survival.heat = 1e12;
+  optional.survival.cleanWaves = 1e12;
+  optional.survival.gems = [{ xp: 1e12, distance: 0 }];
+  const restored = restoreNightfallSave(optional);
+  assert.deepEqual(restored.survival.evolutions, []);
+  assert.equal(restored.survival.seconds, 0);
+  assert.equal(restored.survival.heat, 100);
+  assert.equal(restored.survival.cleanWaves, 72);
+  assert.deepEqual(restored.survival.gems, []);
 });
 
 test('survival cannot overwrite the tour save; records are local, bounded and tolerate denied storage', () => {
@@ -394,4 +684,54 @@ test('no-input survival is not a winning strategy even with automatic attacks', 
   }
   assert.equal(s.status, 'lost');
   assert.ok(s.survival.kills > 0);
+});
+
+test('all four starters can finish the twelve-road run with driving and build choices', () => {
+  for (const starter of SURVIVAL_WEAPONS) {
+    const s = createState({
+      mode: 'survival',
+      startingWeapon: starter.id,
+      seed: 175,
+      survivalDay: '2026-10-21',
+    });
+    for (
+      let tick = 0;
+      tick < 36000 && s.status !== 'lost' && !s.campaignComplete;
+      tick++
+    ) {
+      if (s.status === 'draft') {
+        const offers = survivalOffers(s);
+        const pick =
+          offers.find((offer) => offer.id === 'armor' && s.integrity < 70) ||
+          offers.find((offer) => offer.kind === 'weapon') ||
+          offers[0];
+        chooseSurvivalUpgrade(s, pick.id);
+      }
+      if (s.status === 'won') nextRoute(s);
+      const hazard = s.entities.find(
+        (actor) =>
+          !actor.cleared &&
+          !actor.resolved &&
+          !actor.converted &&
+          ['salaryman', 'barrier', 'cone', 'pothole'].includes(actor.type) &&
+          actor.distance > s.distance - 1 &&
+          actor.distance - s.distance < 45,
+      );
+      const station = s.entities.find(
+        (actor) =>
+          actor.type === 'ev' &&
+          Math.abs(actor.distance - s.distance) <= actor.radius,
+      );
+      update(
+        s,
+        { boost: Boolean(hazard), charge: Boolean(station && !hazard) },
+        1 / 30,
+      );
+    }
+    assert.equal(s.status, 'won', starter.id);
+    assert.equal(s.campaignComplete, true, starter.id);
+    assert.equal(s.stagesCompleted, 12, starter.id);
+    assert.ok(s.survival.kills > 0, starter.id);
+    assert.ok(s.survival.evolutions.length > 0, starter.id);
+  }
 });

@@ -1,4 +1,5 @@
-import { isSurvival, dailySurvival, survivalView, chooseSurvivalUpgrade, survivalMultiplier, createSurvivalRecords } from './src/survival.js';
+import { isSurvival, dailySurvival, survivalView, chooseSurvivalUpgrade, survivalMultiplier, createSurvivalRecords, SURVIVAL_WEAPONS, SURVIVAL_UPGRADES } from './src/survival.js';
+import { createItemIcon } from './src/item-icons.js';
 import { drawSurvival, renderSurvivalResult } from './src/survival-ui.js';
 import { localizeText, localizeAttribute, localizeHTML, initializeLanguage, installLanguageSelectors } from './src/localized-ui.js';
 import { message, number, t } from './src/i18n.js';
@@ -47,12 +48,16 @@ import {
   upgradePrice,
   retryRoute,
   answerQuiz,
+  beginClubQuiz,
   exportCampaignSave,
   restoreCampaignSave,
   changeRouteBeforeStart,
   campaignEnvironment,
   beginCampaign,
   chooseStageDestination,
+  chooseStartingWeapon,
+  exportNightfallSave,
+  restoreNightfallSave,
   selectNextJourneyDestination,
 } from "./src/simulation.js";
 import { questionForStage } from "./src/questions.js";
@@ -63,10 +68,10 @@ await initializeLanguage();
 const $ = (s) => document.querySelector(s),
   canvas = $("#game"),
   ctx = canvas.getContext("2d", { alpha: false });
-const campaignSeed = () => Math.floor(Math.random() * 0x7fffffff);
-function newTour(progress) {
-  const seed = campaignSeed();
+function newTour(progress, challenge = dailySurvival()) {
+  const seed = challenge.seed;
   const fresh = createState({
+    mode: 'survival', survivalDay: challenge.day, startingWeapon: 'heart',
     routeIndex: 0,
     routeOption: "scenic",
     seed,
@@ -77,7 +82,6 @@ function newTour(progress) {
     ...campaignEnvironment(seed, 0),
   });
   if (progress) equipStartingCar(fresh, progress, getCarProfile(fresh).id);
-  chooseRunStyle(fresh, "relay");
   return fresh;
 }
 let state = newTour(),
@@ -91,7 +95,8 @@ let state = newTour(),
   visualTime = 0,
   toastTime = 0,
   ready = false;
-let performanceSet = createPerformance(), roadFeedback = createRoadFeedback(), autoHearts = false;
+let performanceSet = createPerformance(), roadFeedback = createRoadFeedback();
+let performanceNext = null, terminalRecord = null;
 let lastHud = 0, lastCue = "";
 const frameSamples = [];
 let storage;
@@ -103,7 +108,7 @@ const survivalRecords = createSurvivalRecords(storage);
 const rpgView = value => survivalView(value) || getRpgView(value);
 let survivalBest = 0;
 let meta = saves.loadMeta(),
-  savedTour = saves.loadCampaign(),
+  savedTour = saves.loadNightfall() || saves.loadCampaign(),
   storageWarningShown = false;
 function storageWarning() {
   if (storageWarningShown) return;
@@ -119,8 +124,8 @@ function syncResume() {
   $("#resume-tour").hidden = !savedTour;
 }
 function saveTour() {
-  if (isSurvival(state)) return;
-  const result = saves.saveCampaign(state);
+  if (isSurvival(state) && !exportNightfallSave(state)) return;
+  const result = isSurvival(state) ? saves.saveNightfall(state) : saves.saveCampaign(state);
   savedTour = result.campaign;
   syncResume();
   if (!result.persisted) storageWarning();
@@ -128,12 +133,15 @@ function saveTour() {
 syncResume();
 $("#resume-tour").addEventListener("click", () => {
   if (!ready || !savedTour) return;
-  state = restoreCampaignSave(exportCampaignSave(savedTour));
+  state = isSurvival(savedTour) ? restoreNightfallSave(exportNightfallSave(savedTour)) : restoreCampaignSave(exportCampaignSave(savedTour));
+  if (!state) return;
+  applySettings();
+  survivalBest = isSurvival(state) ? survivalRecords.best(state.survival.day)?.score || 0 : 0;
   roadChoice = state.routeOption;
   if (!state.campaignStarted && state.routeIndex === 0 && state.distance === 0) {
     setScreen("cars"); renderGarage(); $("#cars-ready").focus();
   } else if (state.status === "won" && state.campaignComplete) showResult();
-  else if (state.status === "won") storyDirector.show('arrival', () => openMap(true));
+  else if (state.status === "won") showResult();
   else openMap(false);
 });
 const sceneUI = createSceneUI();
@@ -150,19 +158,14 @@ const input = controls.input,
 const settingsStore = createSettingsStore(storage, window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches);
 let settings = settingsStore.load();
 let reducedMotion = settings.reducedMotion;
-autoHearts = settings.autoHearts;
 function applySettings() {
   reducedMotion = settings.reducedMotion;
-  autoHearts = settings.autoHearts;
   state.assistMode = !isSurvival(state) && settings.assistMode;
   document.body.dataset.reducedMotion = String(reducedMotion);
   document.body.dataset.assistMode = String(settings.assistMode);
-  $('#auto-hearts').checked = autoHearts;
   $('#reduced-motion').checked = reducedMotion;
   $('#assist-mode').checked = state.assistMode;
   $('#assist-mode').disabled = isSurvival(state);
-  $('#auto-hearts').disabled = isSurvival(state);
-  if (isSurvival(state)) $('#auto-hearts').checked = true;
   document.body.dataset.runMode = state.mode;
 }
 function saveSettings() {
@@ -170,7 +173,7 @@ function saveSettings() {
   if (!settingsStore.save(settings)) storageWarning();
 }
 applySettings();
-for (const [id, key] of [['auto-hearts','autoHearts'], ['reduced-motion','reducedMotion'], ['assist-mode','assistMode']]) {
+for (const [id, key] of [['reduced-motion','reducedMotion'], ['assist-mode','assistMode']]) {
   $('#' + id).addEventListener('change', event => { settings[key] = event.target.checked; saveSettings(); });
 }
 const storyDirector = createStoryDirector({
@@ -239,17 +242,18 @@ function home() {
   pendingNext = false;
   releaseInput();
   state = newTour(meta);
+  performanceNext = null; terminalRecord = null;
   applySettings();
   refreshSurvivalRecord();
   setScreen("menu");
-  say("ありねぇ！ハート積んで、クラブ行こ！");
+  say("ありねぇ、うちらの曲と平成ギャル、次の街にも届けよ！");
   hud();
   $(savedTour ? "#resume-tour" : "#story").focus();
 }
 function openMap(next = false) {
   pendingNext = next;
-  $("#change-starting-car").hidden = isSurvival(state) || !atNewRunGarage();
-  $("#garage-tab").hidden = isSurvival(state);
+  $("#change-starting-car").hidden = !atNewRunGarage();
+  $("#garage-tab").hidden = false;
   releaseInput();
   setScreen("map");
   sceneUI.mapPanel("route");
@@ -286,7 +290,7 @@ function openMap(next = false) {
     localizeText(arrived, message("{0}、到着や！ {1}人をフロアの仲間に。{2} ガレージでこの旅のパーツを選べるで。", [state.route.goal, state.stageGyaru, mission?.complete ? message("道の目標も達成、+{0}コイン！", [mission.reward]) : "次の道でもうひと盛りしよ。"]));
   }
   if (isSurvival(state)) {
-    localizeText($("#map-subtitle"), "1ライフ。ハートは自動。進化を選び、72ウェーブを生き抜こ。修理は小さな発見と整備ルートで。");
+    localizeText($("#map-subtitle"), "次のクラブへ、うちらの音を届けよ。道と進化を選んで、72ウェーブの夜を走り抜こ。");
     if (next) localizeText(arrived, message("道を突破！ スコア {0} · 耐久 {1} · 次の6ウェーブへ", [number(Math.floor(state.score), { useGrouping: true }), Math.ceil(state.integrity)]));
   }
   hud();
@@ -300,12 +304,11 @@ function enterPlay(announce = true) {
   canvas.tabIndex = 0;
   canvas.focus({ preventScroll: true });
   localizeText($("#pause"), "ひと休み");
-  if (isSurvival(state)) say("自動ハートで誘ってこ！ Z長押しで連射アップ、電池は毎秒8使うで。", "DJちゃな / ナビ担当");
+  if (isSurvival(state) && announce) say("音もハートも自動で届くで。ありねぇ、道は任せた！", "DJちゃな / ナビ担当");
   else if (announce) say(state.route.intro || "ハートで仲間を誘って、EVで充電やで！");
-  if (announce && state.distance === 0) { roadFeedback = createRoadFeedback(); toast(isSurvival(state) ? "ハートは自動。飛ぶ・充電・加速で生き抜こ。" : state.routeIndex === 0 ? "運転は自動。まずはハートを長押しや" : "選んだ街角へ。今回の盛りで行くで！"); }
+  if (announce && state.distance === 0) { roadFeedback = createRoadFeedback(); toast(isSurvival(state) ? "武器は自動。飛ぶ・充電・加速で道をつなご。" : state.routeIndex === 0 ? "運転もハートも自動。段差は飛んでかわそ。" : "選んだ街角へ。今回の盛りで行くで！"); }
   unlockSound();
   accumulator = 0;
-  saveTour();
   hud();
 }
 let departing = false;
@@ -356,9 +359,11 @@ async function depart() {
   });
   beginCampaign(state);
   applySettings();
-  saveTour();
-  if (isSurvival(state)) enterPlay();
-  else storyDirector.show("departure", () => enterPlay());
+  if (isSurvival(state)) {
+    if (!saves.clearNightfall()) storageWarning();
+    savedTour = saves.loadCampaign(); syncResume();
+  } else saveTour();
+  storyDirector.show("departure", () => enterPlay());
 }
 const weatherTips = {
   sunny: "晴れた夜は、ロケット日和。",
@@ -389,16 +394,21 @@ function atNewRunGarage() {
 function renderStyles() {
   const host = $('#style-options'), current = getRpgView(state);
   host.replaceChildren();
-  for (const style of RUN_STYLES) {
+  const weaponMode = isSurvival(state);
+  const options = weaponMode ? SURVIVAL_WEAPONS : RUN_STYLES;
+  host.classList.toggle('weapon-options', weaponMode);
+  for (const style of options) {
     const button = document.createElement('button');
-    button.className = 'style-card'; button.dataset.style = style.id;
-    button.setAttribute('aria-pressed', String(current.style === style.id));
+    button.className = 'style-card';
+    button.dataset[weaponMode ? 'weapon' : 'style'] = style.id;
+    button.setAttribute('aria-pressed', String((weaponMode ? state.survival.startingWeapon : current.style) === style.id));
     const name = document.createElement('strong'); localizeText(name, style.name);
     const detail = document.createElement('span'); localizeText(detail, style.description);
-    const hint = document.createElement('small'); localizeText(hint, message("{0} / {1}", [style.effect, style.signature]));
-    button.append(name, detail, hint);
+    const hint = document.createElement('small'); localizeText(hint, weaponMode ? "自動アタック / Lv.1" : message("{0} / {1}", [style.effect, style.signature]));
+    const heading = document.createElement('span'); heading.className = 'item-heading'; heading.append(createItemIcon(style.id), name);
+    button.append(heading, detail, hint);
     button.addEventListener('click', () => {
-      if (!chooseRunStyle(state, style.id)) return;
+      if (!(weaponMode ? chooseStartingWeapon(state, style.id) : chooseRunStyle(state, style.id))) return;
       saveTour(); renderStyles(); renderRpgHud();
       host.querySelector('[aria-pressed=true]')?.focus({ preventScroll: true });
     });
@@ -427,7 +437,17 @@ function showDraft() {
     const name = document.createElement('strong'); localizeText(name, perk.name);
     const description = document.createElement('span'); localizeText(description, perk.description);
     const detail = document.createElement('small'); localizeText(detail, message("{0} / {1}", [perk.effect, perk.synergy]));
-    card.append(family, name, description, detail);
+    const heading = document.createElement('span'); heading.className = 'item-heading'; heading.append(createItemIcon(perk.id), name);
+    card.append(family, heading, description, detail);
+    if (perk.evolution) {
+      const recipe = document.createElement('small'); recipe.className = 'evolution-recipe';
+      const label = document.createElement('span'), evo = perk.evolution;
+      const weapon = SURVIVAL_UPGRADES.find(item => item.id === evo.weapon), support = SURVIVAL_UPGRADES.find(item => item.id === evo.support);
+      localizeText(label, message('{0} Lv.{1}/3 + {2} Lv.{3}/2 → {4}', [weapon.name, evo.weaponLevel, support.name, Math.min(2, evo.supportLevel), evo.name]));
+      recipe.append(createItemIcon(evo.id, { size: 24 }), label);
+      if (perk.evolutionReady) { const ready = document.createElement('b'); localizeText(ready, 'これで進化！'); recipe.append(ready); }
+      card.append(recipe);
+    }
     card.addEventListener('click', () => {
       if (!(isSurvival(state) ? chooseSurvivalUpgrade(state, perk.id) : choosePerk(state, perk.id))) return;
       const evolution = state.events.find(event => event.type === 'evolution');
@@ -462,6 +482,8 @@ function renderShop() {
       if (!buyUpgrade(state, item.id)) return;
       saveTour(); beep(750); renderShop(); hud(); toast(`${item.name}、準備できたで！`);
     });
+    const heading = document.createElement("div"), title = node.querySelector("h3");
+    heading.className = "item-heading"; title.before(heading); heading.append(createItemIcon(item.id), title);
     node.append(button); $("#shop").append(node);
   }
   localizeText($("#shop-status"), "ハートで稼いだコインで、いま乗ってるくるまを盛れるで。");
@@ -476,7 +498,8 @@ function renderBuildWorkshop() {
     const title = document.createElement("h4"); localizeText(title, offer.name);
     const copy = document.createElement("p"); localizeText(copy, offer.description);
     const preview = document.createElement("small"); localizeText(preview, offer.preview);
-    card.append(tag,title,copy,preview);
+    const heading = document.createElement('div'); heading.className = 'item-heading'; heading.append(createItemIcon(offer.id),title);
+    card.append(tag,heading,copy,preview);
     let replacement;
     if (offer.requiresReplacement) {
       const label = document.createElement("label"); localizeText(label, "外すパーツを選んでな");
@@ -545,7 +568,7 @@ function renderGarage() {
     button.addEventListener("click", () => {
       if (!owned && !unlockCar(meta, car.id, state)) return;
       if (equipStartingCar(state, meta, car.id)) {
-        chooseRunStyle(state, getRpgView(state).style || "relay");
+        if (!isSurvival(state)) chooseRunStyle(state, getRpgView(state).style || "relay");
         saveMeta();
         saveTour();
         renderShop();
@@ -580,6 +603,11 @@ function renderStartingCustomization() {
 }
 function updateCustomizationPreview() {
   const patch = customizationPatch(), price = startingCustomizationPrice(state, meta, patch);
+  for (const [key, id] of Object.entries(patch)) {
+    const select = $("#custom-" + key);
+    select.parentElement.querySelector(".item-icon")?.remove();
+    select.before(createItemIcon(`${key}:${id}`));
+  }
   const appearance = Object.fromEntries(Object.entries(cosmeticCatalogs).map(([key,catalog]) => [key,catalog.find(item=>item.id===patch[key])]));
   const preview = $("#customization-preview"), g = preview.getContext("2d");
   g.clearRect(0,0,preview.width,preview.height);
@@ -597,8 +625,9 @@ $("#customization-apply").addEventListener("click", () => {
 });
 
 let currentQuestion = null,
-  quizAnswered = false;
-function showQuiz() {
+  quizAnswered = false, quizNext = null;
+function showQuiz(next = null) {
+  quizNext = next;
   releaseInput();
   paused = false;
   setScreen("quiz");
@@ -624,6 +653,7 @@ function chooseAnswer(index) {
   quizAnswered = true;
   const correct = index === currentQuestion.answer;
   answerQuiz(state, correct);
+  if (isSurvival(state)) { saveTour(); if (state.campaignComplete) persistNightfallResult(); }
   releaseInput();
   localizeText($("#quiz-feedback"), (correct ? "正解！新しいファンが増えたで " : "今回は惜しい！ ") +
     message("答えは「{0}」。{1}", [currentQuestion.choices[currentQuestion.answer], currentQuestion.explanation]));
@@ -643,21 +673,59 @@ function chooseAnswer(index) {
 }
 $("#quiz-continue").addEventListener("click", () => {
   if (!quizAnswered) return;
+  if (quizNext) { const next = quizNext; quizNext = null; next(); return; }
   enterPlay(false);
   say("ほな、クラブで会おな！");
 });
+function startClubSet(next) {
+  performanceSet = createPerformance(); performanceNext = next;
+  setScreen('finale');
+  localizeText($('#finale-home'), state.campaignComplete ? 'ランの記録を見る' : '次の街へ');
+  localizeText($('#performance-tip'), message('{0} / オリジナル・ハードバウンス、開演！', [state.route.club]));
+  say('看板より大きい音で、うちらの出番や！'); unlockSound();
+  $('#pause').disabled = false; localizeText($('#pause'), 'ひと休み');
+}
+function persistNightfallResult() {
+  if (terminalRecord?.id === state.runId && terminalRecord.score === state.score) return terminalRecord;
+  const sameRun = terminalRecord?.id === state.runId;
+  const previous = sameRun ? terminalRecord.previous : survivalRecords.best(state.survival.day);
+  const result = survivalRecords.save(state);
+  if (sameRun && terminalRecord.result.best) result.best = true;
+  terminalRecord = { id: state.runId, score: state.score, previous, result };
+  return terminalRecord;
+}
+function showNightfallRecord() {
+  const { previous, result } = persistNightfallResult();
+  setScreen('result');
+  localizeText($('#result-eyebrow'), 'NIGHTFALL TOUR');
+  localizeText($('#result-title'), state.campaignComplete ? '72ウェーブ、生き抜いた！' : 'このビルドで、ここまで来た。');
+  localizeText($('#result-copy'), '同じコースでも、選ぶ進化で違う走りに。もう一回なら、新しいビルドで最初から。');
+  renderSurvivalResult(state, result, previous, $('#result-stats'));
+  localizeText($('#continue'), '同じシードでもう一回');
+  $('#continue').focus(); beep(state.campaignComplete ? 880 : 190, .2);
+}
 function showResult() {
   if (isSurvival(state)) {
     releaseInput();
-    if (state.status === "won" && !state.campaignComplete) { openMap(true); return; }
-    const previous = survivalRecords.best(state.survival.day), result = survivalRecords.save(state);
-    setScreen("result");
-    localizeText($("#result-eyebrow"), "NEON SURVIVAL / RUN COMPLETE");
-    localizeText($("#result-title"), state.campaignComplete ? "72ウェーブ、生き抜いた！" : "このビルドで、ここまで来た。");
-    localizeText($("#result-copy"), "同じコースでも、選ぶ進化で違う走りに。もう一回なら、新しいビルドで最初から。");
-    renderSurvivalResult(state, result, previous, $("#result-stats"));
-    localizeText($("#continue"), "同じシードでもう一回");
-    $("#continue").focus(); beep(state.campaignComplete ? 880 : 190, .2);
+    if (state.status === 'won') {
+      const earned = awardCompletion(meta, state);
+      if (earned) saveMeta();
+      saveTour();
+      if (state.campaignComplete) persistNightfallResult();
+      const next = state.campaignComplete ? showNightfallRecord : () => openMap(true);
+      if (state.campaignComplete) {
+        storyDirector.show('arrival', () => {
+          const finale = () => storyDirector.show('finale', () => startClubSet(next));
+          if (beginClubQuiz(state)) showQuiz(finale); else finale();
+        });
+      } else if (getJourneyStage(state.routeIndex).clubStop) {
+        const club = () => startClubSet(() => storyDirector.show('arrival', next));
+        if (beginClubQuiz(state)) showQuiz(club); else club();
+      } else storyDirector.show('arrival', next);
+    } else {
+      if (!saves.clearNightfall()) storageWarning();
+      savedTour = saves.loadCampaign(); syncResume(); showNightfallRecord();
+    }
     return;
   }
   $("#result-stats").classList.remove("survival-results");
@@ -713,34 +781,19 @@ function refreshSurvivalRecord() {
   const challenge = dailySurvival(), best = survivalRecords.best(challenge.day);
   localizeText($('#survival-record'), best ? message('今日の自己ベスト {0} · この端末', [number(best.score, { useGrouping: true })]) : '今日のコースに挑戦 · 記録はこの端末に保存');
 }
-function startSurvival(challenge = dailySurvival()) {
+function startNight(challenge = dailySurvival()) {
   if (!ready) return;
-  state = createState({ mode: 'survival', seed: challenge.seed, survivalDay: challenge.day,
-    runId: typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : `survival-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-    ...campaignEnvironment(challenge.seed, 0) });
+  if (savedTour && isSurvival(savedTour) && !savedTour.campaignComplete && !confirm(t("新しい旅を始めたら、いまの旅のセーブは上書きやで。解禁したくるまとギャルポイントは残るで。始める？"))) return;
+  state = newTour(meta, challenge);
   survivalBest = survivalRecords.best(challenge.day)?.score || 0;
-  pendingNext = false; paused = false; roadFeedback = createRoadFeedback();
-  applySettings(); openMap(false);
-}
-$('#survival').addEventListener('click', () => startSurvival());
-refreshSurvivalRecord();
-$("#story").addEventListener("click", () => {
-  if (!ready) return;
-  if (
-    savedTour &&
-    !savedTour.campaignComplete &&
-    !confirm(
-      t("新しい旅を始めたら、いまの旅のセーブは上書きやで。解禁したくるまとギャルポイントは残るで。始める？"),
-    )
-  )
-    return;
-  state = newTour(meta);
-  applySettings();
-  roadChoice = 'scenic';
+  pendingNext = false; paused = false; performanceNext = null; terminalRecord = null; roadFeedback = createRoadFeedback();
+  applySettings(); roadChoice = 'scenic';
   storyDirector.show('opening', () => {
-    setScreen('cars'); renderGarage(); $('#cars-ready').focus();
+    setScreen('cars'); renderGarage(); saveTour(); $('#cars-ready').focus();
   });
-});
+}
+refreshSurvivalRecord();
+$('#story').addEventListener('click', () => startNight());
 $("#cars-ready").addEventListener("click", () => { saveTour(); openMap(); });
 $("#change-starting-car").addEventListener("click", () => {
   if (!atNewRunGarage()) return;
@@ -752,7 +805,7 @@ $("#quit").addEventListener("click", home);
 $("#resume").addEventListener("click", () => setPause(false));
 $("#pause").addEventListener("click", () => setPause(!paused));
 $("#continue").addEventListener("click", () => {
-  if (isSurvival(state)) { startSurvival({ seed: state.seed, day: state.survival.day }); return; }
+  if (isSurvival(state)) { startNight({ seed: state.seed, day: state.survival.day }); return; }
   if (state.status === "won") {
     if (state.campaignComplete) {
       performanceSet = createPerformance();
@@ -769,7 +822,7 @@ $("#continue").addEventListener("click", () => {
   }
 });
 // The encore is optional; leaving never changes already-earned completion credit.
-$("#finale-home").addEventListener("click", home);
+$("#finale-home").addEventListener("click", () => { const next = performanceNext; performanceNext = null; if (next) next(); else home(); });
 function previewMission(node) {
   if (!node) return null;
   const preview = node.nodeId === state.journeyNodeId ? state : createState({ routeIndex: node.stageIndex, seed: state.seed, journeyNodeId: node.nodeId, ...mapClimate });
@@ -844,7 +897,7 @@ function hud() {
   }
   const route = state.route;
   localizeText($("#location-label"), message("{0} / {1}", [(getDistrictScene(route.cityId, state.locationIndex || 0) || { name: route.goal }).name, String((state.locationIndex || 0) + 1).padStart(2, "0")]));
-  localizeText($("#mode-label"), isSurvival(state) ? "NEON SURVIVAL" : message("クラブ旅 {0} / {1}", [state.routeIndex + 1, JOURNEY_STAGE_COUNT]));
+  localizeText($("#mode-label"), isSurvival(state) ? "NIGHTFALL TOUR" : message("クラブ旅 {0} / {1}", [state.routeIndex + 1, JOURNEY_STAGE_COUNT]));
   localizeText($("#money"), isSurvival(state) ? number(Math.floor(state.score), { useGrouping: true }) : String(state.money).padStart(3, "0"));
   localizeText($(".wallet > span"), isSurvival(state) ? "スコア" : "コイン");
   $("#combo-bar").style.width =
@@ -866,9 +919,8 @@ function hud() {
   if (isSurvival(state)) {
     localizeText($("#combo"), message("HEAT ×{0} · 招待 {1}", [survivalMultiplier(state), state.survival.kills]));
     localizeText($("#rpg-build"), message("進化 {0} · ノーダメージ {1}", [state.survival.evolutions.length, state.survival.cleanWaves]));
-    localizeText($('[data-control="shoot"] small'), "Z / J · 連射アップ · 電池8/秒");
     if (state.score > survivalBest && survivalBest > 0 && !state.survival.bestNotified) { state.survival.bestNotified = true; toast("今日の自己ベスト更新！"); }
-  } else localizeText($('[data-control="shoot"] small'), "Z / J 長押し");
+  }
   $("#health-bar").style.width =
     `${(state.integrity / (state.integrityCapacity || 100)) * 100}%`;
   localizeText($("#energy-value"), message("{0}", [Math.ceil(state.energy)]));
@@ -879,7 +931,7 @@ function handleEvents() {
   captureRoadFeedback(roadFeedback, state.events, state.distance);
   const crewEvent = selectCrewEvent(state.events || [], {...state, time: visualTime});
   for (const event of state.events || []) {
-    if (event.type === "fever-start") { toast("FEVER！ スコア6倍、ハート連射！"); beep(1174, .16); }
+    if (event.type === "fever-start") { toast("FEVER！ スコア6倍、フロア全開！"); beep(1174, .16); }
     if (event.type === "clean-wave") { toast(message("ノーダメージ！ +{0}", [event.points])); beep(988, .1); }
     if (event.type === "survival-elite") { toast(message("シグナル突破！ +{0}", [event.points])); beep(1320, .15); }
     if (["convert"].includes(event.type)) {
@@ -923,7 +975,7 @@ function frame(now) {
   if (screen === "playing" && !paused) {
     accumulator += dt;
     while (accumulator >= 1 / 60) {
-      update(state, { ...input, shoot: input.shoot || (!isSurvival(state) && autoHearts) }, 1 / 60);
+      update(state, { ...input, shoot: !isSurvival(state) }, 1 / 60);
       handleEvents();
       accumulator -= 1 / 60;
       if (state.status !== "playing") {
@@ -962,6 +1014,7 @@ function frame(now) {
       totalFans: state.totalFans,
       converted: state.gyaruConverted,
       performance: performanceView(performanceSet),
+      club: state.route.club, complete: state.campaignComplete,
       width: 960,
       height: 540,
     });
@@ -989,7 +1042,6 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 async function loadGameArt() {
-  $("#survival").disabled = true;
   $("#story").disabled = true;
   $("#resume-tour").disabled = true;
   $("#retry-art").hidden = true;
@@ -998,7 +1050,6 @@ async function loadGameArt() {
     await prepareGameArt(state);
     ready = true;
     localizeText($("#loading"), "準備できたで。いつでも行こ！");
-    $("#survival").disabled = false;
     $("#story").disabled = false;
     $("#resume-tour").disabled = false;
     hud();
@@ -1014,7 +1065,7 @@ loadGameArt();
 document.querySelectorAll("[data-control]").forEach((b) => (b.disabled = true));
 Object.defineProperty(window, "__HYPERDRIVE__", {
   value: {
-    snapshot: () => structuredClone({ state, input, screen, paused, ready, performanceSet, autoHearts, settings, rpg: getRpgView(state), story: storyDirector.memory }),
+    snapshot: () => structuredClone({ state, input, screen, paused, ready, performanceSet, autoHearts: true, settings, rpg: getRpgView(state), story: storyDirector.memory }),
     metrics: () => { const samples = [...frameSamples].sort((a,b)=>a-b); return { frames: samples.length, p50: samples[Math.floor(samples.length*.5)] || 0, p95: samples[Math.floor(samples.length*.95)] || 0, max: samples.at(-1) || 0 }; },
   },
   writable: false,

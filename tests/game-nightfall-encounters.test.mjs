@@ -93,6 +93,9 @@ test('authored calls and responses occur without reducing full-speed warning tim
     'gate-response',
     'syncopated-lift',
     'last-call',
+    'notification-burst',
+    'inspection-pair',
+    'overtime-release',
   ])
     assert.ok(beats.has(name), name);
 });

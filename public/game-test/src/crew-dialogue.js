@@ -7,8 +7,8 @@ import { resolveCrewActions } from './character-actions.js';
 export const CREW_DIALOGUE_BUCKET_SECONDS = 8;
 const SPEAKERS = { arisu: 'DJありねぇ / ドライバー', chana: 'DJちゃな / ナビ担当' };
 const CREATIVE = [
-  '同じ服、同じ作業、同じ顔。うちらの夜までコピーせんでええねん。',
-  'でっかい会社の広告より、うちらの一枚で目ぇ引いたろ。',
+  '同じ服、同じ作業、同じ音。うちらのオリジナル曲は、その枠に収まらへんで。',
+  '平成ギャルの盛りも、175 BPMも、好きやから選んでるねん。会社の許可は要らんやろ。',
   '次の撮影、ポーズ考えた？ ふたりで並んだら、そこがランウェイや。',
   'DJもテレビもイベントも、うちららしく出たいな。見つけてくれる人、もっと増やそ！',
   'ファンと撮った写真、あとで見返すん好き。今日のフロアでも思い出つくろ。',
@@ -16,16 +16,16 @@ const CREATIVE = [
   'ちっちゃい花とか、かわいいシールとか。小さい好きも、ちゃんと連れてこ。',
 ];
 const CITY = {
-  nakano: ['中野から一本目の音、録りにいこ。地図も準備できたで。', '中野の看板、気になる店多すぎ。寄り道はあとやな。', '中野、角を曲がるたび景色変わるな。ナビ任せてや。'],
-  shinjuku: ['新宿のネオン、うちのラメとええ勝負やん。', '新宿、看板多いな。目的地まで見失わへんで。', '新宿のビル、背ぇ高いなあ。地図は上向けても伸びへんか。'],
-  shibuya: ['渋谷、街ごとビート刻んでるみたいやな。', '渋谷の看板、目移りするわ。道案内はちゃんとするで。', '渋谷まで来たな。地図のピンも踊りたそうやん。'],
-  asakusa: ['浅草の提灯、ええ色やな。今日の音にもこの感じ、残したい。', '浅草、ゆっくり眺めたいな。案内は任せとき。', '浅草の灯り、じんわりくるわ。音もあったかめにしたなるな。'],
-  osaka: ['大阪の看板、声まで聞こえてきそうやん。', '大阪の夜、招待するで。気になったら遊びに来てな。', '移動と休憩、ちゃんと取れたな。今日は大阪の道からや。'],
-  kyoto: ['京都の街並み、色の合わせ方うまいなあ。', '京都、曲がり角まで絵になるやん。ナビは任せて。', '最後の街やな。ここで録る音、ほかの五つとつなぐの楽しみ！'],
+  nakano: ['中野のBEAT BASE 175へ！ 予定表にない楽しみ、今夜つくろ。', '中野の看板、気になる店多すぎ。寄り道はあとやな。', '中野、角を曲がるたび景色変わるな。ナビ任せてや。'],
+  shinjuku: ['新宿の広告、同じ曲ばっかやな。PINK FLASHでは、うちらの曲かけるで。', '新宿、看板多いな。目的地まで見失わへんで。', '新宿のビル、背ぇ高いなあ。地図は上向けても伸びへんか。'],
+  shibuya: ['渋谷の服装チェック、うちの盛りは測れへんで。好きな格好でNEON LEOPARDへ！', '渋谷の看板、目移りするわ。道案内はちゃんとするで。', '渋谷まで来たな。地図のピンも踊りたそうやん。'],
+  asakusa: ['浅草の手描きの提灯、色が一個ずつ違う。LANTERN BASSも、あの感じで飾りたいな。', '浅草、ゆっくり眺めたいな。案内は任せとき。', '浅草の灯り、じんわりくるわ。音もあったかめにしたなるな。'],
+  osaka: ['大阪のノルマ通知、今夜はオフや。BASS TAKOYAKIで、自分の時間取り戻そ。', '大阪の夜、招待するで。気になったら遊びに来てな。', '移動と休憩、ちゃんと取れたな。今日は大阪の道からや。'],
+  kyoto: ['京都のGALAXY FLOOR、もうすぐや。六つの街で聴いてくれた人の声、全部連れていこ。', '京都、曲がり角まで絵になるやん。ナビは任せて。', '最後の街やな。ここで録る音、ほかの五つとつなぐの楽しみ！'],
 };
 const ROAD = {
   scenic: ['ゆったりルートや。景色と充電スポット、両方チェックするで。', 'この道、充電スポット多めやな。電池にも休憩いるもんな。', '遠回りもええな。地図の余白まで楽しめるやん。'],
-  express: ['特急ルート、充電スポット少なめや。残量見とくで。', '近道やけど人多いな。ハートの招待状はうちに任せて。', '特急ルートや。次の充電場所、地図で先に探しとくな。'],
+  express: ['特急ルート、充電スポット少なめや。残量見とくで。', '近道やけど人多いな。装備に任せて、抜けられる道を見よ。', '特急ルートや。次の充電場所、地図で先に探しとくな。'],
 };
 const WEATHER = {
   sunny: ['晴れてるな。窓の光、ラメにちょうどええわ。', 'ええ天気や。地図も見やすいし、案内は順調やで。'],
@@ -52,12 +52,12 @@ const ACTION = {
   rush: ['息合わせていくで！ ありねぇ、運転よろしく！', 'ふたりのタイミング、ぴったりやん！'],
 };
 const EVENTS = {
-  lost: { priority: 100, holdSeconds: 6, speaker: 'arisu', lines: ['安全なピットへ戻ろ。前の道までの記録は残る。また準備しよ。'] },
+  lost: { priority: 100, holdSeconds: 6, speaker: 'arisu', lines: ['安全なピットへ戻ろ。車もふたりも、いったん休憩や。'] },
   won: { priority: 100, holdSeconds: 6, speaker: 'arisu', lines: ['着いたで。ナビも招待も、ええ連携やったな。'] },
   collision: { priority: 90, speaker: 'arisu', lines: ['おっと、立て直すで。前の道、もう一回確認や。', 'ぶつかったな。落ち着いて、ハンドル戻すで。'] },
   'rush-start': { priority: 80, lines: ACTION.rush },
   charged: { priority: 75, lines: ['充電いっぱいや！ 電池のごきげん、満点やな。'] },
-  'charge-start': { priority: 70, lines: ['充電中やで。ハートはひと休み、電池にごほうびや。'] },
+  'charge-start': { priority: 70, lines: ['充電中やで。ここで息整えて、次の街角へ行こ。'] },
   'charge-stop': { priority: 65, lines: ['充電おしまい。残量見ながら、次へいこか。'] },
   'rush-stop': { priority: 60, lines: ['息ぴったりやったな。ほな、いつものペースでいこ。'] },
   boost: { priority: 55, speaker: 'arisu', lines: ['浮くで！ 前の道、しっかり見とくな。'] },
@@ -82,7 +82,7 @@ export function selectCrewDialogue(context = {}) {
   const action = resolveCrewActions({ ...context, time }).chana;
   const options = { previousId: context.previousId };
   if (context.charging) return makeLine('action:charging', EVENTS['charge-start'].lines, bucket, { ...options, priority: 30 });
-  if (context.action || context.shooting || context.rushing || context.boosting) {
+  if (context.action || (context.shooting && context.mode !== 'survival') || context.rushing || context.boosting) {
     return makeLine(`action:${action}`, ACTION[action] || ACTION.map, bucket, { ...options, priority: 30 });
   }
   const city = key(context.cityId) || context.route?.cityId;
@@ -106,6 +106,7 @@ export function selectCrewEvent(events, context = {}) {
   let winner;
   for (const event of list) {
     const type = typeof event === 'string' ? event : event?.type;
+    if (type === 'shoot' && context.mode === 'survival') continue;
     if (EVENTS[type] && (!winner || EVENTS[type].priority > EVENTS[winner].priority)) winner = type;
   }
   if (!winner) return null;

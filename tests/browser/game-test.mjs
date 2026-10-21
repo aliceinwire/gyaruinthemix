@@ -5,8 +5,16 @@ import {
   createState,
   update,
   exportCampaignSave,
+  exportNightfallSave,
 } from '../../public/game-test/src/simulation.js';
-import { SAVE_KEY } from '../../public/game-test/src/save-store.js';
+import {
+  SAVE_KEY,
+  NIGHTFALL_SAVE_KEY,
+} from '../../public/game-test/src/save-store.js';
+import {
+  survivalOffers,
+  survivalXpCost,
+} from '../../public/game-test/src/survival.js';
 import {
   getRpgView,
   normalizeRpg,
@@ -126,7 +134,9 @@ async function assertFrameFits(page, selectors) {
         faults.push({
           selector,
           lang: document.documentElement.lang,
-          route: document.querySelector('#destination-choices [aria-pressed="true"]')?.textContent,
+          route: document.querySelector(
+            '#destination-choices [aria-pressed="true"]',
+          )?.textContent,
           viewport: [innerWidth, innerHeight],
           box: box.toJSON(),
           availableBottom: bottom,
@@ -180,9 +190,13 @@ async function assertWorldUncovered(page) {
 }
 async function loadCampaignFixture(page, save) {
   await page.evaluate(
-    ({ key, value }) => localStorage.setItem(key, JSON.stringify(value)),
+    ({ key, nightfallKey, value }) => {
+      localStorage.removeItem(nightfallKey);
+      localStorage.setItem(key, JSON.stringify(value));
+    },
     {
       key: SAVE_KEY,
+      nightfallKey: NIGHTFALL_SAVE_KEY,
       value: save,
     },
   );
@@ -203,7 +217,10 @@ async function departThroughStory(page) {
 async function reloadWithoutCampaign(page) {
   // Independent audio fixtures must not inherit the workshop's unfinished tour
   // or the new tour created by the previous audio case. Keep garage progress.
-  await page.evaluate((key) => localStorage.removeItem(key), SAVE_KEY);
+  await page.evaluate(
+    (keys) => keys.forEach((key) => localStorage.removeItem(key)),
+    [SAVE_KEY, NIGHTFALL_SAVE_KEY],
+  );
   await page.reload();
   await page.waitForFunction(() => globalThis.__HYPERDRIVE__?.snapshot().ready);
   assert.equal(await page.locator('#resume-tour').isVisible(), false);
@@ -290,7 +307,7 @@ try {
       console.error('Game page error:', e.message);
     });
     await page.addInitScript(() => {
-      // Deterministic autumn/rain fixture, not random user gameplay.
+      // Stable incidental randomness; the daily run keeps its own seeded course.
       Math.random = () => 7.1 / 0x7fffffff;
       globalThis.cspViolations = [];
       document.addEventListener('securitypolicyviolation', (e) =>
@@ -305,6 +322,20 @@ try {
     );
     assert.equal(await page.locator('iframe#music').count(), 0);
     assert.equal(await page.locator('#music audio').count(), 1);
+    assert.equal(
+      await page
+        .locator('#survival, [data-control=shoot], #auto-hearts')
+        .count(),
+      0,
+    );
+    assert.deepEqual(
+      await page
+        .locator('[data-control]')
+        .evaluateAll((buttons) =>
+          buttons.map((button) => button.dataset.control),
+        ),
+      ['boost', 'charge', 'rush'],
+    );
     await checkLanguages(page, '.settings select', [
       '#menu h1',
       '#menu > .eyebrow',
@@ -344,19 +375,19 @@ try {
     assert.equal(openingMemory.choices['tour:opening'], 'crew');
     assert.ok(openingMemory.seen.includes('tour:opening'));
     assert.equal(await page.locator('#car-select').isVisible(), true);
-    const styles = page.locator('#style-options button');
-    assert.equal(await styles.count(), 3);
-    await page.locator('#style-options [data-style="guardian"]').click();
-    assert.equal(
-      await page
-        .locator('#style-options [data-style="guardian"]')
-        .getAttribute('aria-pressed'),
-      'true',
-    );
-    assert.equal(
-      (await page.evaluate(() => __HYPERDRIVE__.snapshot())).rpg.style,
-      'guardian',
-    );
+    const weapons = page.locator('#style-options button');
+    assert.equal(await weapons.count(), 4);
+    for (const id of ['heart', 'flash', 'vinyl', 'bass', 'flash']) {
+      const choice = page.locator(`#style-options [data-weapon="${id}"]`);
+      assert.equal(await choice.locator('.item-icon').count(), 1);
+      await choice.click();
+      assert.equal(await choice.getAttribute('aria-pressed'), 'true');
+      const selected = (await page.evaluate(() => __HYPERDRIVE__.snapshot()))
+        .state;
+      assert.equal(selected.mode, 'survival');
+      assert.equal(selected.survival.startingWeapon, id);
+      assert.deepEqual(selected.survival.upgrades, { [id]: 1 });
+    }
     await page.screenshot({
       path: resolve(
         root,
@@ -457,6 +488,15 @@ try {
       fullPage: true,
     });
     await page.locator('#garage-done').click();
+    const selectedWeather = await page.evaluate(
+      () => __HYPERDRIVE__.snapshot().state.weather,
+    );
+    assert.ok(
+      await page.evaluate(
+        (key) => localStorage.getItem(key),
+        NIGHTFALL_SAVE_KEY,
+      ),
+    );
     await page.locator('#depart').click();
     await page.locator('#story-panel').waitFor({ state: 'visible' });
     assert.equal(await page.locator('#story-panel').isVisible(), true);
@@ -467,10 +507,33 @@ try {
     await page.waitForTimeout(1800);
     assert.equal(
       await page.evaluate(() => __HYPERDRIVE__.snapshot().state.weather),
-      'rain',
+      selectedWeather,
     );
     assert.ok(
       await page.evaluate(() => __HYPERDRIVE__.snapshot().state.distance > 0),
+    );
+    assert.equal(
+      await page.evaluate(
+        (key) => localStorage.getItem(key),
+        NIGHTFALL_SAVE_KEY,
+      ),
+      null,
+      'Departure consumes the safe-stop checkpoint',
+    );
+    await page.keyboard.down('KeyZ');
+    await page.keyboard.down('KeyJ');
+    assert.equal(
+      await page.evaluate(() => Boolean(__HYPERDRIVE__.snapshot().input.shoot)),
+      false,
+    );
+    await page.keyboard.up('KeyZ');
+    await page.keyboard.up('KeyJ');
+    assert.equal(
+      await page.evaluate(() =>
+        Boolean(__HYPERDRIVE__.snapshot().state.survival.upgrades.heart),
+      ),
+      false,
+      'A camera build does not silently equip hearts',
     );
     await assertWorldUncovered(page);
     await page.screenshot({
@@ -498,22 +561,11 @@ try {
         .evaluate((el) => el === document.activeElement),
       true,
     );
-    await page.locator('#auto-hearts').focus();
-    await page.keyboard.press('Space');
-    assert.equal(await page.locator('#auto-hearts').isChecked(), true);
-    await page.keyboard.press('Tab');
-    assert.equal(
-      await page
-        .locator('#assist-mode')
-        .evaluate((el) => el === document.activeElement),
-      true,
-    );
-    await page.keyboard.press('Space');
-    assert.equal(await page.locator('#assist-mode').isChecked(), true);
+    assert.equal(await page.locator('#assist-mode').isDisabled(), true);
     const expectedSettings = {
       version: 1,
-      autoHearts: true,
-      assistMode: true,
+      autoHearts: false,
+      assistMode: false,
       reducedMotion: true,
     };
     assert.deepEqual(
@@ -580,6 +632,128 @@ try {
       JSON.stringify(metrics, null, 2),
     );
     if (width === 1440) {
+      const nightfall = createState({
+        mode: 'survival',
+        startingWeapon: 'bass',
+        survivalDay: '2026-10-21',
+        routeIndex: 1,
+        seed: 175,
+        campaignStarted: true,
+      });
+      nightfall.survival.xp = survivalXpCost(nightfall.survival.level);
+      const nightfallOffers = survivalOffers(nightfall).map((item) => item.id);
+      const nightfallSave = exportNightfallSave(nightfall);
+      assert.ok(nightfallSave);
+      await page.evaluate(
+        ({ key, legacyKey, save }) => {
+          localStorage.removeItem(legacyKey);
+          localStorage.setItem(key, JSON.stringify(save));
+        },
+        { key: NIGHTFALL_SAVE_KEY, legacyKey: SAVE_KEY, save: nightfallSave },
+      );
+      await page.reload();
+      await page.waitForFunction(
+        () => globalThis.__HYPERDRIVE__?.snapshot().ready,
+      );
+      await page.locator('#resume-tour').click();
+      await finishStory(page);
+      assert.equal(
+        await page.evaluate(() => __HYPERDRIVE__.snapshot().screen),
+        'map',
+      );
+      assert.deepEqual(
+        await page.evaluate(
+          () => __HYPERDRIVE__.snapshot().state.survival.upgrades,
+        ),
+        { bass: 1 },
+      );
+      await departThroughStory(page);
+      await page.waitForFunction(
+        () => __HYPERDRIVE__.snapshot().screen === 'draft',
+      );
+      assert.deepEqual(
+        await page
+          .locator('#draft-options button')
+          .evaluateAll((buttons) =>
+            buttons.map((button) => button.dataset.perkId),
+          ),
+        nightfallOffers,
+      );
+      assert.equal(
+        await page.locator('#draft-options button > .item-heading > .item-icon').count(),
+        3,
+      );
+      const frozenNightfall = await page.evaluate(
+        () => __HYPERDRIVE__.snapshot().state,
+      );
+      await checkLanguages(page, '#draft-panel select', [
+        '#draft-panel .modal-card',
+      ]);
+      assert.deepEqual(
+        await page.evaluate(() => __HYPERDRIVE__.snapshot().state),
+        frozenNightfall,
+      );
+      await page.locator('#draft-options button').first().click();
+      await page.waitForFunction(
+        () => __HYPERDRIVE__.snapshot().screen === 'playing',
+      );
+      const chosenNightfall = await page.evaluate(
+        () => __HYPERDRIVE__.snapshot().state,
+      );
+      assert.equal(chosenNightfall.survival.level, 1);
+      assert.equal(
+        chosenNightfall.survival.upgrades[nightfallOffers[0]],
+        (nightfall.survival.upgrades[nightfallOffers[0]] || 0) + 1,
+      );
+      assert.equal(
+        await page.evaluate(
+          (key) => localStorage.getItem(key),
+          NIGHTFALL_SAVE_KEY,
+        ),
+        null,
+      );
+      await page.reload();
+      await page.waitForFunction(
+        () => globalThis.__HYPERDRIVE__?.snapshot().ready,
+      );
+      assert.equal(
+        await page.locator('#resume-tour').isVisible(),
+        false,
+        'Reloading a road cannot restore a consumed checkpoint',
+      );
+
+      const clubFixture = createState({ mode: 'survival', survivalDay: '2026-10-21', routeIndex: 1, seed: 175, campaignStarted: true });
+      clubFixture.entities = []; clubFixture._stations = []; clubFixture._encounterPlan = [];
+      clubFixture.distance = clubFixture.routeLength - .01;
+      update(clubFixture, {}, .01);
+      assert.equal(clubFixture.status, 'won');
+      await page.evaluate(({ key, save }) => localStorage.setItem(key, JSON.stringify(save)), { key: NIGHTFALL_SAVE_KEY, save: exportNightfallSave(clubFixture) });
+      await page.reload();
+      await page.waitForFunction(() => globalThis.__HYPERDRIVE__?.snapshot().ready);
+      await page.locator('#resume-tour').click();
+      await page.locator('#quiz').waitFor({ state: 'visible' });
+      const beforeClubQuiz = await page.evaluate(() => __HYPERDRIVE__.snapshot().state);
+      await checkLanguages(page, '#quiz select', ['#quiz .modal-card']);
+      assert.deepEqual(await page.evaluate(() => __HYPERDRIVE__.snapshot().state), beforeClubQuiz);
+      await page.locator('#quiz-choices button').first().click();
+      assert.deepEqual(await page.evaluate(() => __HYPERDRIVE__.snapshot().state.survival.quizRoads), [1]);
+      await page.locator('#quiz-continue').click();
+      assert.equal(await page.evaluate(() => __HYPERDRIVE__.snapshot().screen), 'finale');
+      assert.match(await page.locator('#performance-tip').textContent(), /BEAT BASE 175/);
+      assert.doesNotMatch(await page.locator('#performance-title').textContent(), /ツアー完走/);
+      await assertFrameFits(page, ['#finale-home', '.controls', '.radio-dock']);
+      await page.locator('#finale-home').click();
+      await finishStory(page);
+      assert.equal(await page.evaluate(() => __HYPERDRIVE__.snapshot().screen), 'map');
+      const afterClubScore = await page.evaluate(() => __HYPERDRIVE__.snapshot().state.score);
+      await page.reload();
+      await page.waitForFunction(() => globalThis.__HYPERDRIVE__?.snapshot().ready);
+      await page.locator('#resume-tour').click();
+      assert.equal(await page.locator('#quiz').isVisible(), false);
+      assert.equal(await page.evaluate(() => __HYPERDRIVE__.snapshot().state.score), afterClubScore);
+      await page.locator('#finale-home').click();
+      await finishStory(page);
+
       // A committed departure with one earned level makes the browser draft
       // deterministic without farming live encounters or mutating browser state.
       const draftFixture = createState({
@@ -629,7 +803,8 @@ try {
       await assertFrameFits(page, ['#draft-panel .modal-card']);
       await page.setViewportSize({ width: 390, height: 667 });
       await page.waitForFunction(
-        () => document.querySelector('#draft-options').dataset.compare === 'false',
+        () =>
+          document.querySelector('#draft-options').dataset.compare === 'false',
       );
       assert.equal(
         await page.locator('#draft-options button:visible').count(),
@@ -648,9 +823,13 @@ try {
       assert.equal(await draftOptions.first().isVisible(), true);
       await page.setViewportSize({ width, height });
       await page.waitForFunction(
-        () => document.querySelector('#draft-options').dataset.compare === 'true',
+        () =>
+          document.querySelector('#draft-options').dataset.compare === 'true',
       );
-      assert.equal(await page.locator('#draft-options button:visible').count(), 3);
+      assert.equal(
+        await page.locator('#draft-options button:visible').count(),
+        3,
+      );
       assert.equal(await draftPager.isVisible(), false);
       assert.equal(await page.locator('#pause').isDisabled(), true);
       assert.equal(await page.locator('#run-journal').isDisabled(), true);
@@ -713,7 +892,9 @@ try {
       // The document can load before asynchronous language initialization finishes.
       languageBootDelay = 150;
       await page.reload();
-      await page.waitForFunction(() => globalThis.__HYPERDRIVE__?.snapshot().ready);
+      await page.waitForFunction(
+        () => globalThis.__HYPERDRIVE__?.snapshot().ready,
+      );
       await page.locator('#resume-tour').click();
       languageBootDelay = 0;
       const rolledBack = await page.evaluate(() => __HYPERDRIVE__.snapshot());
@@ -824,7 +1005,9 @@ try {
         fullPage: true,
       });
       await page.reload();
-      await page.waitForFunction(() => globalThis.__HYPERDRIVE__?.snapshot().ready);
+      await page.waitForFunction(
+        () => globalThis.__HYPERDRIVE__?.snapshot().ready,
+      );
       await page.locator('#resume-tour').click();
       await finishStory(page);
       assert.deepEqual(

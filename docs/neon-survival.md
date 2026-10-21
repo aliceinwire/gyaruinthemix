@@ -1,28 +1,26 @@
-# Neon Survival
+# Nightfall Tour
 
-Neon Survival is a separate, one-life score attack through the existing six-city, twelve-road map. The tour, quiz bank, car collection and tour save remain available through **Start a new night**. Survival uses the stock car and disables the damage assist and garage purchases. Pausing is free; leaving a survival run starts the next attempt from the beginning.
+Start a new night joins the six-city club story and one-life survival into a single journey. DJ Chana and DJ Arine bring Heisei gyaru style, original music and hard bounce to streets shaped by corporate conformity. Each club records its crowd and soundcheck for the final shared set in Kyoto.
 
-## Run loop
+Choose a starting automatic weapon, customize the car, and select destinations on the branching map. Flying, charging and rushing are the three driving actions. Hearts, camera flashes, orbiting records and bass waves fire automatically when equipped. People become creative fans; office clutter clears; animals remain scenery.
 
-1. Choose a destination on the existing map. Charging routes offer more EV stops; event routes offer more crowded encounters; service routes trade length and scoring opportunities for an arrival repair.
-2. Hearts fire automatically. Hold Hearts to amplify the firing rate for eight battery per second. Flying, charging and rushing still require input. Potholes still require a jump; area attacks cannot erase them.
-3. Clear enemy packs to release visible XP crystals. Collect enough XP for a paused, seeded choice of three upgrades. The offer includes an offensive upgrade and a support whenever both remain available.
-4. Build HEAT through consecutive clears. Multipliers rise from ×1 to ×5. Reaching 100 starts six seconds of FEVER with ×6 action scores, faster hearts and a wider XP collection range. Hype upgrades extend it. A damaging collision ends FEVER and resets HEAT.
-5. Each road has six distance-based waves. Clearing threats in a wave without taking damage awards a growing score bonus. Named signal encounters award an additional 600 points times the current multiplier. Every charging window and a late-road breather remain protected from additional packs.
-6. Finish all 72 waves or lose the car. The result shows score, time, invitations, clean waves, build and the gap to today's personal best. Replay keeps the same seed and resets all run power.
+## Building the set
 
-## Builds
+Each road contains six waves, for 72 across the tour. Invitations produce XP crystals. Level-ups pause the action for three seeded choices, with weapon and support options. Item icons, numerical effects and evolution recipes identify each choice. Nine upgrades have three levels each; the first weapon starts at level one.
 
-Eight upgrade families each have three levels. They improve firing cadence, chaining, camera bursts, vinyl attacks, energy recovery, flight efficiency, armor and HEAT. Upgrade cards show the next level's numerical effect. Three combinations evolve automatically:
+| Evolution    | Ingredients          | Effect                                               |
+| ------------ | -------------------- | ---------------------------------------------------- |
+| Heartstorm   | Hearts 3 + Relay 2   | Three height bands with extra damage and piercing    |
+| Flash mob    | Camera 3 + Battery 2 | Wider bursts that pass guards                        |
+| Encore orbit | Vinyl 3 + Glide 2    | More targets, greater reach and faster orbit attacks |
+| Afterparty   | Bass 3 + Hype 2      | A wider, faster pulse that passes guards             |
 
-| Evolution    | Ingredients                     | Combat change                                         |
-| ------------ | ------------------------------- | ----------------------------------------------------- |
-| Heartstorm   | Heart tempo 3 + Fan relay 2     | Three height bands, extra damage, more piercing       |
-| Flash mob    | Photo flash 3 + Heart battery 2 | Wider, stronger, faster bursts that pierce guards     |
-| Encore orbit | Vinyl orbit 3 + Feather lift 2  | Four nearby targets, greater range and faster attacks |
+Consecutive clears build HEAT, raising the multiplier to ×5. FEVER gives ×6 scores and a wider XP collection range; Hype extends it. Damage breaks the streak. Clearing an active wave without damage grants a bonus. Charging windows and breathing room stay clear of additional packs.
 
-Survival packs progress from three members to eight; later ordinary opponents gain durability. Damage increases across roads. Service-route repairs, little finds and armor choices are the recovery sources; the tour's minimum-hull refill does not apply. People are invited to the floor, office clutter is cleared, and animals remain scenery.
+## Clubs and continuation
 
-## Competition and records
+Map branches offer different crowds, charging opportunities and repairs. Coins buy parts and repairs between roads. Club stops include a music quiz and an optional performance using the same three controls. Completing the tour grants garage progress for another night.
 
-The course seed changes at midnight in Japan. A run started before the date change keeps its seed. Route selection, seeded offers, survivability and weapon decisions determine the outcome. Scores are **personal records on this device**, not an online or cheat-resistant leaderboard. The browser retains up to five runs per day and ninety records in total. Denied browser storage does not stop the run or hide its result.
+The game saves between roads. Departing consumes that checkpoint: a lost or abandoned road starts a new attempt, with no midroad rollback. Older tour saves remain separate and playable. Music continues through the car radio.
+
+The course changes at midnight in Japan. An active run retains its original seed, and replay uses the same course. Results and daily personal bests are stored on this device. They are not an online leaderboard. Records for the revised weapon rules are separate from earlier survival scores.

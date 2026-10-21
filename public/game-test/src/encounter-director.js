@@ -17,10 +17,10 @@ export const ENCOUNTER_RULES = Object.freeze({
 /** Named, fictional sound-system challenges. They are optional skill checks: the
  * safe aerial route remains available and clearing one never gates arrival. */
 export const SIGNAL_HEADLINERS = Object.freeze([
-  { id: 'nakano-relay', cityId: 'nakano', name: '中野リレー', title: '止まった街角スピーカー', lesson: 'ハートで信号を送ろ', color: '#ff91cd' },
-  { id: 'shinjuku-filter', cityId: 'shinjuku', name: '新宿フィルター', title: 'ネオンのノイズゲート', lesson: 'ゲートが開いたらハート', color: '#c0a4ff' },
+  { id: 'nakano-relay', cityId: 'nakano', name: '中野リレー', title: '止まった街角スピーカー', lesson: 'うちらの音で信号を送ろ', color: '#ff91cd' },
+  { id: 'shinjuku-filter', cityId: 'shinjuku', name: '新宿フィルター', title: 'ネオンのノイズゲート', lesson: 'ゲートが開いたら届くで', color: '#c0a4ff' },
   { id: 'shibuya-feedback', cityId: 'shibuya', name: '渋谷フィードバック', title: 'スクランブルの音詰まり', lesson: '開くタイミングをつなご', color: '#ff87ad' },
-  { id: 'asakusa-echo', cityId: 'asakusa', name: '浅草エコー', title: '提灯通りのエコーボックス', lesson: 'ハートを重ねて音を戻そ', color: '#ffcc8d' },
+  { id: 'asakusa-echo', cityId: 'asakusa', name: '浅草エコー', title: '提灯通りのエコーボックス', lesson: '音を重ねて響きを戻そ', color: '#ffcc8d' },
   { id: 'osaka-resonance', cityId: 'osaka', name: '大阪レゾナンス', title: '道頓堀の共鳴タワー', lesson: '開いたら一気に届けよ', color: '#ffb673' },
   { id: 'kyoto-nightfall', cityId: 'kyoto', name: '京都ナイトフォール', title: '最後のミックスゲート', lesson: '最後の信号、ふたりでつなご', color: '#d4b5ff' },
 ].map(Object.freeze));
@@ -91,6 +91,9 @@ function grammar(stage, kind, phase, random) {
   if (stage >= 5) choices.push({ name: 'gate-response', actors: [shield(), heart(), obstacle()] });
   if (stage >= 7 && phase === 'pressure') choices.push({ name: 'syncopated-lift', actors: [sway(), jump(), charger()] });
   if (stage >= 8 && ['climax', 'finale'].includes(phase)) choices.push({ name: 'last-call', actors: [charger(), heart(), shield()] });
+  if (stage >= 2 && phase === 'pressure') choices.push({ name: 'notification-burst', actors: [heart(), sway(), heart()] });
+  if (stage >= 3 && kind !== 'ev') choices.push({ name: 'inspection-pair', actors: [shield(), sway()] });
+  if (stage >= 4 && ['groove', 'pressure'].includes(phase)) choices.push({ name: 'overtime-release', actors: [charger(), obstacle()] });
   if (phase === 'breather') return { name: 'breathing-space', actors: [heart()] };
   if (stage >= 2 && kind === 'event' && random() < .42) {
     const member = stage >= 6 && random() < .6 ? sway : heart;
@@ -109,7 +112,7 @@ function descriptor(definition, stage, random, lowCeiling) {
   const radius = RADII[type];
   const leadDistance = Math.min(ENCOUNTER_RULES.warningViewDistance, Math.max(94, MAX_METRES_PER_SECOND * (anticipation + counterWindow) + radius + motionAmplitude));
   const counter = type === 'pothole' ? 'hover' : behavior === 'shield' ? 'open-or-hover' : behavior === 'charger' ? 'shoot-or-hover' : type === 'salaryman' ? 'heart-or-hover' : 'shoot-or-hover';
-  const label = type === 'pothole' ? '浮いてかわそう' : behavior === 'shield' ? 'ゲートが開いたらハート' : behavior === 'charger' ? '動く前にハートか浮上' : behavior === 'sway' ? '動く相手にハート' : type === 'salaryman' ? 'ハートを届けよう' : 'ハートか浮上でクリア';
+  const label = type === 'pothole' ? '浮いてかわそう' : behavior === 'shield' ? 'ゲートが開いたら届くで' : behavior === 'charger' ? '突進の合図。攻撃か浮上' : behavior === 'sway' ? '揺れる相手。間合いを見よ' : type === 'salaryman' ? 'うちらのフロアへ誘お' : '攻撃か浮上でクリア';
   return {
     type, behavior, hp, maxHp: hp, elite, variant: Math.floor(random() * 4),
     directorManaged: true, converted: false, collisionRadius: radius,

@@ -1,3 +1,4 @@
+import { drawItemIcon, createItemIcon } from './item-icons.js';
 import { t, message, number } from './i18n.js';
 import { localizeText } from './localized-ui.js';
 import { isSurvival, survivalMultiplier, survivalResult, SURVIVAL_UPGRADES, SURVIVAL_EVOLUTIONS } from './survival.js';
@@ -17,7 +18,10 @@ export function renderSurvivalResult(state, result, previous, host) {
   const best = document.createElement('p'); best.className = 'survival-record-note';
   localizeText(best, result.best ? '今日の自己ベスト！' : message('今日の自己ベストまで、あと {0}', [number(Math.max(0, (previous?.score || row.score) - row.score), { useGrouping: true })]));
   const build = document.createElement('p'); build.className = 'survival-build-recap';
-  localizeText(build, SURVIVAL_UPGRADES.filter(item => row.build[item.id]).map(item => `${item.name} ${row.build[item.id]}/3`).join(' · '));
+  for (const item of SURVIVAL_UPGRADES.filter(item => row.build[item.id])) {
+    const slot = document.createElement('span'), label = document.createElement('span'); slot.className = 'build-slot';
+    localizeText(label, `${item.name} ${row.build[item.id]}/3`); slot.append(createItemIcon(item.id, { size: 24 }), label); build.append(slot);
+  }
   const recordLabel = document.createElement('small'); recordLabel.className = 'survival-record-note';
   localizeText(recordLabel, result.persisted ? message('この端末の記録 · {0} · 日本時間', [row.day]) : '記録を保存できませんでした。このランはこの画面で確認できます。');
   host.append(best, build, recordLabel);
@@ -49,7 +53,7 @@ export function drawSurvival(ctx, state, time, reducedMotion = false) {
   ctx.fillStyle = '#141022df'; ctx.strokeStyle = s.fever > 0 ? '#ffdc91' : '#73567c'; ctx.lineWidth = 1;
   ctx.beginPath(); ctx.roundRect(22, 22, 316, 94, 10); ctx.fill(); ctx.stroke();
   ctx.textAlign = 'left'; ctx.fillStyle = '#ffafd9'; ctx.font = '700 11px system-ui';
-  ctx.fillText(`NEON SURVIVAL  /  ${t(message('ウェーブ {0} / 72', [state.routeIndex * 6 + s.wave + 1]))}`, 36, 43, 284);
+  ctx.fillText(`${t('NIGHTFALL TOUR')}  /  ${t(message('ウェーブ {0} / 72', [state.routeIndex * 6 + s.wave + 1]))}`, 36, 43, 284);
   ctx.font = '800 28px system-ui'; ctx.fillStyle = '#fff5f9';
   ctx.fillText(t(number(Math.floor(state.score), { useGrouping: true })), 36, 76, 212);
   ctx.textAlign = 'right'; ctx.fillStyle = s.fever > 0 ? '#ffe192' : '#88ffe1'; ctx.font = '800 23px system-ui';
@@ -57,9 +61,14 @@ export function drawSurvival(ctx, state, time, reducedMotion = false) {
   ctx.fillStyle = '#33253e'; ctx.fillRect(36, 89, 212, 7);
   ctx.fillStyle = s.fever > 0 ? '#ffe192' : '#ff79be'; ctx.fillRect(36, 89, 212 * (s.fever > 0 ? s.fever / (6 + (s.upgrades.hype || 0)) : s.heat / 100), 7);
   ctx.font = '700 10px system-ui'; ctx.fillText(s.fever > 0 ? 'FEVER' : 'HEAT', 322, 96);
+  const equipped = SURVIVAL_UPGRADES.filter(item => item.kind === 'weapon' && s.upgrades[item.id]);
+  equipped.forEach((item, index) => {
+    const x = 36 + index * 47; drawItemIcon(ctx, item.id, x, 103, 24);
+    ctx.font = '700 10px system-ui'; ctx.fillStyle = '#fff0f8'; ctx.textAlign = 'left'; ctx.fillText(String(s.upgrades[item.id]), x + 27, 121);
+  });
   if (s.evolutions.length) {
     ctx.textAlign = 'left'; ctx.fillStyle = '#ffe192'; ctx.font = '700 12px system-ui';
-    ctx.fillText(s.evolutions.map(id => t(SURVIVAL_EVOLUTIONS.find(item => item.id === id).name)).join(' / '), 36, 135, 650);
+    ctx.fillText(s.evolutions.map(id => t(SURVIVAL_EVOLUTIONS.find(item => item.id === id).name)).join(' / '), 36, 146, 650);
   }
   ctx.restore();
 }
