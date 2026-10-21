@@ -415,7 +415,7 @@ body[data-screen="map"] .notification-rail { display: none; }
  body:is([data-screen="playing"], [data-screen="finale"]) .meter { height: 3px; }
  body:is([data-screen="playing"], [data-screen="finale"]) .wallet { gap: 2px; font-size: 8px; line-height: 1.2; }
  body:is([data-screen="playing"], [data-screen="finale"]) .wallet strong { font-size: 16px; }
- body:is([data-screen="playing"], [data-screen="finale"]) .below-stage { grid-template-columns: 1fr 1.1fr; }
+ body:is([data-screen="playing"], [data-screen="finale"]) .below-stage { grid-template-columns: minmax(0,1fr) minmax(0,1.6fr); padding-block: 3px; }
  body:is([data-screen="playing"], [data-screen="finale"]) .crew { min-height: 42px; }
  body:is([data-screen="playing"], [data-screen="finale"]) .controls button { padding: 4px; min-height: 44px !important; line-height: 1.3; }
  body:is([data-screen="playing"], [data-screen="finale"]) .controls small { font-size: 8px; line-height: 1.4; margin-top: 2px; }

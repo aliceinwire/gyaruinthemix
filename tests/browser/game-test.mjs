@@ -597,8 +597,22 @@ try {
       const draftPager = page.locator('#draft-options + .card-pager');
       assert.equal(
         await page.locator('#draft-options button:visible').count(),
-        1,
+        3,
+        'Wide screens compare all three upgrade choices',
       );
+      assert.equal(await draftPager.isVisible(), false);
+      await assertFrameFits(page, ['#draft-panel .modal-card']);
+      await page.setViewportSize({ width: 390, height: 667 });
+      await page.waitForFunction(
+        () => document.querySelector('#draft-options').dataset.compare === 'false',
+      );
+      assert.equal(
+        await page.locator('#draft-options button:visible').count(),
+        1,
+        'Narrow screens show one complete upgrade choice at a time',
+      );
+      assert.equal(await draftPager.isVisible(), true);
+      await assertFrameFits(page, ['#draft-panel .modal-card']);
       await draftPager
         .getByRole('button', { name: '次へ →', exact: true })
         .click();
@@ -607,6 +621,12 @@ try {
         .getByRole('button', { name: '← 前へ', exact: true })
         .click();
       assert.equal(await draftOptions.first().isVisible(), true);
+      await page.setViewportSize({ width, height });
+      await page.waitForFunction(
+        () => document.querySelector('#draft-options').dataset.compare === 'true',
+      );
+      assert.equal(await page.locator('#draft-options button:visible').count(), 3);
+      assert.equal(await draftPager.isVisible(), false);
       assert.equal(await page.locator('#pause').isDisabled(), true);
       assert.equal(await page.locator('#run-journal').isDisabled(), true);
       const frozenDraft = (await page.evaluate(() => __HYPERDRIVE__.snapshot()))
