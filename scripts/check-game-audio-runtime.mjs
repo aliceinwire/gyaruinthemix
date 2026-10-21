@@ -61,11 +61,20 @@ export async function checkGameAudioRuntime(
   }
   const catalog = await request('/game-audio/v1/catalog', 200);
   const metadata = await catalog.text();
-  assert.doesNotMatch(metadata, /sourceHash|chunks|path|ci-synthetic|\.wav/);
+  assert.doesNotMatch(metadata, /sourceHash|chunks|path|\.wav/);
   assert.ok(!metadata.includes(AUDIO_FIXTURE_KEY));
   const { tracks } = JSON.parse(metadata);
   assert.equal(tracks.length, 1, 'Only the synthetic CI track is permitted');
   assert.match(tracks[0].id, /^t-[a-f0-9]{24}$/);
+  assert.equal(tracks[0].title, AUDIO_FIXTURE_SOURCE.replace(/\.wav$/, ''));
+  assert.equal(tracks[0].artist, 'ギャルインザミックス');
+  assert.deepEqual(Object.keys(tracks[0]).sort(), [
+    'artist',
+    'duration',
+    'excerpt',
+    'id',
+    'title',
+  ]);
   assert.ok(tracks[0].duration > 0 && tracks[0].duration < 10);
   const options = {
     method: 'POST',
