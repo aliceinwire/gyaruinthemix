@@ -483,3 +483,8 @@ html:not(:lang(ja)) .destination-kind { letter-spacing: .02em; }
  .map-goal { margin-top: 8px; }
  .map-goal::before { height: 9px; }
 }
+/* Compact choices keep every weapon visible and expand the selected details. */
+@media (max-width: 680px), (max-height: 600px) {
+ .weapon-options button { min-height: 44px; }
+ .weapon-options button[aria-pressed="false"] > :is(span:not(.item-heading),small) { display: none; }
+}

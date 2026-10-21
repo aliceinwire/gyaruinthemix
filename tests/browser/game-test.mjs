@@ -387,6 +387,8 @@ try {
       assert.equal(selected.mode, 'survival');
       assert.equal(selected.survival.startingWeapon, id);
       assert.deepEqual(selected.survival.upgrades, { [id]: 1 });
+      assert.equal(await choice.locator(':scope > span:not(.item-heading)').isVisible(), true);
+      await assertFrameFits(page, ['#style-options', '#cars-ready']);
     }
     await page.screenshot({
       path: resolve(
