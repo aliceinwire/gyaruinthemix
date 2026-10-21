@@ -779,6 +779,16 @@ try {
       await assertFrameFits(page, ['#finale-home', '.controls', '.radio-dock']);
       assert.ok([1, 2].includes(await page.evaluate(() => __HYPERDRIVE__.snapshot().state.totalFans)));
       await page.screenshot({ path: resolve(root, 'artifacts/browser/game-test/1440-low-fan-club.png'), fullPage: true });
+      await page.evaluate(async () => {
+        const { drawFinale } = await import('/game-test/src/campaign.js');
+        const canvas = document.createElement('canvas');
+        canvas.id = 'zero-fan-scene'; canvas.width = 960; canvas.height = 540;
+        canvas.style.cssText = 'position:fixed;inset:0;z-index:9999;width:960px;height:540px';
+        document.body.append(canvas);
+        drawFinale(canvas.getContext('2d'), { totalFans: 0, time: 0, complete: false, club: 'BEAT BASE 175' });
+      });
+      await page.locator('#zero-fan-scene').screenshot({ path: resolve(root, 'artifacts/browser/game-test/zero-fan-stage.png') });
+      await page.locator('#zero-fan-scene').evaluate(canvas => canvas.remove());
       await page.locator('#finale-home').click();
       await finishStory(page);
       assert.equal(await page.evaluate(() => __HYPERDRIVE__.snapshot().screen), 'map');

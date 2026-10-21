@@ -11,6 +11,7 @@ import {
 import {
   finaleCrowdCount,
   drawFinale,
+  drawFinaleStage,
 } from '../public/game-test/src/campaign.js';
 import {
   createRoadFeedback,
@@ -148,4 +149,28 @@ test('rendered finale attendance ignores energy and conversion double counts', (
     assert.equal(heads.length, Math.min(totalFans, 56));
     for (const call of heads) assert.ok(call.slice(1).every(Number.isFinite));
   }
+});
+
+test('stage artwork excludes its baked audience before earned fans are drawn', () => {
+  const { ctx, calls } = canvas();
+  const stage = { naturalWidth: 960, naturalHeight: 540 };
+  drawFinaleStage(ctx, stage);
+  assert.deepEqual(
+    calls.find((call) => call[0] === 'drawImage'),
+    ['drawImage', stage, 0, 0, 960, 432, 0, 0, 960, 432],
+  );
+  assert.ok(
+    calls.some(
+      (call) =>
+        call[0] === 'fillRect' &&
+        call[1] === 0 &&
+        call[2] === 432 &&
+        call[3] === 960 &&
+        call[4] === 108,
+    ),
+  );
+  assert.equal(
+    calls.some((call) => call[0] === 'ellipse'),
+    false,
+  );
 });

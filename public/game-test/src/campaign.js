@@ -423,7 +423,7 @@ function crowd(ctx, time, totalFans) {
   for (let row = 0; row < 2; row++) {
     const count = row ? Math.floor(visible / 2) : Math.ceil(visible / 2);
     for (let i = 0; i < count; i++) {
-      const x = count === 1 ? 480 + row * 30 : 24 + i * (912 / (count - 1)) + (row ? 11 : 0);
+      const x = count === 1 ? 160 + row * 640 : 24 + i * (912 / (count - 1)) + (row ? 11 : 0);
       const hop = Math.round(
         Math.max(0, Math.sin(time * 6.8 + i * 0.57)) * (4 + energy * 8),
       );
@@ -462,6 +462,21 @@ function crowd(ctx, time, totalFans) {
   }
 }
 
+/** Only the architecture is reused; attendance is drawn from run progress. */
+export function drawFinaleStage(ctx, stage = images.stage) {
+  const floorY = 432;
+  if (stage) {
+    const width = stage.naturalWidth || stage.width || W;
+    const height = stage.naturalHeight || stage.height || H;
+    ctx.drawImage(stage, 0, 0, width, height * floorY / H, 0, 0, W, floorY);
+  }
+  rect(ctx, 0, floorY, W, H - floorY, "#111327");
+  for (const y of [434, 452, 480, 519]) line(ctx, [[0, y], [W, y]], "#39223f", 2);
+  for (let x = -240; x <= W + 240; x += 120)
+    line(ctx, [[480 + (x - 480) * .55, floorY], [x, H]], "#25243d", 1);
+  line(ctx, [[0, floorY], [W, floorY]], "#bd4b9b", 2);
+}
+
 /** Animated two-DJ set for each club and the final shared mix. */
 export function drawFinale(
   ctx,
@@ -469,7 +484,7 @@ export function drawFinale(
 ) {
   setCanvas(ctx, width, height);
   rect(ctx, 0, 0, W, H, "#0c1023");
-  if (images.stage) ctx.drawImage(images.stage, 0, 0, W, H);
+  drawFinaleStage(ctx);
   const setEnergy = performance?.energy || 0;
   for (let i = 0; i < 6; i++) {
     const x = 80 + i * 160;
