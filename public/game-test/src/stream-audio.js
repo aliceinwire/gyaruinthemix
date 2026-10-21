@@ -57,7 +57,7 @@ export function createStreamAudio({
     listeners.push(() => target?.removeEventListener(name, fn));
   };
   const allowed = () =>
-    !destroyed && desired && consented && canPlay() && !documentRef?.hidden;
+    !destroyed && desired && consented && canPlay();
   const cancelTimer = () => {
     if (renewTimer !== null) timers.clearTimeout(renewTimer);
     renewTimer = null;
@@ -162,7 +162,7 @@ export function createStreamAudio({
     const version = generation,
       t = track.id,
       fresh = await getSession();
-    if (destroyed || version !== generation || t !== track?.id) return;
+    if (!allowed() || version !== generation || t !== track?.id) return;
     if (session?.sessionId !== fresh.sessionId) {
       await attach(fresh, media.currentTime, version);
       if (allowed()) await safePlay();
@@ -237,7 +237,7 @@ export function createStreamAudio({
     }
     if (!consented) return false;
     desired = true;
-    if (!canPlay() || documentRef?.hidden) {
+    if (!canPlay()) {
       desired = false;
       emit();
       return false;
@@ -362,7 +362,14 @@ export function createStreamAudio({
     } else pause();
   });
   listen(documentRef, 'visibilitychange', () => {
-    if (documentRef.hidden) pause();
+    // Background audio keeps its play intent. Renew promptly after timer throttling.
+    if (!documentRef.hidden && allowed() && session) {
+      refreshSession().then(() => {
+        if (allowed() && media.paused) return safePlay();
+      }).catch(() => {
+        if (allowed()) recover();
+      });
+    }
   });
   emit();
   return {

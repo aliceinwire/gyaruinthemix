@@ -418,7 +418,7 @@ test('all hidden routes use noindex layout and explicit test labels; normal navi
   );
   assert.match(
     layout,
-    /!indexable && \(\s*<meta name="robots" content="noindex, nofollow, noarchive"/,
+    /name="robots"\s+content=\{indexable \? 'noarchive' : 'noindex, nofollow, noarchive'\}/,
   );
   assert.match(layout, /position: sticky/);
   assert.match(layout, /実際のお支払い・商品の発送はありません/);

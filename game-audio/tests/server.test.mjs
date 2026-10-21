@@ -22,7 +22,8 @@ async function setup(t, opts = {}) {
       tracks: [id, other].map((id) => ({
         id,
         init: 'init.mp4',
-        title: 'DO NOT EXPOSE SOURCE TITLE',
+        title: id === other ? 'Second Song' : '夜のドライブ',
+        comment: 'PRIVATE SOURCE COMMENT',
         duration: 4,
         chunks: [{ file: 'seg-00000.m4s', duration: 4 }],
       })),
@@ -112,7 +113,9 @@ test('catalog is metadata only and library originals are never routable', async 
   const r = await f.request('/game-audio/v1/catalog'),
     b = await r.json();
   assert.equal(b.tracks.length, 2);
-  assert.match(b.tracks[0].title, /ギャルインザミックス/);
+  assert.equal(b.tracks[0].title, '夜のドライブ');
+  assert.equal(b.tracks[1].title, 'Second Song');
+  assert.equal(b.tracks[0].artist, 'ギャルインザミックス');
   assert.doesNotMatch(JSON.stringify(b), /SOURCE|chunks|sourceHash|path/);
   for (const path of [
     '/assets/music/track.mp3',
