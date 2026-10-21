@@ -25,6 +25,7 @@ export function createSaveStore(storage) {
     loadMeta: () => createMetaProgress(read(META_KEY)),
     saveCampaign(state) {
       const value = exportCampaignSave(state);
+      if (!value) return { persisted: false, campaign: restoreCampaignSave(read(SAVE_KEY)) };
       return {
         persisted: write(SAVE_KEY, value),
         campaign: restoreCampaignSave(value),

@@ -1,3 +1,5 @@
+import { isSurvival, dailySurvival, survivalView, chooseSurvivalUpgrade, survivalMultiplier, createSurvivalRecords } from './src/survival.js';
+import { drawSurvival, renderSurvivalResult } from './src/survival-ui.js';
 import { localizeText, localizeAttribute, localizeHTML, initializeLanguage, installLanguageSelectors } from './src/localized-ui.js';
 import { message, number, t } from './src/i18n.js';
 import { installFrame } from './src/frame.js';
@@ -97,6 +99,9 @@ try {
   storage = globalThis.localStorage;
 } catch {}
 const saves = createSaveStore(storage);
+const survivalRecords = createSurvivalRecords(storage);
+const rpgView = value => survivalView(value) || getRpgView(value);
+let survivalBest = 0;
 let meta = saves.loadMeta(),
   savedTour = saves.loadCampaign(),
   storageWarningShown = false;
@@ -114,6 +119,7 @@ function syncResume() {
   $("#resume-tour").hidden = !savedTour;
 }
 function saveTour() {
+  if (isSurvival(state)) return;
   const result = saves.saveCampaign(state);
   savedTour = result.campaign;
   syncResume();
@@ -148,12 +154,16 @@ autoHearts = settings.autoHearts;
 function applySettings() {
   reducedMotion = settings.reducedMotion;
   autoHearts = settings.autoHearts;
-  state.assistMode = settings.assistMode;
+  state.assistMode = !isSurvival(state) && settings.assistMode;
   document.body.dataset.reducedMotion = String(reducedMotion);
   document.body.dataset.assistMode = String(settings.assistMode);
   $('#auto-hearts').checked = autoHearts;
   $('#reduced-motion').checked = reducedMotion;
-  $('#assist-mode').checked = settings.assistMode;
+  $('#assist-mode').checked = state.assistMode;
+  $('#assist-mode').disabled = isSurvival(state);
+  $('#auto-hearts').disabled = isSurvival(state);
+  if (isSurvival(state)) $('#auto-hearts').checked = true;
+  document.body.dataset.runMode = state.mode;
 }
 function saveSettings() {
   applySettings();
@@ -230,6 +240,7 @@ function home() {
   releaseInput();
   state = newTour(meta);
   applySettings();
+  refreshSurvivalRecord();
   setScreen("menu");
   say("ありねぇ！ハート積んで、クラブ行こ！");
   hud();
@@ -237,7 +248,8 @@ function home() {
 }
 function openMap(next = false) {
   pendingNext = next;
-  $("#change-starting-car").hidden = !atNewRunGarage();
+  $("#change-starting-car").hidden = isSurvival(state) || !atNewRunGarage();
+  $("#garage-tab").hidden = isSurvival(state);
   releaseInput();
   setScreen("map");
   sceneUI.mapPanel("route");
@@ -273,6 +285,10 @@ function openMap(next = false) {
     const mission = getRouteMission(state);
     localizeText(arrived, message("{0}、到着や！ {1}人をフロアの仲間に。{2} ガレージでこの旅のパーツを選べるで。", [state.route.goal, state.stageGyaru, mission?.complete ? message("道の目標も達成、+{0}コイン！", [mission.reward]) : "次の道でもうひと盛りしよ。"]));
   }
+  if (isSurvival(state)) {
+    localizeText($("#map-subtitle"), "1ライフ。ハートは自動。進化を選び、72ウェーブを生き抜こ。修理は小さな発見と整備ルートで。");
+    if (next) localizeText(arrived, message("道を突破！ スコア {0} · 耐久 {1} · 次の6ウェーブへ", [number(Math.floor(state.score), { useGrouping: true }), Math.ceil(state.integrity)]));
+  }
   hud();
   $("#route-tab").focus();
 }
@@ -284,8 +300,9 @@ function enterPlay(announce = true) {
   canvas.tabIndex = 0;
   canvas.focus({ preventScroll: true });
   localizeText($("#pause"), "ひと休み");
-  if (announce) say(state.route.intro || "ハートで仲間を誘って、EVで充電やで！");
-  if (announce && state.distance === 0) { roadFeedback = createRoadFeedback(); toast(state.routeIndex === 0 ? "運転は自動。まずはハートを長押しや" : "選んだ街角へ。今回の盛りで行くで！"); }
+  if (isSurvival(state)) say("自動ハートで誘ってこ！ Z長押しで連射アップ、電池は毎秒8使うで。", "DJちゃな / ナビ担当");
+  else if (announce) say(state.route.intro || "ハートで仲間を誘って、EVで充電やで！");
+  if (announce && state.distance === 0) { roadFeedback = createRoadFeedback(); toast(isSurvival(state) ? "ハートは自動。飛ぶ・充電・加速で生き抜こ。" : state.routeIndex === 0 ? "運転は自動。まずはハートを長押しや" : "選んだ街角へ。今回の盛りで行くで！"); }
   unlockSound();
   accumulator = 0;
   saveTour();
@@ -340,7 +357,8 @@ async function depart() {
   beginCampaign(state);
   applySettings();
   saveTour();
-  storyDirector.show("departure", () => enterPlay());
+  if (isSurvival(state)) enterPlay();
+  else storyDirector.show("departure", () => enterPlay());
 }
 const weatherTips = {
   sunny: "晴れた夜は、ロケット日和。",
@@ -388,7 +406,7 @@ function renderStyles() {
   }
 }
 function renderRpgHud() {
-  const view = getRpgView(state);
+  const view = rpgView(state);
   localizeText($('#rpg-rank'), view.enabled ? message("MIX Lv.{0} · {1}", [view.rank, view.styleName]) : 'CLASSIC TOUR');
   const xp = $('#rpg-xp');
   xp.value = view.progress || 0; xp.max = 1;
@@ -399,9 +417,9 @@ function renderRpgHud() {
 function showDraft() {
   releaseInput(); accumulator = 0; paused = false;
   setScreen('draft');
-  const view = getRpgView(state), host = $('#draft-options');
+  const view = rpgView(state), host = $('#draft-options');
   localizeText($('#draft-title'), message("MIX LEVEL {0} / ひとつ、盛ってこ。", [view.rank + 1]));
-  localizeText($('#draft-copy'), '時間は止まってるで。前へ・次へで3枚を見比べて、欲しいカードをタップ。効果はこの旅だけ。');
+  localizeText($('#draft-copy'), '時間は止まってるで。3つの中から1つ選ぼ。組み合わせで進化、効果はこのランだけ。');
   host.replaceChildren();
   for (const perk of view.offers || []) {
     const card = document.createElement('button'); card.className = 'draft-card'; card.dataset.perkId = perk.id;
@@ -411,11 +429,12 @@ function showDraft() {
     const detail = document.createElement('small'); localizeText(detail, message("{0} / {1}", [perk.effect, perk.synergy]));
     card.append(family, name, description, detail);
     card.addEventListener('click', () => {
-      if (!choosePerk(state, perk.id)) return;
+      if (!(isSurvival(state) ? chooseSurvivalUpgrade(state, perk.id) : choosePerk(state, perk.id))) return;
+      const evolution = state.events.find(event => event.type === 'evolution');
       host.querySelectorAll('button').forEach(button => button.disabled = true);
       beep(880, .12); saveTour();
       if (state.status === 'draft') showDraft();
-      else { enterPlay(false); say(`${perk.name}、息ぴったりで使ってこ！`); }
+      else { enterPlay(false); say(`${perk.name}、息ぴったりで使ってこ！`); if (evolution) { toast(message('進化！ {0}', [evolution.name])); beep(1174, .18); } }
     });
     host.append(card);
   }
@@ -628,6 +647,20 @@ $("#quiz-continue").addEventListener("click", () => {
   say("ほな、クラブで会おな！");
 });
 function showResult() {
+  if (isSurvival(state)) {
+    releaseInput();
+    if (state.status === "won" && !state.campaignComplete) { openMap(true); return; }
+    const previous = survivalRecords.best(state.survival.day), result = survivalRecords.save(state);
+    setScreen("result");
+    localizeText($("#result-eyebrow"), "NEON SURVIVAL / RUN COMPLETE");
+    localizeText($("#result-title"), state.campaignComplete ? "72ウェーブ、生き抜いた！" : "このビルドで、ここまで来た。");
+    localizeText($("#result-copy"), "同じコースでも、選ぶ進化で違う走りに。もう一回なら、新しいビルドで最初から。");
+    renderSurvivalResult(state, result, previous, $("#result-stats"));
+    localizeText($("#continue"), "同じシードでもう一回");
+    $("#continue").focus(); beep(state.campaignComplete ? 880 : 190, .2);
+    return;
+  }
+  $("#result-stats").classList.remove("survival-results");
   const earned = awardCompletion(meta, state);
   if (earned) {
     saveMeta();
@@ -665,7 +698,9 @@ function showResult() {
   localizeText($("#result-copy"), won
     ? state.route.win || "街で増えた仲間も、一緒にフロアへ！"
     : (state.reason === "energy" ? "電池が足りへんかったな。次はEVの手前で浮上をやめて、E長押しで充電しよ。" : "いったんピットへ戻ろ。段差は浮上、音の壁はハートかラッシュ。休憩メニューでダメージを減らすこともできるで。"));
-  localizeText($("#result-stats"), message("{0}人と出会えた · 最高{1}コンボ · ちいさなしあわせ {2}個", [state.stageGyaru, state.bestCombo, state.littleFinds]) + (won ? '。次の街でも、うちららしく。' : '。この道の出発前へ戻って再挑戦。前の街までの記録は残るで。'));
+  const tourStats = document.createElement("p");
+  $("#result-stats").replaceChildren(tourStats);
+  localizeText(tourStats, message("{0}人と出会えた · 最高{1}コンボ · ちいさなしあわせ {2}個", [state.stageGyaru, state.bestCombo, state.littleFinds]) + (won ? '。次の街でも、うちららしく。' : '。この道の出発前へ戻って再挑戦。前の街までの記録は残るで。'));
   localizeText($("#continue"), won
     ? state.campaignComplete
       ? "ほな、音出そ →"
@@ -674,6 +709,21 @@ function showResult() {
   $("#continue").focus();
   beep(won ? 880 : 190, 0.25);
 }
+function refreshSurvivalRecord() {
+  const challenge = dailySurvival(), best = survivalRecords.best(challenge.day);
+  localizeText($('#survival-record'), best ? message('今日の自己ベスト {0} · この端末', [number(best.score, { useGrouping: true })]) : '今日のコースに挑戦 · 記録はこの端末に保存');
+}
+function startSurvival(challenge = dailySurvival()) {
+  if (!ready) return;
+  state = createState({ mode: 'survival', seed: challenge.seed, survivalDay: challenge.day,
+    runId: typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : `survival-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    ...campaignEnvironment(challenge.seed, 0) });
+  survivalBest = survivalRecords.best(challenge.day)?.score || 0;
+  pendingNext = false; paused = false; roadFeedback = createRoadFeedback();
+  applySettings(); openMap(false);
+}
+$('#survival').addEventListener('click', () => startSurvival());
+refreshSurvivalRecord();
 $("#story").addEventListener("click", () => {
   if (!ready) return;
   if (
@@ -702,6 +752,7 @@ $("#quit").addEventListener("click", home);
 $("#resume").addEventListener("click", () => setPause(false));
 $("#pause").addEventListener("click", () => setPause(!paused));
 $("#continue").addEventListener("click", () => {
+  if (isSurvival(state)) { startSurvival({ seed: state.seed, day: state.survival.day }); return; }
   if (state.status === "won") {
     if (state.campaignComplete) {
       performanceSet = createPerformance();
@@ -724,11 +775,15 @@ function previewMission(node) {
   const preview = node.nodeId === state.journeyNodeId ? state : createState({ routeIndex: node.stageIndex, seed: state.seed, journeyNodeId: node.nodeId, ...mapClimate });
   return getRouteMission(preview,node);
 }
+function survivalRouteDetail(node) {
+  if (!isSurvival(state)) return node.description;
+  return node.kind === 'event' ? '招待スコア+25%・人波多め・短めの道' : node.kind === 'service' ? '到着で耐久+20・短い道・EV少なめ' : 'EV多め・長い道・招待スコア控えめ';
+}
 function renderDestinationChoices() {
   const choices = getJourneyChoices(pendingNext ? state.routeIndex+1 : state.routeIndex,state.seed);
   const chosen = choices.find(node => node.nodeId === selectedNodeId);
   const mission = previewMission(chosen);
-  localizeText($("#map-route-detail"), chosen?.description || "");
+  localizeText($("#map-route-detail"), chosen ? survivalRouteDetail(chosen) : "");
   localizeText($("#route-mission-preview"), mission ? message("寄り道の目標「{0}」 {1} {2}", [mission.label, mission.description, mission.rewardLabel]) : "");
   localizeText($("#map-selected-route"), chosen ? message("選んだ道：{0}", [chosen.districtName]) : "地図の行き先を選んでな");
   const host = $("#destination-choices"); host.replaceChildren();
@@ -744,11 +799,11 @@ function renderDestinationChoices() {
     const district = getDistrictScene(node.cityId,node.locationIndex);
     image.src = new URL(`./assets/districts/${node.cityId}/${district.files[mapClimate.season]}`,import.meta.url).href; image.alt = ""; image.loading="lazy";
     const title = document.createElement("strong"); localizeText(title, node.districtName);
-    const detail = document.createElement("small"); localizeText(detail, message("{0} · {1}", [node.label, node.description]));
+    const detail = document.createElement("small"); localizeText(detail, message("{0} · {1}", [node.label, survivalRouteDetail(node)]));
     const kind = document.createElement("span"); kind.className="destination-kind"; localizeText(kind, message("{0} · {1}", [index + 1, node.label]));
     const status = document.createElement("span"); status.className="destination-status"; localizeText(status, node.nodeId===selectedNodeId ? "✓ この道を選択中" : "この街角へ →");
     const fit = document.createElement("span"); fit.className = "route-fit";
-    localizeText(fit, node.kind === "service" ? message("到着で耐久+20 / 現在{0}", [Math.ceil(state.integrity)]) : node.kind === "event" ? "コイン+25% / 動く相手が多め" : "EV多め / ゆっくり長めの道");
+    localizeText(fit, isSurvival(state) ? survivalRouteDetail(node) : node.kind === "service" ? message("到着で耐久+20 / 現在{0}", [Math.ceil(state.integrity)]) : node.kind === "event" ? "コイン+25% / 動く相手が多め" : "EV多め / ゆっくり長めの道");
     button.append(kind,image,title,detail,fit,status);
     button.addEventListener("click",()=>selectDestination(node.nodeId)); host.append(button);
   }
@@ -783,14 +838,15 @@ function hud() {
   }
   const ev = state._stations.find(distance => distance > state.distance + 5);
   localizeText($("#next-ev"), state.atStation ? "EV · EVエリア" : ev ? message("EV · あと{0}m", [Math.ceil(ev - state.distance)]) : "まもなく到着");
-  localizeText($("#road-phase"), getEncounterPhase(state).label);
+  localizeText($("#road-phase"), isSurvival(state) ? message("ウェーブ {0} / 72", [state.routeIndex * 6 + state.survival.wave + 1]) : getEncounterPhase(state).label);
   for (const [kind,value,capacity] of [["health",state.integrity,state.integrityCapacity],["energy",state.energy,state.energyCapacity]]) {
     const meter = $("#" + kind + "-meter"); meter.setAttribute("aria-valuenow", String(Math.ceil(value))); meter.setAttribute("aria-valuemax", String(capacity)); meter.dataset.low = String(value / capacity < .25);
   }
   const route = state.route;
   localizeText($("#location-label"), message("{0} / {1}", [(getDistrictScene(route.cityId, state.locationIndex || 0) || { name: route.goal }).name, String((state.locationIndex || 0) + 1).padStart(2, "0")]));
-  localizeText($("#mode-label"), message("クラブ旅 {0} / {1}", [state.routeIndex + 1, JOURNEY_STAGE_COUNT]));
-  localizeText($("#money"), String(state.money).padStart(3, "0"));
+  localizeText($("#mode-label"), isSurvival(state) ? "NEON SURVIVAL" : message("クラブ旅 {0} / {1}", [state.routeIndex + 1, JOURNEY_STAGE_COUNT]));
+  localizeText($("#money"), isSurvival(state) ? number(Math.floor(state.score), { useGrouping: true }) : String(state.money).padStart(3, "0"));
+  localizeText($(".wallet > span"), isSurvival(state) ? "スコア" : "コイン");
   $("#combo-bar").style.width =
     `${Math.min(100, ((state.comboTimer || 0) / 4) * 100)}%`;
   localizeText($("#destination"), message("次のフロア / {0}", [route.club]));
@@ -807,6 +863,12 @@ function hud() {
         ? message("{0} 連続やで", [state.combo])
         : " ハートでフロアへ誘お");
   localizeText($("#health-value"), message("{0}", [Math.ceil(state.integrity)]));
+  if (isSurvival(state)) {
+    localizeText($("#combo"), message("HEAT ×{0} · 招待 {1}", [survivalMultiplier(state), state.survival.kills]));
+    localizeText($("#rpg-build"), message("進化 {0} · ノーダメージ {1}", [state.survival.evolutions.length, state.survival.cleanWaves]));
+    localizeText($('[data-control="shoot"] small'), "Z / J · 連射アップ · 電池8/秒");
+    if (state.score > survivalBest && survivalBest > 0 && !state.survival.bestNotified) { state.survival.bestNotified = true; toast("今日の自己ベスト更新！"); }
+  } else localizeText($('[data-control="shoot"] small'), "Z / J 長押し");
   $("#health-bar").style.width =
     `${(state.integrity / (state.integrityCapacity || 100)) * 100}%`;
   localizeText($("#energy-value"), message("{0}", [Math.ceil(state.energy)]));
@@ -817,6 +879,9 @@ function handleEvents() {
   captureRoadFeedback(roadFeedback, state.events, state.distance);
   const crewEvent = selectCrewEvent(state.events || [], {...state, time: visualTime});
   for (const event of state.events || []) {
+    if (event.type === "fever-start") { toast("FEVER！ スコア6倍、ハート連射！"); beep(1174, .16); }
+    if (event.type === "clean-wave") { toast(message("ノーダメージ！ +{0}", [event.points])); beep(988, .1); }
+    if (event.type === "survival-elite") { toast(message("シグナル突破！ +{0}", [event.points])); beep(1320, .15); }
     if (["convert"].includes(event.type)) {
       beep(850, 0.07);
       if (event.elite || (state.combo > 1 && state.combo % 5 === 0)) toast(`${state.combo}連続！ 街がつながってきたで`);
@@ -858,7 +923,7 @@ function frame(now) {
   if (screen === "playing" && !paused) {
     accumulator += dt;
     while (accumulator >= 1 / 60) {
-      update(state, { ...input, shoot: input.shoot || autoHearts }, 1 / 60);
+      update(state, { ...input, shoot: input.shoot || (!isSurvival(state) && autoHearts) }, 1 / 60);
       handleEvents();
       accumulator -= 1 / 60;
       if (state.status !== "playing") {
@@ -907,7 +972,7 @@ function frame(now) {
       crewVisuals,
       reducedMotion,
     });
-  if (screen === "playing") drawRoadFeedback(ctx, roadFeedback, state, { reducedMotion });
+  if (screen === "playing") { drawRoadFeedback(ctx, roadFeedback, state, { reducedMotion }); drawSurvival(ctx, state, visualTime, reducedMotion); }
   const portraits = $("#crew-actions").getContext("2d");
   portraits.clearRect(0, 0, 240, 128);
   for (const [i, character] of ["arisu", "chana"].entries())
@@ -924,6 +989,7 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 async function loadGameArt() {
+  $("#survival").disabled = true;
   $("#story").disabled = true;
   $("#resume-tour").disabled = true;
   $("#retry-art").hidden = true;
@@ -932,6 +998,7 @@ async function loadGameArt() {
     await prepareGameArt(state);
     ready = true;
     localizeText($("#loading"), "準備できたで。いつでも行こ！");
+    $("#survival").disabled = false;
     $("#story").disabled = false;
     $("#resume-tour").disabled = false;
     hud();

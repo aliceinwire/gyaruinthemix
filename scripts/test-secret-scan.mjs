@@ -6,6 +6,7 @@ import {
   copyFile,
   mkdir,
   mkdtemp,
+  readFile,
   rm,
   writeFile,
 } from 'node:fs/promises';
@@ -47,6 +48,17 @@ try {
   ])
     await copyFile(new URL(`../${path}`, import.meta.url), join(root, path));
   await chmod(join(root, '.githooks/pre-commit'), 0o755);
+  const storagePath = 'public/game-test/src/survival.js';
+  const storageFile = join(root, storagePath);
+  const storageSource = await readFile(
+    new URL(`../${storagePath}`, import.meta.url),
+    'utf8',
+  );
+  const storageDeclaration = storageSource.match(
+    /^export const SURVIVAL_RECORD_KEY = .*$/m,
+  )[0];
+  await mkdir(join(root, 'public/game-test/src'), { recursive: true });
+  await writeFile(storageFile, storageDeclaration);
   await writeFile(
     join(root, 'fixture.txt'),
     [
@@ -68,6 +80,37 @@ try {
   );
   commit();
   assert.equal(scan('history').status, 0, 'clean history must pass');
+  await writeFile(join(root, 'unexpected.js'), storageDeclaration);
+  git('add', 'unexpected.js');
+  assert.equal(
+    scan('staged').status,
+    1,
+    'the storage identifier exception must apply only to its exact source path',
+  );
+  git('rm', '-f', 'unexpected.js');
+  const fakeStorageSecret = randomBytes(24).toString('hex');
+  await writeFile(
+    storageFile,
+    `export const SURVIVAL_RECORD_KEY = '${fakeStorageSecret}';\n`,
+  );
+  git('add', storagePath);
+  const storageScan = scan('staged');
+  assert.equal(
+    storageScan.status,
+    1,
+    'other credential-like values in the survival module must still be blocked',
+  );
+  assert.ok(
+    !(storageScan.stdout + storageScan.stderr).includes(fakeStorageSecret),
+    'credential-like values in the survival module must remain redacted',
+  );
+  await writeFile(storageFile, storageDeclaration);
+  git('add', storagePath);
+  assert.equal(
+    scan('staged').status,
+    0,
+    'restoring the storage identifier passes',
+  );
   const install = () =>
     spawnSync('bash', ['scripts/install-hooks.sh'], {
       cwd: root,

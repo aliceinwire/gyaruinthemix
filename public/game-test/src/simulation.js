@@ -1,3 +1,4 @@
+import { isSurvival, createSurvival, applySurvivalModifiers, recordSurvivalEvent, survivalStep, openSurvivalDraft, survivalEncounterPlan, finishSurvivalWave } from './survival.js';
 import { createEncounterPlan, updateEncounterActor, getEncounterPhase } from './encounter-director.js';
 import { DRIVING_PACE } from './pace.js';
 import { littleFindAt } from './street-culture.js';
@@ -250,7 +251,9 @@ function random(state) {
   return state._rng / 4294967296;
 }
 function emit(state, type, detail = {}) {
-  state.events.push({ ...detail, type });
+  const event = { ...detail, type };
+  state.events.push(event);
+  recordSurvivalEvent(state, event);
   if (state.runBuild) routeMissionProgress(state, { ...detail, type });
   if (state.rpg) recordRpgEvent(state, { ...detail, type });
 }
@@ -280,7 +283,7 @@ function spawn(state, type, distance, detail = {}) {
 }
 function roadSettings(state) {
   const mode = modeFor(state.routeOption), node = getJourneyNode(state.journeyNodeId);
-  return { ...mode, stationSpacing: mode.stationSpacing * (node?.stationSpacingMultiplier ?? 1),
+  return { ...mode, stationSpacing: mode.stationSpacing * (node?.stationSpacingMultiplier ?? 1) * (isSurvival(state) ? 1.5 : 1),
     encounterSpacing: mode.encounterSpacing * (node?.encounterSpacingMultiplier ?? 1) };
 }
 /** Enemy distance is the authoritative moving position for renderer, hits and collisions. */
@@ -314,7 +317,7 @@ function stationPositions(state) {
 function populate(state) {
   const settings = roadSettings(state);
   if (
-    !state._fanSpawned &&
+    !isSurvival(state) && !state._fanSpawned &&
     state._quizDistance <= state.distance + VIEW_DISTANCE
   ) {
     const fan = spawn(state, "fan", state._quizDistance, { recruited: false });
@@ -365,6 +368,7 @@ function snapshot(state) {
     ["garage", serializeGarage(state)],
     ["runBuild", normalizeRunBuild(state.runBuild, { carId: state.garage.equipped })],
     ["rpg", normalizeRpg(state.rpg)],
+    ["survival", isSurvival(state) ? structuredClone(state.survival) : null],
     ["runId", state.runId],
     ["campaignStarted", state.campaignStarted === true],
   ]);
@@ -375,12 +379,15 @@ function restoreSnapshot(state, saved) {
   state.garage = normalizeGarage(saved.garage);
   state.runBuild = normalizeRunBuild(saved.runBuild, { carId: state.garage.equipped });
   state.rpg = normalizeRpg(saved.rpg);
+  if (isSurvival(state) && saved.survival) state.survival = structuredClone(saved.survival);
   state.buildModifiers = getBuildModifiers(state);
   state.runId = validCampaignRunId(saved.runId) ? saved.runId : state.runId;
   state.campaignStarted = state.campaignStarted === true || saved.campaignStarted === true;
   stats(state);
 }
 export function createState({
+  mode = "story",
+  survivalDay = "",
   routeIndex = 0,
   routeOption = "scenic",
   seed = 175,
@@ -421,7 +428,8 @@ export function createState({
     wetness: 0,
     windOffset: 0,
     landingRecovery: 0,
-    mode: "story",
+    mode: mode === "survival" ? "survival" : "story",
+    survival: mode === "survival" ? createSurvival(survivalDay) : null,
     status: "playing",
     reason: null,
     routeIndex: index,
@@ -519,6 +527,7 @@ export function createState({
       Math.abs(b - state.routeLength * 0.6),
   )[0];
   state._encounterPlan = createEncounterPlan({ seed: state.seed, routeIndex: index, routeLength: state.routeLength, node, stations: state._stations, stationRadius: roadSettings(state).stationRadius });
+  if (isSurvival(state)) state._encounterPlan = survivalEncounterPlan(state._encounterPlan, state, roadSettings(state).stationRadius);
   populate(state);
   state._stageStart = snapshot(state);
   return state;
@@ -558,23 +567,26 @@ function convert(state, target) {
   });
 }
 function fire(state) {
-  state.projectiles.push({
+  const evolved = isSurvival(state) && state.survival.evolutions.includes("heartstorm");
+  const heights = evolved ? [.18, .42, .65] : [.18 + state.jumpHeight * .85];
+  for (const height of heights) state.projectiles.push({
     id: state._nextProjectileId++,
     distance: state.distance + 18,
-    height: 0.18 + state.jumpHeight * 0.85,
+    height,
     lane: 1,
     age: 0,
     resolved: false,
     hitIds: [],
     pierceLeft: (state.buildModifiers?.heartPierce || 0) + (state.buildModifiers?.shieldPiercing && state.buildRuntime.shield > 0 ? state.buildModifiers.guardedHeartPierce ?? 1 : 0),
-    damage: 1 + (state.buildRuntime.chargedShot || 0),
+    damage: 1 + (evolved ? 1 : 0) + (state.buildRuntime.chargedShot || 0),
   });
   state.buildRuntime.chargedShot = 0;
-  state.shotCooldown = state.shotInterval;
+  state.shotCooldown = state.shotInterval * (isSurvival(state) ? Math.max(.36, 1 - (state.survival.upgrades.heart || 0) * .16) * (state.survival.fever > 0 ? .55 : 1) * (state.focusing ? .72 : 1) : 1);
   emit(state, "shoot");
 }
-function hitTarget(state, target, damage = 1, chain = true) {
-  if (target.shielded && !(state.buildModifiers.shieldPiercing && state.buildRuntime.shield > 0)) {
+function hitTarget(state, target, damage = 1, chain = true, bypassGuard = false) {
+  if (target.resolved || target.converted || target.cleared) return false;
+  if (target.shielded && !bypassGuard && !(state.buildModifiers.shieldPiercing && state.buildRuntime.shield > 0)) {
     if (!target._lastGuardHit || state.elapsed - target._lastGuardHit > .4) {
       emit(state, "guard-hit", { entityId: target.id, distance: target.distance }); target._lastGuardHit = state.elapsed;
     }
@@ -620,7 +632,7 @@ function collide(state, target, hazard) {
     emit(state, "shield-block", { distance: target.distance, entityId: target.id }); return;
   }
   const damage = Math.round(
-    hazard.damage * (state.routeOption === "express" ? 1.12 : 1) * (state.assistMode === true ? .55 : 1),
+    hazard.damage * (state.routeOption === "express" ? 1.12 : 1) * (isSurvival(state) ? (1.3 + state.routeIndex * .08) * (1 - (state.survival.upgrades.armor || 0) * .12) : state.assistMode === true ? .55 : 1),
   );
   state.integrity = Math.max(0, state.integrity - damage);
   state.invulnerability = COLLISION_GRACE;
@@ -654,6 +666,7 @@ function finish(state, status, reason) {
   state.reason = reason;
   state.boosting = state.shooting = state.charging = false;
   if (status === "won") {
+    if (isSurvival(state)) for (let wave = 0; wave < 6; wave++) finishSurvivalWave(state, wave);
     state.stagesCompleted++;
     state.journey = completeJourneyNode(state.journey, state.journeyNodeId) || state.journey;
     state.integrity = Math.min(state.integrityCapacity, state.integrity + (getJourneyNode(state.journeyNodeId)?.arrivalRepair || 0));
@@ -707,7 +720,9 @@ function step(state, input, dt) {
   const wasCharging = state.charging;
   state.charging = Boolean(chargeIntent && state.altitude < 12);
   state.boosting = Boolean(input.boost && !chargeIntent && state.energy > 0);
-  state.shooting = Boolean(input.shoot && !chargeIntent);
+  state.focusing = Boolean(isSurvival(state) && input.shoot && !chargeIntent && state.energy >= 8);
+  if (state.focusing) state.energy = Math.max(0, state.energy - 8 * dt);
+  state.shooting = Boolean((input.shoot || isSurvival(state)) && !chargeIntent);
   if (state.charging) {
     const previous = state.energy;
     state.energy = Math.min(
@@ -766,6 +781,7 @@ function step(state, input, dt) {
   state.score += movement * 0.3;
   populate(state);
   moveEnemies(state, dt);
+  survivalStep(state, dt, (target, damage, chain, bypass) => hitTarget(state, target, damage, chain, bypass));
   projectilesStep(state, dt);
   for (const item of state.entities) {
     if (item.type !== 'little-find' || item.resolved || state.altitude > 36) continue;
@@ -810,7 +826,7 @@ function step(state, input, dt) {
   if (state.integrity <= 0) finish(state, "lost", "integrity");
   else if (state.distance >= state.routeLength) finish(state, "won", "club");
   else if (
-    !state._quizTriggered &&
+    !isSurvival(state) && !state._quizTriggered &&
     state.distance >= state._quizDistance - 20
   ) {
     state._quizTriggered = true;
@@ -825,7 +841,8 @@ function step(state, input, dt) {
     };
     emit(state, "quiz", { ...state.pendingQuiz });
   }
-  openRpgDraft(state);
+  if (isSurvival(state)) openSurvivalDraft(state);
+  else openRpgDraft(state);
 }
 /** Mutates state. Pause belongs to caller: do not call update while paused. */
 export function update(state, input = {}, dt = 0) {
@@ -834,6 +851,7 @@ export function update(state, input = {}, dt = 0) {
     return state;
   beginCampaign(state);
   state.buildModifiers = getBuildModifiers(state);
+  applySurvivalModifiers(state);
   let remaining = dt;
   while (remaining > 1e-10 && state.status === "playing") {
     const delta = Math.min(FIXED_STEP, remaining);
@@ -877,7 +895,7 @@ export function upgradePrice(state, id) {
 }
 /** Current-car upgrades and repairs spend campaign coins at club stops only. */
 export function buyUpgrade(state, id) {
-  if (state.status !== "won") return false;
+  if (state.status !== "won" || isSurvival(state)) return false;
   const price = upgradePrice(state, id);
   if (price === null || !Number.isFinite(state.money) || state.money < price) return false;
   if (id === "repair" && state.integrity >= state.integrityCapacity) return false;
@@ -900,6 +918,7 @@ export function buyUpgrade(state, id) {
 export function nextRoute(state, routeOption = "scenic", journeyNodeId = null) {
   if (state.status !== "won" || state.campaignComplete) return state;
   const next = createState({
+    mode: state.mode, survivalDay: state.survival?.day,
     routeIndex: state.routeIndex + 1,
     routeOption,
     journeyNodeId: journeyNodeId ?? state.pendingJourneyNodeId,
@@ -912,10 +931,11 @@ export function nextRoute(state, routeOption = "scenic", journeyNodeId = null) {
   });
   restoreSnapshot(next, snapshot(state));
   next.assistMode = state.assistMode === true;
+  if (isSurvival(next)) { next.survival.wave = 0; next.survival.waveStats = Array.from({ length: 6 }, () => ({ kills: 0, hits: 0 })); next.survival.settledWaves = []; next.survival.gems = []; next.survival.receipts = []; }
   next.stageSignals = 0;
   next.locationIndex = getJourneyNode(next.journeyNodeId).locationIndex;
   next.energy = next.energyCapacity;
-  next.integrity = Math.max(next.integrity, next.integrityCapacity * 0.4);
+  if (!isSurvival(next)) next.integrity = Math.max(next.integrity, next.integrityCapacity * 0.4);
   routeMissionProgress(next, { type: "stage-start" });
   next._stageStart = snapshot(next);
   emit(next, "stage-start", {
@@ -928,7 +948,7 @@ export function nextRoute(state, routeOption = "scenic", journeyNodeId = null) {
 }
 /** A failed run cannot farm currency/fans or erase purchases made before it. */
 export function retryRoute(state) {
-  if (state.status !== "lost") return state;
+  if (state.status !== "lost" || isSurvival(state)) return state;
   const next = createState({
     routeIndex: state.routeIndex,
     routeOption: state.routeOption,
@@ -985,6 +1005,7 @@ function normalizeCheckpoint(value, fallback) {
  * Won saves remain at the club and include all purchases made there.
  */
 export function exportCampaignSave(state) {
+  if (isSurvival(state)) return null;
   const checkpoint = state.status === "won" ? snapshot(state) : state._stageStart || snapshot(state);
   return {
     version: CAMPAIGN_SAVE_VERSION,
@@ -1012,7 +1033,7 @@ export function restoreCampaignSave(value) {
   if (typeof saved === "string") {
     try { saved = JSON.parse(saved); } catch { return null; }
   }
-  if (!saved || typeof saved !== "object" || Array.isArray(saved)) return null;
+  if (!saved || typeof saved !== "object" || Array.isArray(saved) || saved.mode === "survival") return null;
   if (saved.version !== undefined && saved.version !== 0 && saved.version !== 1 && saved.version !== 2 && saved.version !== CAMPAIGN_SAVE_VERSION) return null;
   if (!Number.isInteger(saved.routeIndex) || saved.routeIndex < 0 || saved.routeIndex >= ROUTES.length) return null;
   if ((saved.version === 1 || saved.version === 2 || saved.version === CAMPAIGN_SAVE_VERSION) && (!saved.checkpoint || typeof saved.checkpoint !== "object" || Array.isArray(saved.checkpoint))) return null;
@@ -1062,6 +1083,7 @@ export function restoreCampaignSave(value) {
 export function changeRouteBeforeStart(state, routeOption = "scenic", environment = {}) {
   if (state.status !== "playing" || state.distance !== 0 || state.elapsed !== 0) return state;
   const next = createState({
+    mode: state.mode, survivalDay: state.survival?.day,
     routeIndex: state.routeIndex,
     routeOption,
     journeyNodeId: environment.journeyNodeId ?? state.journeyNodeId,

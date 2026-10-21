@@ -8,7 +8,8 @@ export function createRoadFeedback() { return { effects: [], time: 0 }; }
 export function captureRoadFeedback(feedback, events, distance = 0) {
   for (const event of events || []) {
     let label = '', color = '#ffadd9', kind = 'ring';
-    if (event.type === 'convert') { label = event.headliner || event.elite ? 'SIGNAL CLEAR' : `+${Math.max(0, finite(event.reward))}`; kind = event.headliner || event.elite ? 'signal' : 'heart'; }
+    if (event.type === 'convert') { label = event.headliner || event.elite ? 'SIGNAL CLEAR' : `+${Math.max(0, finite(event.survivalPoints, event.reward))}`; kind = event.headliner || event.elite ? 'signal' : 'heart'; }
+    else if (event.type === 'survival-attack') { label = event.kind === 'flash' ? 'FLASH' : 'VINYL'; color = event.kind === 'flash' ? '#fff1b8' : '#c5a6ff'; kind = event.kind; }
     else if (event.type === 'collision') { label = `−${event.damage}`; color = '#ffd29a'; }
     else if (event.type === 'jump-clear') { label = 'NICE!'; color = '#a6f6e5'; }
     else if (event.type === 'destroy') { label = 'CLEAR'; color = '#d4b7ff'; }
@@ -36,6 +37,10 @@ export function drawRoadFeedback(ctx, feedback, state, { reducedMotion = false }
     const p = effect.age / effect.duration, x = 190 + (effect.distance - state.distance) * 3, y = 300 - (reducedMotion ? 0 : p * 24);
     if (x < -90 || x > 1050) continue;
     ctx.save(); ctx.globalAlpha = Math.min(1, (1 - p) * 2);
+    if (effect.kind === 'flash' || effect.kind === 'vinyl') {
+      ctx.strokeStyle = effect.color; ctx.lineWidth = reducedMotion ? 2 : 3;
+      ctx.beginPath(); ctx.ellipse(x + 50, 415, reducedMotion ? 65 : 30 + p * 120, 24 + p * 12, 0, 0, Math.PI * 2); ctx.stroke();
+    }
     ctx.font = '800 18px system-ui, sans-serif'; ctx.textAlign = 'center';
     ctx.lineWidth = 4; ctx.strokeStyle = '#20152e'; ctx.strokeText(t(effect.label), x, y, 260);
     ctx.fillStyle = effect.color; ctx.fillText(t(effect.label), x, y, 260);

@@ -167,7 +167,7 @@ async function loadCampaignFixture(page, save) {
     },
   );
   await page.reload();
-  await page.waitForFunction(() => __HYPERDRIVE__?.snapshot().ready);
+  await page.waitForFunction(() => globalThis.__HYPERDRIVE__?.snapshot().ready);
   await page.locator('#resume-tour').click();
   await finishStory(page);
 }
@@ -185,7 +185,7 @@ async function reloadWithoutCampaign(page) {
   // or the new tour created by the previous audio case. Keep garage progress.
   await page.evaluate((key) => localStorage.removeItem(key), SAVE_KEY);
   await page.reload();
-  await page.waitForFunction(() => __HYPERDRIVE__?.snapshot().ready);
+  await page.waitForFunction(() => globalThis.__HYPERDRIVE__?.snapshot().ready);
   assert.equal(await page.locator('#resume-tour').isVisible(), false);
   assert.equal(
     await page.evaluate(() => __HYPERDRIVE__.snapshot().screen),
@@ -203,6 +203,7 @@ try {
     [320, 740],
     [390, 667],
     [768, 1000],
+    [667, 375],
     [844, 390],
     [1440, 1000],
   ]) {
@@ -213,7 +214,8 @@ try {
     context.setDefaultTimeout(10000);
     const errors = [];
     let audioEnabled = false,
-      audioConfigStatus = 200;
+      audioConfigStatus = 200,
+      languageBootDelay = 0;
     const audioRequests = [];
     const moduleRequests = [];
     await mkdir(resolve(root, 'artifacts/browser/game-test'), {
@@ -223,6 +225,8 @@ try {
       const url = new URL(route.request().url());
       if (url.origin !== origin) return route.abort();
       if (url.pathname.endsWith('.mjs')) moduleRequests.push(url.pathname);
+      if (languageBootDelay && url.pathname.startsWith('/game-test/locales/'))
+        await new Promise((resolve) => setTimeout(resolve, languageBootDelay));
       if (url.pathname === '/game-audio/v1/config') {
         audioRequests.push(url.pathname);
         return route.fulfill({
@@ -596,8 +600,22 @@ try {
       const draftPager = page.locator('#draft-options + .card-pager');
       assert.equal(
         await page.locator('#draft-options button:visible').count(),
-        1,
+        3,
+        'Wide screens compare all three upgrade choices',
       );
+      assert.equal(await draftPager.isVisible(), false);
+      await assertFrameFits(page, ['#draft-panel .modal-card']);
+      await page.setViewportSize({ width: 390, height: 667 });
+      await page.waitForFunction(
+        () => document.querySelector('#draft-options').dataset.compare === 'false',
+      );
+      assert.equal(
+        await page.locator('#draft-options button:visible').count(),
+        1,
+        'Narrow screens show one complete upgrade choice at a time',
+      );
+      assert.equal(await draftPager.isVisible(), true);
+      await assertFrameFits(page, ['#draft-panel .modal-card']);
       await draftPager
         .getByRole('button', { name: '次へ →', exact: true })
         .click();
@@ -606,6 +624,12 @@ try {
         .getByRole('button', { name: '← 前へ', exact: true })
         .click();
       assert.equal(await draftOptions.first().isVisible(), true);
+      await page.setViewportSize({ width, height });
+      await page.waitForFunction(
+        () => document.querySelector('#draft-options').dataset.compare === 'true',
+      );
+      assert.equal(await page.locator('#draft-options button:visible').count(), 3);
+      assert.equal(await draftPager.isVisible(), false);
       assert.equal(await page.locator('#pause').isDisabled(), true);
       assert.equal(await page.locator('#run-journal').isDisabled(), true);
       const frozenDraft = (await page.evaluate(() => __HYPERDRIVE__.snapshot()))
@@ -664,9 +688,12 @@ try {
       );
       assert.equal(memoryBeforeReload.choices['tour:opening'], 'crew');
       assert.ok(memoryBeforeReload.seen.includes('departure:1'));
+      // The document can load before asynchronous language initialization finishes.
+      languageBootDelay = 150;
       await page.reload();
-      await page.waitForFunction(() => __HYPERDRIVE__?.snapshot().ready);
+      await page.waitForFunction(() => globalThis.__HYPERDRIVE__?.snapshot().ready);
       await page.locator('#resume-tour').click();
+      languageBootDelay = 0;
       const rolledBack = await page.evaluate(() => __HYPERDRIVE__.snapshot());
       assert.equal(rolledBack.screen, 'map');
       assert.deepEqual(rolledBack.state.rpg.perks, []);
@@ -775,7 +802,7 @@ try {
         fullPage: true,
       });
       await page.reload();
-      await page.waitForFunction(() => __HYPERDRIVE__?.snapshot().ready);
+      await page.waitForFunction(() => globalThis.__HYPERDRIVE__?.snapshot().ready);
       await page.locator('#resume-tour').click();
       await finishStory(page);
       assert.deepEqual(
