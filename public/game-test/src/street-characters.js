@@ -50,14 +50,21 @@ function phaseOf(value) {
   return (hash / 4294967296) * Math.PI * 2;
 }
 
+/** Invitations change allegiance, never someone's individual clothes. */
+export function streetCharacterIdentity({ type = 'salaryman', originalType, converted = false } = {}) {
+  return converted || type === 'converted' ? originalType || 'salaryman' : type;
+}
+
 /** Salarymen change gear with the weather; fan/gyaru identities stay clear. */
 export function resolveStreetPose({
   type = "salaryman",
   weather = "sunny",
   season = "summer",
+  originalType,
+  converted = false,
 } = {}) {
-  const character = key(type);
-  if (character === "gyaru" || character === "converted") return "gyaru";
+  const character = key(streetCharacterIdentity({ type, originalType, converted }));
+  if (character === "gyaru") return "gyaru";
   if (character === "fan") return "fan";
   if (character !== "salaryman") return null;
   const climate = key(weather, "sunny");
@@ -135,7 +142,7 @@ export function drawStreetCharacter(ctx, options = {}) {
     scale <= 0
   )
     return false;
-  const selected = resolveStreetPose({ type, weather, season });
+  const selected = resolveStreetPose({ type, weather, season, originalType: options.originalType, converted: options.converted });
   const frame = STREET_CHARACTER_SHEET.poses[selected];
   if (!frame) return false;
   const [sx, sy, sw, sh] = frame.crop;

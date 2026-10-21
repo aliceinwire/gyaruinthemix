@@ -472,6 +472,7 @@ function renderShop() {
   for (const item of UPGRADE_CATALOG) {
     const node = document.createElement("article"); node.className = "shop-item";
     const level = state.upgrades[item.id] || 0, price = upgradePrice(state, item.id);
+    if (price === null) continue;
     const repairFull = item.id === "repair" && state.integrity >= state.integrityCapacity;
     const max = repairFull || (item.id !== "repair" && level >= item.maxLevel);
     localizeHTML(node, `<h3>${item.name}</h3><p>${item.description}</p><small>${item.id === "repair" ? "お手入れ" : `盛り ${level} / ${item.maxLevel}`}</small>`);
@@ -741,7 +742,7 @@ function showResult() {
       storyDirector.show('arrival', () => storyDirector.show('finale', () => {
         performanceSet = createPerformance();
         setScreen('finale');
-        say('6つの街の音、ひとつになったで。ここからはうちらの時間や！');
+        say('6つのクラブの音、ひとつになったで。ここからはうちらの時間や！');
         unlockSound();
         $('#pause').disabled = false;
         localizeText($('#pause'), 'ひと休み');
@@ -1012,7 +1013,6 @@ function frame(now) {
       time: reducedMotion ? 0 : visualTime,
       score: state.score,
       totalFans: state.totalFans,
-      converted: state.gyaruConverted,
       performance: performanceView(performanceSet),
       club: state.route.club, complete: state.campaignComplete,
       width: 960,

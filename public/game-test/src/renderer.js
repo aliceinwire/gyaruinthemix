@@ -12,6 +12,7 @@ import {
   preloadStreetCharacters,
   drawStreetCharacter,
   streetCharacterBob,
+  streetCharacterIdentity,
 } from "./street-characters.js";
 import { drawLocation } from "./location-renderer.js";
 import { environmentFor, getLocation } from "./locations.js";
@@ -258,13 +259,14 @@ export function drawSignalHeadliner(g, actor, x, y, time = 0) {
 }
 
 function entity(g, e, x, y, time, state) {
+  const clothing = streetCharacterIdentity(e);
   if (e.headliner) { drawSignalHeadliner(g, e, x, y, time); return true; }
   if (drawRoutineHazard(g, e, x, y, time) || drawLittleFind(g, e, x, y, time)) return true;
   if (e.type === 'ev') drawFriendlyCat(g, x, y - 68, time);
   if (drawRoadsideObject(g, { type: e.type, x, y, time, weather: state.weather, season: state.season, charging: state.charging })) return true;
   if (
     drawStreetCharacter(g, {
-      type: e.type,
+      type: clothing,
       x,
       y,
       time,
@@ -273,11 +275,11 @@ function entity(g, e, x, y, time, state) {
       id: e.id,
     })
   ) {
-    drawCultureProp(g, e, x, y + streetCharacterBob({ type: e.type, id: e.id, time }), time);
-    if (e.type === "salaryman" && ["rain","storm"].includes(state.weather))
-      drawUmbrellaArt(g,{type:e.type,x:Math.round(x),y:Math.round(y)+streetCharacterBob({type:e.type,id:e.id,time})});
+    drawCultureProp(g, e, x, y + streetCharacterBob({ type: clothing, id: e.id, time }), time);
+    if (clothing === "salaryman" && ["rain","storm"].includes(state.weather))
+      drawUmbrellaArt(g,{type:clothing,x:Math.round(x),y:Math.round(y)+streetCharacterBob({type:clothing,id:e.id,time})});
     if (e.type === "fan") text(g, "話そ", x - 21, y - 96, 11, "#fff3d7");
-    if (e.type === "gyaru") {
+    if (e.converted || e.type === "gyaru") {
       text(g, "♡", x - 6, y - 82 + Math.sin(time * 6) * 2, 18, "#ff9fd3");
       for (let i = 0; i < 3; i++)
         box(
@@ -353,12 +355,12 @@ export function render(
       if (
         !(
           detailed &&
-          o.e.type === "salaryman" &&
+          streetCharacterIdentity(o.e) === "salaryman" &&
           (["rain", "storm", "snow", "mud"].includes(state.weather) ||
             state.season === "winter")
         )
       )
-        drawNpcWeather(g, o.e, o.x, o.y, time, state);
+        drawNpcWeather(g, { ...o.e, type: streetCharacterIdentity(o.e) }, o.x, o.y, time, state);
     });
   objects
     .filter((o) => o.e.type !== "ev")
@@ -367,12 +369,12 @@ export function render(
       if (
         !(
           detailed &&
-          o.e.type === "salaryman" &&
+          streetCharacterIdentity(o.e) === "salaryman" &&
           (["rain", "storm", "snow", "mud"].includes(state.weather) ||
             state.season === "winter")
         )
       )
-        drawNpcWeather(g, o.e, o.x, o.y, time, state);
+        drawNpcWeather(g, { ...o.e, type: streetCharacterIdentity(o.e) }, o.x, o.y, time, state);
     });
   drawCar(g, 190 + (state.windOffset || 0), 465, {
     crewVisuals,

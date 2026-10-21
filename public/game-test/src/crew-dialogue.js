@@ -1,3 +1,4 @@
+import { getJourneyNode } from './journey.js';
 import { resolveCrewActions } from './character-actions.js';
 
 /** Pure dialogue selectors. Time is simulation seconds, never wall-clock time.
@@ -21,12 +22,15 @@ const CITY = {
   shibuya: ['渋谷の服装チェック、うちの盛りは測れへんで。好きな格好でNEON LEOPARDへ！', '渋谷の看板、目移りするわ。道案内はちゃんとするで。', '渋谷まで来たな。地図のピンも踊りたそうやん。'],
   asakusa: ['浅草の手描きの提灯、色が一個ずつ違う。LANTERN BASSも、あの感じで飾りたいな。', '浅草、ゆっくり眺めたいな。案内は任せとき。', '浅草の灯り、じんわりくるわ。音もあったかめにしたなるな。'],
   osaka: ['大阪のノルマ通知、今夜はオフや。BASS TAKOYAKIで、自分の時間取り戻そ。', '大阪の夜、招待するで。気になったら遊びに来てな。', '移動と休憩、ちゃんと取れたな。今日は大阪の道からや。'],
-  kyoto: ['京都のGALAXY FLOOR、もうすぐや。六つの街で聴いてくれた人の声、全部連れていこ。', '京都、曲がり角まで絵になるやん。ナビは任せて。', '最後の街やな。ここで録る音、ほかの五つとつなぐの楽しみ！'],
+  kyoto: ['京都のGALAXY FLOOR、もうすぐや。ここまでの五つのクラブの録音、最後のセットにつなご。', '京都、曲がり角まで絵になるやん。ナビは任せて。', '最後の街やな。ここで録る音、ほかの五つとつなぐの楽しみ！'],
 };
 const ROAD = {
   scenic: ['ゆったりルートや。景色と充電スポット、両方チェックするで。', 'この道、充電スポット多めやな。電池にも休憩いるもんな。', '遠回りもええな。地図の余白まで楽しめるやん。'],
   express: ['特急ルート、充電スポット少なめや。残量見とくで。', '近道やけど人多いな。装備に任せて、抜けられる道を見よ。', '特急ルートや。次の充電場所、地図で先に探しとくな。'],
 };
+ROAD.ev = ROAD.scenic;
+ROAD.event = ['街角イベントの道や。人波多め、招待に返事くれたらコインも多めやで。'];
+ROAD.service = ['整備ピットへの近道や。充電所は少なめ、着いたら車を直してもらお。'];
 const WEATHER = {
   sunny: ['晴れてるな。窓の光、ラメにちょうどええわ。', 'ええ天気や。地図も見やすいし、案内は順調やで。'],
   cloudy: ['曇り空やな。街の色はよう見えるで。', '雲多いな。まぶしないぶん、地図読みやすいわ。'],
@@ -39,7 +43,7 @@ const WEATHER = {
 };
 const SEASON = {
   spring: ['春の色、やわらかいな。今日の音も軽やかにいこ。', '春やなあ。景色がちょっと明るく見えるわ。'],
-  summer: ['夏やな。日差しも街も、元気あり余ってるやん。', '夏の景色、色濃いな。地図の青まで涼しそうや。'],
+  summer: ['夏の夜やな。街も、元気あり余ってるやん。', '夏の景色、色濃いな。地図の青まで涼しそうや。'],
   autumn: ['秋の色、ええな。次のメイク、この色にしよかな。', '秋やな。街の色が落ち着いてて、よう見えるわ。'],
   winter: ['冬やな。うちはナビ、ありねぇは運転、ぬくぬく連携や。', '冬の空気、きりっとしてるな。道案内もしゃきっといくで。'],
 };
@@ -86,10 +90,11 @@ export function selectCrewDialogue(context = {}) {
     return makeLine(`action:${action}`, ACTION[action] || ACTION.map, bucket, { ...options, priority: 30 });
   }
   const city = key(context.cityId) || context.route?.cityId;
+  const road = getJourneyNode(context.journeyNodeId)?.kind || key(context.routeOption) || 'scenic';
   const weather = key(context.weather) === 'clear' ? 'sunny' : key(context.weather);
   const groups = [
     [`city:${city || 'unknown'}`, CITY[city] || ['この街の道、地図で確認しとくな。案内は任せて。', '次の角まで確認したで。落ち着いていこか。']],
-    [`road:${key(context.routeOption) || 'scenic'}`, ROAD[key(context.routeOption)] || ROAD.scenic],
+    [`road:${road}`, ROAD[road] || ROAD.scenic],
     [`weather:${weather || 'sunny'}`, WEATHER[weather] || WEATHER.sunny],
     [`season:${key(context.season) || 'summer'}`, SEASON[key(context.season)] || SEASON.summer],
     [`action:${action}`, ACTION[action] || ACTION.map],

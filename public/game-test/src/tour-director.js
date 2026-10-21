@@ -1,6 +1,6 @@
 import { localizeText } from './localized-ui.js';
 import { message } from './i18n.js';
-import { getStoryScene, normalizeStoryMemory, markStorySeen, chooseStoryOption, getStoryJournal, STORY_SPEAKERS } from './tour-story.js';
+import { getStoryScene, normalizeStoryMemory, storyMemoryForRun, markStorySeen, chooseStoryOption, getStoryJournal, STORY_SPEAKERS } from './tour-story.js';
 
 export const STORY_SAVE_KEY = 'gyaruinthemix-tour-story-v2';
 
@@ -85,12 +85,18 @@ export function createStoryDirector({ root = document, storage, getState, onOpen
     if (event.code === 'Escape' && journal) { event.preventDefault(); event.stopPropagation(); finish(); }
   });
   return {
-    show(trigger, done) { return open(getStoryScene(getState(), trigger, memory), done); },
+    show(trigger, done) {
+      if (scene) return false;
+      const state = getState();
+      const nextMemory = storyMemoryForRun(memory, state?.runId, state?.routeIndex);
+      if (nextMemory.runId !== memory.runId) { memory = nextMemory; persist(); }
+      return open(getStoryScene(state, trigger, memory), done);
+    },
     journal(done) {
       const entries = getStoryJournal(memory);
       return open({ id: 'journal', kicker: 'TOUR JOURNAL / うちらの記録', lines: entries.length
         ? entries.map(entry => ({ speaker: 'ツアーノート', text: `${entry.kicker} ${entry.summary}` }))
-        : [{ speaker: 'ツアーノート', text: '6つの街で音と仲間を集めて、京都でひとつのミックスに。ここに旅の記録が増えていくで。' }], choices: [] }, done, true);
+        : [{ speaker: 'ツアーノート', text: '6つのクラブで音と仲間を集めて、京都でひとつのミックスに。ここに旅の記録が増えていくで。' }], choices: [] }, done, true);
     },
     get memory() { return normalizeStoryMemory(memory); },
     get active() { return Boolean(scene); },

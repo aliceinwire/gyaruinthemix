@@ -1,4 +1,5 @@
 import { t } from './i18n.js';
+import { drawItemIcon } from './item-icons.js';
 /** Small, bounded feedback layer. Detailed world and character art remain unobscured. */
 import { ENCOUNTER_RULES } from './encounter-director.js';
 import { DRIVING_PACE } from './pace.js';
@@ -9,7 +10,7 @@ export function captureRoadFeedback(feedback, events, distance = 0) {
   for (const event of events || []) {
     let label = '', color = '#ffadd9', kind = 'ring';
     if (event.type === 'convert') { label = event.headliner || event.elite ? 'SIGNAL CLEAR' : `+${Math.max(0, finite(event.survivalPoints, event.reward))}`; kind = event.headliner || event.elite ? 'signal' : 'heart'; }
-    else if (event.type === 'survival-attack') { label = event.kind === 'flash' ? 'FLASH' : event.kind === 'bass' ? 'BASS' : 'VINYL'; color = event.kind === 'flash' ? '#fff1b8' : event.kind === 'bass' ? '#8cf0db' : '#c5a6ff'; kind = event.kind; }
+    else if (event.type === 'survival-attack') { label = event.kind === 'phone' ? 'LINK' : event.kind === 'flash' ? 'FLASH' : event.kind === 'bass' ? 'BASS' : 'VINYL'; color = event.kind === 'phone' ? '#ffadd9' : event.kind === 'flash' ? '#fff1b8' : event.kind === 'bass' ? '#8cf0db' : '#c5a6ff'; kind = event.kind; }
     else if (event.type === 'collision') { label = `−${event.damage}`; color = '#ffd29a'; }
     else if (event.type === 'jump-clear') { label = 'NICE!'; color = '#a6f6e5'; }
     else if (event.type === 'destroy') { label = 'CLEAR'; color = '#d4b7ff'; }
@@ -22,7 +23,7 @@ export function captureRoadFeedback(feedback, events, distance = 0) {
     else if (event.type === 'heart-chain') { label = 'RELAY'; color = '#d4b7ff'; }
     else if (event.type === 'little-find') { label = 'ちいさなしあわせ +75'; color = '#a6f6e5'; kind = 'heart'; }
     else continue;
-    feedback.effects.push({ label, color, kind, distance: finite(event.distance, finite(distance)), age: 0, duration: event.type === 'convert' ? 1.15 : .8 });
+    feedback.effects.push({ label, color, kind, repeat: event.repeat === true, targets: (Array.isArray(event.targetDistances) ? event.targetDistances : []).filter(Number.isFinite).slice(0, 4), distance: finite(event.distance, finite(distance)), age: 0, duration: event.type === 'convert' ? 1.15 : .8 });
   }
   if (feedback.effects.length > MAX_EFFECTS) feedback.effects.splice(0, feedback.effects.length - MAX_EFFECTS);
 }
@@ -36,7 +37,26 @@ export function drawRoadFeedback(ctx, feedback, state, { reducedMotion = false }
   for (const effect of feedback?.effects || []) {
     const p = effect.age / effect.duration, x = 190 + (effect.distance - state.distance) * 3, y = 300 - (reducedMotion ? 0 : p * 24);
     if (x < -90 || x > 1050) continue;
-    ctx.save(); ctx.globalAlpha = Math.min(1, (1 - p) * 2);
+    ctx.save(); ctx.globalAlpha = Math.min(1, (1 - p) * 2) * (effect.repeat ? .65 : 1);
+    if (effect.kind === 'phone') {
+      // Thin signal links stay at street height instead of covering the scene.
+      let previous = Math.max(0, Math.min(960, x + 20));
+      drawItemIcon(ctx, 'phone', previous - 12, 382, 24);
+      ctx.strokeStyle = effect.color; ctx.lineWidth = 2;
+      for (const distance of effect.targets) {
+        const target = 190 + (distance - state.distance) * 3;
+        if (target < 0 || target > 960) continue;
+        const midpoint = (previous + target) / 2;
+        ctx.beginPath(); ctx.moveTo(previous, 408); ctx.lineTo(midpoint, 402); ctx.lineTo(target, 408); ctx.stroke();
+        ctx.strokeRect(target - 5, 403, 10, 10);
+        if (!reducedMotion) {
+          const progress = Math.min(1, p * 3);
+          ctx.fillStyle = '#fff4e8'; ctx.fillRect(previous + (target - previous) * progress - 2, 404, 4, 4);
+        }
+        previous = target;
+      }
+    }
+    if (effect.repeat) drawItemIcon(ctx, 'md', x - 10, y + 7, 20);
     if (['flash', 'vinyl', 'bass'].includes(effect.kind)) {
       ctx.strokeStyle = effect.color; ctx.lineWidth = reducedMotion ? 2 : 3;
       const center = effect.kind === 'bass' ? x : x + 50;

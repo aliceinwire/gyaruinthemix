@@ -272,3 +272,19 @@ test('unavailable browser storage does not block reading, choices, or host conti
   assert.equal(director.show('opening', complete), false);
   assert.equal(counts.completed, 2);
 });
+
+test('director binds scenes to the active run without replaying a resumed scene', () => {
+  const state = { routeIndex: 1, status: 'won', runId: 'tour-a' };
+  const memory = { ...markStorySeen({}, 'arrival:1'), runId: 'tour-a' };
+  const view = fixture({ state, memory });
+  assert.equal(view.director.show('arrival', view.complete), false);
+  assert.equal(view.counts.completed, 1);
+  state.runId = 'tour-b';
+  state.routeIndex = 0;
+  state.status = 'playing';
+  assert.equal(view.director.show('opening', view.complete), true);
+  assert.equal(view.director.memory.runId, 'tour-b');
+  assert.deepEqual(view.director.memory.seen, []);
+  assert.equal(view.writes.at(-1).runId, 'tour-b');
+  assert.equal(view.director.show('departure', view.complete), false);
+});

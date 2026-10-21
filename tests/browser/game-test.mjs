@@ -6,6 +6,8 @@ import {
   update,
   exportCampaignSave,
   exportNightfallSave,
+  UPGRADE_CATALOG,
+  upgradePrice,
 } from '../../public/game-test/src/simulation.js';
 import {
   SAVE_KEY,
@@ -376,8 +378,8 @@ try {
     assert.ok(openingMemory.seen.includes('tour:opening'));
     assert.equal(await page.locator('#car-select').isVisible(), true);
     const weapons = page.locator('#style-options button');
-    assert.equal(await weapons.count(), 4);
-    for (const id of ['heart', 'flash', 'vinyl', 'bass', 'flash']) {
+    assert.equal(await weapons.count(), 5);
+    for (const id of ['heart', 'flash', 'vinyl', 'bass', 'phone', 'flash']) {
       const choice = page.locator(`#style-options [data-weapon="${id}"]`);
       assert.equal(await choice.locator('.item-icon').count(), 1);
       await choice.click();
@@ -387,6 +389,8 @@ try {
       assert.equal(selected.mode, 'survival');
       assert.equal(selected.survival.startingWeapon, id);
       assert.deepEqual(selected.survival.upgrades, { [id]: 1 });
+      assert.equal(await choice.locator(':scope > span:not(.item-heading)').isVisible(), true);
+      await assertFrameFits(page, ['#style-options', '#cars-ready']);
     }
     await page.screenshot({
       path: resolve(
@@ -482,7 +486,11 @@ try {
     await page.locator('#garage-tab').click();
     await assertFrameFits(page, ['#garage-done']);
     assert.equal(await page.locator('#garage-content').isVisible(), true);
-    assert.ok((await page.locator('#shop button').count()) >= 8);
+    const shopState = await page.evaluate(() => __HYPERDRIVE__.snapshot().state);
+    const eligibleUpgrades = UPGRADE_CATALOG.filter(item => upgradePrice(shopState, item.id) !== null);
+    assert.equal(await page.locator('#shop button').count(), eligibleUpgrades.length);
+    assert.equal(shopState.survival.upgrades.heart || 0, 0);
+    assert.equal(eligibleUpgrades.some(item => ['hearts', 'heartReach'].includes(item.id)), false);
     await page.screenshot({
       path: resolve(root, `artifacts/browser/game-test/${width}-garage.png`),
       fullPage: true,
@@ -722,8 +730,35 @@ try {
         'Reloading a road cannot restore a consumed checkpoint',
       );
 
+      const gadgetFixture = createState({
+        mode: 'survival', startingWeapon: 'phone', survivalDay: '2026-10-21',
+        routeIndex: 1, seed: 23, campaignStarted: true,
+      });
+      gadgetFixture.survival.upgrades.md = 1;
+      gadgetFixture.survival.level = 1;
+      const gadgetSave = exportNightfallSave(gadgetFixture);
+      assert.ok(gadgetSave);
+      await page.evaluate(({ key, save }) => localStorage.setItem(key, JSON.stringify(save)), { key: NIGHTFALL_SAVE_KEY, save: gadgetSave });
+      await page.reload();
+      await page.waitForFunction(() => globalThis.__HYPERDRIVE__?.snapshot().ready);
+      await page.locator('#resume-tour').click();
+      await finishStory(page);
+      assert.deepEqual(await page.evaluate(() => __HYPERDRIVE__.snapshot().state.survival.upgrades), { phone: 1, md: 1 });
+      await departThroughStory(page);
+      await page.waitForFunction(() => {
+        const snapshot = __HYPERDRIVE__.snapshot();
+        return snapshot.screen === 'playing' && snapshot.state.events.some(event => event.type === 'survival-attack' && event.kind === 'phone' && event.repeat);
+      });
+      await assertWorldUncovered(page);
+      await assertFrameFits(page, ['.controls', '.radio-dock']);
+      await page.screenshot({ path: resolve(root, 'artifacts/browser/game-test/1440-phone-md-road.png'), fullPage: true });
+      const gadgetState = await page.evaluate(() => __HYPERDRIVE__.snapshot().state);
+      assert.ok(gadgetState.elapsed > 0);
+      assert.ok(gadgetState.survival.mdClock > 0, 'Automatic phone attacks record a bounded MD repeat');
+
       const clubFixture = createState({ mode: 'survival', survivalDay: '2026-10-21', routeIndex: 1, seed: 175, campaignStarted: true });
       clubFixture.entities = []; clubFixture._stations = []; clubFixture._encounterPlan = [];
+      clubFixture.totalFans = 1;
       clubFixture.distance = clubFixture.routeLength - .01;
       update(clubFixture, {}, .01);
       assert.equal(clubFixture.status, 'won');
@@ -742,6 +777,18 @@ try {
       assert.match(await page.locator('#performance-tip').textContent(), /BEAT BASE 175/);
       assert.doesNotMatch(await page.locator('#performance-title').textContent(), /ツアー完走/);
       await assertFrameFits(page, ['#finale-home', '.controls', '.radio-dock']);
+      assert.ok([1, 2].includes(await page.evaluate(() => __HYPERDRIVE__.snapshot().state.totalFans)));
+      await page.screenshot({ path: resolve(root, 'artifacts/browser/game-test/1440-low-fan-club.png'), fullPage: true });
+      await page.evaluate(async () => {
+        const { drawFinale } = await import('/game-test/src/campaign.js');
+        const canvas = document.createElement('canvas');
+        canvas.id = 'zero-fan-scene'; canvas.width = 960; canvas.height = 540;
+        canvas.style.cssText = 'position:fixed;inset:0;z-index:9999;width:960px;height:540px';
+        document.body.append(canvas);
+        drawFinale(canvas.getContext('2d'), { totalFans: 0, time: 0, complete: false, club: 'BEAT BASE 175' });
+      });
+      await page.locator('#zero-fan-scene').screenshot({ path: resolve(root, 'artifacts/browser/game-test/zero-fan-stage.png') });
+      await page.locator('#zero-fan-scene').evaluate(canvas => canvas.remove());
       await page.locator('#finale-home').click();
       await finishStory(page);
       assert.equal(await page.evaluate(() => __HYPERDRIVE__.snapshot().screen), 'map');
@@ -887,7 +934,8 @@ try {
         (key) => JSON.parse(localStorage.getItem(key)),
         STORY_SAVE_KEY,
       );
-      assert.equal(memoryBeforeReload.choices['tour:opening'], 'crew');
+      assert.equal(memoryBeforeReload.runId, draftFixture.runId);
+      assert.equal(memoryBeforeReload.choices['tour:opening'], undefined, 'A different tour cannot inherit the opening choice');
       assert.ok(memoryBeforeReload.seen.includes('departure:1'));
       // The document can load before asynchronous language initialization finishes.
       languageBootDelay = 150;
