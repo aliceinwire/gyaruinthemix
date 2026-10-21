@@ -152,6 +152,34 @@ async function assertFrameFits(page, selectors) {
     'All actions must fit inside the frame without overlapping the radio',
   );
 }
+async function assertNavigatorReadable(page) {
+  await assertFrameFits(page, ['.crew', '#crew-actions', '.dialogue', '.controls', '.radio-dock']);
+  const layout = await page.evaluate(() => {
+    const portrait = document.querySelector('#crew-actions');
+    const dialogue = document.querySelector('.dialogue');
+    const text = document.querySelector('#dialogue');
+    const crew = document.querySelector('.crew').getBoundingClientRect();
+    const controls = document.querySelector('.controls').getBoundingClientRect();
+    const image = portrait.getBoundingClientRect();
+    const words = dialogue.getBoundingClientRect();
+    const shortLandscape = innerWidth >= 540 && innerHeight <= 600;
+    return {
+      portraitWidth: image.width,
+      requiredWidth: shortLandscape ? 96 : innerWidth <= 680 ? 112 : 144,
+      sourceWidth: portrait.width,
+      fontSize: parseFloat(getComputedStyle(text).fontSize),
+      requiredFontSize: shortLandscape ? 12 : innerWidth <= 680 ? 13 : 14,
+      textFits: text.scrollHeight <= text.clientHeight + 1 && text.scrollWidth <= text.clientWidth + 1,
+      portraitsSeparate: image.right <= words.left + 1,
+      contained: image.top >= crew.top - 1 && image.bottom <= crew.bottom + 1 && words.bottom <= crew.bottom + 1,
+      controlsSeparate: Math.min(crew.right, controls.right) - Math.max(crew.left, controls.left) <= 1 || Math.min(crew.bottom, controls.bottom) - Math.max(crew.top, controls.top) <= 1,
+    };
+  });
+  assert.ok(layout.portraitWidth >= layout.requiredWidth - 1, JSON.stringify(layout));
+  assert.ok(layout.sourceWidth >= layout.portraitWidth, 'Portraits retain native pixel detail');
+  assert.ok(layout.fontSize >= layout.requiredFontSize, JSON.stringify(layout));
+  assert.ok(layout.textFits && layout.portraitsSeparate && layout.contained && layout.controlsSeparate, JSON.stringify(layout));
+}
 async function assertWorldUncovered(page) {
   const overlaps = await page.evaluate(() => {
     const world = document.querySelector('#game').getBoundingClientRect();
@@ -624,6 +652,9 @@ try {
     assert.equal(await page.locator('.radio-dock').isVisible(), true);
     assert.equal(await page.locator('#music-open, #sound').count(), 0);
     await assertFrameFits(page, ['.controls', '.radio-dock']);
+    await assertNavigatorReadable(page);
+    await assertWorldUncovered(page);
+    await page.screenshot({ path: resolve(root, `artifacts/browser/game-test/${width}-navigator.png`), fullPage: true });
     assert.deepEqual(await page.evaluate(() => globalThis.cspViolations), []);
     assert.deepEqual(errors, []);
     await mkdir(resolve(root, 'artifacts/browser/game-test'), {
