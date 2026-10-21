@@ -1,5 +1,5 @@
 .car-stereo {
-  --amber: #ffb84b;
+  --stereo-accent: #ff5555;
   box-sizing: border-box;
   max-width: 720px;
   width: 100%;
@@ -10,9 +10,9 @@
     175deg,
     #62656a 0,
     #b3b4b4 2%,
-    #44464a 4%,
-    #222428 8%,
-    #181a1e 83%,
+    #94979b 4%,
+    #676a70 8%,
+    #393c42 83%,
     #53565b 96%,
     #a7aaac 98%,
     #42454a
@@ -68,7 +68,8 @@
   background: repeating-conic-gradient(#42454a 0deg 4deg, #181a1c 4deg 7deg);
   box-shadow:
     0 3px 6px #000,
-    inset 0 0 0 4px #a9acb0;
+    inset 0 0 0 3px #ff3c43,
+    0 0 5px #ff253d80;
   touch-action: none;
   cursor: grab;
 }
@@ -77,7 +78,7 @@
   position: absolute;
   inset: 9px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #d9dbdb, #5a5e63 55%, #b0b1b2);
+  background: linear-gradient(135deg, #f4f5f6, #979ba1 55%, #e5e7e9);
   box-shadow:
     inset 1px 1px 3px #fff8,
     1px 2px 3px #000a;
@@ -96,9 +97,9 @@
   left: calc(50% - 2px);
   height: 10px;
   width: 4px;
-  background: var(--amber);
+  background: var(--stereo-accent);
   border-radius: 2px;
-  box-shadow: 0 0 5px #ffac3c;
+  box-shadow: 0 0 5px #ff4b52;
 }
 .stereo-knob-label {
   font-size: 8px;
@@ -110,14 +111,14 @@
   border: 3px solid #111316;
   border-radius: 4px;
   background:
-    repeating-linear-gradient(0deg, #1f241a80 0 1px, transparent 1px 3px),
-    linear-gradient(#272c1b, #11190d);
+    repeating-linear-gradient(0deg, #84b7ff0c 0 1px, transparent 1px 3px),
+    linear-gradient(#0755d7, #053390 65%, #05296e);
   box-shadow:
     inset 0 4px 9px #000b,
     0 1px #797c7b;
-  color: var(--amber);
+  color: #e5f6ff;
   font-family: "Courier New", monospace;
-  text-shadow: 0 0 7px #ffb43a55;
+  text-shadow: 0 0 7px #96d6ff88;
 }
 .stereo-display-top,
 .stereo-display-bottom {
@@ -129,11 +130,12 @@
   white-space: nowrap;
 }
 .stereo-display-top {
-  color: #c69541;
+  color: #ccecff;
 }
 .stereo-screen strong {
+  min-height: 1.2em;
   display: block;
-  font-family: Arial, sans-serif;
+  font-family: "Courier New", monospace;
   font-size: 20px;
   letter-spacing: 0.08em;
   white-space: nowrap;
@@ -159,7 +161,7 @@
   display: block;
   min-height: 28px;
   width: 100%;
-  accent-color: var(--amber);
+  accent-color: var(--stereo-accent);
   cursor: pointer;
   margin: 0;
 }
@@ -177,8 +179,8 @@
   gap: 9px;
   flex-wrap: wrap;
   padding: 8px 5px;
-  color: #ddd;
-  background: linear-gradient(#4b4e53, #22252a);
+  color: #ff9a9c;
+  background: linear-gradient(#75787d, #35383c);
   border: 1px solid #787a7d;
   border-bottom: 3px solid #0b0d10;
   border-radius: 5px;
@@ -195,13 +197,13 @@
   border-bottom-width: 2px;
 }
 .stereo-controls .stereo-play {
-  color: var(--amber);
-  background: linear-gradient(#5b5444, #272724);
-  border-color: #a99973;
+  color: var(--stereo-accent);
+  background: linear-gradient(#6d7076, #2b2e34);
+  border-color: #b3b6ba;
 }
 .stereo-controls button[aria-pressed="true"] {
-  color: var(--amber);
-  box-shadow: inset 0 0 9px #ffac3c33;
+  color: var(--stereo-accent);
+  box-shadow: inset 0 0 9px #ff4b5233;
 }
 .car-stereo :focus-visible {
   outline: 3px solid #ffe4ac;
@@ -227,7 +229,7 @@
   width: 100%;
   min-height: 44px;
   background: #292d2f;
-  color: #ffe2a3;
+  color: #e5f6ff;
   border: 1px solid #73746d;
   border-radius: 3px;
   font-size: 13px;
@@ -302,6 +304,7 @@
     padding: 9px 9px;
   }
   .stereo-screen strong {
+  min-height: 1.2em;
     font-size: 14px;
     letter-spacing: 0.02em;
     margin: 10px 0;
@@ -340,3 +343,6 @@
     padding: 7vh 10px;
   }
 }
+
+.stereo-equalizer { letter-spacing: 2px; color: #e5f6ff; opacity: .45; }
+.car-stereo[data-playing="true"] .stereo-equalizer { opacity: 1; text-shadow: 0 0 5px #bfe8ff; }

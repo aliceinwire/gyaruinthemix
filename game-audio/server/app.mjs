@@ -67,16 +67,17 @@ export async function loadCatalog(mediaRoot) {
       Math.abs(t.duration - t.chunks.reduce((n, c) => n + c.duration, 0)) > 0.01
     )
       throw new Error('Invalid duration.');
+    const title =
+      typeof t.title === 'string'
+        ? t.title
+            .replace(/[\p{Cc}\p{Cf}]/gu, '')
+            .trim()
+            .slice(0, 160)
+        : '';
+    if (!title) continue;
     tracks.set(t.id, {
       ...t,
-      title:
-        (typeof t.title === 'string'
-          ? t.title
-              .replace(/[\p{Cc}\p{Cf}]/gu, '')
-              .trim()
-              .slice(0, 160)
-          : '') || `Track ${String(tracks.size + 1).padStart(2, '0')}`,
-      artist: BRAND,
+      title,
       files,
     });
   }
@@ -201,7 +202,6 @@ export function createAudioHandler({
           tracks: [...tracks.values()].map((t) => ({
             id: t.id,
             title: t.title,
-            artist: t.artist,
             duration: t.duration,
             excerpt: Boolean(t.excerpt),
           })),
