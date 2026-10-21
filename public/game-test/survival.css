@@ -32,6 +32,17 @@ body[data-run-mode="survival"] #rpg-build { color: #aaf2df; }
 }
 /* Compact landscape phones use the same two-column cabinet as wider screens. */
 @media (min-width:540px) and (max-height:600px) {
+ .radio-dock .car-stereo { grid-template-columns: minmax(180px,1fr) minmax(240px,.9fr); gap: 2px 10px; }
+ .radio-dock .stereo-core { display: grid; grid-column: 1; grid-row: 1 / 3; grid-template-columns: 44px minmax(0,1fr); gap: 6px; }
+ .radio-dock .stereo-volume { grid-column: 1; grid-row: 1; gap: 0; }
+ .radio-dock .stereo-knob { width: 44px; height: 44px; }
+ .radio-dock .stereo-knob-label { display: none; }
+ .radio-dock .stereo-screen { grid-column: 2; grid-row: 1; padding: 3px 6px; }
+ .radio-dock .stereo-screen strong { font-size: 11px; margin: 2px 0; }
+ .radio-dock .stereo-seek { grid-column: 2; grid-row: 1; }
+ .radio-dock .stereo-controls { grid-column: 2; grid-row: 2; }
+ .radio-dock .stereo-controls button { min-height: 30px; }
+
  .screen-menu .menu-actions { max-width: none; }
  .screen-menu .menu-actions button { font-size: 11px; padding: 6px 10px; min-height: 34px; }
  .screen-menu :is(.menu-copy,.tour-ticket) { display: none; }
