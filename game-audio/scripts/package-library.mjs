@@ -16,6 +16,7 @@ import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 const EXTENSIONS = /\.(mp3|wav|flac|m4a|aac|ogg|opus)$/i;
 const BRAND = 'ギャルインザミックス';
+const PACKAGER_VERSION = 2;
 // Local extensions are not proof of container type. Refuse playlist/concat
 // demuxers and network protocols, including playlists disguised as audio files.
 const INPUT_OPTIONS = [
@@ -42,6 +43,41 @@ export function trackTitle(tags, streamTags) {
     if (tagged) return tagged;
   }
   return '';
+}
+// The HLS muxer may add an encoder tag even with metadata copying disabled.
+// Keep only the title item in its MP4 metadata; media/container boxes stay intact.
+export function titleOnlyInit(input) {
+  if (input.length > 256 * 1024) throw new Error('Oversized init metadata.');
+  function boxes(buffer, parent = '', depth = 0) {
+    if (depth > 8) throw new Error('Nested init metadata.');
+    const output = [];
+    let offset = 0;
+    while (offset < buffer.length) {
+      if (buffer.length - offset < 8) throw new Error('Invalid init metadata.');
+      const size = buffer.readUInt32BE(offset);
+      if (size < 8 || offset + size > buffer.length)
+        throw new Error('Invalid init box.');
+      const type = buffer.toString('latin1', offset + 4, offset + 8);
+      let payload = buffer.subarray(offset + 8, offset + size);
+      offset += size;
+      if (parent === 'ilst' && type !== '\u00a9nam') continue;
+      if (['moov', 'udta', 'ilst'].includes(type))
+        payload = boxes(payload, type, depth + 1);
+      else if (type === 'meta') {
+        if (payload.length < 4) throw new Error('Invalid init metadata.');
+        payload = Buffer.concat([
+          payload.subarray(0, 4),
+          boxes(payload.subarray(4), type, depth + 1),
+        ]);
+      }
+      const header = Buffer.alloc(8);
+      header.writeUInt32BE(payload.length + 8);
+      header.write(type, 4, 4, 'latin1');
+      output.push(header, payload);
+    }
+    return Buffer.concat(output);
+  }
+  return boxes(input);
 }
 async function run(command, args, timeout = 1800000) {
   return new Promise((done, fail) => {
@@ -212,7 +248,7 @@ export async function packageLibrary({
           }
           if (
             cached.sourceHash === hash &&
-            cached.packagerVersion === 1 &&
+            cached.packagerVersion === PACKAGER_VERSION &&
             cached.excerpt === excerpt
           )
             track = cached;
@@ -239,6 +275,8 @@ export async function packageLibrary({
             '-dn',
             '-map_metadata',
             '-1',
+            '-map_metadata:s:a',
+            '-1',
             '-map_chapters',
             '-1',
             '-c:a',
@@ -252,7 +290,7 @@ export async function packageLibrary({
             '-threads',
             '1',
             '-metadata',
-            `title=${BRAND}`,
+            `title=${title}`,
             '-fflags',
             '+bitexact',
             '-flags:a',
@@ -271,6 +309,8 @@ export async function packageLibrary({
             join(temporary, 'seg-%05d.m4s'),
             join(temporary, 'index.m3u8'),
           ]);
+          const initPath = join(temporary, 'init.mp4');
+          await writeFile(initPath, titleOnlyInit(await readFile(initPath)));
           const after = await lstat(source);
           if (before.size !== after.size || before.mtimeMs !== after.mtimeMs)
             throw new Error(
@@ -294,7 +334,7 @@ export async function packageLibrary({
             excerpt,
             duration: chunks.reduce((n, c) => n + c.duration, 0),
             sourceHash: hash,
-            packagerVersion: 1,
+            packagerVersion: PACKAGER_VERSION,
             init: 'init.mp4',
             chunks,
           };
@@ -321,7 +361,7 @@ export async function packageLibrary({
             'Source changed during packaging; retry after copy completes.',
           );
         // Refresh titles even when older audio segments remain safely reusable.
-        tracks.push({ ...track, title, artist: BRAND });
+        tracks.push({ ...track, title });
       } catch (e) {
         failures.push({ file: entry.name, error: e.message });
         if (temporary) await rm(temporary, { recursive: true, force: true });

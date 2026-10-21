@@ -78,7 +78,6 @@ export async function loadCatalog(mediaRoot) {
     tracks.set(t.id, {
       ...t,
       title,
-      artist: BRAND,
       files,
     });
   }
@@ -203,7 +202,6 @@ export function createAudioHandler({
           tracks: [...tracks.values()].map((t) => ({
             id: t.id,
             title: t.title,
-            artist: t.artist,
             duration: t.duration,
             excerpt: Boolean(t.excerpt),
           })),

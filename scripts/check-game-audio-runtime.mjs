@@ -68,9 +68,8 @@ export async function checkGameAudioRuntime(
   assert.equal(tracks.length, 1, 'Only the synthetic CI track is permitted');
   assert.match(tracks[0].id, /^t-[a-f0-9]{24}$/);
   assert.equal(tracks[0].title, AUDIO_FIXTURE_TITLE);
-  assert.equal(tracks[0].artist, 'ギャルインザミックス');
+  assert.equal(tracks[0].artist, undefined);
   assert.deepEqual(Object.keys(tracks[0]).sort(), [
-    'artist',
     'duration',
     'excerpt',
     'id',

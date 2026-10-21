@@ -122,7 +122,7 @@ test('catalog is metadata only and library originals are never routable', async 
   assert.equal(b.tracks.length, 2);
   assert.equal(b.tracks[0].title, '夜のドライブ');
   assert.equal(b.tracks[1].title, 'Second Song');
-  assert.equal(b.tracks[0].artist, 'ギャルインザミックス');
+  assert.equal(b.tracks[0].artist, undefined);
   assert.doesNotMatch(JSON.stringify(b), /SOURCE|chunks|sourceHash|path/);
   for (const path of [
     '/assets/music/track.mp3',
