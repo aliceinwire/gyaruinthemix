@@ -14,7 +14,7 @@ import {
 } from '../public/game-test/src/crew-dialogue.js';
 import { getJourneyStage } from '../public/game-test/src/journey.js';
 
-test('the club tour carries original hard bounce and Heisei gyaru culture through all six cities', () => {
+test('the club tour carries original hard bounce and Heisei gyaru culture through all six club stops', () => {
   const opening = getStoryScene({ mode: 'survival' }, 'opening');
   const premise = opening.lines.map((line) => line.text).join(' ');
   for (const theme of [
@@ -251,13 +251,18 @@ test('story speaks in the two established voices and invitations never coerce id
   for (let routeIndex = 0; routeIndex < 12; routeIndex++) {
     for (const trigger of [
       'opening',
+      'returning',
+      'breakdown',
       'departure',
       'arrival',
       'retry',
       'finale',
     ]) {
       const scene = getStoryScene(
-        { routeIndex, status: trigger === 'retry' ? 'lost' : 'won' },
+        {
+          routeIndex,
+          status: ['retry', 'breakdown'].includes(trigger) ? 'lost' : 'won',
+        },
         trigger,
       );
       if (scene) all.push(...scene.lines);
@@ -291,4 +296,54 @@ test('existing crew selectors preserve priority and event arrays without decorat
     assert.ok(!/[♡♥❤]/.test(dialogue.text));
   }
   assert.match(selectCrewEvent('convert', { time: 0 }).text, /招待/);
+});
+
+test('returning tours choose a new narrative focus without borrowing previous-run events', () => {
+  const state = Object.freeze({
+    routeIndex: 0,
+    status: 'playing',
+    mode: 'survival',
+  });
+  const returning = getStoryScene(state, 'returning');
+  const opening = getStoryScene(state, 'opening');
+  assert.equal(returning.id, 'tour:returning');
+  assert.ok(returning.lines.length < opening.lines.length);
+  assert.deepEqual(returning.choices, opening.choices);
+  assert.equal(getStoryScene({ routeIndex: 2 }, 'returning'), null);
+  assert.equal(
+    getStoryScene(state, 'returning', markStorySeen({}, returning.id)),
+    null,
+  );
+  const crew = chooseStoryOption({}, returning, 'crew');
+  const discovery = chooseStoryOption({}, returning, 'discovery');
+  assert.equal(crew.choices['tour:returning'], 'crew');
+  assert.equal(crew.choices['tour:opening'], undefined);
+  assert.notDeepEqual(
+    getStoryScene({ routeIndex: 5, status: 'won' }, 'arrival', crew).lines,
+    getStoryScene({ routeIndex: 5, status: 'won' }, 'arrival', discovery).lines,
+  );
+  assert.deepEqual(crew.history, ['tour:returning']);
+});
+
+test('a breakdown closes only a lost attempt and never claims a midroad retry', () => {
+  const lost = Object.freeze({
+    routeIndex: 7,
+    status: 'lost',
+    mode: 'survival',
+  });
+  for (const status of ['playing', 'draft', 'quiz', 'won']) {
+    assert.equal(getStoryScene({ ...lost, status }, 'breakdown'), null);
+  }
+  const scene = getStoryScene(lost, 'breakdown');
+  assert.equal(scene.id, 'tour:breakdown');
+  assert.equal(scene.choices, undefined);
+  const text = scene.lines.map((line) => line.text).join(' ');
+  assert.match(text, /無事/);
+  assert.match(text, /中野/);
+  assert.doesNotMatch(text, /巻き戻|この道.*再挑戦|死亡|復活/);
+  assert.equal(
+    getStoryScene(lost, 'breakdown', markStorySeen({}, scene.id)),
+    null,
+  );
+  assert.equal(lost.status, 'lost');
 });

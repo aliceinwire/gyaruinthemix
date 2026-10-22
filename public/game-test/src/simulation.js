@@ -1,4 +1,4 @@
-import { isSurvival, createSurvival, SURVIVAL_WEAPONS, normalizeSurvivalSave, applySurvivalModifiers, recordSurvivalEvent, survivalStep, openSurvivalDraft, survivalEncounterPlan, finishSurvivalWave, survivalWeaponProfile, queueSurvivalRepeat } from './survival.js';
+import { isSurvival, createSurvival, SURVIVAL_STARTERS, survivalWeaponStats, queueSurvivalEcho, normalizeSurvivalSave, applySurvivalModifiers, recordSurvivalEvent, survivalStep, openSurvivalDraft, survivalEncounterPlan, finishSurvivalWave } from './survival.js';
 import { createEncounterPlan, updateEncounterActor, getEncounterPhase } from './encounter-director.js';
 import { DRIVING_PACE } from './pace.js';
 import { littleFindAt } from './street-culture.js';
@@ -535,8 +535,8 @@ export function createState({
 }
 /** Starting equipment is chosen once in the garage, before the run begins. */
 export function chooseStartingWeapon(state, id) {
-  if (!isSurvival(state) || !SURVIVAL_WEAPONS.some(item => item.id === id) || state.status !== "playing" || state.campaignStarted || state.routeIndex !== 0 || state.distance !== 0 || state.elapsed !== 0 || state.survival.level !== 0 || state.survival.xp !== 0) return false;
-  state.survival = createSurvival(state.survival.day, id);
+  if (!isSurvival(state) || !SURVIVAL_STARTERS.some(item => item.id === id) || state.status !== "playing" || state.campaignStarted || state.routeIndex !== 0 || state.distance !== 0 || state.elapsed !== 0 || state.survival.level !== 0 || state.survival.xp !== 0) return false;
+  state.survival = { ...createSurvival(state.survival.day, id), recordEligible: state.survival.recordEligible !== false };
   state.projectiles = [];
   state.shotCooldown = 0;
   state.shooting = false;
@@ -578,8 +578,9 @@ function convert(state, target) {
     streetRole: target.streetRole || null,
   });
 }
-function fire(state, repeatDamage = null) {
-  const evolved = isSurvival(state) && state.survival.evolutions.includes("heartstorm");
+function fire(state) {
+  const weapon = isSurvival(state) ? survivalWeaponStats(state, "heart") : null;
+  const evolved = weapon?.evolved;
   const heights = evolved ? [.18, .42, .65] : [.18 + state.jumpHeight * .85];
   for (const height of heights) state.projectiles.push({
     id: state._nextProjectileId++,
@@ -590,16 +591,14 @@ function fire(state, repeatDamage = null) {
     resolved: false,
     hitIds: [],
     pierceLeft: (state.buildModifiers?.heartPierce || 0) + (state.buildModifiers?.shieldPiercing && state.buildRuntime.shield > 0 ? state.buildModifiers.guardedHeartPierce ?? 1 : 0),
-    damage: repeatDamage ?? (1 + (evolved ? 1 : 0) + (state.buildRuntime.chargedShot || 0)),
+    damage: weapon ? weapon.damage : 1 + (state.buildRuntime.chargedShot || 0),
+    range: weapon?.range ?? Infinity,
   });
-  if (repeatDamage === null) {
-    state.buildRuntime.chargedShot = 0;
-    state.shotCooldown = state.shotInterval * (isSurvival(state) ? Math.max(.36, 1 - (state.survival.upgrades.heart || 0) * .16) * (state.survival.fever > 0 ? .55 : 1) : 1);
-    if (isSurvival(state)) queueSurvivalRepeat(state, "heart", survivalWeaponProfile("heart", state.survival.upgrades.heart, evolved));
-  }
+  if (!weapon) state.buildRuntime.chargedShot = 0;
+  state.shotCooldown = weapon?.interval ?? state.shotInterval;
   emit(state, "shoot");
 }
-function hitTarget(state, target, damage = 1, chain = true, bypassGuard = false) {
+function hitTarget(state, target, damage = 1, chain = true, bypassGuard = false, source = "heart") {
   if (target.resolved || target.converted || target.cleared) return false;
   if (target.shielded && !bypassGuard && !(state.buildModifiers.shieldPiercing && state.buildRuntime.shield > 0)) {
     if (!target._lastGuardHit || state.elapsed - target._lastGuardHit > .4) {
@@ -607,14 +606,19 @@ function hitTarget(state, target, damage = 1, chain = true, bypassGuard = false)
     }
     return false;
   }
+  const primary = ["heart", "flash", "vinyl", "bass", "phone"].includes(source);
+  if (isSurvival(state) && primary && state.buildRuntime.chargedShot) {
+    damage += state.buildRuntime.chargedShot; state.buildRuntime.chargedShot = 0;
+  }
   target.hp = (target.hp ?? (target.type === "barrier" ? 2 : 1)) - damage;
+  if (primary) queueSurvivalEcho(state, target, damage, bypassGuard);
   if (target.hp > 0) { emit(state, "heart-hit", { entityId: target.id, distance: target.distance }); return false; }
   if (target.type === "salaryman") {
     convert(state, target);
     if (chain && state.buildModifiers.heartChain) {
       // Each source adds one distinct secondary target. Secondary hits never recurse.
       const neighbors = state.entities.filter(other => other.id !== target.id && other.type === "salaryman" && !other.converted && !other.cleared && !other.resolved && Math.abs(other.distance - target.distance) <= state.buildModifiers.heartChainRange).slice(0, state.buildModifiers.heartChain);
-      for (const next of neighbors) { hitTarget(state, next, 1, false); emit(state, "heart-chain", { distance: target.distance, targetDistance: next.distance }); }
+      for (const next of neighbors) { hitTarget(state, next, 1, false, false, "chain"); emit(state, "heart-chain", { distance: target.distance, targetDistance: next.distance }); }
     }
   } else {
     target.resolved = true; state.score += 25;
@@ -626,8 +630,8 @@ function projectilesStep(state, dt) {
   for (const heart of state.projectiles) {
     if (heart.resolved) continue;
     const previous = heart.distance;
-    if (isSurvival(state) && heart.distance - state.distance > survivalWeaponProfile("heart", state.survival.upgrades.heart).radius) { heart.resolved = true; continue; }
     heart.distance += (state.speed / 3.6 + 100) * dt; heart.age += dt;
+    if (heart.distance - state.distance > (heart.range ?? Infinity)) { heart.resolved = true; continue; }
     heart.hitIds ??= [];
     for (const target of state.entities) {
       if (target.resolved || target.converted || target.cleared || heart.hitIds.includes(target.id) || !["salaryman", "cone", "barrier"].includes(target.type)) continue;
@@ -722,7 +726,7 @@ function step(state, input, dt) {
     state.rushGestureTime = 0.75;
     emit(state, "rush-start");
     if (state.buildModifiers.rushPulse > 0) {
-      for (const target of state.entities) if (target.type === "salaryman" && !target.converted && !target.cleared && target.distance >= state.distance && target.distance <= state.distance + state.buildModifiers.rushPulse) hitTarget(state, target, 2);
+      for (const target of state.entities) if (target.type === "salaryman" && !target.converted && !target.cleared && target.distance >= state.distance && target.distance <= state.distance + state.buildModifiers.rushPulse) hitTarget(state, target, 2, true, false, "rush");
     }
   }
   state.speed =
@@ -795,7 +799,7 @@ function step(state, input, dt) {
   state.score += movement * 0.3;
   populate(state);
   moveEnemies(state, dt);
-  survivalStep(state, dt, (target, damage, chain, bypass) => hitTarget(state, target, damage, chain, bypass), damage => fire(state, damage));
+  survivalStep(state, dt, (target, damage, chain, bypass, source) => hitTarget(state, target, damage, chain, bypass, source));
   projectilesStep(state, dt);
   for (const item of state.entities) {
     if (item.type !== 'little-find' || item.resolved || state.altitude > 36) continue;
@@ -912,9 +916,12 @@ export function answerQuiz(state, correct) {
   });
   return true;
 }
+/** Heart-specific hardware only appears once the build owns a heart weapon. */
+export function availableCarUpgrades(state) {
+  return UPGRADE_CATALOG.filter(item => !isSurvival(state) || state.survival.upgrades.heart > 0 || !['hearts', 'heartReach'].includes(item.id));
+}
 export function upgradePrice(state, id) {
-  if (isSurvival(state) && ["hearts", "heartReach"].includes(id) && !state.survival.upgrades.heart) return null;
-  const item = UPGRADE_CATALOG.find((upgrade) => upgrade.id === id);
+  const item = availableCarUpgrades(state).find((upgrade) => upgrade.id === id);
   if (!item) return null;
   const level = state.upgrades[id] ?? 0;
   if (item.maxLevel !== null && level >= item.maxLevel) return null;
@@ -958,7 +965,7 @@ export function nextRoute(state, routeOption = "scenic", journeyNodeId = null) {
   });
   restoreSnapshot(next, snapshot(state));
   next.assistMode = state.assistMode === true;
-  if (isSurvival(next)) { next.survival.wave = 0; next.survival.waveStats = Array.from({ length: 6 }, () => ({ kills: 0, hits: 0 })); next.survival.settledWaves = []; next.survival.gems = []; next.survival.receipts = []; next.survival.repeat = null; }
+  if (isSurvival(next)) { next.survival.wave = 0; next.survival.waveStats = Array.from({ length: 6 }, () => ({ kills: 0, hits: 0 })); next.survival.settledWaves = []; next.survival.gems = []; next.survival.receipts = []; next.survival.echoPending = null; }
   next.stageSignals = 0;
   next.locationIndex = getJourneyNode(next.journeyNodeId).locationIndex;
   next.energy = next.energyCapacity;
@@ -1188,14 +1195,17 @@ const CAMPAIGN_WEATHER_WEIGHTS = Object.freeze({
  */
 export function campaignEnvironment(seed = 175, routeIndex = 0) {
   const index = clamp(Math.trunc(Number(routeIndex) || 0), 0, ROUTES.length - 1);
-  let mixed = (seedNumber(seed) ^ 0x9e3779b9) >>> 0;
+  let mixed = (seedNumber(seed) ^ Math.imul(index + 1, 0x9e3779b9)) >>> 0;
   // Avalanche sequential numeric seeds before drawing the first season.
   mixed = Math.imul(mixed ^ (mixed >>> 16), 0x21f0aaad);
   mixed = Math.imul(mixed ^ (mixed >>> 15), 0x735a2d97);
   const rng = { _rng: (mixed ^ (mixed >>> 15)) >>> 0 || 1 };
-  const season = CAMPAIGN_SEASONS[Math.floor(random(rng) * CAMPAIGN_SEASONS.length)];
-  // Keep one season throughout the tour; only road weather advances.
-  for (let road = 0; road < index; road++) random(rng);
+  let seasonSeed = (seedNumber(seed) ^ 0x9e3779b9) >>> 0;
+  seasonSeed = Math.imul(seasonSeed ^ (seasonSeed >>> 16), 0x21f0aaad);
+  seasonSeed = Math.imul(seasonSeed ^ (seasonSeed >>> 15), 0x735a2d97);
+  const seasonRng = { _rng: (seasonSeed ^ (seasonSeed >>> 15)) >>> 0 || 1 };
+  const season = CAMPAIGN_SEASONS[Math.floor(random(seasonRng) * CAMPAIGN_SEASONS.length)];
+  random(rng); // Weather retains its independent per-road stream.
   const weights = Object.entries(CAMPAIGN_WEATHER_WEIGHTS[season]);
   let roll = random(rng) * weights.reduce((sum, [, weight]) => sum + weight, 0);
   for (const [weather, weight] of weights) {

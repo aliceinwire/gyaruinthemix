@@ -6,8 +6,6 @@ import {
   update,
   exportCampaignSave,
   exportNightfallSave,
-  UPGRADE_CATALOG,
-  upgradePrice,
 } from '../../public/game-test/src/simulation.js';
 import {
   SAVE_KEY,
@@ -16,6 +14,10 @@ import {
 import {
   survivalOffers,
   survivalXpCost,
+  SURVIVAL_VERSION,
+  SURVIVAL_UPGRADES,
+  SURVIVAL_EVOLUTIONS,
+  SURVIVAL_RECORD_KEY,
 } from '../../public/game-test/src/survival.js';
 import {
   getRpgView,
@@ -73,6 +75,11 @@ async function checkLanguages(page, picker, selectors) {
       assert.equal(
         await page.title(),
         catalog['ギャルインザミックス / NIGHTFALL TOUR'],
+      );
+      assert.equal(
+        await page.locator('.tour-ticket span').first().textContent(),
+        catalog['6 CLUBS'] || '6 CLUBS',
+        'The tour describes its six clubs, including four Tokyo districts',
       );
     }
     await assertFrameFits(page, selectors);
@@ -236,6 +243,21 @@ async function loadCampaignFixture(page, save) {
       nightfallKey: NIGHTFALL_SAVE_KEY,
       value: save,
     },
+  );
+  await page.reload();
+  await page.waitForFunction(() => globalThis.__HYPERDRIVE__?.snapshot().ready);
+  await page.locator('#resume-tour').click();
+  await finishStory(page);
+}
+async function loadNightfallFixture(page, state) {
+  const save = exportNightfallSave(state);
+  assert.ok(save, 'Nightfall browser fixtures enter through a valid safe-stop save');
+  await page.evaluate(
+    ({ key, legacyKey, value }) => {
+      localStorage.removeItem(legacyKey);
+      localStorage.setItem(key, JSON.stringify(value));
+    },
+    { key: NIGHTFALL_SAVE_KEY, legacyKey: SAVE_KEY, value: save },
   );
   await page.reload();
   await page.waitForFunction(() => globalThis.__HYPERDRIVE__?.snapshot().ready);
@@ -521,11 +543,9 @@ try {
     await page.locator('#garage-tab').click();
     await assertFrameFits(page, ['#garage-done']);
     assert.equal(await page.locator('#garage-content').isVisible(), true);
-    const shopState = await page.evaluate(() => __HYPERDRIVE__.snapshot().state);
-    const eligibleUpgrades = UPGRADE_CATALOG.filter(item => upgradePrice(shopState, item.id) !== null);
-    assert.equal(await page.locator('#shop button').count(), eligibleUpgrades.length);
-    assert.equal(shopState.survival.upgrades.heart || 0, 0);
-    assert.equal(eligibleUpgrades.some(item => ['hearts', 'heartReach'].includes(item.id)), false);
+    assert.equal(await page.locator('#shop button').count(), 6);
+    assert.equal(await page.locator('#shop [data-item-icon="hearts"], #shop [data-item-icon="heartReach"]').count(), 0,
+      'A flash-only build is not offered inactive heart hardware');
     await page.screenshot({
       path: resolve(root, `artifacts/browser/game-test/${width}-garage.png`),
       fullPage: true,
@@ -634,9 +654,19 @@ try {
       fullPage: true,
     });
     await page.locator('#resume').click();
+    const scoreFits = await page.locator('#money').evaluate(node => {
+      const original = node.textContent;
+      node.textContent = '99,999,999';
+      const bounds = node.getBoundingClientRect();
+      const panel = node.closest('.dashboard').getBoundingClientRect();
+      const fits = node.scrollWidth <= node.clientWidth + 1 && bounds.right <= panel.right;
+      node.textContent = original;
+      return fits;
+    });
+    assert.equal(scoreFits, true, 'The complete score remains readable inside the instrument panel');
     await page.locator('#run-journal').click();
     assert.equal(await page.locator('#story-panel').isVisible(), true);
-    assert.match(await page.locator('#story-kicker').innerText(), /JOURNAL/);
+    assert.equal(await page.locator('#story-kicker').innerText(), 'プリ帳 / うちらの記録');
     assert.equal(await page.locator('#story-skip').isVisible(), true);
     assert.equal(await page.locator('#story-skip').innerText(), '記録を閉じる');
     await page.locator('#story-skip').click();
@@ -690,12 +720,20 @@ try {
       const nightfallOffers = survivalOffers(nightfall).map((item) => item.id);
       const nightfallSave = exportNightfallSave(nightfall);
       assert.ok(nightfallSave);
+      // A real pre-balance map save keeps its seed, date and earned equipment.
+      nightfallSave.survival.version = 2;
       await page.evaluate(
-        ({ key, legacyKey, save }) => {
+        ({ key, legacyKey, storyKey, save }) => {
           localStorage.removeItem(legacyKey);
           localStorage.setItem(key, JSON.stringify(save));
+          localStorage.setItem(storyKey, JSON.stringify({
+            version: 1,
+            seen: ['tour:opening', 'arrival:11', 'tour:finale'],
+            choices: { 'tour:opening': 'crew' },
+            history: ['arrival:11', 'tour:finale'],
+          }));
         },
-        { key: NIGHTFALL_SAVE_KEY, legacyKey: SAVE_KEY, save: nightfallSave },
+        { key: NIGHTFALL_SAVE_KEY, legacyKey: SAVE_KEY, storyKey: STORY_SAVE_KEY, save: nightfallSave },
       );
       await page.reload();
       await page.waitForFunction(
@@ -713,6 +751,20 @@ try {
         ),
         { bass: 1 },
       );
+      const migratedNightfall = await page.evaluate(
+        () => __HYPERDRIVE__.snapshot().state,
+      );
+      assert.equal(migratedNightfall.survival.version, SURVIVAL_VERSION);
+      assert.equal(migratedNightfall.survival.recordEligible, false);
+      assert.equal(migratedNightfall.seed, nightfall.seed);
+      assert.equal(migratedNightfall.survival.day, nightfall.survival.day);
+      const resumedMemory = await page.evaluate(() => __HYPERDRIVE__.snapshot().story);
+      assert.equal(resumedMemory.seen.includes('arrival:11'), false);
+      assert.equal(resumedMemory.seen.includes('tour:finale'), false);
+      await page.locator('#run-journal').click();
+      assert.doesNotMatch(await page.locator('#story-text').textContent(), /GALAXY FLOOR|FINAL MIX/);
+      await page.locator('#story-skip').click();
+      assert.equal(await page.evaluate(() => __HYPERDRIVE__.snapshot().screen), 'map');
       await departThroughStory(page);
       await page.waitForFunction(
         () => __HYPERDRIVE__.snapshot().screen === 'draft',
@@ -770,7 +822,7 @@ try {
 
       const gadgetFixture = createState({
         mode: 'survival', startingWeapon: 'phone', survivalDay: '2026-10-21',
-        routeIndex: 1, seed: 23, campaignStarted: true,
+        routeIndex: 8, seed: 23, campaignStarted: true,
       });
       gadgetFixture.survival.upgrades.md = 1;
       gadgetFixture.survival.level = 1;
@@ -785,14 +837,14 @@ try {
       await departThroughStory(page);
       await page.waitForFunction(() => {
         const snapshot = __HYPERDRIVE__.snapshot();
-        return snapshot.screen === 'playing' && snapshot.state.events.some(event => event.type === 'survival-attack' && event.kind === 'phone' && event.repeat);
+        return snapshot.screen === 'playing' && snapshot.state.events.some(event => event.type === 'survival-attack' && event.kind === 'echo' && event.repeat);
       });
       await assertWorldUncovered(page);
       await assertFrameFits(page, ['.controls', '.radio-dock']);
       await page.screenshot({ path: resolve(root, 'artifacts/browser/game-test/1440-phone-md-road.png'), fullPage: true });
       const gadgetState = await page.evaluate(() => __HYPERDRIVE__.snapshot().state);
       assert.ok(gadgetState.elapsed > 0);
-      assert.ok(gadgetState.survival.mdClock > 0, 'Automatic phone attacks record a bounded MD repeat');
+      assert.ok(gadgetState.survival.echoClock > 0, 'Automatic phone attacks record a bounded MD repeat');
 
       const clubFixture = createState({ mode: 'survival', survivalDay: '2026-10-21', routeIndex: 1, seed: 175, campaignStarted: true });
       clubFixture.entities = []; clubFixture._stations = []; clubFixture._encounterPlan = [];
@@ -838,6 +890,149 @@ try {
       assert.equal(await page.evaluate(() => __HYPERDRIVE__.snapshot().state.score), afterClubScore);
       await page.locator('#finale-home').click();
       await finishStory(page);
+
+      // An earned late-tour build leaves the two new gadget choices available.
+      const gadgetDraftFixture = createState({
+        mode: 'survival', startingWeapon: 'flash', survivalDay: '2026-10-21',
+        routeIndex: 9, seed: 175, campaignStarted: true,
+      });
+      gadgetDraftFixture.survival.upgrades = Object.fromEntries(
+        SURVIVAL_UPGRADES.filter((item) => !['phone', 'md'].includes(item.id))
+          .map((item) => [item.id, 3]),
+      );
+      function prepareGadgetDraft() {
+        const survival = gadgetDraftFixture.survival;
+        survival.level = Object.values(survival.upgrades).reduce((sum, level) => sum + level, 0) - 1;
+        survival.xp = survivalXpCost(survival.level);
+        survival.evolutions = SURVIVAL_EVOLUTIONS.filter((recipe) =>
+          survival.upgrades[recipe.weapon] >= 3 && survival.upgrades[recipe.support] >= 2,
+        ).map((recipe) => recipe.id);
+      }
+      prepareGadgetDraft();
+      const gadgetOffers = survivalOffers(gadgetDraftFixture);
+      assert.deepEqual(gadgetOffers.map((item) => item.id).sort(), ['md', 'phone']);
+      await loadNightfallFixture(page, gadgetDraftFixture);
+      await departThroughStory(page);
+      await page.waitForFunction(() => __HYPERDRIVE__.snapshot().screen === 'draft');
+      const phoneCard = page.locator('#draft-options [data-perk-id="phone"]');
+      const echoCard = page.locator('#draft-options [data-perk-id="md"]');
+      assert.equal(await phoneCard.locator('[data-item-icon="phone"]').count(), 1);
+      assert.equal(await echoCard.locator('[data-item-icon="md"]').count(), 1);
+      assert.equal(await phoneCard.locator('[data-item-icon="hotline"]').count(), 1);
+      await page.locator('#draft-panel select').selectOption('en');
+      await page.waitForFunction(() => document.documentElement.lang === 'en');
+      const expectedPhoneStats = await page.evaluate(async source =>
+        (await import('/game-test/src/i18n.js')).t(source),
+      gadgetOffers.find((item) => item.id === 'phone').synergy);
+      assert.ok((await phoneCard.locator('.weapon-stats').textContent()).includes(expectedPhoneStats),
+        'The phone card translates the same numerical stats used by the simulation');
+      await checkLanguages(page, '#draft-panel select', ['#draft-panel .modal-card']);
+      await page.setViewportSize({ width: 390, height: 667 });
+      await page.waitForFunction(() => document.querySelector('#draft-options').dataset.compare === 'false');
+      await assertFrameFits(page, ['#draft-panel .modal-card']);
+      const gadgetPager = page.locator('#draft-options + .card-pager');
+      await gadgetPager.getByRole('button', { name: '次へ →', exact: true }).click();
+      assert.equal(await echoCard.isVisible(), true);
+      await assertFrameFits(page, ['#draft-panel .modal-card']);
+      await page.setViewportSize({ width, height });
+      await page.waitForFunction(() => document.querySelector('#draft-options').dataset.compare === 'true');
+      await phoneCard.click();
+      await page.waitForFunction(() => __HYPERDRIVE__.snapshot().screen === 'playing');
+      assert.equal(await page.evaluate(() => __HYPERDRIVE__.snapshot().state.survival.upgrades.phone), 1);
+
+      // The support card announces and grants the phone's actual evolution.
+      gadgetDraftFixture.survival.upgrades.phone = 3;
+      gadgetDraftFixture.survival.upgrades.md = 1;
+      prepareGadgetDraft();
+      assert.equal(survivalOffers(gadgetDraftFixture)[0].id, 'md');
+      assert.equal(survivalOffers(gadgetDraftFixture)[0].evolutionReady, true);
+      await loadNightfallFixture(page, gadgetDraftFixture);
+      await departThroughStory(page);
+      await page.waitForFunction(() => __HYPERDRIVE__.snapshot().screen === 'draft');
+      const evolutionCard = page.locator('#draft-options [data-perk-id="md"]');
+      assert.equal(await evolutionCard.locator('.evolution-recipe b').textContent(), 'これで進化！');
+      assert.equal(await evolutionCard.locator('[data-item-icon="hotline"]').count(), 1);
+      await evolutionCard.click();
+      await page.waitForFunction(() => __HYPERDRIVE__.snapshot().screen === 'playing');
+      assert.equal(await page.evaluate(() => __HYPERDRIVE__.snapshot().state.survival.upgrades.md), 2);
+      assert.ok(await page.evaluate(() => __HYPERDRIVE__.snapshot().state.survival.evolutions.includes('hotline')));
+
+      // Replaying starts a new current-tour album while remembering the duo's past.
+      await reloadWithoutCampaign(page);
+      await page.locator('#story').click();
+      assert.equal(await page.locator('#story-panel').isVisible(), true);
+      await finishStory(page);
+      const returningTour = await page.evaluate(() => __HYPERDRIVE__.snapshot());
+      assert.ok(returningTour.story.seen.includes('tour:returning'));
+      assert.equal(returningTour.story.choices['tour:returning'], 'crew');
+      assert.equal(returningTour.story.seen.includes('tour:finale'), false);
+      assert.equal(returningTour.story.history.includes('arrival:11'), false);
+      const returningSave = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)), STORY_SAVE_KEY);
+      assert.equal(returningSave.runId, returningTour.state.runId);
+      assert.ok(returningSave.archive.seen.includes('tour:finale'));
+      assert.deepEqual(returningSave.current, returningTour.story);
+
+      // A damaged car loses to the first unjumped pothole through real simulation.
+      const breakdownFixture = createState({
+        mode: 'survival', startingWeapon: 'flash', survivalDay: '2026-10-21',
+        routeIndex: 0, seed: 7, campaignStarted: true,
+      });
+      breakdownFixture.integrity = 1;
+      breakdownFixture.survival.upgrades = { flash: 3 };
+      breakdownFixture.survival.level = 2;
+      await loadNightfallFixture(page, breakdownFixture);
+      await departThroughStory(page);
+      await page.waitForFunction(() => {
+        const view = __HYPERDRIVE__.snapshot();
+        return view.state.status === 'lost' && view.screen === 'story';
+      }, null, { timeout: 20000 });
+      const lostBeforeDialogue = await page.evaluate(() => __HYPERDRIVE__.snapshot());
+      const recordedLoss = await page.evaluate(
+        ({ key, id }) => JSON.parse(localStorage.getItem(key)).find((row) => row.id === id),
+        { key: SURVIVAL_RECORD_KEY, id: breakdownFixture.runId },
+      );
+      assert.equal(recordedLoss.won, false);
+      assert.equal(recordedLoss.score, Math.floor(lostBeforeDialogue.state.score));
+      assert.equal(await page.evaluate((key) => localStorage.getItem(key), NIGHTFALL_SAVE_KEY), null);
+      await checkLanguages(page, '#story-panel select', ['#story-panel .modal-card']);
+      await finishStory(page);
+      assert.equal(await page.evaluate(() => __HYPERDRIVE__.snapshot().screen), 'result');
+      assert.ok(await page.evaluate(() => __HYPERDRIVE__.snapshot().story.seen.includes('tour:breakdown')));
+      await page.locator('#continue').click();
+      await finishStory(page);
+      const retryTour = await page.evaluate(() => __HYPERDRIVE__.snapshot());
+      assert.equal(retryTour.screen, 'cars');
+      assert.ok(retryTour.story.seen.includes('tour:returning'));
+      assert.equal(retryTour.story.seen.includes('tour:breakdown'), false);
+      assert.notEqual(retryTour.state.runId, breakdownFixture.runId);
+      assert.equal(retryTour.state.seed, breakdownFixture.seed);
+
+      // Continued older-rule tours show their score without changing daily records.
+      const continuedFixture = createState({
+        mode: 'survival', startingWeapon: 'flash', survivalDay: '2026-10-21',
+        routeIndex: 0, seed: 7, campaignStarted: true,
+      });
+      continuedFixture.integrity = 1;
+      continuedFixture.score = 500000;
+      continuedFixture.survival.upgrades = { flash: 3 };
+      continuedFixture.survival.level = 2;
+      continuedFixture.survival.recordEligible = false;
+      const recordsBeforeContinued = await page.evaluate((key) => localStorage.getItem(key), SURVIVAL_RECORD_KEY);
+      await loadNightfallFixture(page, continuedFixture);
+      await departThroughStory(page);
+      await page.waitForFunction(() => __HYPERDRIVE__.snapshot().state.status === 'lost', null, { timeout: 20000 });
+      await finishStory(page);
+      assert.equal(await page.evaluate(() => __HYPERDRIVE__.snapshot().screen), 'result');
+      assert.equal(await page.evaluate((key) => localStorage.getItem(key), SURVIVAL_RECORD_KEY), recordsBeforeContinued);
+      assert.match(await page.locator('#result-stats').textContent(), /引き継いだツアー/);
+      assert.doesNotMatch(await page.locator('#result-stats').textContent(), /今日の自己ベスト|保存できませんでした/);
+      await checkLanguages(page, '#result select', ['#result .modal-card']);
+      await page.locator('#continue').click();
+      await finishStory(page);
+      const continuedReplay = await page.evaluate(() => __HYPERDRIVE__.snapshot());
+      assert.equal(continuedReplay.screen, 'cars');
+      assert.equal(continuedReplay.state.survival.recordEligible, false);
+      assert.equal(continuedReplay.state.seed, continuedFixture.seed);
 
       // A committed departure with one earned level makes the browser draft
       // deterministic without farming live encounters or mutating browser state.
@@ -972,9 +1167,9 @@ try {
         (key) => JSON.parse(localStorage.getItem(key)),
         STORY_SAVE_KEY,
       );
-      assert.equal(memoryBeforeReload.runId, draftFixture.runId);
-      assert.equal(memoryBeforeReload.choices['tour:opening'], undefined, 'A different tour cannot inherit the opening choice');
-      assert.ok(memoryBeforeReload.seen.includes('departure:1'));
+      assert.ok(memoryBeforeReload.current.seen.includes('departure:1'));
+      assert.equal(memoryBeforeReload.runId, afterDraft.state.runId);
+      assert.deepEqual(memoryBeforeReload.current, afterDraft.story);
       // The document can load before asynchronous language initialization finishes.
       languageBootDelay = 150;
       await page.reload();
@@ -989,7 +1184,7 @@ try {
       assert.equal(rolledBack.state.rpg.xp, 32);
       assert.deepEqual(
         rolledBack.story,
-        memoryBeforeReload,
+        memoryBeforeReload.current,
         'Story memory survives a road rollback',
       );
 

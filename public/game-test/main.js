@@ -1,4 +1,4 @@
-import { isSurvival, dailySurvival, survivalView, chooseSurvivalUpgrade, survivalMultiplier, createSurvivalRecords, SURVIVAL_WEAPONS, SURVIVAL_UPGRADES } from './src/survival.js';
+import { isSurvival, dailySurvival, survivalView, chooseSurvivalUpgrade, survivalMultiplier, createSurvivalRecords, SURVIVAL_STARTERS, SURVIVAL_UPGRADES } from './src/survival.js';
 import { createItemIcon } from './src/item-icons.js';
 import { drawSurvival, renderSurvivalResult } from './src/survival-ui.js';
 import { localizeText, localizeAttribute, localizeHTML, initializeLanguage, installLanguageSelectors } from './src/localized-ui.js';
@@ -43,9 +43,9 @@ import {
   update,
   nextRoute,
   ROUTES,
-  UPGRADE_CATALOG,
   buyUpgrade,
   upgradePrice,
+  availableCarUpgrades,
   retryRoute,
   answerQuiz,
   beginClubQuiz,
@@ -81,6 +81,7 @@ function newTour(progress, challenge = dailySurvival()) {
         : `tour-${Date.now().toString(36)}-${seed.toString(36)}-${Math.random().toString(36).slice(2)}`,
     ...campaignEnvironment(seed, 0),
   });
+  fresh.survival.recordEligible = challenge.recordEligible !== false;
   if (progress) equipStartingCar(fresh, progress, getCarProfile(fresh).id);
   return fresh;
 }
@@ -135,6 +136,7 @@ $("#resume-tour").addEventListener("click", () => {
   if (!ready || !savedTour) return;
   state = isSurvival(savedTour) ? restoreNightfallSave(exportNightfallSave(savedTour)) : restoreCampaignSave(exportCampaignSave(savedTour));
   if (!state) return;
+  storyDirector.beginRun();
   applySettings();
   survivalBest = isSurvival(state) ? survivalRecords.best(state.survival.day)?.score || 0 : 0;
   roadChoice = state.routeOption;
@@ -395,7 +397,7 @@ function renderStyles() {
   const host = $('#style-options'), current = getRpgView(state);
   host.replaceChildren();
   const weaponMode = isSurvival(state);
-  const options = weaponMode ? SURVIVAL_WEAPONS : RUN_STYLES;
+  const options = weaponMode ? SURVIVAL_STARTERS : RUN_STYLES;
   host.classList.toggle('weapon-options', weaponMode);
   for (const style of options) {
     const button = document.createElement('button');
@@ -422,14 +424,14 @@ function renderRpgHud() {
   xp.value = view.progress || 0; xp.max = 1;
   localizeAttribute(xp, 'aria-valuetext', view.enabled ? message("{0} XP / 次のレベル {1}", [view.xp, view.nextXp ?? 'MAX']) : 'クラシックツアー');
   const active = view.synergy?.filter(item => item.active) || [];
-  localizeText($('#rpg-build'), view.enabled ? (active.length ? active.map(item => message("{0}連携", [item.name])).join(' / ') : message("{0} スキル · ハートと回避でXP", [view.perks?.length || 0])) : 'いまの旅はそのまま続けられるで');
+  localizeText($('#rpg-build'), view.enabled ? (active.length ? active.map(item => message("{0}連携", [item.name])).join(' / ') : message("{0} スキル · 招待と回避でXP", [view.perks?.length || 0])) : 'いまの旅はそのまま続けられるで');
 }
 function showDraft() {
   releaseInput(); accumulator = 0; paused = false;
   setScreen('draft');
   const view = rpgView(state), host = $('#draft-options');
   localizeText($('#draft-title'), message("MIX LEVEL {0} / ひとつ、盛ってこ。", [view.rank + 1]));
-  localizeText($('#draft-copy'), '時間は止まってるで。3つの中から1つ選ぼ。組み合わせで進化、効果はこのランだけ。');
+  localizeText($('#draft-copy'), '時間は止まってるで。ひとつ選んで、うちらの組み合わせに。進化も装備も、このランだけ。');
   host.replaceChildren();
   for (const perk of view.offers || []) {
     const card = document.createElement('button'); card.className = 'draft-card'; card.dataset.perkId = perk.id;
@@ -437,6 +439,7 @@ function showDraft() {
     const name = document.createElement('strong'); localizeText(name, perk.name);
     const description = document.createElement('span'); localizeText(description, perk.description);
     const detail = document.createElement('small'); localizeText(detail, message("{0} / {1}", [perk.effect, perk.synergy]));
+    if (perk.kind === 'weapon') detail.className = 'weapon-stats';
     const heading = document.createElement('span'); heading.className = 'item-heading'; heading.append(createItemIcon(perk.id), name);
     card.append(family, heading, description, detail);
     if (perk.evolution) {
@@ -469,7 +472,7 @@ function renderShop() {
   renderGarage();
   renderBuildWorkshop();
   $("#shop").replaceChildren();
-  for (const item of UPGRADE_CATALOG) {
+  for (const item of availableCarUpgrades(state)) {
     const node = document.createElement("article"); node.className = "shop-item";
     const level = state.upgrades[item.id] || 0, price = upgradePrice(state, item.id);
     if (price === null) continue;
@@ -487,7 +490,7 @@ function renderShop() {
     heading.className = "item-heading"; title.before(heading); heading.append(createItemIcon(item.id), title);
     node.append(button); $("#shop").append(node);
   }
-  localizeText($("#shop-status"), "ハートで稼いだコインで、いま乗ってるくるまを盛れるで。");
+  localizeText($("#shop-status"), "招待と寄り道で集めたコインで、いまのくるまを盛れるで。");
 }
 function renderBuildWorkshop() {
   const build = describeBuild(state), offers = getBuildOffers(state), host = $("#build-offers");
@@ -632,6 +635,8 @@ function showQuiz(next = null) {
   releaseInput();
   paused = false;
   setScreen("quiz");
+  localizeText($('#quiz-eyebrow'), isSurvival(state) ? 'CLUB LOUNGE / ギャルトーク' : 'ROADSIDE / ギャルトーク');
+  localizeText($('#quiz-continue'), isSurvival(state) ? 'ほな、うちらの出番や' : 'ほな、クラブ目指そ');
   currentQuestion = questionForStage(state.routeIndex, state.routeOption, state.seed);
   quizAnswered = false;
   $("#quiz").hidden = false;
@@ -725,7 +730,9 @@ function showResult() {
       } else storyDirector.show('arrival', next);
     } else {
       if (!saves.clearNightfall()) storageWarning();
-      savedTour = saves.loadCampaign(); syncResume(); showNightfallRecord();
+      savedTour = saves.loadCampaign(); syncResume();
+      persistNightfallResult();
+      storyDirector.show('breakdown', showNightfallRecord);
     }
     return;
   }
@@ -806,7 +813,7 @@ $("#quit").addEventListener("click", home);
 $("#resume").addEventListener("click", () => setPause(false));
 $("#pause").addEventListener("click", () => setPause(!paused));
 $("#continue").addEventListener("click", () => {
-  if (isSurvival(state)) { startNight({ seed: state.seed, day: state.survival.day }); return; }
+  if (isSurvival(state)) { startNight({ seed: state.seed, day: state.survival.day, recordEligible: state.survival.recordEligible }); return; }
   if (state.status === "won") {
     if (state.campaignComplete) {
       performanceSet = createPerformance();
@@ -826,7 +833,7 @@ $("#continue").addEventListener("click", () => {
 $("#finale-home").addEventListener("click", () => { const next = performanceNext; performanceNext = null; if (next) next(); else home(); });
 function previewMission(node) {
   if (!node) return null;
-  const preview = node.nodeId === state.journeyNodeId ? state : createState({ routeIndex: node.stageIndex, seed: state.seed, journeyNodeId: node.nodeId, ...mapClimate });
+  const preview = node.nodeId === state.journeyNodeId ? state : createState({ mode: state.mode, routeIndex: node.stageIndex, seed: state.seed, journeyNodeId: node.nodeId, ...mapClimate });
   return getRouteMission(preview,node);
 }
 function survivalRouteDetail(node) {
@@ -920,7 +927,7 @@ function hud() {
   if (isSurvival(state)) {
     localizeText($("#combo"), message("HEAT ×{0} · 招待 {1}", [survivalMultiplier(state), state.survival.kills]));
     localizeText($("#rpg-build"), message("進化 {0} · ノーダメージ {1}", [state.survival.evolutions.length, state.survival.cleanWaves]));
-    if (state.score > survivalBest && survivalBest > 0 && !state.survival.bestNotified) { state.survival.bestNotified = true; toast("今日の自己ベスト更新！"); }
+    if (state.survival.recordEligible !== false && state.score > survivalBest && survivalBest > 0 && !state.survival.bestNotified) { state.survival.bestNotified = true; toast("今日の自己ベスト更新！"); }
   }
   $("#health-bar").style.width =
     `${(state.integrity / (state.integrityCapacity || 100)) * 100}%`;
@@ -997,7 +1004,7 @@ function frame(now) {
     localizeText($("#performance-phase"), view.phase);
     $("#performance-progress").style.width = `${view.progress * 100}%`;
     const completed = `${view.hits} / 8 フレーズ · ファン ${state.totalFans}人 · フロアの仲間 ${state.gyaruConverted}人`;
-    if ($("#performance-score").textContent !== completed) localizeText($("#performance-score"), completed);
+    if ($("#performance-score").textContent !== t(completed)) localizeText($("#performance-score"), completed);
     document.querySelectorAll("[data-control]").forEach(button => button.classList.toggle("suggested", button.dataset.control === view.action));
   }
   if (screen === "playing" && !paused) updateRoadFeedback(roadFeedback, dt);

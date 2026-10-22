@@ -9,7 +9,7 @@ export const STREET_ROLES = Object.freeze([
   { id: 'approval-chief', name: '承認待ちの番人', behavior: 'shield', stage: 5, fan: 'stylist', welcome: '好きな服に、ハンコはいらへん！' },
   { id: 'notification-clerk', name: '通知おかわり係', behavior: 'steady', stage: 0, fan: 'photographer', welcome: '通知はミュート。今この瞬間を撮ろ！' },
   { id: 'metrics-inspector', name: '数字ばっかり監査官', behavior: 'sway', stage: 2, fan: 'dj', welcome: '数字よりノリや。好きな音、回してこ！' },
-  { id: 'dress-code-guard', name: '服装ルールの門番', behavior: 'shield', stage: 3, fan: 'model', welcome: '制服脱いだら、うちだけのランウェイや！' },
+  { id: 'dress-code-guard', name: '服装ルールの門番', behavior: 'shield', stage: 3, fan: 'model', welcome: '着たい服でええねん。ここから、うちだけのランウェイや！' },
   { id: 'overtime-runner', name: '残業ぐるぐる係', behavior: 'charger', stage: 4, fan: 'event', welcome: '残業はおしまい。今夜のイベント間に合うで！' },
   { id: 'script-reader', name: 'マニュアル読み上げ係', behavior: 'steady', stage: 1, fan: 'tv', welcome: '台本の外にも、うちの言葉あるで！' },
   { id: 'hierarchy-keeper', name: '肩書きタワーの番人', behavior: 'shield', stage: 5, fan: 'stylist', welcome: '肩書きより、そのアクセめっちゃ似合う！' },
@@ -33,6 +33,8 @@ export const LITTLE_FINDS = Object.freeze([
   { id: 'flower', name: '道ばたの花の写真', line: '道ばたの花、写真に残そ。咲いたままがかわいいな。' },
   { id: 'paw-sticker', name: '肉球ステッカー', line: 'ちいさな肉球シール！ ラジオの横に貼ろか。' },
   { id: 'mini-photo', name: 'ふたりのミニフォト', line: 'この一枚、ええ顔してる。今日の思い出やな。' },
+  { id: 'deco-charm', name: 'キラキラのデコチャーム', line: 'このチャーム、デコ電にぴったり。好きな色、足してこ！' },
+  { id: 'puri-note', name: '手描きのプリ帳シール', line: '余白に今日のクラブ名書こ。ふたりのプリ帳、またにぎやかになるな。' },
 ].map(Object.freeze));
 
 function hash(value) {

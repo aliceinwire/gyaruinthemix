@@ -14,7 +14,6 @@ import {
   changeRouteBeforeStart,
   exportCampaignSave,
   buyUpgrade,
-  upgradePrice,
 } from '../public/game-test/src/simulation.js';
 import {
   createSaveStore,
@@ -33,13 +32,10 @@ import {
   finishSurvivalWave,
   SURVIVAL_RECORD_KEY,
   SURVIVAL_UPGRADES,
-  SURVIVAL_WEAPONS,
+  SURVIVAL_STARTERS,
+  SURVIVAL_EVOLUTIONS,
   SURVIVAL_MAX_LEVEL,
   survivalView,
-  survivalWeaponProfile,
-  survivalStep,
-  queueSurvivalRepeat,
-  normalizeSurvivalSave,
 } from '../public/game-test/src/survival.js';
 import { getJourneyChoices } from '../public/game-test/src/journey.js';
 
@@ -142,7 +138,7 @@ test('automatic hearts deliver real hits without manual fire or battery drain', 
 });
 
 test('every starting weapon attacks automatically, and hearts require acquisition', () => {
-  for (const weapon of SURVIVAL_WEAPONS) {
+  for (const weapon of SURVIVAL_STARTERS) {
     const s = createState({ mode: 'survival', startingWeapon: weapon.id });
     s.entities = [];
     s._stations = [];
@@ -187,11 +183,11 @@ test('bass reaches behind the car and its evolution pierces guards', () => {
   const s = quiet();
   chooseStartingWeapon(s, 'bass');
   const behind = enemy(s, 730, -25, { hp: 2 });
-  const guard = enemy(s, 731, 45, { hp: 5, shielded: true });
+  const guard = enemy(s, 731, 45, { hp: 4, shielded: true });
   update(s, {}, 0.01);
   assert.equal(behind.converted, true);
   assert.equal(guard.converted, undefined);
-  assert.equal(guard.hp, 5);
+  assert.equal(guard.hp, 4);
   draft(s, 'bass');
   draft(s, 'bass');
   draft(s, 'hype');
@@ -264,7 +260,7 @@ test('distinct attack and support offers spend XP once, stop time, and exclude m
   assert.ok(survivalOffers(s).every((item) => item.id !== id));
 });
 
-test('all weapon evolutions require both ingredients and change live attacks', () => {
+test('all five evolutions require both ingredients and change live attacks', () => {
   for (const [weapon, support, evolution] of [
     ['heart', 'relay', 'heartstorm'],
     ['flash', 'battery', 'flashmob'],
@@ -322,10 +318,10 @@ test('HEAT rewards distinct actions, FEVER has bounded duration, hits end it', (
 test('projectiles clearing the next wave early preserve its later clean-wave reward', () => {
   const s = quiet(),
     boundary = s.routeLength / 6;
-  s.distance = boundary - 80;
+  s.distance = boundary - 100;
   const nearby = enemy(s, 810, 35),
-    distant = enemy(s, 811, 100);
-  update(s, {}, 0.9);
+    distant = enemy(s, 811, 110);
+  update(s, {}, 1.2);
   assert.equal(nearby.converted, true);
   assert.equal(distant.converted, true);
   assert.ok(s.distance < boundary);
@@ -695,8 +691,8 @@ test('no-input survival is not a winning strategy even with automatic attacks', 
   assert.ok(s.survival.kills > 0);
 });
 
-test('all starters can finish the twelve-road run with driving and build choices', () => {
-  for (const starter of SURVIVAL_WEAPONS) {
+test('all five starters can finish the twelve-road run with driving and build choices', () => {
+  for (const starter of SURVIVAL_STARTERS) {
     const s = createState({
       mode: 'survival',
       startingWeapon: starter.id,
@@ -710,8 +706,14 @@ test('all starters can finish the twelve-road run with driving and build choices
     ) {
       if (s.status === 'draft') {
         const offers = survivalOffers(s);
+        const recipe = SURVIVAL_EVOLUTIONS.find(
+          (item) => item.weapon === starter.id,
+        );
         const pick =
-          offers.find((offer) => offer.id === 'armor' && s.integrity < 70) ||
+          offers.find((offer) => offer.evolutionReady) ||
+          offers.find((offer) => offer.id === 'armor' && s.integrity < 55) ||
+          offers.find((offer) => offer.id === starter.id) ||
+          offers.find((offer) => offer.id === recipe.support) ||
           offers.find((offer) => offer.kind === 'weapon') ||
           offers[0];
         chooseSurvivalUpgrade(s, pick.id);
@@ -743,101 +745,6 @@ test('all starters can finish the twelve-road run with driving and build choices
     assert.ok(s.survival.kills > 0, starter.id);
     assert.ok(s.survival.evolutions.length > 0, starter.id);
   }
-});
-
-test('weapon roles trade coverage and recovery instead of one weapon dominating every stat', () => {
-  const camera = survivalWeaponProfile('flash');
-  const bass = survivalWeaponProfile('bass');
-  const vinyl = survivalWeaponProfile('vinyl');
-  const phone = survivalWeaponProfile('phone');
-  assert.ok(camera.radius > bass.radius);
-  assert.ok(camera.cooldown < bass.cooldown);
-  assert.ok(camera.limit > bass.limit);
-  assert.ok(bass.damage > camera.damage);
-  assert.ok(bass.behind > camera.behind);
-  assert.ok(vinyl.cooldown < camera.cooldown);
-  assert.ok(vinyl.behind > bass.behind);
-  assert.ok(vinyl.limit < camera.limit);
-  assert.ok(phone.radius > camera.radius);
-  assert.ok(phone.cooldown > camera.cooldown);
-  assert.ok(phone.limit < camera.limit);
-  const s = quiet();
-  chooseStartingWeapon(s, 'phone');
-  const targets = [20, 40, 60, -25].map((distance, i) =>
-    enemy(s, 1200 + i, distance),
-  );
-  update(s, {}, 0.01);
-  assert.deepEqual(
-    targets.map((e) => Boolean(e.converted)),
-    [true, true, false, false],
-  );
-  const event = s.events.find((e) => e.kind === 'phone');
-  assert.deepEqual(
-    event.targetDistances,
-    targets.slice(0, 2).map((e) => e.distance),
-  );
-});
-
-test('heart-only support and shop upgrades cannot waste non-heart builds', () => {
-  const s = quiet();
-  chooseStartingWeapon(s, 'phone');
-  s.survival.xp = 100;
-  for (let seed = 1; seed <= 60; seed++) {
-    s.seed = seed;
-    assert.ok(survivalOffers(s).every((item) => item.id !== 'relay'));
-  }
-  s.status = 'won';
-  s.money = 10000;
-  for (const id of ['hearts', 'heartReach']) {
-    assert.equal(upgradePrice(s, id), null);
-    assert.equal(buyUpgrade(s, id), false);
-  }
-  assert.equal(s.money, 10000);
-  s.status = 'playing';
-  draft(s, 'heart');
-  s.status = 'won';
-  assert.ok(upgradePrice(s, 'hearts') > 0);
-  assert.equal(buyUpgrade(s, 'hearts'), true);
-});
-
-test('MD repeats once at half strength, respects cooldown and never serializes pending samples', () => {
-  const s = quiet();
-  chooseStartingWeapon(s, 'phone');
-  s.survival.upgrades.md = 1;
-  s.survival.level = 1;
-  const profile = survivalWeaponProfile('phone');
-  queueSurvivalRepeat(s, 'phone', profile);
-  assert.equal(s.survival.repeat.profile.damage, 0.5);
-  const first = s.survival.repeat;
-  queueSurvivalRepeat(s, 'bass', survivalWeaponProfile('bass'));
-  assert.equal(s.survival.repeat, first);
-  const hits = [];
-  enemy(s, 1300, 20, { hp: 10 });
-  s.survival.phoneClock = 100;
-  survivalStep(s, 0.2, (target, damage) => {
-    hits.push(damage);
-    target.hp -= damage;
-  });
-  assert.deepEqual(hits, []);
-  survivalStep(s, 0.2, (target, damage) => {
-    hits.push(damage);
-    target.hp -= damage;
-  });
-  assert.deepEqual(hits, [0.5]);
-  assert.equal(s.survival.repeat, null);
-  assert.equal(s.events.filter((e) => e.repeat).length, 1);
-  survivalStep(s, 1, () => {
-    throw Error('A repeat must not record itself');
-  });
-  queueSurvivalRepeat(s, 'phone', profile);
-  assert.equal(s.survival.repeat, null);
-  survivalStep(s, 6, () => {});
-  queueSurvivalRepeat(s, 'phone', profile);
-  assert.ok(s.survival.repeat);
-  const restored = normalizeSurvivalSave(s.survival);
-  assert.equal(restored.repeat, null);
-  assert.equal(restored.mdClock, 0);
-  assert.equal(restored.upgrades.md, 1);
 });
 
 function measureRoad(seed, weapon, routeIndex, level) {
@@ -893,7 +800,7 @@ test('seeded early and late roads give every weapon a viable fixed-build role', 
     [8, 3],
   ]) {
     const totals = [];
-    for (const weapon of SURVIVAL_WEAPONS) {
+    for (const weapon of SURVIVAL_STARTERS) {
       let total = 0;
       for (const seed of [1, 175, 819, 1456847409]) {
         const result = measureRoad(seed, weapon.id, stage, level);
@@ -917,25 +824,8 @@ test('seeded early and late roads give every weapon a viable fixed-build role', 
   );
 });
 
-test('MD heart playback uses a real half-strength projectile and preserves guard rules', () => {
-  const s = quiet();
-  s.survival.upgrades.md = 1;
-  s.shotCooldown = 100;
-  queueSurvivalRepeat(s, 'heart');
-  s.survival.repeat.delay = 0.01;
-  const guard = enemy(s, 1500, 60, { hp: 4, shielded: true });
-  update(s, {}, 0.02);
-  assert.ok(s.projectiles.some((p) => p.damage === 0.5));
-  assert.ok(s.shotCooldown > 99);
-  assert.equal(s.survival.repeat, null);
-  update(s, {}, 0.5);
-  assert.equal(guard.hp, 4);
-  assert.equal(guard.converted, undefined);
-  assert.equal(s.survival.repeat, null);
-});
-
 test('every starter reaches its first build choice promptly without taking unavoidable damage', () => {
-  for (const weapon of SURVIVAL_WEAPONS)
+  for (const weapon of SURVIVAL_STARTERS)
     for (const seed of [1, 175, 819, 1456847409]) {
       const s = createState({
         mode: 'survival',

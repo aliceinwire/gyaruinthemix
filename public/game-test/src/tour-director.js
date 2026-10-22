@@ -3,24 +3,58 @@ import { message } from './i18n.js';
 import { getStoryScene, normalizeStoryMemory, storyMemoryForRun, markStorySeen, chooseStoryOption, getStoryJournal, STORY_SPEAKERS } from './tour-story.js';
 
 export const STORY_SAVE_KEY = 'gyaruinthemix-tour-story-v2';
+const SAVE_VERSION = 3;
+const runKey = value => typeof value === 'string' && value.length > 0 && value.length <= 200 ? value : null;
+
+/** Older journals remain an archive, never future events in a fresh tour. */
+export function normalizeStorySave(value) {
+  if (typeof value === 'string') {
+    try { value = JSON.parse(value); } catch { value = null; }
+  }
+  if (value?.version === SAVE_VERSION && value && typeof value === 'object' && !Array.isArray(value)) {
+    return { version: SAVE_VERSION, runId: runKey(value.runId), current: normalizeStoryMemory(value.current), archive: normalizeStoryMemory(value.archive) };
+  }
+  const legacy = normalizeStoryMemory(value), legacyRunId = runKey(legacy.runId);
+  return { version: SAVE_VERSION, runId: legacyRunId, current: legacyRunId ? legacy : normalizeStoryMemory(), archive: legacy };
+}
 
 /** Narrative owns its text and reading pace; the host owns simulation transitions. */
 export function createStoryDirector({ root = document, storage, getState, onOpen, onSaveError = () => {} }) {
   const $ = selector => root.querySelector(selector);
-  let memory;
-  try { memory = normalizeStoryMemory(storage?.getItem(STORY_SAVE_KEY)); }
-  catch { memory = normalizeStoryMemory(); }
+  let saved;
+  try { saved = normalizeStorySave(storage?.getItem(STORY_SAVE_KEY)); }
+  catch { saved = normalizeStorySave(); }
+  let memory = saved.current, archive = saved.archive, activeRunId = saved.runId;
   let scene = null, line = 0, complete = null, journal = false;
   const panel = $('#story-panel');
+  function bindRun() {
+    const state = getState(), id = runKey(state?.runId);
+    if (id === activeRunId) return false;
+    const hasFutureScenes = [...archive.seen, ...archive.history].some(sceneId => {
+      const road = /^(?:departure|arrival|retry):(\d+)(?::|$)/.exec(sceneId);
+      return road ? Number(road[1]) > state?.routeIndex : sceneId === 'tour:finale' && (state?.routeIndex !== 11 || state?.status !== 'won');
+    });
+    const legacyResume = activeRunId === null && !archive.runId && !hasFutureScenes && Number.isInteger(state?.routeIndex) && state.routeIndex > 0 && state.routeIndex < 12;
+    activeRunId = id;
+    memory = legacyResume ? storyMemoryForRun(archive, id, state.routeIndex) : { ...normalizeStoryMemory(), ...(id ? { runId: id } : {}) };
+    persist();
+    return true;
+  }
   function persist() {
     try {
       if (!storage) throw new Error('Storage unavailable');
-      storage.setItem(STORY_SAVE_KEY, JSON.stringify(memory));
+      storage.setItem(STORY_SAVE_KEY, JSON.stringify({ version: SAVE_VERSION, runId: activeRunId, current: memory, archive }));
     } catch { onSaveError(); }
   }
   function finish() {
     if (!scene) return;
-    if (!journal) { memory = markStorySeen(memory, scene.id); persist(); }
+    if (!journal) {
+      memory = markStorySeen(memory, scene.id);
+      archive = markStorySeen(archive, scene.id);
+      const choice = memory.choices[scene.id];
+      if (choice) archive = chooseStoryOption(archive, scene, choice);
+      persist();
+    }
     scene = null;
     const callback = complete;
     complete = null;
@@ -65,6 +99,7 @@ export function createStoryDirector({ root = document, storage, getState, onOpen
     if (scene) return false;
     if (!next?.lines?.length) { done?.(); return false; }
     scene = next; line = 0; complete = done; journal = isJournal;
+    panel.dataset.journal = String(isJournal);
     onOpen(); render();
     panel.scrollIntoView({ block: 'nearest', behavior: 'instant' });
     return true;
@@ -85,20 +120,23 @@ export function createStoryDirector({ root = document, storage, getState, onOpen
     if (event.code === 'Escape' && journal) { event.preventDefault(); event.stopPropagation(); finish(); }
   });
   return {
+    beginRun() { return scene ? false : bindRun(); },
     show(trigger, done) {
       if (scene) return false;
-      const state = getState();
-      const nextMemory = storyMemoryForRun(memory, state?.runId, state?.routeIndex);
-      if (nextMemory.runId !== memory.runId) { memory = nextMemory; persist(); }
-      return open(getStoryScene(state, trigger, memory), done);
+      bindRun();
+      const selected = trigger === 'opening' && !memory.seen.includes('tour:opening') && (archive.seen.includes('tour:opening') || archive.seen.includes('tour:returning')) ? 'returning' : trigger;
+      return open(getStoryScene(getState(), selected, memory), done);
     },
     journal(done) {
+      if (scene) return false;
+      bindRun();
       const entries = getStoryJournal(memory);
-      return open({ id: 'journal', kicker: 'TOUR JOURNAL / うちらの記録', lines: entries.length
+      return open({ id: 'journal', kicker: 'PURI ALBUM / うちらの記録', lines: entries.length
         ? entries.map(entry => ({ speaker: 'ツアーノート', text: `${entry.kicker} ${entry.summary}` }))
-        : [{ speaker: 'ツアーノート', text: '6つのクラブで音と仲間を集めて、京都でひとつのミックスに。ここに旅の記録が増えていくで。' }], choices: [] }, done, true);
+        : [{ speaker: 'ツアーノート', text: 'このツアーの一枚目は、これから。出会った仲間とクラブの思い出を、ここに残そ。' }], choices: [] }, done, true);
     },
     get memory() { return normalizeStoryMemory(memory); },
+    get archive() { return normalizeStoryMemory(archive); },
     get active() { return Boolean(scene); },
   };
 }

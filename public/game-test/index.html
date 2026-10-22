@@ -5,7 +5,7 @@
     <meta name="robots" content="noindex, nofollow, noarchive" />
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
     <meta name="theme-color" content="#0b1019" />
-    <meta name="description" content="6つのクラブ、6本のサウンドチェックテープ。DJありねぇとDJちゃなの、うちらだけのナイトツアー。" />
+    <meta name="description" content="DJありねぇとDJちゃなが、平成ギャルとオリジナル・ハードバウンスを6つのクラブへ届けるロードツアー。" />
     <title>ギャルインザミックス / NIGHTFALL TOUR</title>
     <link rel="stylesheet" href="./style.css" />
     <link rel="stylesheet" href="./car-stereo.css" />
@@ -73,7 +73,7 @@
             <div class="eyebrow">A GYARUINTHEMIX ROAD ROGUELITE</div>
             <h1>NIGHTFALL<span>TOUR</span></h1>
             <p class="tagline">今夜の音は、うちらがつくる。</p>
-            <div class="tour-ticket"><span>6 CLUBS</span><span>6 TAPES</span><span>ONE FINAL SHOW</span></div>
+            <div class="tour-ticket"><span>6 CLUBS</span><span>12 ROADS</span><span>ONE CREW</span></div>
             <p class="menu-copy">会社のルールで色をなくした街へ、うちらの音を。<br />平成ギャルとハードバウンスで、6つのフロアをつなご。</p>
             <div class="menu-actions"><button id="story" class="primary">新しい夜をはじめる</button><button id="resume-tour" hidden>この旅のつづきから</button></div>
             <p id="survival-record" class="survival-record"></p>
@@ -122,7 +122,7 @@
               <div class="map-stop map-origin"><span class="map-stop-label">NOW / いまここ</span><strong id="map-current-location">出発ガレージ</strong><span class="map-stop-hint">ここから、3つの道に分岐</span></div>
               <div class="map-branch-label">走りたい街角を選ぼ</div>
               <div id="destination-choices" class="road-options" aria-label="分岐マップの行き先"></div>
-              <div class="map-stop map-goal"><span class="map-stop-label">NEXT / 次のサウンドチェック</span><strong id="map-next-club">中野 / BEAT BASE 175</strong><span id="map-club-distance" class="map-stop-hint">あと2本の道でクラブ到着</span></div>
+              <div class="map-stop map-goal"><span class="map-stop-label">NEXT / 次のクラブ</span><strong id="map-next-club">中野 / BEAT BASE 175</strong><span id="map-club-distance" class="map-stop-hint">あと2本の道でクラブ到着</span></div>
             </div>
             <p id="map-selected-route" class="selected-route" aria-live="polite"></p>
             <p id="map-route-detail" class="map-route-detail"></p>
@@ -149,7 +149,7 @@
           <div class="story-topline"><p id="story-kicker" class="eyebrow">NIGHTFALL TOUR</p><span id="story-progress">1 / 1</span></div>
           <div aria-live="polite" aria-atomic="true">
             <h2 id="story-speaker">DJありねぇ</h2>
-            <p id="story-text">6つのクラブで音を集めて、最後のフロアへ。今夜も一緒に行こ。</p>
+            <p id="story-text">6つのクラブで、うちらの新曲を鳴らそ。旅の思い出は、プリ帳とMDに。</p>
           </div>
           <div id="story-choices" class="story-choices"></div>
           <details class="story-log"><summary>これまでの旅を振り返る</summary><div id="story-history" class="story-history" aria-label="これまでの旅の記録"></div></details>
@@ -170,7 +170,7 @@
         </div>
       </section>
       <section id="quiz" class="quiz-overlay modal" hidden role="dialog" aria-modal="true" aria-labelledby="quiz-question" tabindex="-1">
-        <div class="quiz-card modal-card"><p class="eyebrow">ROADSIDE / ギャルトーク</p><h2 id="quiz-question"></h2><p class="quiz-tip">うちらの音と平成ギャル、どこまで知ってる？</p><div id="quiz-choices"></div><p id="quiz-feedback" aria-live="polite"></p><a id="quiz-source" target="_blank" rel="noopener noreferrer" hidden>答えの出典を見る</a><button id="quiz-continue" class="primary" hidden>ほな、クラブ目指そ</button></div>
+        <div class="quiz-card modal-card"><p id="quiz-eyebrow" class="eyebrow">CLUB LOUNGE / ギャルトーク</p><h2 id="quiz-question"></h2><p class="quiz-tip">うちらの音と平成ギャル、どこまで知ってる？</p><div id="quiz-choices"></div><p id="quiz-feedback" aria-live="polite"></p><a id="quiz-source" target="_blank" rel="noopener noreferrer" hidden>答えの出典を見る</a><button id="quiz-continue" class="primary" hidden>ほな、クラブ目指そ</button></div>
       </section>
 
     <section class="radio-dock" aria-label="カーステレオ"><div id="music" aria-label="ギャルインザミックス 音楽プレイヤー"></div></section>

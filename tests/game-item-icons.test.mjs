@@ -64,10 +64,13 @@ test('icons fit the 32 pixel view box and weapons have distinct silhouettes', ()
     'flash',
     'vinyl',
     'bass',
+    'phone',
+    'echo',
     'heartstorm',
     'flashmob',
     'encore',
     'afterparty',
+    'hotline',
   ];
   assert.equal(
     new Set(weapons.map((id) => JSON.stringify(itemIconRects(id)))).size,

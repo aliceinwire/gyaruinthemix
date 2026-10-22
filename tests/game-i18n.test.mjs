@@ -23,6 +23,13 @@ import {
   exportCampaignSave,
 } from '../public/game-test/src/simulation.js';
 import { questionForStage } from '../public/game-test/src/questions.js';
+import {
+  SURVIVAL_UPGRADES,
+  SURVIVAL_EVOLUTIONS,
+  survivalOffers,
+  survivalXpCost,
+} from '../public/game-test/src/survival.js';
+import { RUN_MOD_CATALOG } from '../public/game-test/src/run-build.js';
 
 const directory = new URL('../public/game-test/locales/', import.meta.url);
 const readCatalog = async (code) =>
@@ -62,6 +69,55 @@ test('Japanese branding uses katakana and survives language switching', async ()
     const expected = code === 'ja' ? branding : await readCatalog(code);
     for (const key of Object.keys(branding))
       assert.equal(translator.t(key), expected[key]);
+  }
+});
+
+test('every survival item and generated effect is translated, including phone and MD upgrades', async () => {
+  const translator = createTranslator({ loadCatalog: readCatalog });
+  const messages = new Set();
+  for (const item of [
+    ...SURVIVAL_UPGRADES,
+    ...SURVIVAL_EVOLUTIONS,
+    ...RUN_MOD_CATALOG,
+  ]) {
+    messages.add(item.name);
+    if (item.description) messages.add(item.description);
+  }
+  const state = createState({ mode: 'survival', seed: 175 });
+  for (let level = 0; level < 3; level++) {
+    state.survival.upgrades = Object.fromEntries(
+      SURVIVAL_UPGRADES.map((item) => [
+        item.id,
+        Math.max(item.id === 'heart' ? 1 : 0, level),
+      ]),
+    );
+    state.survival.level =
+      Object.values(state.survival.upgrades).reduce(
+        (sum, value) => sum + value,
+        0,
+      ) - 1;
+    state.survival.xp = survivalXpCost(state.survival.level);
+    for (let seed = 1; seed <= 50; seed++) {
+      state.seed = seed;
+      for (const offer of survivalOffers(state)) messages.add(offer.synergy);
+    }
+  }
+  for (const { code } of LANGUAGES.filter((item) => item.code !== 'ja')) {
+    const catalog = await readCatalog(code);
+    for (const item of [...SURVIVAL_UPGRADES, ...SURVIVAL_EVOLUTIONS]) {
+      assert.ok(catalog[item.name], `${code}: ${item.name}`);
+      if (item.description)
+        assert.ok(catalog[item.description], `${code}: ${item.description}`);
+    }
+  }
+  for (const code of ['en', 'it', 'es', 'fr', 'de', 'pt-BR']) {
+    await translator.setLanguage(code);
+    for (const value of messages)
+      assert.doesNotMatch(
+        translator.t(value),
+        /[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}]/u,
+        `${code}: ${value}`,
+      );
   }
 });
 

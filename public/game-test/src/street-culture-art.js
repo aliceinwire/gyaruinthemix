@@ -140,6 +140,15 @@ export function drawLittleFind(ctx, actor, x, y, time = 0) {
     rect(ctx,x-1,top+12,3,12,'#559779'); rect(ctx,x-8,top+4,16,12,pink); rect(ctx,x-4,top,8,20,pink); rect(ctx,x-3,top+7,6,6,'#ffe1a6');
   } else if (actor.find.id === 'paw-sticker') {
     rect(ctx,x-5,top+12,11,9,pink); for(const [dx,dy] of [[-9,6],[-3,2],[4,3],[9,8]]) rect(ctx,x+dx,top+dy,5,6,pink);
+  } else if (actor.find.id === 'deco-charm') {
+    rect(ctx,x-4,top+1,9,3,ink); rect(ctx,x-6,top+4,3,8,ink); rect(ctx,x+3,top+4,3,8,ink);
+    rect(ctx,x-4,top+12,9,3,ink); rect(ctx,x-2,top+15,5,4,mint);
+    rect(ctx,x-6,top+19,13,5,pink); rect(ctx,x-3,top+16,7,11,pink); rect(ctx,x-2,top+18,3,3,paper);
+  } else if (actor.find.id === 'puri-note') {
+    rect(ctx,x-11,top+3,22,15,'#b69aff');
+    rect(ctx,x-8,top+5,6,7,'#ffe1a6'); rect(ctx,x+2,top+5,6,7,'#ffe1a6');
+    rect(ctx,x-9,top+12,8,5,pink); rect(ctx,x+1,top+12,8,5,mint);
+    rect(ctx,x-10,top+21,13,2,ink); rect(ctx,x-10,top+25,20,2,ink);
   } else {
     rect(ctx,x-3,top+2,6,22,'#e3a14a'); rect(ctx,x-10,top+9,20,7,'#e3a14a'); rect(ctx,x-2,top+8,5,8,'#fff0a2');
   }
