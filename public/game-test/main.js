@@ -960,7 +960,7 @@ function handleEvents() {
       say("充電スポット！Eでバッテリー回復や！");
     }
     if (event.type === "rush-start") {
-      beep(520, .18); toast("バウンスラッシュ！ いま無敵やで！");
+      beep(520, .18); toast("テキーララッシュ！ いま無敵やで！");
       say("息合わせて一気に行くで。電池は気ぃつけや！");
     }
     if (event.type === "empty-energy") {
