@@ -2,7 +2,9 @@
 .screen-menu .menu-actions { flex-flow: row wrap; max-width: 480px; gap: 8px; }
 .screen-menu .menu-actions button { min-height: 42px; padding: 10px 14px; font-size: 13px; }
 .survival-record { color: #9eeedb; font-size: 11px; margin: 8px 0 0; }
-body[data-run-mode="survival"] .wallet strong { font-size: 26px; font-variant-numeric: tabular-nums; }
+body[data-run-mode="survival"] .dashboard { grid-template-columns: minmax(0,1fr) max-content; }
+body[data-run-mode="survival"] .objective { grid-column: 1 / -1; }
+body[data-run-mode="survival"] .wallet strong { font-size: 18px; white-space: nowrap; font-variant-numeric: tabular-nums; }
 body[data-run-mode="survival"] .rpg-status { border-color: #ff80c2; }
 body[data-run-mode="survival"] #rpg-build { color: #aaf2df; }
 #result-stats.survival-results { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 8px; }
@@ -70,6 +72,19 @@ body[data-run-mode="survival"] #rpg-build { color: #aaf2df; }
 .evolution-recipe b { width: 100%; color: #aaf2df; }
 .survival-build-recap { display: flex; flex-wrap: wrap; gap: 6px 12px; }
 .build-slot { display: inline-flex; align-items: center; gap: 4px; }
+.story-panel[data-journal="true"] .story-card {
+ background: linear-gradient(135deg, #34202f, #171622 65%);
+ border-color: #d7a0bb;
+ box-shadow: inset 0 0 0 4px #241926, inset 0 0 0 5px #936d83, 0 18px 80px #0008;
+}
+.story-panel[data-journal="true"] #story-kicker { color: #ffe3a3; letter-spacing: .09em; }
+.story-panel[data-journal="true"] #story-text {
+ border-left: 3px solid #ff8bc5;
+ padding-left: 12px;
+ background-image: repeating-linear-gradient(transparent 0, transparent calc(1.65em - 1px), #dca5bf14 calc(1.65em - 1px), #dca5bf14 1.65em);
+}
+.item-heading .item-icon { filter: drop-shadow(1px 1px 0 #07050d); }
+.tour-ticket { border-style: dashed; }
 @media (max-height:600px) and (min-width:540px) {
  .weapon-options { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
  .weapon-options .style-card { padding: 6px; }

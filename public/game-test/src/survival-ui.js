@@ -15,16 +15,19 @@ export function renderSurvivalResult(state, result, previous, host) {
   stat('生き抜いた時間', `${Math.floor(row.seconds / 60)}:${String(row.seconds % 60).padStart(2, '0')}`);
   stat('ノーダメージウェーブ', `${row.cleanWaves} / ${row.waves}`);
   stat('フロアへ招待', row.kills);
-  const best = document.createElement('p'); best.className = 'survival-record-note';
-  localizeText(best, result.best ? '今日の自己ベスト！' : message('今日の自己ベストまで、あと {0}', [number(Math.max(0, (previous?.score || row.score) - row.score), { useGrouping: true })]));
+  if (result.eligible !== false) {
+    const best = document.createElement('p'); best.className = 'survival-record-note';
+    localizeText(best, result.best ? '今日の自己ベスト！' : message('今日の自己ベストまで、あと {0}', [number(Math.max(0, (previous?.score || row.score) - row.score), { useGrouping: true })]));
+    host.append(best);
+  }
   const build = document.createElement('p'); build.className = 'survival-build-recap';
   for (const item of SURVIVAL_UPGRADES.filter(item => row.build[item.id])) {
     const slot = document.createElement('span'), label = document.createElement('span'); slot.className = 'build-slot';
     localizeText(label, `${item.name} ${row.build[item.id]}/3`); slot.append(createItemIcon(item.id, { size: 24 }), label); build.append(slot);
   }
   const recordLabel = document.createElement('small'); recordLabel.className = 'survival-record-note';
-  localizeText(recordLabel, result.persisted ? message('この端末の記録 · {0} · 日本時間', [row.day]) : '記録を保存できませんでした。このランはこの画面で確認できます。');
-  host.append(best, build, recordLabel);
+  localizeText(recordLabel, result.eligible === false ? '引き継いだツアーのスコアや。今のデイリー記録には入らへん。' : result.persisted ? message('この端末の記録 · {0} · 日本時間', [row.day]) : '記録を保存できませんでした。このランはこの画面で確認できます。');
+  host.append(build, recordLabel);
 }
 
 /** World-space pickups and restrained weapon feedback, independent of crew/car art. */
@@ -51,7 +54,7 @@ export function drawSurvival(ctx, state, time, reducedMotion = false) {
     }
   }
   ctx.fillStyle = '#141022df'; ctx.strokeStyle = s.fever > 0 ? '#ffdc91' : '#73567c'; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.roundRect(22, 22, 316, 94, 10); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.roundRect(22, 22, 316, 112, 10); ctx.fill(); ctx.stroke();
   ctx.textAlign = 'left'; ctx.fillStyle = '#ffafd9'; ctx.font = '700 11px system-ui';
   ctx.fillText(`${t('NIGHTFALL TOUR')}  /  ${t(message('ウェーブ {0} / 72', [state.routeIndex * 6 + s.wave + 1]))}`, 36, 43, 284);
   ctx.font = '800 28px system-ui'; ctx.fillStyle = '#fff5f9';

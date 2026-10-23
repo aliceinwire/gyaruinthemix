@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   createStoryDirector,
   STORY_SAVE_KEY,
+  normalizeStorySave,
 } from '../public/game-test/src/tour-director.js';
 import {
   markStorySeen,
@@ -30,6 +31,7 @@ function fixture({
       textContent: '',
       hidden: false,
       children: [],
+      dataset: {},
       addEventListener(type, callback) {
         if (!listeners.has(type)) listeners.set(type, []);
         listeners.get(type).push(callback);
@@ -113,6 +115,7 @@ function fixture({
     root,
     writes,
     counts,
+    state,
     get: (id) => nodes.get(`#${id}`),
     complete() {
       counts.completed++;
@@ -188,7 +191,8 @@ test('closing opening dialogue reaches its required choice and cannot bypass or 
   assert.equal(director.memory.choices['tour:opening'], 'crew');
   assert.deepEqual(director.memory.history, ['tour:opening']);
   assert.equal(writes.length, 1);
-  assert.deepEqual(writes[0], director.memory);
+  assert.deepEqual(writes[0].current, director.memory);
+  assert.deepEqual(writes[0].archive, director.archive);
 });
 
 test('holding a reading key cannot advance dialogue repeatedly', () => {
@@ -212,7 +216,9 @@ test('holding a reading key cannot advance dialogue repeatedly', () => {
 
 test('a long journal closes immediately from its first entry without changing story memory', () => {
   const memory = fullJournal();
-  const { director, get, counts, writes, complete } = fixture({ memory });
+  const { director, get, counts, writes, complete } = fixture({
+    memory: { version: 3, current: memory, archive: memory },
+  });
   assert.equal(director.journal(complete), true);
   assert.equal(get('story-progress').textContent, '1 / 48');
   assert.equal(get('story-skip').hidden, false);
@@ -227,7 +233,7 @@ test('a long journal closes immediately from its first entry without changing st
 
 test('Escape closes a long journal at any entry and the next scene still requires its choice', () => {
   const { director, get, counts, writes, complete } = fixture({
-    memory: fullJournal(),
+    memory: { version: 3, current: fullJournal(), archive: fullJournal() },
   });
   director.journal(complete);
   get('story-next').click();
@@ -252,6 +258,77 @@ test('Escape closes a long journal at any entry and the next scene still require
   assert.equal(director.active, true);
   assert.equal(get('story-choices').children.length, 2);
   assert.equal(counts.completed, 1);
+});
+
+test('new tours have a fresh album and choice while prior tours remain archived', () => {
+  const { director, get, state, writes, complete } = fixture({
+    state: { routeIndex: 0, status: 'playing', runId: 'first-tour' },
+  });
+  director.show('opening', complete);
+  get('story-skip').click();
+  get('story-choices').children[0].click();
+  state.routeIndex = 5;
+  state.status = 'won';
+  director.show('arrival', complete);
+  get('story-skip').click();
+  assert.ok(director.memory.history.includes('arrival:5'));
+
+  state.runId = 'second-tour';
+  state.routeIndex = 0;
+  state.status = 'playing';
+  assert.equal(director.show('opening', complete), true);
+  assert.deepEqual(director.memory.seen, []);
+  get('story-skip').click();
+  get('story-choices').children[1].click();
+  assert.equal(director.memory.choices['tour:returning'], 'discovery');
+  assert.equal(director.memory.choices['tour:opening'], undefined);
+  assert.deepEqual(director.memory.history, ['tour:returning']);
+  assert.ok(director.archive.seen.includes('arrival:5'));
+  assert.equal(writes.at(-1).runId, 'second-tour');
+  assert.equal(director.show('opening', complete), false);
+
+  director.journal(complete);
+  assert.equal(get('story-panel').dataset.journal, 'true');
+  assert.equal(get('story-progress').textContent, '1 / 1');
+  get('story-skip').click();
+  director.show('departure', complete);
+  assert.equal(get('story-panel').dataset.journal, 'false');
+});
+
+test('resume preserves seen scenes even when menu snapshots inspect the loaded story first', () => {
+  const current = markStorySeen({}, 'departure:0');
+  const stored = { version: 3, runId: 'saved-tour', current, archive: current };
+  const { director, state, counts, complete } = fixture({
+    memory: stored,
+    state: { runId: 'menu-placeholder', routeIndex: 0, status: 'playing' },
+  });
+  assert.deepEqual(director.memory, current);
+  state.runId = 'saved-tour';
+  assert.equal(director.show('departure', complete), false);
+  assert.equal(counts.opened, 0);
+  assert.equal(counts.completed, 1);
+  assert.deepEqual(director.memory, current);
+});
+
+test('old global journals migrate into an archive without leaking later stops into a new tour', () => {
+  const old = markStorySeen(markStorySeen({}, 'tour:opening'), 'arrival:11');
+  const normalized = normalizeStorySave(JSON.stringify(old));
+  assert.deepEqual(normalized.current, normalizeStoryMemory());
+  assert.deepEqual(normalized.archive, old);
+  const { director, get, complete } = fixture({
+    memory: old,
+    state: { runId: 'new-tour', routeIndex: 0 },
+  });
+  director.journal(complete);
+  assert.equal(get('story-progress').textContent, '1 / 1');
+  assert.match(get('story-text').textContent, /一枚目/);
+  assert.equal(get('story-history').children.length, 0);
+  get('story-skip').click();
+  assert.equal(director.show('opening', complete), true);
+  get('story-skip').click();
+  get('story-choices').children[0].click();
+  assert.deepEqual(director.memory.seen, ['tour:returning']);
+  assert.ok(director.archive.seen.includes('arrival:11'));
 });
 
 test('unavailable browser storage does not block reading, choices, or host continuation', () => {
@@ -287,4 +364,64 @@ test('director binds scenes to the active run without replaying a resumed scene'
   assert.deepEqual(view.director.memory.seen, []);
   assert.equal(view.writes.at(-1).runId, 'tour-b');
   assert.equal(view.director.show('departure', view.complete), false);
+});
+
+test('the director adopts an unbound legacy journal when resuming either tour mode', () => {
+  for (const mode of ['story', 'survival']) {
+    const state = {
+      mode,
+      routeIndex: 4,
+      status: 'playing',
+      runId: 'legacy-resume',
+    };
+    const memory = {
+      ...markStorySeen(markStorySeen({}, 'arrival:3'), 'departure:4'),
+      choices: { 'tour:opening': 'discovery' },
+    };
+    const { director } = fixture({ state, memory });
+    director.beginRun();
+    assert.equal(director.memory.choices['tour:opening'], 'discovery', mode);
+    assert.ok(director.memory.seen.includes('arrival:3'), mode);
+    assert.ok(director.memory.history.includes('arrival:3'), mode);
+    assert.ok(director.memory.seen.includes('departure:4'), mode);
+    assert.equal(director.memory.runId, state.runId, mode);
+  }
+});
+
+test('unbound journals with future scenes remain archives when resuming either tour mode', () => {
+  for (const mode of ['story', 'survival']) {
+    for (const field of ['seen', 'history']) {
+      for (const future of [
+        'departure:5',
+        'arrival:5',
+        'retry:5:first',
+        'tour:finale',
+      ]) {
+        const memory = {
+          ...markStorySeen({}, 'arrival:3'),
+          choices: { 'tour:opening': 'discovery' },
+        };
+        memory[field].push(future);
+        const { director } = fixture({
+          memory,
+          state: {
+            mode,
+            routeIndex: 4,
+            status: 'playing',
+            runId: 'resumed-tour',
+          },
+        });
+        director.beginRun();
+        assert.deepEqual(
+          director.memory.seen,
+          [],
+          `${mode}/${field}/${future}`,
+        );
+        assert.deepEqual(director.memory.history, []);
+        assert.deepEqual(director.memory.choices, {});
+        assert.equal(director.memory.runId, 'resumed-tour');
+        assert.ok(director.archive[field].includes(future));
+      }
+    }
+  }
 });

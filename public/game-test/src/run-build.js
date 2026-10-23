@@ -1,3 +1,4 @@
+import { applySurvivalModifiers, isSurvival } from './survival.js';
 /** Current-car tour builds and destination goals. No DOM, randomness, unlocks or new currency. */
 import { CAR_CATALOG, DEFAULT_CAR_ID } from './garage.js';
 import { getJourneyNode, JOURNEY_STAGE_COUNT } from './journey.js';
@@ -16,7 +17,7 @@ const data = [
   { id: 'heart-chain', family: 'relay', tier: 2, name: 'となりもリレー', description: 'ハートが届いた場所から32m以内の1か所へ連鎖や。コーラスハートと組むと38m以内の2か所へ。', preview: '連鎖+1 / コーラス併用で2連鎖・38m', effects: { heartChain: 1, heartChainRange: 32 } },
   { id: 'heart-recycle', family: 'relay', tier: 3, name: 'ときめき還元', description: '招待やシグナル復旧で電池+3や。ときめきリチャージと合わせたら+6や。', preview: 'ハートが届くたび電池+3 / 得意技と合算', effects: { conversionEnergy: 3 } },
   { id: 'charge-shield', family: 'guardian', tier: 1, name: 'EVおまもり', description: 'EVで2秒充電したら、次の衝突1回をガードや。すでにガードがあれば充電時間を0.25秒短縮。', preview: 'EV充電2秒でガード / 併用はさらに−0.25秒', effects: { chargeShield: true, chargeShieldSeconds: 2 } },
-  { id: 'charged-heart', family: 'guardian', tier: 2, name: '満タンの一撃', description: '満充電で次のハートの威力+1や。満タンアンプと合わせて威力+2にできるで。', preview: '満充電後の次弾は威力+1 / アンプ併用で+2', effects: { chargedHeartBonus: 1 } },
+  { id: 'charged-heart', family: 'guardian', tier: 2, name: '満タンの一撃', description: '満充電で次に届く一撃の威力+1。自動武器のどれでも使えて、満タンアンプと合わせたら+2や。', preview: '満充電後、次に届く一撃は威力+1 / アンプ併用で+2', effects: { chargedHeartBonus: 1 } },
   { id: 'shield-piercing', family: 'guardian', tier: 3, name: 'おまもり貫通', description: 'EVガードを持ってる間は敵のガードを無視して、ハートがさらに1体貫通や。EVおまもりと一緒に積んで、守りを残そ。', preview: 'EVガード保持中、敵のガードを無視・貫通+1', effects: { shieldPiercing: true } },
   { id: 'air-control', family: 'air', tier: 1, name: 'ふわっと着地', description: '落ちる速さを35%抑えて、スラスター消費も15%節約や。高く飛ぶほど着地を見よ。', preview: '下降速度×0.65 / スラスター消費×0.85', effects: { descentMultiplier: .65, thrustDrainMultiplier: .85 } },
   { id: 'rush-pulse', family: 'air', tier: 2, name: 'ラッシュ開花', description: 'ラッシュ開始で前45mに威力2のハート波。ベースドロップと組むと前75mに広がるで。', preview: '前45mへハート波 / ドロップ併用で75m', effects: { rushPulse: 45 } },
@@ -112,11 +113,16 @@ function hash(value) {
   for (const char of value) result = Math.imul(result ^ char.charCodeAt(0), 16777619) >>> 0;
   return result;
 }
+function liveBuildModifiers(state) {
+  const effects = getBuildModifiers(state);
+  applySurvivalModifiers({ ...state, buildModifiers: effects });
+  return effects;
+}
 function offerPreview(state, item, build) {
-  const before = getBuildModifiers(state);
+  const before = liveBuildModifiers(state);
   // Each shop part owns distinct effect fields. Preview this part with mastery;
   // any player-selected replacement has its own separately displayed effect.
-  const after = getBuildModifiers({ ...state, runBuild: { ...build, mods: [item.id], acquiredIds: [...build.acquiredIds, item.id] } });
+  const after = liveBuildModifiers({ ...state, runBuild: { ...build, mods: [item.id], acquiredIds: [...build.acquiredIds, item.id] } });
   const delta = (key, unit = '') => `${before[key]}${unit}→${after[key]}${unit}`;
   const guardPierce = effects => effects.guardedHeartPierce ?? Number(effects.shieldPiercing);
   return {
@@ -124,7 +130,7 @@ function offerPreview(state, item, build) {
     'heart-chain': `連鎖 ${delta('heartChain')} / 距離${after.heartChainRange}m`,
     'heart-recycle': `招待・復旧の電池回復 +${before.conversionEnergy}→+${after.conversionEnergy}`,
     'charge-shield': before.chargeShield ? `ガード必要充電 ${delta('chargeShieldSeconds', '秒')}` : `EV充電${after.chargeShieldSeconds}秒で1回ガード`,
-    'charged-heart': `満充電後の次弾 威力+${before.chargedHeartBonus}→+${after.chargedHeartBonus}`,
+    'charged-heart': `満充電後の一撃 威力+${before.chargedHeartBonus}→+${after.chargedHeartBonus}`,
     'shield-piercing': `ガード保持中、敵ガード無視 / 貫通+${guardPierce(before)}→+${guardPierce(after)}`,
     'air-control': `下降速度×${before.descentMultiplier.toFixed(2)}→×${after.descentMultiplier.toFixed(2)} / 浮力消費×${before.thrustDrainMultiplier.toFixed(2)}→×${after.thrustDrainMultiplier.toFixed(2)}`,
     'rush-pulse': `ラッシュ波の範囲 ${delta('rushPulse', 'm')} / 威力2`,
@@ -137,6 +143,7 @@ export function getBuildOffers(state) {
   const build = stateBuild(state), carId = carIdFrom(state), car = CAR_CATALOG.find(item => item.id === carId);
   const rotation = hash(`${Number.isSafeInteger(state.seed) ? state.seed : 0}:${state.routeIndex}:${carId}`) % FAMILIES.length;
   return FAMILIES.map((_, index) => FAMILIES[(index + rotation) % FAMILIES.length]).map(family => {
+    if (isSurvival(state) && !state.survival.upgrades.heart && family.id === 'relay') return null;
     const familyMods = RUN_MOD_CATALOG.filter(item => item.family === family.id);
     const item = familyMods.find(item => !build.acquiredIds.includes(item.id));
     if (!item || state.routeIndex < item.minLeg) return null;
@@ -181,7 +188,7 @@ export function describeBuild(state) {
   const leaders = active.filter(family => family.level === max);
   const name = !active.length ? 'まだ自由なノーマル仕様' : leaders.length > 1 ? 'ええとこ混ぜるミックス仕様' : `${leaders[0].name}仕様`;
   return { name, carId: build.carId, capacity: RUN_BUILD_CAPACITY, installedCount: build.mods.length, acquiredIds: [...build.acquiredIds], families, mods: RUN_MOD_CATALOG.filter(item => build.mods.includes(item.id)).map(item => ({ id: item.id, name: item.name, description: item.description, preview: item.preview })),
-    effects: getBuildModifiers(state), summary: active.length ? active.map(family => `${family.name} ${family.level}/3`).join('・') : '到着後、3つの系統からこの車の伸ばし方を選ぼ。' };
+    effects: liveBuildModifiers(state), summary: active.length ? active.map(family => `${family.name} ${family.level}/3`).join('・') : '到着後、3つの系統からこの車の伸ばし方を選ぼ。' };
 }
 function routeNode(state, candidate) {
   const requested = typeof candidate === 'string' ? candidate : candidate?.nodeId ?? state?.journeyNodeId;
@@ -199,7 +206,7 @@ export function getRouteMission(state, node) {
     description = `EVで合計${goal.chargeSeconds}秒充電して到着や。電池満タンでも数えるで。`;
     complete = progress.chargeSeconds + 1e-8 >= goal.chargeSeconds;
   } else if (target.kind === 'event') {
-    label = '街角のハートリレー'; goal = { conversions: 3 + tier, bestCombo: 2 + (tier === 2 ? 1 : 0) };
+    label = '街角の招待リレー'; goal = { conversions: 3 + tier, bestCombo: 2 + (tier === 2 ? 1 : 0) };
     // Use the complete deterministic road plan, never the transient visible entities.
     // Map previews construct this same candidate road, so their promise matches play.
     if (state?.journeyNodeId === target.nodeId && state.routeIndex === target.stageIndex && Array.isArray(state._encounterPlan)) {
@@ -214,7 +221,7 @@ export function getRouteMission(state, node) {
       goal.conversions = Math.max(1, Math.min(goal.conversions, distances.length - 1));
       goal.bestCombo = Math.max(1, Math.min(goal.bestCombo, longest));
     }
-    description = `ハートを${goal.conversions}か所につないで、${goal.bestCombo}コンボを1回決めよ。仲間への招待もシグナル復旧も数えるで。`;
+    description = `${goal.conversions}か所で招待かシグナル復旧、${goal.bestCombo}コンボを1回決めよ。どの武器でも数えるで。`;
     complete = progress.conversions >= goal.conversions && progress.bestCombo >= goal.bestCombo;
   } else {
     label = 'ピットまでスマートに'; goal = { maxHits: 2, rushes: 1 };

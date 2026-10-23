@@ -5,6 +5,24 @@ const PALETTE = Object.freeze({
 });
 // Sixteen logical pixels keep the silhouettes crisp at both card and HUD sizes.
 const ART = {
+  phone: [
+    '................', '..........kk....', '...kkkkkkkkk....', '..kppppppppk....',
+    '..kphkkkkhpk....', '..kpkmmmmkpk....', '..kpkmwwmkpk....', '..kphkkkkhpk....',
+    '...kkkkkkkk.....', '..kppphhpppk....', '..kpkpkpkppk....', '..kpkpkpkppk....',
+    '..kppppppppk.k..', '...kkkkkkkk.kgk.', '.............k..', '................',
+  ],
+  md: [
+    '................', '..kkkkkkkkkkkk..', '.kppppppppppppk.', '.kphhhhhhhhhppk.',
+    '.kphwwwwwwwhppk.', '.kphwssssswhppk.', '.kphwwwwwwwhppk.', '.kphhhhhhhhhppk.',
+    '.kppppppppppppk.', '.kpppkkkkkkpppk.', '.kppkswwwskpppk.', '.kppkswwsskpppk.',
+    '.kppkssssskpppk.', '..kkkkkkkkkkkk..', '................', '................',
+  ],
+  album: [
+    '................', '..kkkkkkkkkkkk..', '.kvvvvvvvvvvvvk.', '.kvwwwwwwwwwwvk.',
+    '.kvwkppkkppkwvk.', '.kvwkppppppkwvk.', '.kvwwkppppkwwvk.', '.kvwwwkkkkwwwvk.',
+    '.kvwwwwwwwwwwvk.', '.kvwssswwssswvk.', '.kvwwwwwwwwwwvk.', '.kvwsssssswwwvk.',
+    '.kvwwwwwwwwwwvk.', '.kvvvvvvvvvvvvk.', '..kkkkkkkkkkkk..', '................',
+  ],
   heart: [
     '................', '................', '..kkkk...kkkk...', '.kppppk.kppppk..',
     'kphhpppkppppppk.', 'kphhppppppppppk.', 'kpppppppppppppk.', '.kpppppppppppk..',
@@ -28,18 +46,6 @@ const ART = {
     '.m..kksmmkkk..m.', '.mt.kksmmkkk.tm.', '.mt.kpkkkkpk.tm.', 'mmt.kppppppk.tmm',
     'mmt.kpkkkkpk.tmm', '.mt.kkmttmkk.tm.', '.mt.kkmwwmkk.tm.', '.m..kkmttmkk..m.',
     '....kpkkkkpk....', '....kppppppk....', '....kkkkkkkk....', '................',
-  ],
-  phone: [
-    '.....kkkkkk.....', '....kppppppk....', '....kpgwwgpk....', '....kpkmmkpk....',
-    '....kpkmmkpk....', '....kpgwwgpk....', '.....kkkkkk.....', '.....kssssk.....',
-    '....kppppppk....', '....kpwhwppk....', '....kpkpkppk....', '....kpwkwppk....',
-    '....kpkpkppk.k..', '....kppppppkgpk.', '.....kkkkkk.kpk.', '.............k..',
-  ],
-  md: [
-    '................', '..kkkkkkkkkkk...', '.kvvvvvvvvvvvk..', '.kvwwwwwwvvvsk..',
-    '.kvwpwwwwvsvsk..', '.kvwwwwwwvvvsk..', '.kvvvvvvvvvvvk..', '.kvvkkkkkkkvvk..',
-    '.kvkssssssskvk..', '.kvksmwwmsskvk..', '.kvkswmmwsskvk..', '.kvkssssssskvk..',
-    '.kvkkkkkkkkkvk..', '.kvvvvvvvvvvvk..', '..kkkkkkkkkkk...', '................',
   ],
   battery: [
     '................', '......kkkk......', '......kssk......', '....kkkkkkkk....',
@@ -121,8 +127,9 @@ define(['flash'], 'camera');
 define(['vinyl'], 'vinyl');
 define(['bass'], 'bass');
 define(['phone'], 'phone');
-define(['md'], 'md');
-define(['hotline'], 'phone', undefined, 'chain');
+define(['md', 'echo'], 'md');
+define(['hotline'], 'phone', '#8cf0db', 'star');
+define(['album'], 'album');
 define(['battery'], 'battery');
 define(['glide', 'air', 'air-control'], 'feather');
 define(['armor', 'guardian', 'charge-shield', 'sanctuary'], 'shield');

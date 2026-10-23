@@ -221,8 +221,8 @@ export function equipStartingCar(state, meta, carId) {
   const progress = restoreMetaProgress(meta);
   if (!progress || !progress.ownedCars.includes(carId)) return false;
   const garage = normalizeGarage({ owned: progress.ownedCars, equipped: carId, customizations: progress.customizations });
-  // Grandfather already-earned legacy upgrades; new purchases use campaign coins only.
-  state.upgrades = { ...progress.upgrades };
+  // Legacy campaigns keep earned power. A scored survival tour starts at stock levels.
+  state.upgrades = state.mode === "survival" ? { battery: 0, hearts: 0, charger: 0, armor: 0 } : { ...progress.upgrades };
   const changed = state.garage?.equipped !== carId;
   state.garage = garage;
   applyCarStats(state);

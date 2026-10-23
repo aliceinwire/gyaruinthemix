@@ -10,7 +10,7 @@ export function captureRoadFeedback(feedback, events, distance = 0) {
   for (const event of events || []) {
     let label = '', color = '#ffadd9', kind = 'ring';
     if (event.type === 'convert') { label = event.headliner || event.elite ? 'SIGNAL CLEAR' : `+${Math.max(0, finite(event.survivalPoints, event.reward))}`; kind = event.headliner || event.elite ? 'signal' : 'heart'; }
-    else if (event.type === 'survival-attack') { label = event.kind === 'phone' ? 'LINK' : event.kind === 'flash' ? 'FLASH' : event.kind === 'bass' ? 'BASS' : 'VINYL'; color = event.kind === 'phone' ? '#ffadd9' : event.kind === 'flash' ? '#fff1b8' : event.kind === 'bass' ? '#8cf0db' : '#c5a6ff'; kind = event.kind; }
+    else if (event.type === 'survival-attack') { label = event.kind === 'echo' ? 'MD ECHO' : event.kind === 'phone' ? 'LINK' : event.kind === 'flash' ? 'FLASH' : event.kind === 'bass' ? 'BASS' : 'VINYL'; color = event.kind === 'echo' ? '#8ccfff' : event.kind === 'phone' ? '#ffadd9' : event.kind === 'flash' ? '#fff1b8' : event.kind === 'bass' ? '#8cf0db' : '#c5a6ff'; kind = event.kind; }
     else if (event.type === 'collision') { label = `−${event.damage}`; color = '#ffd29a'; }
     else if (event.type === 'jump-clear') { label = 'NICE!'; color = '#a6f6e5'; }
     else if (event.type === 'destroy') { label = 'CLEAR'; color = '#d4b7ff'; }

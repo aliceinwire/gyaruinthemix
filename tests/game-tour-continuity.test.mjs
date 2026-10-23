@@ -74,7 +74,7 @@ test('Kyoto approach recalls five club recordings before the sixth soundcheck', 
   const line = selectCrewDialogue({ time: 0, cityId: 'kyoto' });
   assert.match(line.text, /五つのクラブ/);
   const last = getStoryScene({ routeIndex: 11, status: 'won' }, 'arrival');
-  assert.match(last.lines.map((line) => line.text).join(' '), /六つのクラブ/);
+  assert.match(last.lines.map((line) => line.text).join(' '), /六枚のMD/);
 });
 
 test('legacy mid-tour journals migrate without losing their focus or completed stops', () => {
