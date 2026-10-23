@@ -72,7 +72,7 @@ test('Japanese branding uses katakana and survives language switching', async ()
   }
 });
 
-test('every survival item and generated effect is translated, including phone and MD upgrades', async () => {
+test('every survival item and generated effect is translated, including six-level weapons and their evolutions', async () => {
   const translator = createTranslator({ loadCatalog: readCatalog });
   const messages = new Set();
   for (const item of [
@@ -84,11 +84,11 @@ test('every survival item and generated effect is translated, including phone an
     if (item.description) messages.add(item.description);
   }
   const state = createState({ mode: 'survival', seed: 175 });
-  for (let level = 0; level < 3; level++) {
+  for (let level = 0; level < 6; level++) {
     state.survival.upgrades = Object.fromEntries(
       SURVIVAL_UPGRADES.map((item) => [
         item.id,
-        Math.max(item.id === 'heart' ? 1 : 0, level),
+        Math.min(item.maxLevel, Math.max(item.id === 'heart' ? 1 : 0, level)),
       ]),
     );
     state.survival.level =

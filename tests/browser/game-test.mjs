@@ -435,8 +435,8 @@ try {
     assert.ok(openingMemory.seen.includes('tour:opening'));
     assert.equal(await page.locator('#car-select').isVisible(), true);
     const weapons = page.locator('#style-options button');
-    assert.equal(await weapons.count(), 5);
-    for (const id of ['heart', 'flash', 'vinyl', 'bass', 'phone', 'flash']) {
+    assert.equal(await weapons.count(), 7);
+    for (const id of ['heart', 'flash', 'vinyl', 'bass', 'phone', 'cd', 'cassette', 'flash']) {
       const choice = page.locator(`#style-options [data-weapon="${id}"]`);
       assert.equal(await choice.locator('.item-icon').count(), 1);
       await choice.click();
@@ -898,14 +898,14 @@ try {
       });
       gadgetDraftFixture.survival.upgrades = Object.fromEntries(
         SURVIVAL_UPGRADES.filter((item) => !['phone', 'md'].includes(item.id))
-          .map((item) => [item.id, 3]),
+          .map((item) => [item.id, item.maxLevel]),
       );
       function prepareGadgetDraft() {
         const survival = gadgetDraftFixture.survival;
         survival.level = Object.values(survival.upgrades).reduce((sum, level) => sum + level, 0) - 1;
         survival.xp = survivalXpCost(survival.level);
         survival.evolutions = SURVIVAL_EVOLUTIONS.filter((recipe) =>
-          survival.upgrades[recipe.weapon] >= 3 && survival.upgrades[recipe.support] >= 2,
+          survival.upgrades[recipe.weapon] >= recipe.weaponRequired && survival.upgrades[recipe.support] >= recipe.supportRequired,
         ).map((recipe) => recipe.id);
       }
       prepareGadgetDraft();
@@ -941,7 +941,7 @@ try {
       assert.equal(await page.evaluate(() => __HYPERDRIVE__.snapshot().state.survival.upgrades.phone), 1);
 
       // The support card announces and grants the phone's actual evolution.
-      gadgetDraftFixture.survival.upgrades.phone = 3;
+      gadgetDraftFixture.survival.upgrades.phone = 6;
       gadgetDraftFixture.survival.upgrades.md = 1;
       prepareGadgetDraft();
       assert.equal(survivalOffers(gadgetDraftFixture)[0].id, 'md');
@@ -956,6 +956,38 @@ try {
       await page.waitForFunction(() => __HYPERDRIVE__.snapshot().screen === 'playing');
       assert.equal(await page.evaluate(() => __HYPERDRIVE__.snapshot().state.survival.upgrades.md), 2);
       assert.ok(await page.evaluate(() => __HYPERDRIVE__.snapshot().state.survival.evolutions.includes('hotline')));
+
+      // Both new weapons reveal their sixth level and evolve through the real draft UI.
+      for (const [id, support, evolution] of [['cd', 'armor', 'prism'], ['cassette', 'glide', 'doubledeck']]) {
+        const fixture = createState({
+          mode: 'survival', startingWeapon: id, survivalDay: '2026-10-23',
+          routeIndex: 7, seed: 175, campaignStarted: true,
+        });
+        fixture.survival.upgrades = { [id]: 5, [support]: 2 };
+        fixture.survival.level = 6;
+        fixture.survival.xp = survivalXpCost(6);
+        await loadNightfallFixture(page, fixture);
+        await departThroughStory(page);
+        await page.waitForFunction(() => __HYPERDRIVE__.snapshot().screen === 'draft');
+        const card = page.locator(`#draft-options [data-perk-id="${id}"]`);
+        assert.equal(await card.locator(`[data-item-icon="${id}"]`).count(), 1);
+        assert.equal(await card.locator(`[data-item-icon="${evolution}"]`).count(), 1);
+        assert.ok((await card.locator('.weapon-stats').textContent()).includes('Lv.6 / 6'));
+        assert.equal(await card.locator('.evolution-recipe b').textContent(), 'これで進化！');
+        await checkLanguages(page, '#draft-panel select', ['#draft-panel .modal-card']);
+        for (const viewport of [{ width: 390, height: 667 }, { width: 844, height: 390 }]) {
+          await page.setViewportSize(viewport);
+          await page.waitForFunction(width => document.querySelector('#draft-options').dataset.compare === String(width >= 760), viewport.width);
+          await checkLanguages(page, '#draft-panel select', ['#draft-panel .modal-card']);
+        }
+        await page.setViewportSize({ width, height });
+        await page.screenshot({ path: resolve(root, `artifacts/browser/game-test/1440-${id}-level-six.png`), fullPage: true });
+        await card.click();
+        await page.waitForFunction(() => __HYPERDRIVE__.snapshot().screen === 'playing');
+        const evolved = await page.evaluate(() => __HYPERDRIVE__.snapshot().state.survival);
+        assert.equal(evolved.upgrades[id], 6);
+        assert.ok(evolved.evolutions.includes(evolution));
+      }
 
       // Replaying starts a new current-tour album while remembering the duo's past.
       await reloadWithoutCampaign(page);
