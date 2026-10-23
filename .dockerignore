@@ -10,6 +10,7 @@
 !assets/originals/**
 !scripts/images.mjs
 !scripts/check-site-build.mjs
+!scripts/release-version.mjs
 !deploy/nginx.conf
 !deploy/bouncer/nginx-www-redirect.conf
 !deploy/nginx-api.conf

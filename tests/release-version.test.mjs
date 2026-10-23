@@ -112,5 +112,9 @@ test('package lock, shared footer and standalone game expose the same release', 
     await read('Dockerfile.web'),
     /COPY scripts\/images\.mjs scripts\/check-site-build\.mjs scripts\/release-version\.mjs \.\/scripts\//,
   );
+  assert.match(
+    await read('.dockerignore'),
+    /^!scripts\/release-version\.mjs$/m,
+  );
   await syncGameRelease({ check: true });
 });
