@@ -1,4 +1,5 @@
 import { t } from './i18n.js';
+import { suitStyleFor } from './street-culture.js';
 /** Small code-native pixel props extend the original detailed sprite artwork. */
 function rect(ctx, x, y, width, height, color) {
   ctx.fillStyle = color; ctx.fillRect(Math.round(x), Math.round(y), width, height);
@@ -13,13 +14,65 @@ function camera(ctx, x, y) {
   rect(ctx,x-4,y-5,10,10,mint); rect(ctx,x-1,y-2,4,4,ink);
   rect(ctx,x+8,y-5,2,3,paper);
 }
+
+function polygon(ctx, x, y, points, color) {
+  ctx.fillStyle = color; ctx.beginPath();
+  for (let i = 0; i < points.length; i++) {
+    const [dx, dy] = points[i];
+    if (i) ctx.lineTo(Math.round(x + dx), Math.round(y + dy));
+    else ctx.moveTo(Math.round(x + dx), Math.round(y + dy));
+  }
+  ctx.closePath(); ctx.fill();
+}
+
+/** Tailored pixel layers sit on the atlas torso, leaving the face and stride intact. */
+export function drawSuitUniform(ctx, actor, x, y) {
+  const suit = suitStyleFor(actor);
+  if (!suit || suit.cut === 'classic') return false;
+  const shoulder = 12 + suit.width, hem = suit.cut === 'coat' ? -24 : -32;
+  ctx.save();
+  // Stronger guards and chiefs have broader shoulders and longer, heavier jackets.
+  polygon(ctx,x,y,[[-7,-51],[-shoulder,-48],[-shoulder-4,-35],[-shoulder+1,-33],[-9,-43],[-10,hem],[-1,hem-1],[3,-39],[8,hem],[13,hem-2],[9,-50]],ink);
+  polygon(ctx,x,y,[[-7,-49],[-shoulder+1,-47],[-shoulder-2,-36],[-shoulder,-35],[-8,-45],[-8,hem-2],[-2,hem-3],[3,-42],[9,hem-2],[11,hem-3],[8,-49]],suit.jacket);
+  // White collar, contrasting lapels and a small tie retain the suit silhouette.
+  polygon(ctx,x,y,[[-5,-50],[7,-50],[5,-43],[2,-36],[-1,-44]],paper);
+  polygon(ctx,x,y,[[-7,-50],[-2,-45],[-4,-43],[1,-36],[-7,-42]],suit.light);
+  polygon(ctx,x,y,[[8,-50],[5,-44],[8,-42],[3,-36],[9,-43]],suit.light);
+  rect(ctx,x+1,y-49,3,3,suit.tie);
+  polygon(ctx,x,y,[[2,-46],[4,-46],[5,-38],[3,-36],[1,-38]],suit.tie);
+  if (suit.cut === 'vest' || suit.cut === 'rolled') {
+    rect(ctx,x-6,y-44,4,9,suit.light); rect(ctx,x+7,y-44,3,9,suit.light);
+    for (let i=0;i<3;i++) rect(ctx,x+2,y-42+i*3,1,1,paper);
+    if (suit.cut === 'rolled') rect(ctx,x-shoulder-1,y-38,6,3,paper);
+  } else if (suit.cut === 'pinstripe') {
+    for (let i=0;i<3;i++) rect(ctx,x-10+i*4,y-42,1,7,suit.light);
+    rect(ctx,x+9,y-41,1,6,suit.light);
+  } else if (suit.cut === 'double' || suit.cut === 'coat') {
+    for (let i=0;i<2;i++) {
+      rect(ctx,x-4,y-38+i*4,2,2,suit.tie); rect(ctx,x+5,y-38+i*4,2,2,suit.tie);
+    }
+    rect(ctx,x-shoulder+2,y-47,6,2,suit.light);
+    rect(ctx,x+7,y-46,5,2,paper);
+  }
+  if (suit.glasses) {
+    rect(ctx,x,y-62,7,4,ink); rect(ctx,x+9,y-62,6,4,ink);
+    rect(ctx,x+6,y-61,4,1,ink);
+    rect(ctx,x+1,y-61,4,2,suit.light); rect(ctx,x+10,y-61,3,2,suit.light);
+  }
+  if (suit.silverHair) {
+    rect(ctx,x-8,y-69,3,7,'#aaa8b7'); rect(ctx,x-7,y-71,4,2,'#d6d0d7');
+    rect(ctx,x-4,y-73,7,2,'#aaa8b7');
+  }
+  ctx.restore(); return true;
+}
+
 export function drawCultureProp(ctx, actor, x, y, time = 0) {
   const role = actor.streetRole;
   if (!role || role.id === 'salaryman' && !actor.converted) return;
   ctx.save();
   if (actor.converted) {
     const fan = role.fan;
-    // The same person keeps their silhouette and gains their own creative kit.
+    // Each new gyaru brings a creative kit to the club crowd.
     rect(ctx,x-18,y-43,5,4,pink); rect(ctx,x+13,y-43,5,4,mint);
     if (fan === 'photographer') camera(ctx,x+21,y-46);
     else if (fan === 'tv') {

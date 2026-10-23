@@ -34,6 +34,7 @@ export function createStreamingAudio(options) {
   const stereo = createCarStereo({
     mount: music,
     canPlay,
+    AudioContextClass,
     loadAvailability: options.loadAvailability,
     onState: (state) => {
       if (!suspending) enabled = state.enabled;
@@ -44,6 +45,7 @@ export function createStreamingAudio(options) {
   async function unlock() {
     if (!enabled || destroyed || !canPlay()) return;
     stereo.controller.play();
+    stereo.equalizer.unlock();
     unlockEffects();
   }
   async function unlockEffects() {

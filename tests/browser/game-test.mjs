@@ -29,6 +29,8 @@ import { STORY_SAVE_KEY } from '../../public/game-test/src/tour-director.js';
 import { extname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+import { checkRadioSpectrum } from './radio-spectrum.mjs';
+import { releaseVersion } from '../../src/data/release.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const origin = 'http://game-test.local';
@@ -129,7 +131,7 @@ async function assertFrameFits(page, selectors) {
       const el = document.querySelector(selector),
         box = el.getBoundingClientRect();
       const bottom =
-        selector === '.radio-dock' || el.closest('.modal')
+        ['.radio-dock', '.game-copyright'].includes(selector) || el.closest('.modal')
           ? shell.bottom
           : radio.top;
       if (
@@ -295,6 +297,7 @@ const browser = await chromium.launch({
     : {}),
 });
 try {
+  await checkRadioSpectrum(browser, { root, csp });
   for (const [width, height] of [
     [320, 740],
     [390, 667],
@@ -381,6 +384,10 @@ try {
     );
     assert.equal(await page.locator('iframe#music').count(), 0);
     assert.equal(await page.locator('#music audio').count(), 1);
+    const release = page.locator('.game-copyright [data-release-version]');
+    assert.equal(await release.getAttribute('data-release-version'), releaseVersion);
+    assert.ok(await release.isVisible());
+    await assertFrameFits(page, ['.game-copyright']);
     assert.equal(
       await page
         .locator('#survival, [data-control=shoot], #auto-hearts')

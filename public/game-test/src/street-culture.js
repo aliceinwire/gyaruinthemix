@@ -15,6 +15,29 @@ export const STREET_ROLES = Object.freeze([
   { id: 'hierarchy-keeper', name: '肩書きタワーの番人', behavior: 'shield', stage: 5, fan: 'stylist', welcome: '肩書きより、そのアクセめっちゃ似合う！' },
 ].map(Object.freeze));
 
+/** Suit silhouettes make stamina readable before the first invitation lands.
+ * Floors preserve the later roads' existing crowd scaling. */
+export const SUIT_STYLES = Object.freeze({
+  salaryman: { cut: 'classic', jacket: '#343b54', light: '#58617c', tie: '#bd4155', width: 0, minimumHp: 1 },
+  'brand-rep': { cut: 'tailored', jacket: '#645d68', light: '#9a8d9a', tie: '#c29d76', width: 0, minimumHp: 1 },
+  'notification-clerk': { cut: 'slim', jacket: '#434653', light: '#737b87', tie: '#87a7b1', width: -1, glasses: true, minimumHp: 1 },
+  'script-reader': { cut: 'vest', jacket: '#565769', light: '#9795a6', tie: '#8e657c', width: -1, minimumHp: 1 },
+  'copy-clerk': { cut: 'vest', jacket: '#60564a', light: '#9d8e75', tie: '#b88569', width: -1, glasses: true, minimumHp: 1 },
+  'metrics-inspector': { cut: 'pinstripe', jacket: '#344955', light: '#718d98', tie: '#b6b2a7', width: 1, glasses: true, minimumHp: 2 },
+  'meeting-host': { cut: 'double', jacket: '#55495f', light: '#877894', tie: '#a894bd', width: 2, minimumHp: 2 },
+  'deadline-runner': { cut: 'tailored', jacket: '#3e4d66', light: '#7790ad', tie: '#bd6969', width: -1, minimumHp: 1 },
+  'overtime-runner': { cut: 'rolled', jacket: '#4d5961', light: '#8b9ba5', tie: '#bc815b', width: 1, minimumHp: 2 },
+  'dress-code-guard': { cut: 'double', jacket: '#2d354a', light: '#66718a', tie: '#b1b7c5', width: 3, glasses: true, minimumHp: 3 },
+  'approval-chief': { cut: 'pinstripe', jacket: '#574552', light: '#957784', tie: '#c7a375', width: 3, silverHair: true, minimumHp: 3 },
+  'hierarchy-keeper': { cut: 'coat', jacket: '#3b3e50', light: '#7d819b', tie: '#d1b178', width: 4, glasses: true, silverHair: true, minimumHp: 4 },
+});
+for (const style of Object.values(SUIT_STYLES)) Object.freeze(style);
+
+export function suitStyleFor(actor = {}) {
+  if (actor.converted || actor.headliner || actor.elite || actor.type !== 'salaryman') return null;
+  return SUIT_STYLES[actor.streetRole?.id] || SUIT_STYLES.salaryman;
+}
+
 export const ROUTINE_HAZARDS = Object.freeze([
   { id: 'paper-stack', name: 'おかわり書類', type: 'cone', hp: 1, clearance: .17, advice: '攻撃で片づく。短く浮いてもOK', stage: 0 },
   { id: 'deadline-clock', name: '締切タイマー', type: 'cone', hp: 1, clearance: .2, advice: '攻撃でオフ。浮いてもOK', stage: 1 },
@@ -46,9 +69,14 @@ export function decorateEncounter(actor, stage, seed) {
   if (actor.headliner || actor.elite) return actor;
   const roll = hash(`${seed}:${stage}:${actor.encounterId}:${actor.phraseIndex}`);
   if (actor.type === 'salaryman') {
-    const available = STREET_ROLES.filter(role => role.stage <= stage && role.behavior === actor.behavior);
+    // Close crowd groups use light suits so one short relay can clear the pair.
+    const available = STREET_ROLES.filter(role => role.stage <= stage && role.behavior === actor.behavior &&
+      (!actor.cluster || SUIT_STYLES[role.id].minimumHp === 1));
     const role = actor.tutorial ? STREET_ROLES[0] : available[roll % available.length];
-    return role ? Object.freeze({ ...actor, streetRole: role }) : actor;
+    if (!role) return actor;
+    const stamina = SUIT_STYLES[role.id].minimumHp;
+    return Object.freeze({ ...actor, streetRole: role,
+      hp: Math.max(actor.hp || 1, stamina), maxHp: Math.max(actor.maxHp || actor.hp || 1, stamina) });
   }
   if (actor.tutorial || roll % 5 === 0) return actor;
   const available = ROUTINE_HAZARDS.filter(hazard => hazard.type === actor.type && hazard.stage <= stage);

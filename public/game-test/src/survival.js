@@ -2,8 +2,8 @@
 import { ENCOUNTER_RULES } from './encounter-director.js';
 import { decorateEncounter } from './street-culture.js';
 
-export const SURVIVAL_VERSION = 4;
-export const SURVIVAL_RECORD_KEY = 'gyaruinthemix-survival-records-v4';
+export const SURVIVAL_VERSION = 5;
+export const SURVIVAL_RECORD_KEY = 'gyaruinthemix-survival-records-v5';
 export const SURVIVAL_UPGRADES = Object.freeze([
   { id: 'heart', kind: 'weapon', name: 'ハート連射', family: 'HEART', description: '自動ハートが速くなる。Lv.6とリレーLv.2で3方向のハートストームに進化。' },
   { id: 'relay', name: 'ファンリレー', family: 'HEART', description: 'ハートが近くの相手へ連鎖。レベルごとに届く人数と距離が増える。' },
@@ -50,7 +50,7 @@ export function createSurvival(day = '', startingWeapon = 'heart') {
 }
 /** Only durable run progress crosses the between-road save boundary. */
 export function normalizeSurvivalSave(value) {
-  if (!value || typeof value !== 'object' || Array.isArray(value) || ![2, 3, SURVIVAL_VERSION].includes(value.version) ||
+  if (!value || typeof value !== 'object' || Array.isArray(value) || ![2, 3, 4, SURVIVAL_VERSION].includes(value.version) ||
       !/^\d{4}-\d{2}-\d{2}$/.test(value.day) || !SURVIVAL_STARTERS.some(item => item.id === value.startingWeapon) ||
       !value.upgrades || typeof value.upgrades !== 'object' || Array.isArray(value.upgrades)) return null;
   const date = new Date(`${value.day}T00:00:00Z`);
@@ -62,7 +62,7 @@ export function normalizeSurvivalSave(value) {
   let savedLevel = -1;
   for (const item of SURVIVAL_UPGRADES) {
     const level = value.upgrades[item.id] ?? 0;
-    const legacy = value.version < SURVIVAL_VERSION;
+    const legacy = value.version < 4;
     if (!Number.isInteger(level) || level < 0 || level > (legacy ? 3 : item.maxLevel) || legacy && ['cd', 'cassette'].includes(item.id) && level) return null;
     savedLevel += level;
     // Old levels 1 / 2 / 3 retain comparable power at levels 1 / 3 / 6.

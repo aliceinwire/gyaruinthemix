@@ -5,6 +5,7 @@ import { readFile, mkdir, writeFile, stat } from 'node:fs/promises';
 import { extname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+import { releaseVersion } from '../../src/data/release.mjs';
 
 const repo = fileURLToPath(new URL('../../', import.meta.url));
 const dist = resolve(repo, 'dist');
@@ -251,6 +252,14 @@ async function inspect(page, pathname, width) {
   const label = pathname + ' at ' + width;
   check(response.ok(), label + ' response', response.status());
   await overflow(page, label);
+  const release = page.locator('footer small [data-release-version]');
+  check(
+    (await release.count()) === 1 &&
+      (await release.isVisible()) &&
+      (await release.getAttribute('data-release-version')) === releaseVersion &&
+      (await release.textContent()).includes(`v${releaseVersion}`),
+    label + ' release version beside footer credits',
+  );
   if (width > 760 && ['/', '/en/'].includes(pathname)) {
     const geometry = await page.evaluate(() => ({
       logoTop: document.querySelector('.hero-brand').getBoundingClientRect()
@@ -635,7 +644,10 @@ async function cartScenarios() {
   }
 }
 try {
-  browser = await chromium.launch({ headless: true });
+  browser = await chromium.launch({
+    headless: true,
+    ...(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {}),
+  });
   const ctx = await context();
   const page = await ctx.newPage();
   for (const width of widths) {

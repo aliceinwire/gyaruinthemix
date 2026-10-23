@@ -2,6 +2,7 @@
 import '../styles/global.css';
 import '../styles/artist.css';
 import { getSite } from '../data/site.mjs';
+import { releaseVersion } from '../data/release.mjs';
 import { getLocale, localizePath, translator } from '../data/i18n.mjs';
 const locale = getLocale(Astro.url.pathname);
 const t = translator(locale);
@@ -234,7 +235,14 @@ const navigation = [
       </div>
       <small
         >© {new Date().getFullYear()}
-        {t('ギャルインザミックス', 'GYARUINTHEMIX')}</small
+        {t('ギャルインザミックス', 'GYARUINTHEMIX')}
+        <span
+          class="release-version"
+          data-release-version={releaseVersion}
+          translate="no"
+        >
+          · v{releaseVersion}</span
+        ></small
       >
     </footer>
     {testShop ? <TestCart /> : usesCart && <Cart />}
