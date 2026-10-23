@@ -10,7 +10,10 @@ export function captureRoadFeedback(feedback, events, distance = 0) {
   for (const event of events || []) {
     let label = '', color = '#ffadd9', kind = 'ring';
     if (event.type === 'convert') { label = event.headliner || event.elite ? 'SIGNAL CLEAR' : `+${Math.max(0, finite(event.survivalPoints, event.reward))}`; kind = event.headliner || event.elite ? 'signal' : 'heart'; }
-    else if (event.type === 'survival-attack') { label = event.kind === 'echo' ? 'MD ECHO' : event.kind === 'phone' ? 'LINK' : event.kind === 'flash' ? 'FLASH' : event.kind === 'bass' ? 'BASS' : 'VINYL'; color = event.kind === 'echo' ? '#8ccfff' : event.kind === 'phone' ? '#ffadd9' : event.kind === 'flash' ? '#fff1b8' : event.kind === 'bass' ? '#8cf0db' : '#c5a6ff'; kind = event.kind; }
+    else if (event.type === 'survival-attack') {
+      const styles = { echo: ['MD ECHO', '#8ccfff'], phone: ['LINK', '#ffadd9'], flash: ['FLASH', '#fff1b8'], bass: ['BASS', '#8cf0db'], vinyl: ['VINYL', '#c5a6ff'], cd: ['CD', '#d7faff'], cassette: ['CASSETTE', '#ffda83'] };
+      [label, color] = styles[event.kind] || styles.vinyl; kind = event.kind;
+    }
     else if (event.type === 'collision') { label = `−${event.damage}`; color = '#ffd29a'; }
     else if (event.type === 'jump-clear') { label = 'NICE!'; color = '#a6f6e5'; }
     else if (event.type === 'destroy') { label = 'CLEAR'; color = '#d4b7ff'; }
@@ -23,7 +26,7 @@ export function captureRoadFeedback(feedback, events, distance = 0) {
     else if (event.type === 'heart-chain') { label = 'RELAY'; color = '#d4b7ff'; }
     else if (event.type === 'little-find') { label = 'ちいさなしあわせ +75'; color = '#a6f6e5'; kind = 'heart'; }
     else continue;
-    feedback.effects.push({ label, color, kind, repeat: event.repeat === true, targets: (Array.isArray(event.targetDistances) ? event.targetDistances : []).filter(Number.isFinite).slice(0, 4), distance: finite(event.distance, finite(distance)), age: 0, duration: event.type === 'convert' ? 1.15 : .8 });
+    feedback.effects.push({ label, color, kind, repeat: event.repeat === true, tapeRepeat: event.tapeRepeat === true, radius: finite(event.radius), behind: finite(event.behind), targets: (Array.isArray(event.targetDistances) ? event.targetDistances : []).filter(Number.isFinite).slice(0, 4), distance: finite(event.distance, finite(distance)), age: 0, duration: event.type === 'convert' ? 1.15 : .8 });
   }
   if (feedback.effects.length > MAX_EFFECTS) feedback.effects.splice(0, feedback.effects.length - MAX_EFFECTS);
 }
@@ -57,6 +60,23 @@ export function drawRoadFeedback(ctx, feedback, state, { reducedMotion = false }
       }
     }
     if (effect.repeat) drawItemIcon(ctx, 'md', x - 10, y + 7, 20);
+    if (effect.kind === 'cd') {
+      const target = 190 + ((effect.targets[0] ?? effect.distance) - state.distance) * 3;
+      const discX = reducedMotion ? target : x + (target - x) * Math.min(1, p * 4);
+      ctx.strokeStyle = effect.color; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(x, 390); ctx.lineTo(discX, 390); ctx.stroke();
+      drawItemIcon(ctx, 'cd', discX - 14, 376, 28);
+    }
+    if (effect.kind === 'cassette') {
+      const left = Math.max(0, x - effect.behind * 3), right = Math.min(960, x + effect.radius * 3);
+      ctx.strokeStyle = effect.color; ctx.lineWidth = effect.tapeRepeat ? 1 : 2;
+      ctx.beginPath();
+      for (let at = left; at <= right; at += 6) {
+        const height = 418 + Math.sin((at - left) / 18 + (reducedMotion ? 0 : p * 8)) * 5;
+        if (at === left) ctx.moveTo(at, height); else ctx.lineTo(at, height);
+      }
+      ctx.stroke(); drawItemIcon(ctx, 'cassette', x - 12, 388, 24);
+    }
     if (['flash', 'vinyl', 'bass'].includes(effect.kind)) {
       ctx.strokeStyle = effect.color; ctx.lineWidth = reducedMotion ? 2 : 3;
       const center = effect.kind === 'bass' ? x : x + 50;

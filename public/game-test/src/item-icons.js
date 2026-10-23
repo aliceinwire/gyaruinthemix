@@ -5,6 +5,18 @@ const PALETTE = Object.freeze({
 });
 // Sixteen logical pixels keep the silhouettes crisp at both card and HUD sizes.
 const ART = {
+  cd: [
+    '................', '.....kkkkkk.....', '...kkwwwwwwkk...', '..kwwmwwwwwwpk..',
+    '..kwmmwwwwwppk..', '.kwwmmwwwwpppgk.', '.kwwmwwwwpppggk.', '.kwwwwwkkppgggk.',
+    '.kwwwwk..kggvvk.', '.kwwwwwkkggvvvk.', '.kwwwwmmggvvvwk.', '..kwwmmggvvvwk..',
+    '..kwmmggvvvwwk..', '...kkggvvwwkk...', '.....kkkkkk.....', '................',
+  ],
+  cassette: [
+    '................', '................', '..kkkkkkkkkkkk..', '.kppppppppppppk.',
+    '.kphhhhhhhhhhpk.', '.kphkkkkkkkkhpk.', '.kphkwksskwkhpk.', '.kphkkkkkkkkhpk.',
+    '.kphhhhhhhhhhpk.', '.kppppppppppppk.', '.kppkkkkkkkkppk.', '.kpksswsswsskpk.',
+    '..kkkkkkkkkkkk..', '....s......s....', '.....ssssss.....', '................',
+  ],
   phone: [
     '................', '..........kk....', '...kkkkkkkkk....', '..kppppppppk....',
     '..kphkkkkhpk....', '..kpkmmmmkpk....', '..kpkmwwmkpk....', '..kphkkkkhpk....',
@@ -127,6 +139,10 @@ define(['flash'], 'camera');
 define(['vinyl'], 'vinyl');
 define(['bass'], 'bass');
 define(['phone'], 'phone');
+define(['cd'], 'cd');
+define(['cassette'], 'cassette');
+define(['prism'], 'cd', undefined, 'star');
+define(['doubledeck'], 'cassette', '#8cf0db', 'bolt');
 define(['md', 'echo'], 'md');
 define(['hotline'], 'phone', '#8cf0db', 'star');
 define(['album'], 'album');

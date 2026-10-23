@@ -188,8 +188,7 @@ test('bass reaches behind the car and its evolution pierces guards', () => {
   assert.equal(behind.converted, true);
   assert.equal(guard.converted, undefined);
   assert.equal(guard.hp, 4);
-  draft(s, 'bass');
-  draft(s, 'bass');
+  while (s.survival.upgrades.bass < 6) draft(s, 'bass');
   draft(s, 'hype');
   draft(s, 'hype');
   s.survival.bassClock = 0;
@@ -219,8 +218,8 @@ test('upgrade offers reveal evolution ingredients and exhaust at the actual buil
         assert.equal(
           offer.evolutionReady,
           !s.survival.evolutions.includes(offer.evolution.id) &&
-            next[offer.evolution.weapon] >= 3 &&
-            next[offer.evolution.support] >= 2,
+            next[offer.evolution.weapon] >= offer.evolution.weaponRequired &&
+            next[offer.evolution.support] >= offer.evolution.supportRequired,
         );
       }
     }
@@ -229,7 +228,9 @@ test('upgrade offers reveal evolution ingredients and exhaust at the actual buil
   }
   assert.equal(s.survival.level, SURVIVAL_MAX_LEVEL);
   assert.ok(
-    SURVIVAL_UPGRADES.every((item) => s.survival.upgrades[item.id] === 3),
+    SURVIVAL_UPGRADES.every(
+      (item) => s.survival.upgrades[item.id] === item.maxLevel,
+    ),
   );
   assert.deepEqual(survivalOffers(s), []);
   assert.equal(survivalView(s).nextXp, null);
@@ -256,20 +257,24 @@ test('distinct attack and support offers spend XP once, stop time, and exclude m
   assert.equal(chooseSurvivalUpgrade(s, id), true);
   assert.equal(s.survival.xp, 32);
   assert.equal(chooseSurvivalUpgrade(s, id), false);
-  s.survival.upgrades[id] = 3;
+  s.survival.upgrades[id] = SURVIVAL_UPGRADES.find(
+    (item) => item.id === id,
+  ).maxLevel;
   assert.ok(survivalOffers(s).every((item) => item.id !== id));
 });
 
-test('all five evolutions require both ingredients and change live attacks', () => {
+test('all seven evolutions require both ingredients and change live attacks', () => {
   for (const [weapon, support, evolution] of [
     ['heart', 'relay', 'heartstorm'],
     ['flash', 'battery', 'flashmob'],
     ['vinyl', 'glide', 'encore'],
     ['bass', 'hype', 'afterparty'],
     ['phone', 'md', 'hotline'],
+    ['cd', 'armor', 'prism'],
+    ['cassette', 'glide', 'doubledeck'],
   ]) {
     const s = quiet();
-    while ((s.survival.upgrades[weapon] || 0) < 3) draft(s, weapon);
+    while ((s.survival.upgrades[weapon] || 0) < 6) draft(s, weapon);
     assert.equal(s.survival.evolutions.includes(evolution), false);
     draft(s, support);
     draft(s, support);
@@ -279,7 +284,7 @@ test('all five evolutions require both ingredients and change live attacks', () 
     s.projectiles = [];
     s.shotCooldown = 0;
     const target = enemy(s, 900, 45, {
-      hp: weapon === 'phone' ? 3 : 4,
+      hp: ['phone', 'cassette'].includes(weapon) ? 3 : 4,
       shielded: weapon === 'flash',
     });
     s.survival.flashClock = s.survival.vinylClock = s.survival.bassClock = 0;
@@ -496,8 +501,7 @@ test('between-road saves preserve the chosen weapon, build, resources and branch
   assert.equal(ready.distance, 0);
   assert.equal(ready.campaignStarted, false);
   beginCampaign(s);
-  draft(s, 'flash');
-  draft(s, 'flash');
+  while (s.survival.upgrades.flash < 6) draft(s, 'flash');
   draft(s, 'battery');
   draft(s, 'battery');
   s.survival.seconds = 180;
@@ -565,7 +569,7 @@ test('nightfall saves reject active or ended roads and corrupt progression', () 
       save.survival.startingWeapon = 'unknown';
     },
     (save) => {
-      save.survival.upgrades.heart = 4;
+      save.survival.upgrades.heart = 7;
     },
     (save) => {
       save.survival.upgrades.heart = 0;
@@ -691,7 +695,7 @@ test('no-input survival is not a winning strategy even with automatic attacks', 
   assert.ok(s.survival.kills > 0);
 });
 
-test('all five starters can finish the twelve-road run with driving and build choices', () => {
+test('all seven starters can finish the twelve-road run with driving and build choices', () => {
   for (const starter of SURVIVAL_STARTERS) {
     const s = createState({
       mode: 'survival',
@@ -797,7 +801,7 @@ function measureRoad(seed, weapon, routeIndex, level) {
 test('seeded early and late roads give every weapon a viable fixed-build role', () => {
   for (const [stage, level] of [
     [0, 1],
-    [8, 3],
+    [8, 6],
   ]) {
     const totals = [];
     for (const weapon of SURVIVAL_STARTERS) {

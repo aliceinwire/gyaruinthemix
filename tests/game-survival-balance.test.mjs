@@ -105,7 +105,7 @@ test('area weapons hit at their shared cadence and stay within target and reach 
 test('deco phone links a bounded nearby group and preserves all existing starter choices', () => {
   assert.deepEqual(
     SURVIVAL_STARTERS.map((item) => item.id),
-    ['heart', 'flash', 'vinyl', 'bass', 'phone'],
+    ['heart', 'flash', 'vinyl', 'bass', 'phone', 'cd', 'cassette'],
   );
   const state = quiet('flash');
   state.survival.upgrades = { phone: 1 };
@@ -322,7 +322,8 @@ test('version-two phone and MD checkpoints retain equipment while discarding pen
   saved.survival.mdClock = 4;
   saved.survival.repeat = { kind: 'phone', delay: 0.1 };
   const restored = restoreNightfallSave(saved);
-  assert.deepEqual(restored.survival.upgrades, { phone: 3, md: 2 });
+  assert.deepEqual(restored.survival.upgrades, { phone: 6, md: 2 });
+  assert.equal(restored.survival.level, 7);
   assert.deepEqual(restored.survival.evolutions, ['hotline']);
   assert.equal(restored.survival.echoPending, null);
   assert.equal(restored.survival.echoClock, 0);
@@ -377,7 +378,7 @@ test('continued older-rules tours retain progress through reload without enterin
   assert.equal(migrated.survival.recordEligible, false);
   assert.equal(migrated.score, legacy.score);
   assert.equal(migrated.money, legacy.money);
-  assert.deepEqual(migrated.survival.upgrades, legacy.survival.upgrades);
+  assert.deepEqual(migrated.survival.upgrades, { bass: 6, hype: 2 });
   assert.equal(migrated.runId, legacy.runId);
   assert.equal(migrated.seed, legacy.seed);
 

@@ -606,7 +606,7 @@ function hitTarget(state, target, damage = 1, chain = true, bypassGuard = false,
     }
     return false;
   }
-  const primary = ["heart", "flash", "vinyl", "bass", "phone"].includes(source);
+  const primary = SURVIVAL_STARTERS.some(item => item.id === source);
   if (isSurvival(state) && primary && state.buildRuntime.chargedShot) {
     damage += state.buildRuntime.chargedShot; state.buildRuntime.chargedShot = 0;
   }
@@ -965,7 +965,7 @@ export function nextRoute(state, routeOption = "scenic", journeyNodeId = null) {
   });
   restoreSnapshot(next, snapshot(state));
   next.assistMode = state.assistMode === true;
-  if (isSurvival(next)) { next.survival.wave = 0; next.survival.waveStats = Array.from({ length: 6 }, () => ({ kills: 0, hits: 0 })); next.survival.settledWaves = []; next.survival.gems = []; next.survival.receipts = []; next.survival.echoPending = null; }
+  if (isSurvival(next)) { next.survival.wave = 0; next.survival.waveStats = Array.from({ length: 6 }, () => ({ kills: 0, hits: 0 })); next.survival.settledWaves = []; next.survival.gems = []; next.survival.receipts = []; next.survival.echoPending = null; next.survival.cassetteLoops = []; }
   next.stageSignals = 0;
   next.locationIndex = getJourneyNode(next.journeyNodeId).locationIndex;
   next.energy = next.energyCapacity;

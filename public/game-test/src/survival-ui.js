@@ -23,7 +23,7 @@ export function renderSurvivalResult(state, result, previous, host) {
   const build = document.createElement('p'); build.className = 'survival-build-recap';
   for (const item of SURVIVAL_UPGRADES.filter(item => row.build[item.id])) {
     const slot = document.createElement('span'), label = document.createElement('span'); slot.className = 'build-slot';
-    localizeText(label, `${item.name} ${row.build[item.id]}/3`); slot.append(createItemIcon(item.id, { size: 24 }), label); build.append(slot);
+    localizeText(label, `${item.name} ${row.build[item.id]}/${item.maxLevel}`); slot.append(createItemIcon(item.id, { size: 24 }), label); build.append(slot);
   }
   const recordLabel = document.createElement('small'); recordLabel.className = 'survival-record-note';
   localizeText(recordLabel, result.eligible === false ? '引き継いだツアーのスコアや。今のデイリー記録には入らへん。' : result.persisted ? message('この端末の記録 · {0} · 日本時間', [row.day]) : '記録を保存できませんでした。このランはこの画面で確認できます。');
@@ -66,7 +66,7 @@ export function drawSurvival(ctx, state, time, reducedMotion = false) {
   ctx.font = '700 10px system-ui'; ctx.fillText(s.fever > 0 ? 'FEVER' : 'HEAT', 322, 96);
   const equipped = SURVIVAL_UPGRADES.filter(item => item.kind === 'weapon' && s.upgrades[item.id]);
   equipped.forEach((item, index) => {
-    const x = 36 + index * 47; drawItemIcon(ctx, item.id, x, 103, 24);
+    const x = 36 + index * 41; drawItemIcon(ctx, item.id, x, 103, 24);
     ctx.font = '700 10px system-ui'; ctx.fillStyle = '#fff0f8'; ctx.textAlign = 'left'; ctx.fillText(String(s.upgrades[item.id]), x + 27, 121);
   });
   if (s.evolutions.length) {

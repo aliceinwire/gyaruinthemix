@@ -446,7 +446,7 @@ function showDraft() {
       const recipe = document.createElement('small'); recipe.className = 'evolution-recipe';
       const label = document.createElement('span'), evo = perk.evolution;
       const weapon = SURVIVAL_UPGRADES.find(item => item.id === evo.weapon), support = SURVIVAL_UPGRADES.find(item => item.id === evo.support);
-      localizeText(label, message('{0} Lv.{1}/3 + {2} Lv.{3}/2 → {4}', [weapon.name, evo.weaponLevel, support.name, Math.min(2, evo.supportLevel), evo.name]));
+      localizeText(label, message('{0} Lv.{1}/{2} + {3} Lv.{4}/{5} → {6}', [weapon.name, evo.weaponLevel, evo.weaponRequired, support.name, Math.min(evo.supportRequired, evo.supportLevel), evo.supportRequired, evo.name]));
       recipe.append(createItemIcon(evo.id, { size: 24 }), label);
       if (perk.evolutionReady) { const ready = document.createElement('b'); localizeText(ready, 'これで進化！'); recipe.append(ready); }
       card.append(recipe);
