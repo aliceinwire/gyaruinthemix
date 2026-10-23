@@ -1,7 +1,7 @@
 import { t } from './i18n.js';
 import { preloadArrivalFans, drawArrivalFans } from './arrival-fans.js';
 import { getThreatSignals } from './road-feedback.js';
-import { drawCultureProp, drawRoutineHazard, drawLittleFind, drawFriendlyCat } from './street-culture-art.js';
+import { drawCultureProp, drawSuitUniform, drawRoutineHazard, drawLittleFind, drawFriendlyCat } from './street-culture-art.js';
 import { drawCabinCharacter, preloadCabinCharacters } from "./cabin-characters.js";
 import { preloadUmbrellaArt, drawUmbrellaArt } from "./umbrella-art.js";
 import { preloadRoadSurfaceArt, drawRoadSurface } from "./road-surface.js";
@@ -275,7 +275,9 @@ function entity(g, e, x, y, time, state) {
       id: e.id,
     })
   ) {
-    drawCultureProp(g, e, x, y + streetCharacterBob({ type: clothing, id: e.id, time }), time);
+    const ground = y + streetCharacterBob({ type: clothing, id: e.id, time });
+    drawSuitUniform(g, e, x, ground, time);
+    drawCultureProp(g, e, x, ground, time);
     if (clothing === "salaryman" && ["rain","storm"].includes(state.weather))
       drawUmbrellaArt(g,{type:clothing,x:Math.round(x),y:Math.round(y)+streetCharacterBob({type:clothing,id:e.id,time})});
     if (e.type === "fan") text(g, "話そ", x - 21, y - 96, 11, "#fff3d7");

@@ -1,6 +1,6 @@
 {
   "name": "gyaruinthemix-store",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -20,7 +20,11 @@
     "security:scan": "bash scripts/scan-secrets.sh history",
     "security:hooks": "bash scripts/install-hooks.sh",
     "test:secret-scan": "node scripts/test-secret-scan.mjs",
-    "test:deployment": "python3 -m unittest discover -s tests -p \"test_bouncer*.py\""
+    "test:deployment": "python3 -m unittest discover -s tests -p \"test_bouncer*.py\"",
+    "predev": "node scripts/release-version.mjs",
+    "prebuild": "node scripts/release-version.mjs",
+    "version": "node scripts/release-version.mjs",
+    "version:check": "node scripts/release-version.mjs --check"
   },
   "dependencies": {
     "@fastify/rate-limit": "11.2.0",

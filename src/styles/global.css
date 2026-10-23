@@ -286,9 +286,10 @@ em {
 }
 .section-heading {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
-  gap: 20px;
+  gap: 10px 20px;
   margin-bottom: 32px;
 }
 .section-heading h2 {
@@ -498,6 +499,10 @@ em {
   padding-top: 25px;
   font-size: 0.75rem;
   color: var(--muted);
+}
+.release-version {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 .shop-heading {
   text-align: center;

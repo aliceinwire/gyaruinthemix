@@ -1,6 +1,7 @@
 import { localizeHTML, localizeText, localizeAttribute } from './localized-ui.js';
 import { message, verbatim } from './i18n.js';
 import { createStreamAudio } from './stream-audio.js';
+import { createRadioEqualizer } from './radio-equalizer.js';
 const time = (n) =>
   `${Math.floor((n || 0) / 60)
     .toString()
@@ -25,14 +26,15 @@ export function createCarStereo({
   canPlay = () => true,
   loadAvailability,
   controllerFactory = createStreamAudio,
+  AudioContextClass = globalThis.AudioContext || globalThis.webkitAudioContext,
 } = {}) {
   mount.classList.add('car-stereo');
   localizeHTML(mount, `<div class="stereo-topline"><span class="stereo-brand">ギャルインザミックス</span><span class="stereo-model">GT-MIX / CAR AUDIO</span></div>
     <div class="stereo-core"><div class="stereo-volume"><div class="stereo-knob" role="slider" tabindex="0" aria-label="Volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="70"><span></span></div><span class="stereo-knob-label">VOLUME</span></div>
-    <div class="stereo-screen"><div class="stereo-display-top"><span data-stereo="status" role="status">STANDBY</span><span class="stereo-equalizer" aria-hidden="true" translate="no">▂▅▃▇▅</span><span data-stereo="disc">TRACK —</span></div><strong data-stereo="title" translate="no"></strong><div class="stereo-display-bottom"><span data-stereo="format">MUSIC</span><output data-stereo="time">00:00 / 00:00</output></div></div></div>
+    <div class="stereo-screen"><div class="stereo-display-top"><span data-stereo="status" role="status">STANDBY</span><span class="stereo-equalizer" aria-hidden="true" translate="no">▁▁▁▁▁</span><span data-stereo="disc">TRACK —</span></div><strong data-stereo="title" translate="no"></strong><div class="stereo-display-bottom"><span data-stereo="format">MUSIC</span><output data-stereo="time">00:00 / 00:00</output></div></div></div>
     <div class="stereo-seek"><input type="range" min="0" max="1" step="0.1" value="0" aria-label="Playback position" disabled></div>
     <div class="stereo-controls"><button type="button" data-action="previous" aria-label="Previous track">◀◀<small>PREV</small></button><button type="button" class="stereo-play" data-action="play" aria-label="Play music">▶<small>PLAY</small></button><button type="button" data-action="next" aria-label="Next track">▶▶<small>NEXT</small></button><button type="button" data-action="mute" aria-label="Mute music" aria-pressed="false">ATT<small>MUTE</small></button><button type="button" data-action="list" aria-label="Show playlist" aria-expanded="false">LIST<small>TRACKS</small></button></div>
-    <div class="stereo-playlist" hidden><label>SELECT TRACK<select aria-label="Select music track"></select></label><p>Private library · tap play to listen</p></div><audio preload="none" playsinline></audio>`);
+    <div class="stereo-playlist" hidden><label>SELECT TRACK<select aria-label="Select music track"></select></label><p>Private library · tap play to listen</p></div><audio preload="none" playsinline crossorigin="anonymous"></audio>`);
   const $ = (s) => mount.querySelector(s),
     media = $('audio'),
     knob = $('.stereo-knob'),
@@ -48,6 +50,7 @@ export function createCarStereo({
     node.addEventListener(name, fn);
     disposers.push(() => node.removeEventListener(name, fn));
   };
+  const equalizer = createRadioEqualizer({ media, display: $('.stereo-equalizer'), AudioContextClass });
   const render = (state) => {
     localizeText($('[data-stereo="status"]'), statuses[state.status] || 'READY');
     $('[data-stereo="title"]').textContent = state.track?.title || '';
@@ -85,9 +88,14 @@ export function createCarStereo({
       !state.track || ['idle', 'empty', 'unavailable'].includes(state.status);
     localizeAttribute(seek, 'aria-valuetext', message("{0} of {1}", [time(state.currentTime), time(state.duration)]));
     mount.dataset.playing = String(state.playing);
+    equalizer.update(state);
     onState(state);
   };
   controller = controllerFactory({ media, onState: render, canPlay, loadAvailability });
+  const unlockMeter = () => { void equalizer.unlock(); };
+  listen(mount, 'pointerdown', unlockMeter);
+  listen(mount, 'keydown', unlockMeter);
+  listen(mount, 'click', unlockMeter);
   listen($('[data-action="play"]'), 'click', () => controller.toggle());
   listen($('[data-action="previous"]'), 'click', () =>
     controller.previous({ userGesture: true }),
@@ -154,9 +162,11 @@ export function createCarStereo({
     controller,
     media,
     render,
+    equalizer,
     destroy() {
       disposers.forEach((fn) => fn());
       controller.destroy();
+      equalizer.destroy();
       mount.replaceChildren();
     },
   };

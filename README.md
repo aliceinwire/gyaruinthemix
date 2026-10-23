@@ -4,6 +4,14 @@ The bilingual Japanese/English official DJ-unit website for ギャルインザ�
 
 **Delivery state:** artist/fan pages and shop implemented; fan-club enrollment is not open and has no membership backend; products ship as `coming_soon`, prices unset and sales disabled. This is a deployable implementation, not a claim that your VPS, Stripe account or live shop has been configured. See `VALIDATION.md` for verification scope and release evidence. Complete the TEST-mode launch procedure before enabling live sales.
 
+## Release versioning
+
+The website, game, shop and fan club ship together under the `package.json` version, displayed beside their footer credits. Releases follow [Semantic Versioning 2.0.0](https://semver.org/): `MAJOR.MINOR.PATCH`.
+
+The compatibility contract covers documented page routes and language equivalents; documented checkout, catalog and membership API requests, responses and return URLs; and supported browser carts, checkout attempts and game saves. A major release is required when these contracts break without a compatible migration. Compatible features and deprecations increment the minor version; compatible fixes increment the patch version. Game balance, scores and artwork may change within a minor release. Save-format and leaderboard versions remain separate from the release version.
+
+Use `npm version patch --no-git-tag-version`, `minor` or `major` as appropriate. The version hook updates the static game footer; development and production builds also synchronize it. `npm run version:check` detects a stale game footer. Published version numbers are never reused for changed releases; prerelease identifiers and build metadata follow SemVer syntax.
+
 ## Japanese and English
 
 Japanese remains the default at `/`; the complete English counterpart lives at `/en/`. The visible 日本語 / English links keep visitors on the equivalent page and preserve query parameters and photo anchors in the browser. Both languages share page templates and the same catalog, cart and sales gates. Song titles and the supplied logo retain their original identity.

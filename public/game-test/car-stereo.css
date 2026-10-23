@@ -344,5 +344,5 @@
   }
 }
 
-.stereo-equalizer { letter-spacing: 2px; color: #e5f6ff; opacity: .45; }
-.car-stereo[data-playing="true"] .stereo-equalizer { opacity: 1; text-shadow: 0 0 5px #bfe8ff; }
+.stereo-equalizer { display: inline-block; min-width: 5ch; font-family: monospace; letter-spacing: 2px; line-height: 1; color: #e5f6ff; opacity: .45; }
+.stereo-equalizer[data-active="true"] { opacity: 1; text-shadow: 0 0 5px #bfe8ff; }

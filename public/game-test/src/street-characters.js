@@ -50,9 +50,12 @@ function phaseOf(value) {
   return (hash / 4294967296) * Math.PI * 2;
 }
 
-/** Invitations change allegiance, never someone's individual clothes. */
+/** Defeated suit-wearers join the crowd in gyaru fashion. */
 export function streetCharacterIdentity({ type = 'salaryman', originalType, converted = false } = {}) {
-  return converted || type === 'converted' ? originalType || 'salaryman' : type;
+  if (type === 'gyaru') return 'gyaru';
+  if (converted || type === 'converted')
+    return !originalType || originalType === 'salaryman' ? 'gyaru' : originalType;
+  return type;
 }
 
 /** Salarymen change gear with the weather; fan/gyaru identities stay clear. */
@@ -142,7 +145,8 @@ export function drawStreetCharacter(ctx, options = {}) {
     scale <= 0
   )
     return false;
-  const selected = resolveStreetPose({ type, weather, season, originalType: options.originalType, converted: options.converted });
+  const identity = streetCharacterIdentity({ type, originalType: options.originalType, converted: options.converted });
+  const selected = resolveStreetPose({ type: identity, weather, season });
   const frame = STREET_CHARACTER_SHEET.poses[selected];
   if (!frame) return false;
   const [sx, sy, sw, sh] = frame.crop;
@@ -159,7 +163,7 @@ export function drawStreetCharacter(ctx, options = {}) {
   const size = Math.min(scale, 8);
   const height = frame.height * size;
   const width = (sw / sh) * height;
-  const bob = streetCharacterBob({type,id,time,scale:size});
+  const bob = streetCharacterBob({type:identity,id,time,scale:size});
   ctx.save();
   ctx.imageSmoothingEnabled = false;
   ctx.drawImage(

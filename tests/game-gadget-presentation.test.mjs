@@ -7,7 +7,12 @@ import {
 import {
   streetCharacterIdentity,
   resolveStreetPose,
+  streetCharacterBob,
+  drawStreetCharacter,
+  preloadStreetCharacters,
+  STREET_CHARACTER_SHEET,
 } from '../public/game-test/src/street-characters.js';
+import { createState, update } from '../public/game-test/src/simulation.js';
 import {
   finaleCrowdCount,
   drawFinale,
@@ -56,21 +61,97 @@ test('phone, MD and hotline use distinct bounded pixel art', () => {
   );
 });
 
-test('supporters retain their clothes, weather gear and individual identity', () => {
+test('defeated suits become gyaru in every climate while existing fans keep their identity', () => {
   const supporter = {
     type: 'gyaru',
     originalType: 'salaryman',
     converted: true,
   };
-  assert.equal(streetCharacterIdentity(supporter), 'salaryman');
-  assert.equal(resolveStreetPose({ ...supporter, weather: 'rain' }), 'rain');
-  assert.equal(resolveStreetPose({ ...supporter, season: 'winter' }), 'winter');
+  assert.equal(streetCharacterIdentity(supporter), 'gyaru');
+  for (const weather of ['sunny', 'rain', 'storm', 'snow', 'mud'])
+    for (const season of ['summer', 'winter'])
+      assert.equal(
+        resolveStreetPose({ ...supporter, weather, season }),
+        'gyaru',
+      );
   assert.equal(resolveStreetPose({ type: 'gyaru' }), 'gyaru');
-  assert.equal(resolveStreetPose({ type: 'converted' }), 'salaryman');
+  assert.equal(resolveStreetPose({ type: 'converted' }), 'gyaru');
+  assert.equal(
+    resolveStreetPose({ type: 'salaryman', converted: true }),
+    'gyaru',
+  );
   assert.equal(
     resolveStreetPose({ type: 'converted', originalType: 'fan' }),
     'fan',
   );
+  assert.equal(
+    resolveStreetPose({ type: 'salaryman', weather: 'rain' }),
+    'rain',
+  );
+  assert.equal(
+    resolveStreetPose({ type: 'salaryman', season: 'winter' }),
+    'winter',
+  );
+});
+
+test('a weapon defeat changes the visible outfit and only rewards conversion once', () => {
+  const state = createState();
+  state._stations = [];
+  state._nextEncounter = 1e9;
+  state._quizTriggered = true;
+  const actor = { id: 900, type: 'salaryman', distance: 100, hp: 1 };
+  state.entities = [actor];
+  assert.equal(streetCharacterIdentity(actor), 'salaryman');
+  update(state, { shoot: true }, 1);
+  assert.equal(actor.converted, true);
+  assert.equal(actor.originalType, 'salaryman');
+  assert.equal(streetCharacterIdentity(actor), 'gyaru');
+  assert.equal(resolveStreetPose({ ...actor, weather: 'storm' }), 'gyaru');
+  assert.equal(state.gyaruConverted, 1);
+  const money = state.money;
+  update(state, { shoot: true }, 2);
+  assert.equal(state.gyaruConverted, 1);
+  assert.equal(state.money, money);
+});
+
+test('converted NPC rendering selects the full gyaru sprite and gyaru animation', async () => {
+  const previousImage = globalThis.Image;
+  globalThis.Image = class {
+    naturalWidth = STREET_CHARACTER_SHEET.width;
+    naturalHeight = STREET_CHARACTER_SHEET.height;
+    set src(_value) {
+      queueMicrotask(() => this.onload?.());
+    }
+  };
+  try {
+    assert.equal(await preloadStreetCharacters(), true);
+    for (const weather of ['sunny', 'rain', 'snow', 'mud']) {
+      const options = {
+        type: 'salaryman',
+        originalType: 'salaryman',
+        converted: true,
+        id: 'former-suit',
+        weather,
+        season: 'winter',
+        x: 500,
+        y: 465,
+        time: 3,
+      };
+      const { ctx, calls } = canvas();
+      assert.equal(drawStreetCharacter(ctx, options), true);
+      const draw = calls.find(([method]) => method === 'drawImage');
+      const frame = STREET_CHARACTER_SHEET.poses.gyaru;
+      assert.deepEqual(draw.slice(2, 6), frame.crop);
+      assert.equal(draw[9], frame.height);
+      assert.equal(
+        draw[7],
+        465 - frame.height + streetCharacterBob({ ...options, type: 'gyaru' }),
+      );
+    }
+  } finally {
+    if (previousImage === undefined) delete globalThis.Image;
+    else globalThis.Image = previousImage;
+  }
 });
 
 test('finale never invents fans or duplicates the earned audience', () => {

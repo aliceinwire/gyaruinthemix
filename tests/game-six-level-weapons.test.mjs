@@ -12,6 +12,7 @@ import {
   SURVIVAL_WEAPONS,
   SURVIVAL_EVOLUTIONS,
   SURVIVAL_MAX_LEVEL,
+  SURVIVAL_VERSION,
   survivalWeaponStats,
   survivalOffers,
   survivalXpCost,
@@ -322,4 +323,41 @@ test('pending cassette sweeps never carry into the next road or a saved checkpoi
   );
   nextRoute(state);
   assert.deepEqual(state.survival.cassetteLoops, []);
+});
+
+test('six-level saves keep every rank and evolution when suit rules change', () => {
+  for (const weapon of SURVIVAL_WEAPONS) {
+    for (let level = 1; level <= 6; level++) {
+      const state = quiet(weapon.id);
+      const recipe = SURVIVAL_EVOLUTIONS.find(
+        (item) => item.weapon === weapon.id,
+      );
+      state.survival.upgrades = { [weapon.id]: level, [recipe.support]: 2 };
+      state.survival.level = level + 1;
+      state.money = 321;
+      const saved = exportNightfallSave(state);
+      saved.survival.version = 4;
+      const restored = restoreNightfallSave(saved);
+      assert.ok(restored, `${weapon.id} Lv.${level} remains loadable`);
+      assert.equal(restored.survival.version, SURVIVAL_VERSION);
+      assert.deepEqual(restored.survival.upgrades, state.survival.upgrades);
+      assert.deepEqual(
+        restored.survival.evolutions,
+        level === 6 ? [recipe.id] : [],
+      );
+      assert.equal(restored.survival.level, state.survival.level);
+      assert.equal(restored.seed, state.seed);
+      assert.equal(restored.runId, state.runId);
+      assert.equal(restored.money, state.money);
+      assert.equal(restored.survival.recordEligible, false);
+      const reloaded = restoreNightfallSave(exportNightfallSave(restored));
+      assert.deepEqual(reloaded.survival.upgrades, state.survival.upgrades);
+      assert.equal(reloaded.survival.recordEligible, false);
+      restored.status = 'lost';
+      assert.deepEqual(
+        normalizeSurvivalRecords([survivalResult(restored)]),
+        [],
+      );
+    }
+  }
 });

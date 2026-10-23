@@ -2,11 +2,22 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { getLocale, localizePath } from '../src/data/i18n.mjs';
 import { canonicalUrl, publicPaths, siteOrigin } from '../src/data/urls.mjs';
+import { releaseVersion } from '../src/data/release.mjs';
 
 const read = (path) =>
   readFile(new URL(`../dist/${path}`, import.meta.url), 'utf8');
+function assertReleaseFooter(html, path) {
+  const versions = [...html.matchAll(/data-release-version="([^"]+)"/g)];
+  assert.equal(versions.length, 1, `${path}: one release version`);
+  assert.equal(versions[0][1], releaseVersion, `${path}: release version`);
+  assert.ok(
+    html.includes(`v${releaseVersion}</span>`),
+    `${path}: visible version`,
+  );
+}
 for (const path of publicPaths) {
   const html = await read(`${path.slice(1)}index.html`);
+  assertReleaseFooter(html, path);
   assert.ok(
     html.includes(`rel="canonical" href="${canonicalUrl(path)}"`),
     path,
@@ -70,6 +81,7 @@ for (const path of [
   'en/404/index.html',
 ]) {
   const html = await read(path);
+  assertReleaseFooter(html, path);
   assert.match(html, /name="robots" content="noindex, nofollow, noarchive"/);
   assert.doesNotMatch(html, /rel="canonical"|property="og:url"/);
   assert.ok(html.includes(`<html lang="${getLocale('/' + path)}"`));
@@ -99,5 +111,6 @@ assert.match(
   await read('game-test/index.html'),
   /name="robots" content="noindex, nofollow, noarchive"/,
 );
+assertReleaseFooter(await read('game-test/index.html'), 'game-test/index.html');
 assert.doesNotMatch(sitemap, /game-test/);
 assert.match(await read('robots.txt'), /Disallow: \/game-test\//);
