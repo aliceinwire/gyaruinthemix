@@ -1,5 +1,7 @@
+import { CHANA_WEAPON_ACTIONS, drawChanaWeapon, preloadChanaWeapons } from './chana-weapons.js';
+
 /**
- * Genuine four-keyframe action animation for the approved DJ duo.
+ * Shared action animation and weapon expressions for the approved DJ duo.
  * Generated sheets are not perfectly square or uniformly spaced: measured
  * source rectangles are explicit, never inferred from width / column count.
  * The original base/pet atlases are intentionally untouched.
@@ -109,7 +111,11 @@ export function preloadCharacterActions() {
             img.src=sheet.url;
           }),
       ),
-    ).then(result=>{if(result.some(item=>!item.ready))loading=null;return result;});
+    ).then(async result=>{
+      result.push({ name: 'chana-weapons', ready: await preloadChanaWeapons() });
+      if(result.some(item=>!item.ready))loading=null;
+      return result;
+    });
   }
   return loading;
 }
@@ -128,6 +134,8 @@ export function resolveCrewActions({
   boosting = false,
   boost = false,
   shooting = false,
+  weaponDriven = false,
+  crewWeaponGesture = null,
   charging = false,
   rushing = false,
   rushGestureTime = 0,
@@ -147,7 +155,7 @@ export function resolveCrewActions({
     chana = "cheer";
   }
   if (
-    shooting ||
+    (shooting && !weaponDriven) ||
     charging ||
     /point|direct|turn|shoot|charge|talk/.test(requested)
   ) {
@@ -167,15 +175,21 @@ export function resolveCrewActions({
   if (action && typeof action === "object") {
     if (CHARACTER_ACTION_SHEETS.arisu.actions.includes(action.arisu))
       arisu = action.arisu;
-    if (CHARACTER_ACTION_SHEETS.chana.actions.includes(action.chana) || action.chana === "hearts")
+    if (CHARACTER_ACTION_SHEETS.chana.actions.includes(action.chana) || action.chana === "hearts" || CHANA_WEAPON_ACTIONS.includes(action.chana))
       chana = action.chana;
   }
   // Chana sends the hearts; Arisu keeps both hands on driving duties.
-  if (shooting || /shoot/.test(requested)) {
+  if ((shooting && !weaponDriven) || /shoot/.test(requested)) {
     arisu = muddyWeather.has(climate) ? "rally" : "drive";
     chana = "hearts";
   }
-  if (rushing || (rushGestureTime > 0 && !shooting) || requested === "rush" || action?.arisu === "rush") { arisu = "rush"; chana = "rush"; }
+  if (CHANA_WEAPON_ACTIONS.includes(requested)) chana = requested;
+  const weapon = crewWeaponGesture?.weapon;
+  if (crewWeaponGesture?.elapsed >= 0 && crewWeaponGesture.elapsed < crewWeaponGesture.duration &&
+      (weapon === 'heart' || CHANA_WEAPON_ACTIONS.includes(weapon))) {
+    chana = weapon === 'heart' ? 'hearts' : weapon;
+  }
+  if (rushing || (rushGestureTime > 0 && (!shooting || weaponDriven)) || requested === "rush" || action?.arisu === "rush") { arisu = "rush"; chana = "rush"; }
   return {
     arisu,
     chana,
@@ -196,6 +210,8 @@ export function resolveCrewVisuals(state = {}, { time = 0, reducedMotion = false
     rushTime: state.rushTime,
     rushGestureTime: state.rushGestureTime,
     shooting: state.shooting,
+    weaponDriven: Object.hasOwn(state, 'crewWeaponGesture'),
+    crewWeaponGesture: state.crewWeaponGesture ? Object.freeze({ ...state.crewWeaponGesture }) : null,
     charging: state.charging,
     invulnerability: state.invulnerability,
     action,
@@ -273,14 +289,19 @@ export function resolveCharacterPose(options = {}) {
   const resolved = resolveCrewActions(options);
   const localAction =
     typeof action === "string" &&
-    (CHARACTER_ACTION_SHEETS[name].actions.includes(action) || action === "rush" || (name === "chana" && action === "hearts"))
+    (CHARACTER_ACTION_SHEETS[name].actions.includes(action) || action === "rush" || (name === "chana" && (action === "hearts" || CHANA_WEAPON_ACTIONS.includes(action))))
       ? action
       : resolved[name];
   const frame = CHARACTER_ACTION_SHEETS[name].actions.indexOf(localAction);
   const gestureElapsed = Number.isFinite(options.rushGestureTime)
     ? Math.max(0, 0.75 - options.rushGestureTime) * 4 / 0.75
     : Math.max(0, 2 - (options.rushTime ?? 2)) * 2.4;
-  const animationFrame = localAction === "rush" ? (animate ? Math.min(3, Math.floor(gestureElapsed)) : 0) : characterMotionFrame(localAction, time, animate);
+  const weaponElapsed = options.crewWeaponGesture?.elapsed ?? time;
+  const weaponPose = name === 'chana' && CHANA_WEAPON_ACTIONS.includes(localAction);
+  let animationFrame;
+  if (localAction === 'rush') animationFrame = animate ? Math.min(3, Math.floor(gestureElapsed)) : 0;
+  else if (weaponPose) animationFrame = animate ? Math.min(3, Math.floor(Math.max(0, weaponElapsed) / .18)) : 0;
+  else animationFrame = characterMotionFrame(localAction, name === 'chana' && options.crewWeaponGesture?.weapon === 'heart' ? weaponElapsed : time, animate);
   return { name, resolved, localAction, frame, animationFrame };
 }
 
@@ -298,6 +319,10 @@ export function drawCharacter(ctx, options = {}) {
     animate = true,
   } = options;
   const { name, resolved, localAction, frame, animationFrame } = resolveCharacterPose(options);
+  if (name === 'chana' && CHANA_WEAPON_ACTIONS.includes(localAction)) {
+    if (!drawChanaWeapon(ctx, { ...options, weapon: localAction, view: 'portrait', animationFrame })) return false;
+    return { character: name, action: localAction, frame, animationFrame, ready: true };
+  }
   const heartSending=name==="chana"&&localAction==="hearts";
   const img=images[localAction === "rush" ? `${name}-rush` : heartSending?"chana-hearts":name];
   if(!img)return false;

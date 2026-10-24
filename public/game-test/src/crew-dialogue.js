@@ -52,6 +52,12 @@ const ACTION = {
   directions: ['次の道、こっちやで。ありねぇ、前は任せた！', '案内するで。曲がるところはちゃんと言うからな。'],
   makeup: ['鏡チェック、口紅よし。次は地図に戻るで。', '助手席でメイク直し中や。ありねぇは運転に集中してな。', 'リップ整ったで。ナビの精度まで上がった気するわ。'],
   hearts: ['ハートの招待状、うちから届けるで。ありねぇは運転よろしく！', 'ちゃなのハート便や。気になったら、そのままの格好で遊びに来てな。'],
+  flash: ['その笑顔、今や！ 助手席から一枚、ばっちり撮れたで。'],
+  vinyl: ['レコードつなぐで。次の一曲、うちらのノリで決めよ！'],
+  bass: ['この低音、たまらんな！ 助手席でも肩が勝手に揺れるわ。'],
+  phone: ['デコ電つながった！ 今夜うちらの出番やで、クラブで会おな！'],
+  cd: ['このCD、やっぱええ音やな。次に聴く一枚も、手元に用意したで。'],
+  cassette: ['カセット、頭出しできたで。この曲から、ゆっくり上げてこ。'],
   cheer: ['ええ調子やん！ ありねぇ、前は任せたで。', '助手席から応援するで。招待もナビも、うちに任せて！'],
   rush: ['息合わせていくで！ ありねぇ、運転よろしく！', 'ふたりのタイミング、ぴったりやん！'],
 };
@@ -83,10 +89,14 @@ function makeLine(group, lines, index, { speaker = 'chana', priority = 0, holdSe
 export function selectCrewDialogue(context = {}) {
   const time = seconds(context.time ?? context.elapsed);
   const bucket = Math.floor(time / CREW_DIALOGUE_BUCKET_SECONDS);
-  const action = resolveCrewActions({ ...context, time }).chana;
+  const weaponDriven = Object.hasOwn(context, 'crewWeaponGesture') || context.weaponDriven === true;
+  const action = resolveCrewActions({ ...context, time, weaponDriven }).chana;
+  const gesture = context.crewWeaponGesture;
+  const activeWeapon = gesture?.elapsed >= 0 && gesture.elapsed < gesture.duration &&
+    (gesture.weapon === 'heart' ? action === 'hearts' : action === gesture.weapon);
   const options = { previousId: context.previousId };
   if (context.charging) return makeLine('action:charging', EVENTS['charge-start'].lines, bucket, { ...options, priority: 30 });
-  if (context.action || (context.shooting && context.mode !== 'survival') || context.rushing || context.boosting) {
+  if (context.action || activeWeapon || (context.shooting && !weaponDriven && context.mode !== 'survival') || context.rushing || context.boosting) {
     return makeLine(`action:${action}`, ACTION[action] || ACTION.map, bucket, { ...options, priority: 30 });
   }
   const city = key(context.cityId) || context.route?.cityId;

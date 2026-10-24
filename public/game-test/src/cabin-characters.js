@@ -1,4 +1,5 @@
 import { resolveCharacterPose } from './character-actions.js';
+import { CHANA_WEAPON_ACTIONS, drawChanaWeapon, preloadChanaWeapons } from './chana-weapons.js';
 
 const rows = (edges) => edges.slice(0, -1).map((top, row) =>
   [0, 314, 628, 942].map((left, column) => [left, top, column === 3 ? 312 : 314, edges[row + 1] - top]));
@@ -21,12 +22,16 @@ export function preloadCabinCharacters() {
     image.onload = () => finish((image.naturalWidth || image.width) === sheet.width && (image.naturalHeight || image.height) === sheet.height);
     image.onerror = () => finish(false);
     image.src = sheet.url;
-  }))).then(ready => { if (ready.some(item => !item)) { loading = null; throw new Error('Required cabin character art failed to load'); } return true; });
+  }))).then(async ready => { ready.push(await preloadChanaWeapons()); if (ready.some(item => !item)) { loading = null; throw new Error('Required cabin character art failed to load'); } return true; });
 }
 
 /** The same action/frame decision as portraits, projected into dedicated side-view art. */
 export function drawCabinCharacter(ctx, options = {}) {
   const { name, localAction, frame, animationFrame } = resolveCharacterPose(options);
+  if (name === 'chana' && CHANA_WEAPON_ACTIONS.includes(localAction)) {
+    if (!drawChanaWeapon(ctx, { ...options, weapon: localAction, view: 'cabin', animationFrame })) return false;
+    return { character: name, action: localAction, frame, animationFrame, ready: true };
+  }
   const sheet = CABIN_SHEETS[name], image = images[localAction === 'rush' ? 'rush' : name];
   if (!image) return false;
   const row = Math.max(0, sheet.actions.indexOf(localAction));

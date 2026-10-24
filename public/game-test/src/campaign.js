@@ -5,6 +5,7 @@ import { drawCarBody, drawCarWheels, getCarArtLayout } from "./car-art.js";
 import { getCityImage } from "./scenery.js";
 import { getDistrictRaster, preloadDistrictArt } from "./district-art.js";
 import { getJourneyStage, getJourneyChoices, JOURNEY_STAGE_COUNT } from "./journey.js";
+import { getClubArt, getClubImage, preloadClubArt } from './club-art.js';
 
 const W = 960;
 const H = 540;
@@ -25,7 +26,7 @@ const images = { arisu: null, chana: null, logo: null, stage: null, console: nul
 let preload;
 
 /** Resolves when the approved transparent character atlases and logo are ready. */
-export function preloadCampaign() {
+export function preloadCampaign(clubIds) {
   if (!preload) {
     preload = Promise.allSettled(
       [
@@ -66,7 +67,7 @@ export function preloadCampaign() {
       return results.map(result => result.value);
     });
   }
-  return preload;
+  return Promise.all([preload, preloadClubArt(clubIds)]).then(([base]) => base);
 }
 
 function rect(ctx, x, y, width, height, color) {
@@ -302,7 +303,7 @@ export function drawMap(ctx, {
   const stage = getJourneyStage(index);
   const nodes = choices?.length === 3 ? choices : getJourneyChoices(index, seed);
   const next = getJourneyStage(index + 1);
-  const future = getJourneyChoices(index + 1, seed);
+  const future = stage.clubStop ? [] : getJourneyChoices(index + 1, seed);
   const selected = nodes.find(n => n.nodeId === choice) || nodes.find(n => n.routeOption === choice) || nodes[0];
   const color = nodeColor(selected);
   setCanvas(ctx, width, height);
@@ -315,7 +316,7 @@ export function drawMap(ctx, {
 
   text(ctx, "いまここ", 115, 211, 13, C.cyan, "center");
   text(ctx, "行き先を選んで出発", 298, 177, 12, C.ink);
-  text(ctx, next ? "その先の分岐" : "ラストセット", 708, 177, 12, C.muted, "center");
+  text(ctx, stage.clubStop ? "クラブ到着" : "その先の分岐", 708, 177, 12, C.muted, "center");
   // Draw every edge before the nodes, so the graph remains legible beneath art.
   road(ctx, [[173, 344], [222, 344]], C.gold, true, time);
   nodes.forEach((node, i) => {
@@ -364,8 +365,8 @@ export function drawMap(ctx, {
     text(ctx, label, 708, y + 42, 10, C.muted, "center");
   });
   panel(ctx, 809, 278, 123, 134, C.pink, "#28182d");
-  const destinationStage = next || stage;
-  const cityImage = getCityImage(destinationStage.cityId);
+  const destinationStage = stage;
+  const cityImage = getClubImage(destinationStage.club) || getCityImage(destinationStage.cityId);
   if (cityImage) ctx.drawImage(cityImage, 815, 284, 111, 67);
   else cityIcon(ctx, 870, 318, destinationStage.cityIndex, C.pink);
   rect(ctx, 815, 335, 111, 25, "#17152eda");
@@ -417,7 +418,7 @@ export function finaleCrowdCount(totalFans) {
   return Number.isFinite(totalFans) ? Math.min(56, Math.max(0, Math.floor(totalFans))) : 0;
 }
 
-function crowd(ctx, time, totalFans) {
+function crowd(ctx, time, totalFans, venue) {
   const visible = finaleCrowdCount(totalFans);
   const energy = Math.min(1, Math.log2(totalFans + 1) / 7);
   for (let row = 0; row < 2; row++) {
@@ -455,7 +456,7 @@ function crowd(ctx, time, totalFans) {
           7,
         );
         if (i % 3 === 0)
-          rect(ctx, x + 17, y - 37, 5, 18, i % 2 ? C.cyan : C.pink);
+          rect(ctx, x + 17, y - 37, 5, 18, i % 2 ? venue?.secondary || C.cyan : venue?.accent || C.pink);
       }
       if (!row && i % 4 === 2) rect(ctx, x - 7, y - 13, 14, 3, "#d56aa5");
     }
@@ -463,7 +464,16 @@ function crowd(ctx, time, totalFans) {
 }
 
 /** Only the architecture is reused; attendance is drawn from run progress. */
-export function drawFinaleStage(ctx, stage = images.stage) {
+export function drawFinaleStage(ctx, stage = images.stage, venue = null) {
+  if (stage && venue) {
+    // These rooms contain no fixed audience. Preserve their actual dance floors;
+    // earned fans are composited separately, including an honestly empty set.
+    const iw = stage.naturalWidth || stage.width, ih = stage.naturalHeight || stage.height;
+    const sourceHeight = Math.min(ih, iw * H / W), sourceWidth = sourceHeight * W / H;
+    ctx.drawImage(stage, (iw - sourceWidth) / 2, (ih - sourceHeight) / 2, sourceWidth, sourceHeight, 0, 0, W, H);
+    rect(ctx, 0, 432, W, 108, `${venue.floor}20`);
+    return;
+  }
   const floorY = 432;
   if (stage) {
     const width = stage.naturalWidth || stage.width || W;
@@ -480,16 +490,18 @@ export function drawFinaleStage(ctx, stage = images.stage) {
 /** Animated two-DJ set for each club and the final shared mix. */
 export function drawFinale(
   ctx,
-  { time = 0, score = 0, totalFans = 0, performance = null, club = '', complete = true, width = W, height = H } = {},
+  { time = 0, score = 0, totalFans = 0, performance = null, club = '', complete = true, width = W, height = H, reducedMotion = false } = {},
 ) {
+  if (reducedMotion) time = 0;
   setCanvas(ctx, width, height);
   rect(ctx, 0, 0, W, H, "#0c1023");
-  drawFinaleStage(ctx);
+  const venue = getClubArt(club), plate = getClubImage(club);
+  drawFinaleStage(ctx, plate || images.stage, plate ? venue : null);
   const setEnergy = performance?.energy || 0;
-  for (let i = 0; i < 6; i++) {
-    const x = 80 + i * 160;
+  const lights = venue?.lights || [80, 240, 400, 560, 720, 880];
+  for (const [i, x] of lights.entries()) {
     beam(ctx, x, 72, x + Math.sin(time * (.7 + setEnergy*.25) + i * 1.7) * 190, 450, 55 + setEnergy*20,
-      i % 2 ? "#61f2eb0d" : "#ff50bd10");
+      `${i % 2 ? venue?.secondary || C.cyan : venue?.accent || C.pink}10`);
   }
   rect(ctx, 20, 8, 920, 30, "#0c1023c9");
   text(ctx, complete ? "ツアー完走や！" : club, 32, 23, 18, C.gold, "left", 900, true);
@@ -566,10 +578,10 @@ export function drawFinale(
       y,
       i % 2 ? 4 : 7,
       i % 2 ? 7 : 3,
-      [C.pink, C.cyan, C.gold, "#b78ffa"][i % 4],
+      [venue?.accent || C.pink, venue?.secondary || C.cyan, C.gold, "#b78ffa"][i % 4],
     );
   }
-  crowd(ctx, time, fanCount);
+  crowd(ctx, time, fanCount, venue);
   panel(ctx, 259, 489, 442, 35, "#a5659c", "#201329");
   text(ctx, performance?.phase || "6つのフロア、みんなでぶちアゲ！", 480, 507, 20, performance?.color || "#fff0fd", "center", 900);
   if (performance?.energy > .2) {
