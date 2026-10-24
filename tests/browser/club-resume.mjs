@@ -23,12 +23,12 @@ export async function checkClubResume(browser, { root, csp }) {
         if (url.pathname === '/game-audio/v1/config') return route.fulfill({ contentType: 'application/json', body: '{"enabled":false}' });
         if (url.pathname.includes('/assets/clubs/')) {
           requests.push(url.pathname);
-          if (failVenue && url.pathname.endsWith(`/${city}.png`)) return route.fulfill({ status: 503, body: 'Unavailable' });
+          if (failVenue && url.pathname.endsWith(`/${city}.webp`)) return route.fulfill({ status: 503, body: 'Unavailable' });
         }
         const path = url.pathname.endsWith('/') ? url.pathname + 'index.html' : url.pathname;
         try {
           await route.fulfill({ body: await readFile(resolve(root, 'dist', path.slice(1))),
-            contentType: ({ '.html': 'text/html', '.js': 'application/javascript', '.mjs': 'application/javascript', '.css': 'text/css', '.png': 'image/png', '.json': 'application/json' })[extname(path)] || 'application/octet-stream',
+            contentType: ({ '.html': 'text/html', '.js': 'application/javascript', '.mjs': 'application/javascript', '.css': 'text/css', '.png': 'image/png', '.webp': 'image/webp', '.json': 'application/json' })[extname(path)] || 'application/octet-stream',
             headers: { 'content-security-policy': csp, 'x-content-type-options': 'nosniff' } });
         } catch { errors.push(path); await route.fulfill({ status: 404, body: 'Missing' }); }
       });
@@ -46,7 +46,7 @@ export async function checkClubResume(browser, { root, csp }) {
       }, { key, save });
       await page.goto('http://club-resume.local/game-test/');
       await page.waitForFunction(() => globalThis.__HYPERDRIVE__?.snapshot().ready);
-      assert.ok(requests.every(path => path.endsWith('/nakano.png')));
+      assert.ok(requests.every(path => path.endsWith('/nakano.webp')));
       await page.locator('#resume-tour').click();
       if (failVenue) {
         await page.locator('#retry-art').waitFor({ state: 'visible' });
@@ -62,7 +62,7 @@ export async function checkClubResume(browser, { root, csp }) {
         else if (await page.evaluate(() => __HYPERDRIVE__.snapshot().screen === 'finale')) break;
         else await page.waitForTimeout(50);
       }
-      await page.waitForFunction(city => clubDraws.some(src => src.endsWith(`/${city}.png`)), city);
+      await page.waitForFunction(city => clubDraws.some(src => src.endsWith(`/${city}.webp`)), city);
       assert.equal(await page.evaluate(() => __HYPERDRIVE__.snapshot().screen), 'finale');
       assert.ok(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1));
       assert.deepEqual(errors, []);

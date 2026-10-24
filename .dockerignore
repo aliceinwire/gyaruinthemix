@@ -9,6 +9,7 @@
 !public/leopard.svg
 !assets/originals/**
 !scripts/images.mjs
+!scripts/optimize-game-images.mjs
 !scripts/check-site-build.mjs
 !scripts/release-version.mjs
 !deploy/nginx.conf
