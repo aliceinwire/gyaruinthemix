@@ -1479,5 +1479,8 @@
   "ゆったり自己ベスト更新！": "New assisted personal best!",
   "通常ツアー": "Normal tour",
   "ゆったりツアー / ダメージ軽減・記録は別": "Assisted tour / Less damage, separate records",
-  "選ぶと: {0} Lv.{1}/{2} + {3} Lv.{4}/{5} → {6}": "After choosing: {0} Lv.{1}/{2} + {3} Lv.{4}/{5} → {6}"
+  "選ぶと: {0} Lv.{1}/{2} + {3} Lv.{4}/{5} → {6}": "After choosing: {0} Lv.{1}/{2} + {3} Lv.{4}/{5} → {6}",
+  "Chrome Bounce Ritual で開演": "Play Chrome Bounce Ritual",
+  "ラジオの曲が変わったで。もう一度始めよか。": "The radio track changed. Start the set again?",
+  "{0} / {1} フレーズ · ファン {2}人 · フロアの仲間 {3}人": "{0} / {1} phrases · {2} fans · {3} floor friends"
 }

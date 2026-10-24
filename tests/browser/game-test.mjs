@@ -30,6 +30,7 @@ import { extname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { checkRadioSpectrum } from './radio-spectrum.mjs';
+import { checkClubChart } from './club-chart.mjs';
 import { checkClubResume } from './club-resume.mjs';
 import { releaseVersion } from '../../src/data/release.mjs';
 
@@ -310,6 +311,7 @@ try {
   await checkRadioSpectrum(browser, { root, csp });
   await checkRadioSpectrum(browser, { root, csp, nativeHls: true });
   await checkClubResume(browser, { root, csp });
+  await checkClubChart(browser, { root, csp });
   for (const [width, height] of [
     [320, 740],
     [390, 667],

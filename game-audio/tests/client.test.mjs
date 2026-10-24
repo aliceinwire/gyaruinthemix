@@ -525,3 +525,27 @@ test('unavailable spectrum metadata never prevents native playback', async () =>
   assert.equal(f.audio.state.spectrum.data[0], 255);
   f.audio.destroy();
 });
+
+test('a chart launch can start a selected track from silence using the existing media element', async () => {
+  const f = fixture();
+  await f.audio.loadCatalog();
+  assert.equal(f.media.plays, 0);
+  await f.audio.selectTrack(b, { autoplay: true, userGesture: true });
+  assert.equal(f.audio.state.track.id, b);
+  assert.equal(f.audio.state.playing, true);
+  assert.equal(f.media.currentTime, 0);
+  const revision = f.audio.state.revision;
+  f.audio.seek(10);
+  assert.ok(f.audio.state.revision > revision);
+  f.media.seeking = true;
+  f.media.dispatchEvent(new Event('seeking'));
+  assert.equal(f.audio.state.seeking, true);
+  f.media.dispatchEvent(new Event('playing'));
+  assert.equal(f.audio.state.seeking, false, 'confirmed playback overrides a stale native seek flag');
+  f.media.dispatchEvent(new Event('ended'));
+  await settle();
+  assert.equal(f.audio.state.endedTrackId, b);
+  assert.equal(f.audio.state.endRevision, 1);
+  assert.equal(f.audio.state.track.id, a);
+  f.audio.destroy();
+});

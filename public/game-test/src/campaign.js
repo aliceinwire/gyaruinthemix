@@ -418,7 +418,7 @@ export function finaleCrowdCount(totalFans) {
   return Number.isFinite(totalFans) ? Math.min(56, Math.max(0, Math.floor(totalFans))) : 0;
 }
 
-function crowd(ctx, time, totalFans, venue) {
+function crowd(ctx, time, totalFans, venue, music = null, intensity = 1) {
   const visible = finaleCrowdCount(totalFans);
   const energy = Math.min(1, Math.log2(totalFans + 1) / 7);
   for (let row = 0; row < 2; row++) {
@@ -426,7 +426,7 @@ function crowd(ctx, time, totalFans, venue) {
     for (let i = 0; i < count; i++) {
       const x = count === 1 ? 160 + row * 640 : 24 + i * (912 / (count - 1)) + (row ? 11 : 0);
       const hop = Math.round(
-        Math.max(0, Math.sin(time * 6.8 + i * 0.57)) * (4 + energy * 8),
+        (music ? music.bass * intensity * (.6 + (i % 3) * .15) : Math.max(0, Math.sin(time * 6.8 + i * 0.57))) * (4 + energy * 8),
       );
       const y = (row ? 526 : 496) - hop;
       const color = row ? "#090b19" : i % 3 === 0 ? "#452142" : "#27203c";
@@ -490,18 +490,21 @@ export function drawFinaleStage(ctx, stage = images.stage, venue = null) {
 /** Animated two-DJ set for each club and the final shared mix. */
 export function drawFinale(
   ctx,
-  { time = 0, score = 0, totalFans = 0, performance = null, club = '', complete = true, width = W, height = H, reducedMotion = false } = {},
+  { time = 0, score = 0, totalFans = 0, performance = null, music = null, club = '', complete = true, width = W, height = H, reducedMotion = false } = {},
 ) {
+  if (performance?.charted) time = performance.musicTime;
   if (reducedMotion) time = 0;
+  const reactive = !reducedMotion && (!performance?.charted || performance.playing);
+  const levels = reactive && music?.active ? music : { bass: 0, energy: 0, bands: [0, 0, 0, 0, 0] };
   setCanvas(ctx, width, height);
   rect(ctx, 0, 0, W, H, "#0c1023");
   const venue = getClubArt(club), plate = getClubImage(club);
   drawFinaleStage(ctx, plate || images.stage, plate ? venue : null);
-  const setEnergy = performance?.energy || 0;
+  const setEnergy = performance?.charted ? (reactive ? performance.intensity : 0) : performance?.energy || 0;
   const lights = venue?.lights || [80, 240, 400, 560, 720, 880];
   for (const [i, x] of lights.entries()) {
     beam(ctx, x, 72, x + Math.sin(time * (.7 + setEnergy*.25) + i * 1.7) * 190, 450, 55 + setEnergy*20,
-      `${i % 2 ? venue?.secondary || C.cyan : venue?.accent || C.pink}10`);
+      `${i % 2 ? venue?.secondary || C.cyan : performance?.charted ? performance.color : venue?.accent || C.pink}${setEnergy >= .8 ? '18' : '10'}`);
   }
   rect(ctx, 20, 8, 920, 30, "#0c1023c9");
   text(ctx, complete ? "ツアー完走や！" : club, 32, 23, 18, C.gold, "left", 900, true);
@@ -547,11 +550,11 @@ export function drawFinale(
   // Hands and hardware share one composition, keeping every wrist attached
   // throughout the beat. Lighting moves independently of the contact points.
   if (images.duoConsole) {
-    const pulse = Math.sin(time * 6.8) * .002;
+    const pulse = levels.bass * .002;
     const w = 640 * (1 + pulse), h = 365 * (1 + pulse);
     ctx.drawImage(images.duoConsole, 480 - w / 2, 490 - h, w, h);
     for (let i = 0; i < 12; i++) {
-      const h = 2 + (Math.sin(time * 8 + i) + 1) * 5;
+      const h = 2 + levels.bands[i % 5] * 10;
       rect(ctx, 453 + i * 5, 425 - h, 3, h, i % 2 ? C.cyan : C.pink);
     }
   } else {
@@ -563,12 +566,12 @@ export function drawFinale(
   text(ctx, "DJちゃな", 626, 453, 24, "#e0fffa", "center", 900);
   text(ctx, "音出してるで", 480, 457, 11, C.pink, "center", 900, true);
   for (let i = 0; i < 9; i++) {
-    const h = 3 + Math.round((Math.sin(time * 6.8 + i * 0.8) + 1) * 5);
+    const h = 3 + Math.round(levels.bands[i % 5] * 10);
     rect(ctx, 449 + i * 7, 478 - h, 4, h, i % 2 ? C.cyan : C.pink);
   }
 
   // Deterministic confetti: looping, subtle, and free of random frame-to-frame noise.
-  for (let i = 0; i < 38; i++) {
+  for (let i = 0; i < (reducedMotion || (performance?.charted && setEnergy < .8) ? 0 : 38); i++) {
     const x = (i * 137 + Math.sin(time + i) * 18 + 960) % 960;
     const y = ((i * 73 + time * (18 + (i % 11))) % 420) + 63;
     if (x > 235 && x < 720 && y > 150 && y < 350) continue;
@@ -581,12 +584,12 @@ export function drawFinale(
       [venue?.accent || C.pink, venue?.secondary || C.cyan, C.gold, "#b78ffa"][i % 4],
     );
   }
-  crowd(ctx, time, fanCount, venue);
+  crowd(ctx, time, fanCount, venue, performance?.charted || reducedMotion ? levels : null, setEnergy);
   panel(ctx, 259, 489, 442, 35, "#a5659c", "#201329");
   text(ctx, performance?.phase || "6つのフロア、みんなでぶちアゲ！", 480, 507, 20, performance?.color || "#fff0fd", "center", 900);
-  if (performance?.energy > .2) {
+  if (setEnergy > .2 && !reducedMotion) {
     for (let i = 0; i < 8; i++) {
-      const x = 98 + i * 108, h = (12 + Math.sin(time*4+i)*8) * performance.energy;
+      const x = 98 + i * 108, h = (12 + levels.bands[i % 5]*8) * setEnergy;
       rect(ctx,x,194-h,3,h, i%2 ? C.cyan : C.pink);
     }
   }
