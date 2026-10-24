@@ -19,11 +19,6 @@ async function setup(t, opts = {}) {
   const dir = await mkdtemp(join(tmpdir(), 'ga-server-'));
   for (const track of [id, other]) {
     await mkdir(join(dir, track));
-    if (opts.spectrum)
-      await writeFile(
-        join(dir, track, 'spectrum.bin'),
-        Buffer.from('GEQ1test'),
-      );
     await writeFile(join(dir, track, 'init.mp4'), Buffer.alloc(20, 1));
     await writeFile(join(dir, track, 'seg-00000.m4s'), Buffer.alloc(100, 2));
   }
@@ -34,7 +29,6 @@ async function setup(t, opts = {}) {
       tracks: [id, other].map((id) => ({
         id,
         init: 'init.mp4',
-        ...(opts.spectrum ? { spectrum: 'spectrum.bin' } : {}),
         title: id === other ? 'Second Song' : '夜のドライブ',
         comment: 'PRIVATE SOURCE COMMENT',
         duration: 4,
@@ -300,36 +294,4 @@ test('catalog entries without a metadata title are not served', async (t) => {
     assert.equal(tracks.has(id), false);
     assert.equal(tracks.get(other).title, 'Second Song');
   }
-});
-
-test('spectrum envelopes require the matching playback session and stay out of the catalog', async (t) => {
-  const f = await setup(t, { spectrum: true });
-  const session = await f.issue();
-  const url = session.body.spectrumUrl;
-  assert.ok(url.endsWith('/spectrum.bin'));
-  assert.equal((await f.request(url)).status, 401);
-  const response = await f.request(url, {
-    headers: { Cookie: session.cookie },
-  });
-  assert.equal(response.status, 200);
-  assert.equal(
-    response.headers.get('content-type'),
-    'application/octet-stream',
-  );
-  assert.match(response.headers.get('cache-control'), /no-store/);
-  assert.equal(await response.text(), 'GEQ1test');
-  const wrong = await f.issue(other);
-  assert.equal(
-    (await f.request(url, { headers: { Cookie: wrong.cookie } })).status,
-    401,
-  );
-  f.advance(121);
-  assert.equal(
-    (await f.request(url, { headers: { Cookie: session.cookie } })).status,
-    401,
-  );
-  assert.doesNotMatch(
-    await (await f.request('/game-audio/v1/catalog')).text(),
-    /spectrum|GEQ1/,
-  );
 });

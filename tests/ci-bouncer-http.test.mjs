@@ -47,10 +47,6 @@ test('each HTTP phase has a fresh process across restart, audio stop and recover
   const id = 't-' + 'a'.repeat(24);
   const output = join(fixture.library, '.hls');
   await mkdir(join(output, id), { recursive: true });
-  await writeFile(
-    join(output, id, 'spectrum.bin'),
-    Buffer.from([71, 69, 81, 49, 1, 0, 0, 0, 100, 0, 0, 0, 0]),
-  );
   await writeFile(join(output, id, 'init.mp4'), Buffer.alloc(20, 1));
   await writeFile(join(output, id, 'seg-00000.m4s'), Buffer.alloc(100, 2));
   await writeFile(
@@ -62,7 +58,6 @@ test('each HTTP phase has a fresh process across restart, audio stop and recover
           id,
           title: AUDIO_FIXTURE_TITLE,
           init: 'init.mp4',
-          spectrum: 'spectrum.bin',
           duration: 4,
           chunks: [{ file: 'seg-00000.m4s', duration: 4 }],
         },

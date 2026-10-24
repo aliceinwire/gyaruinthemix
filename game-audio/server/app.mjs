@@ -7,7 +7,7 @@ const BASE = '/game-audio/v1',
   BRAND = 'ギャルインザミックス';
 const TRACK = /^t-[a-f0-9]{24}$/,
   SID = /^[A-Za-z0-9_-]{32}$/,
-  FILE = /^(init\.mp4|seg-\d{5}\.m4s|spectrum\.bin)$/;
+  FILE = /^(init\.mp4|seg-\d{5}\.m4s)$/;
 export async function loadCatalog(mediaRoot) {
   const root = await realpath(resolve(mediaRoot));
   const catalogPath = join(root, 'catalog.json');
@@ -31,8 +31,7 @@ export async function loadCatalog(mediaRoot) {
       !Array.isArray(t.chunks) ||
       !t.chunks.length ||
       t.chunks.length > 1802 ||
-      t.init !== 'init.mp4' ||
-      (t.spectrum !== undefined && t.spectrum !== 'spectrum.bin')
+      t.init !== 'init.mp4'
     )
       throw new Error('Invalid track.');
     const directory = join(root, t.id);
@@ -42,11 +41,7 @@ export async function loadCatalog(mediaRoot) {
     )
       throw new Error('Track symlink rejected.');
     const files = new Map();
-    for (const file of [
-      t.init,
-      ...t.chunks.map((c) => c.file),
-      ...(t.spectrum ? [t.spectrum] : []),
-    ]) {
+    for (const file of [t.init, ...t.chunks.map((c) => c.file)]) {
       if (!FILE.test(file) || files.has(file))
         throw new Error('Invalid media file.');
       const path = join(directory, file),
@@ -55,7 +50,7 @@ export async function loadCatalog(mediaRoot) {
         !stat.isFile() ||
         stat.isSymbolicLink() ||
         stat.size <= 0 ||
-        stat.size > (file === 'spectrum.bin' ? 1024 * 1024 : 256 * 1024) ||
+        stat.size > 256 * 1024 ||
         !(await realpath(path)).startsWith(root + sep)
       )
         throw new Error('Unsafe media file.');
@@ -266,14 +261,11 @@ export function createAudioHandler({
           expiresAt: exp * 1000,
           renewAfterMs: Math.floor((ttlSeconds * 1000) / 3),
           manifestUrl: `${BASE}/stream/${t.id}/${sid}/index.m3u8?ticket=${ticket}`,
-          ...(t.spectrum
-            ? { spectrumUrl: `${BASE}/stream/${t.id}/${sid}/spectrum.bin` }
-            : {}),
         });
         return true;
       }
       const match = path.match(
-        /^\/game-audio\/v1\/stream\/(t-[a-f0-9]{24})\/([A-Za-z0-9_-]{32})\/(index\.m3u8|init\.mp4|seg-\d{5}\.m4s|spectrum\.bin)$/,
+        /^\/game-audio\/v1\/stream\/(t-[a-f0-9]{24})\/([A-Za-z0-9_-]{32})\/(index\.m3u8|init\.mp4|seg-\d{5}\.m4s)$/,
       );
       if (!match || !['GET', 'HEAD'].includes(req.method)) {
         send(res, 404, { error: 'Unavailable' });
@@ -368,12 +360,7 @@ export function createAudioHandler({
         return true;
       }
       res.writeHead(status, {
-        'Content-Type':
-          name === 'spectrum.bin'
-            ? 'application/octet-stream'
-            : name === 'init.mp4'
-              ? 'audio/mp4'
-              : 'audio/iso.segment',
+        'Content-Type': name === 'init.mp4' ? 'audio/mp4' : 'audio/iso.segment',
         'Content-Length': end - start + 1,
         'Accept-Ranges': 'bytes',
       });

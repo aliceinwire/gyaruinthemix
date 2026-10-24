@@ -32,14 +32,7 @@ class Media extends EventTarget {
     this.currentTime = 0;
   }
 }
-function fixture({
-  delay = false,
-  native = true,
-  blocked = false,
-  spectrum = false,
-  delayedSpectrum = false,
-  brokenSpectrum = false,
-} = {}) {
+function fixture({ delay = false, native = true, blocked = false } = {}) {
   const media = new Media(),
     doc = new EventTarget();
   doc.hidden = false;
@@ -49,7 +42,6 @@ function fixture({
     playable = true,
     sessionId = 'x'.repeat(32),
     nextTimer = 0;
-  const spectrumResolvers = [];
   const scheduled = new Map();
   const timers = {
     setTimeout: (fn) => {
@@ -66,32 +58,6 @@ function fixture({
     };
   const fetchImpl = async (url, opts) => {
     calls.push({ url, opts });
-    if (url.endsWith('/spectrum.bin')) {
-      const value = new Uint8Array([
-        71,
-        69,
-        81,
-        49,
-        1,
-        0,
-        0,
-        0,
-        url.includes(a) ? 255 : 0,
-        0,
-        0,
-        0,
-        url.includes(b) ? 255 : 0,
-      ]);
-      const result = {
-        ok: !brokenSpectrum,
-        arrayBuffer: async () => value.buffer,
-      };
-      if (delayedSpectrum)
-        return new Promise((resolve) =>
-          spectrumResolvers.push(() => resolve(result)),
-        );
-      return result;
-    }
     if (url.endsWith('/catalog'))
       return {
         ok: true,
@@ -112,11 +78,6 @@ function fixture({
         expiresAt: Date.now() + 120000,
         renewAfterMs: 40000,
         manifestUrl: '/game-audio/test.m3u8',
-        ...(spectrum
-          ? {
-              spectrumUrl: `/game-audio/v1/stream/${JSON.parse(opts.body).trackId}/${sessionId}/spectrum.bin`,
-            }
-          : {}),
       }),
     };
     if (delay) return new Promise((r) => (resolveSession = () => r(result)));
@@ -154,10 +115,6 @@ function fixture({
   });
   return {
     audio,
-    spectrumResolvers,
-    setSpectrumAvailable: () => {
-      brokenSpectrum = false;
-    },
     media,
     doc,
     calls,
@@ -481,47 +438,5 @@ test('the next track continues while the tab is hidden', async () => {
   await settle();
   assert.equal(f.audio.state.track.id, b);
   assert.equal(f.media.paused, false);
-  f.audio.destroy();
-});
-
-test('only native HLS fetches spectrum data after consent and late tracks cannot replace it', async () => {
-  const f = fixture({ spectrum: true, delayedSpectrum: true });
-  await f.audio.loadCatalog();
-  assert.equal(
-    f.calls.filter((c) => c.url.endsWith('/spectrum.bin')).length,
-    0,
-  );
-  await f.audio.play({ userGesture: true });
-  assert.equal(f.media.plays, 1);
-  await f.audio.next({ userGesture: true });
-  assert.equal(f.spectrumResolvers.length, 2);
-  f.spectrumResolvers[1]();
-  await settle();
-  const current = f.audio.state.spectrum;
-  assert.equal(current.data[4], 255);
-  f.spectrumResolvers[0]();
-  await settle();
-  assert.equal(f.audio.state.spectrum, current);
-  f.audio.destroy();
-  assert.equal(f.audio.state.spectrum, null);
-  const js = fixture({ native: false, spectrum: true });
-  await js.audio.play({ userGesture: true });
-  assert.equal(
-    js.calls.filter((c) => c.url.endsWith('/spectrum.bin')).length,
-    0,
-  );
-  js.audio.destroy();
-});
-
-test('unavailable spectrum metadata never prevents native playback', async () => {
-  const f = fixture({ spectrum: true, brokenSpectrum: true });
-  await f.audio.play({ userGesture: true });
-  await settle();
-  assert.equal(f.audio.state.playing, true);
-  assert.equal(f.audio.state.spectrum, null);
-  f.setSpectrumAvailable();
-  await f.renew();
-  await settle();
-  assert.equal(f.audio.state.spectrum.data[0], 255);
   f.audio.destroy();
 });

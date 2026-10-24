@@ -5,21 +5,11 @@ import {
   radioSpectrumBars,
   RADIO_IDLE_BARS,
 } from '../public/game-test/src/radio-equalizer.js';
-import {
-  SILENT_MUSIC,
-  decodeMusicTimeline,
-} from '../public/game-test/src/music-reactivity.js';
+import { SILENT_MUSIC } from '../public/game-test/src/music-reactivity.js';
 
-function fixture({
-  blocked = false,
-  deferred = false,
-  supported = true,
-  native = false,
-} = {}) {
+function fixture({ blocked = false, deferred = false, supported = true } = {}) {
   const media = new EventTarget();
   Object.assign(media, {
-    canPlayType: () => (native ? 'probably' : ''),
-    currentTime: 0,
     paused: true,
     ended: false,
     muted: false,
@@ -323,51 +313,23 @@ test('seeking stays quiet through controller updates and resumes only with a fre
   f.equalizer.destroy();
 });
 
-test('native HLS follows song envelopes without capturing the media element', async () => {
-  const f = fixture({ native: true, supported: false });
-  const bytes = new Uint8Array(18);
-  bytes.set([71, 69, 81, 49, 2, 0, 0, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0, 255]);
-  const spectrum = decodeMusicTimeline(bytes.buffer);
-  const state = { status: 'playing', playing: true, enabled: true, spectrum };
+test('confirmed playback resumes the meter even while the media seek flag remains set', async () => {
+  const f = fixture();
+  await f.equalizer.unlock();
   f.playing();
-  f.equalizer.update(state);
-  assert.equal(await f.equalizer.unlock(), true);
-  assert.equal(f.context(), undefined);
+  f.context().data[2] = 255;
   f.frame(0);
-  assert.equal(f.display.textContent, '█▁▁▁▁');
-  f.media.currentTime = 0.05;
-  f.frame(50);
-  assert.equal(f.display.textContent, '▁▁▁▁█');
   f.media.seeking = true;
   f.media.dispatchEvent(new Event('seeking'));
-  f.equalizer.update(state);
-  assert.equal(f.equalizer.reactivity, SILENT_MUSIC);
-  f.media.currentTime = 0;
-  f.media.seeking = false;
-  f.media.dispatchEvent(new Event('seeked'));
-  f.frame(100);
-  assert.equal(f.display.textContent, '█▁▁▁▁');
-  f.reducedMotion(true);
-  assert.equal(f.equalizer.reactivity, SILENT_MUSIC);
-  f.reducedMotion(false);
-  f.frame(150);
-  f.media.muted = true;
-  f.media.dispatchEvent(new Event('volumechange'));
-  assert.equal(f.equalizer.reactivity, SILENT_MUSIC);
-  f.media.muted = false;
-  f.equalizer.update({ ...state, spectrum: null });
   assert.equal(f.equalizer.reactivity, SILENT_MUSIC);
   assert.equal(f.frames.size, 0);
+  f.context().data.fill(0);
+  f.context().data[180] = 255;
+  f.media.dispatchEvent(new Event('playing'));
+  f.equalizer.update({ playing: true, enabled: true, status: 'playing' });
+  f.frame(60);
+  assert.notEqual(f.display.textContent, RADIO_IDLE_BARS);
+  assert.equal(f.equalizer.reactivity.bass, 0);
+  assert.ok(f.equalizer.reactivity.treble > 0);
   f.equalizer.destroy();
-});
-
-test('native spectrum payloads reject truncated, oversized and unsupported data', () => {
-  for (const buffer of [
-    new ArrayBuffer(0),
-    new ArrayBuffer(13),
-    new ArrayBuffer(1024 * 1024 + 1),
-  ])
-    assert.equal(decodeMusicTimeline(buffer), null);
-  const bytes = new Uint8Array([71, 69, 81, 49, 2, 0, 0, 0, 255, 0, 0, 0, 0]);
-  assert.equal(decodeMusicTimeline(bytes.buffer), null);
 });

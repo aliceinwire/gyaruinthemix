@@ -1,4 +1,4 @@
-import { readMusicSpectrum, readMusicTimeline, SILENT_MUSIC } from './music-reactivity.js';
+import { readMusicSpectrum, SILENT_MUSIC } from './music-reactivity.js';
 /** One bass-to-treble sample feeds both the radio display and the game artwork. */
 const BLOCKS = '▁▂▃▄▅▆▇█';
 export const RADIO_IDLE_BARS = BLOCKS[0].repeat(5);
@@ -19,10 +19,9 @@ export function createRadioEqualizer({
   cancelFrame = id => globalThis.cancelAnimationFrame(id),
 } = {}) {
   let context = null, source = null, analyser = null, spectrum = null;
-  let frame = null, lastSample = -Infinity, destroyed = false, buffering = false;
+  let frame = null, lastSample = -Infinity, destroyed = false, buffering = false, seeking = false;
   let controllerPlaying = false, resumePending = null, generation = 0;
-  let music = SILENT_MUSIC, timeline = null;
-  const nativeHls = Boolean(media.canPlayType?.('application/vnd.apple.mpegurl'));
+  let music = SILENT_MUSIC;
   const disposers = [];
   const listen = (node, event, handler) => {
     node?.addEventListener?.(event, handler);
@@ -32,8 +31,8 @@ export function createRadioEqualizer({
     const preference = documentRef?.body?.dataset?.reducedMotion;
     return preference === undefined ? Boolean(motionQuery?.matches) : preference === 'true';
   };
-  const active = () => !destroyed && (nativeHls ? timeline : analyser && context?.state === 'running')
-    && controllerPlaying && !media.paused && !media.ended && !media.muted && !media.seeking
+  const active = () => !destroyed && analyser && context?.state === 'running'
+    && controllerPlaying && !media.paused && !media.ended && !media.muted && !seeking
     && media.volume > 0 && !buffering && !documentRef?.hidden && !reducedMotion();
   function paint(value) {
     if (display.textContent !== value) display.textContent = value;
@@ -57,11 +56,8 @@ export function createRadioEqualizer({
     frame = null;
     if (!active()) { stop(); return; }
     if (timestamp - lastSample >= 50) {
-      if (nativeHls) music = readMusicTimeline(timeline, media.currentTime);
-      else {
-        analyser.getByteFrequencyData(spectrum);
-        music = readMusicSpectrum(spectrum, context.sampleRate, analyser.fftSize);
-      }
+      analyser.getByteFrequencyData(spectrum);
+      music = readMusicSpectrum(spectrum, context.sampleRate, analyser.fftSize);
       paint(spectrumBars(music));
       lastSample = timestamp;
     }
@@ -73,11 +69,7 @@ export function createRadioEqualizer({
     if (frame === null) schedule();
   }
   async function unlock() {
-    if (destroyed) return false;
-    // Native HLS can bypass Web Audio. Keep its audible path intact and use
-    // measured song envelopes at the media clock instead of an empty analyser.
-    if (nativeHls) { sync(); return true; }
-    if (!AudioContextClass) return false;
+    if (destroyed || !AudioContextClass) return false;
     if (resumePending) return resumePending;
     // Resume inside the user gesture, before moving playback into Web Audio.
     // A blocked context must leave the original media playback path untouched.
@@ -106,12 +98,13 @@ export function createRadioEqualizer({
       return resumePending;
     } catch { return false; }
   }
-  listen(media, 'playing', () => { buffering = false; controllerPlaying = true; sync(); });
+  // Playback events confirm resumed audio even if the media seek flag lags.
+  listen(media, 'playing', () => { seeking = false; buffering = false; controllerPlaying = true; sync(); });
   for (const event of ['pause', 'ended', 'emptied', 'error'])
     listen(media, event, () => { controllerPlaying = false; stop(); });
   for (const event of ['waiting', 'seeking'])
-    listen(media, event, () => { buffering = true; stop(); });
-  listen(media, 'seeked', () => { buffering = false; sync(); });
+    listen(media, event, () => { if (event === 'seeking') seeking = true; buffering = true; stop(); });
+  listen(media, 'seeked', () => { seeking = false; buffering = false; sync(); });
   listen(media, 'volumechange', sync);
   listen(documentRef, 'visibilitychange', sync);
   listen(motionQuery, 'change', sync);
@@ -122,7 +115,6 @@ export function createRadioEqualizer({
     unlock,
     get reactivity() { return active() ? music : SILENT_MUSIC; },
     update(state) {
-      if (timeline !== (state.spectrum || null)) { timeline = state.spectrum || null; stop(); }
       controllerPlaying = Boolean(state.playing && state.enabled
         && !['paused', 'idle', 'empty', 'unavailable', 'tap-to-play'].includes(state.status));
       buffering = ['buffering', 'loading', 'reconnecting'].includes(state.status);
