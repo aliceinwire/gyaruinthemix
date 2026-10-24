@@ -89,8 +89,27 @@ export async function checkGameAudioRuntime(
   const setCookie = session.headers.get('set-cookie');
   assert.match(setCookie, /HttpOnly; SameSite=Strict; Secure/);
   const headers = { Cookie: setCookie.split(';')[0] };
-  const { manifestUrl } = await session.json();
+  const { manifestUrl, spectrumUrl } = await session.json();
   assert.ok(manifestUrl.startsWith('/game-audio/v1/stream/'));
+  assert.ok(
+    spectrumUrl.startsWith('/game-audio/v1/stream/') &&
+      spectrumUrl.endsWith('/spectrum.bin'),
+  );
+  await request(spectrumUrl, 401);
+  const envelope = await request(spectrumUrl, 200, { headers });
+  assert.equal(
+    envelope.headers.get('content-type'),
+    'application/octet-stream',
+  );
+  assert.match(envelope.headers.get('cache-control'), /no-store/);
+  const levels = Buffer.from(await envelope.arrayBuffer());
+  assert.ok(levels.length >= 13 && levels.length <= 1024 * 1024);
+  assert.equal(levels.toString('ascii', 0, 4), 'GEQ1');
+  assert.equal(levels.length, 8 + levels.readUInt32LE(4) * 5);
+  assert.ok(levels.subarray(8).some((value) => value > 0));
+  await request(spectrumUrl, 403, {
+    headers: { ...headers, 'Sec-Fetch-Site': 'cross-site' },
+  });
   await request(manifestUrl, 401);
   await request(manifestUrl.split('?')[0], 401, { headers });
   const manifest = await request(manifestUrl, 200, { headers });

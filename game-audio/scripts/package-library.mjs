@@ -10,13 +10,14 @@ import {
   rm,
 } from 'node:fs/promises';
 import { createReadStream } from 'node:fs';
+import { createInterface } from 'node:readline';
 import { createHash } from 'node:crypto';
 import { resolve, join, basename } from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 const EXTENSIONS = /\.(mp3|wav|flac|m4a|aac|ogg|opus)$/i;
 const BRAND = 'ギャルインザミックス';
-const PACKAGER_VERSION = 2;
+const PACKAGER_VERSION = 3;
 // Local extensions are not proof of container type. Refuse playlist/concat
 // demuxers and network protocols, including playlists disguised as audio files.
 const INPUT_OPTIONS = [
@@ -79,9 +80,9 @@ export function titleOnlyInit(input) {
   }
   return boxes(input);
 }
-async function run(command, args, timeout = 1800000) {
+async function run(command, args, timeout = 1800000, cwd) {
   return new Promise((done, fail) => {
-    const p = spawn(command, args, { stdio: ['ignore', 'pipe', 'pipe'] });
+    const p = spawn(command, args, { cwd, stdio: ['ignore', 'pipe', 'pipe'] });
     let stdout = '',
       stderr = '';
     const timer = setTimeout(() => p.kill('SIGKILL'), timeout);
@@ -102,6 +103,69 @@ async function run(command, args, timeout = 1800000) {
         : fail(new Error(`${command} failed (${code}): ${stderr.slice(-400)}`));
     });
   });
+}
+// Five measured band envelopes, 20 frames/second. No playable audio is retained.
+async function packageSpectrum(source, directory, duration) {
+  const edges = [45, 150, 500, 1600, 5000, 16000];
+  const filters = ['[0:a:0]aresample=48000,asplit=5[b0][b1][b2][b3][b4]'];
+  for (let band = 0; band < 5; band++)
+    filters.push(
+      `[b${band}]highpass=f=${edges[band]},lowpass=f=${edges[band + 1]},asetnsamples=n=2400:p=1,astats=metadata=1:reset=1:measure_perchannel=none:measure_overall=RMS_level,ametadata=mode=print:key=lavfi.astats.Overall.RMS_level:file=band-${band}.txt[o${band}]`,
+    );
+  await run(
+    'ffmpeg',
+    [
+      '-hide_banner',
+      '-loglevel',
+      'error',
+      '-nostdin',
+      ...INPUT_OPTIONS,
+      '-threads',
+      '1',
+      '-i',
+      source,
+      '-filter_complex_threads',
+      '1',
+      '-filter_complex',
+      filters.join(';'),
+      ...Array.from({ length: 5 }, (_, band) => ['-map', `[o${band}]`]).flat(),
+      '-f',
+      'null',
+      '-',
+    ],
+    1800000,
+    directory,
+  );
+  const limit = Math.ceil(duration * 20) + 2;
+  const data = Buffer.alloc(8 + limit * 5);
+  data.write('GEQ1');
+  let frames;
+  for (let band = 0; band < 5; band++) {
+    const path = join(directory, `band-${band}.txt`);
+    let count = 0;
+    const lines = createInterface({
+      input: createReadStream(path),
+      crlfDelay: Infinity,
+    });
+    for await (const line of lines) {
+      if (!line.startsWith('lavfi.astats.Overall.RMS_level=')) continue;
+      if (count >= limit) throw new Error('Spectrum duration exceeds limit.');
+      const db = Number(line.slice(line.indexOf('=') + 1));
+      data[8 + count++ * 5 + band] = Number.isFinite(db)
+        ? Math.round(Math.max(0, Math.min(1, (db + 60) / 60)) * 255)
+        : 0;
+    }
+    if (!count || (frames !== undefined && frames !== count))
+      throw new Error('Invalid spectrum frames.');
+    frames = count;
+    await rm(path);
+  }
+  data.writeUInt32LE(frames, 4);
+  await writeFile(
+    join(directory, 'spectrum.bin'),
+    data.subarray(0, 8 + frames * 5),
+    { mode: 0o640 },
+  );
 }
 async function hashFile(path) {
   const hash = createHash('sha256');
@@ -229,11 +293,12 @@ export async function packageLibrary({
           const cachedFiles = new Set();
           for (const file of [
             cached.init,
+            ...(cached.spectrum ? [cached.spectrum] : []),
             ...(cached.chunks || []).map((c) => c.file),
           ]) {
             if (
               cachedFiles.has(file) ||
-              !/^(init\.mp4|seg-\d{5}\.m4s)$/.test(file)
+              !/^(init\.mp4|seg-\d{5}\.m4s|spectrum\.bin)$/.test(file)
             )
               throw new Error('Invalid cached file.');
             cachedFiles.add(file);
@@ -242,13 +307,24 @@ export async function packageLibrary({
               !stat.isFile() ||
               stat.isSymbolicLink() ||
               !stat.size ||
-              stat.size > 256 * 1024
+              stat.size > (file === 'spectrum.bin' ? 1024 * 1024 : 256 * 1024)
             )
               throw new Error('Invalid cached package.');
+            if (file === 'spectrum.bin') {
+              const bytes = await readFile(join(target, file));
+              if (
+                bytes.length < 13 ||
+                bytes.toString('ascii', 0, 4) !== 'GEQ1' ||
+                bytes.readUInt32LE(4) > 7201 * 20 ||
+                bytes.length !== 8 + bytes.readUInt32LE(4) * 5
+              )
+                throw new Error('Invalid cached spectrum.');
+            }
           }
           if (
             cached.sourceHash === hash &&
             cached.packagerVersion === PACKAGER_VERSION &&
+            cached.spectrum === 'spectrum.bin' &&
             cached.excerpt === excerpt
           )
             track = cached;
@@ -309,6 +385,7 @@ export async function packageLibrary({
             join(temporary, 'seg-%05d.m4s'),
             join(temporary, 'index.m3u8'),
           ]);
+          await packageSpectrum(source, temporary, duration);
           const initPath = join(temporary, 'init.mp4');
           await writeFile(initPath, titleOnlyInit(await readFile(initPath)));
           const after = await lstat(source);
@@ -336,6 +413,7 @@ export async function packageLibrary({
             sourceHash: hash,
             packagerVersion: PACKAGER_VERSION,
             init: 'init.mp4',
+            spectrum: 'spectrum.bin',
             chunks,
           };
           await writeFile(

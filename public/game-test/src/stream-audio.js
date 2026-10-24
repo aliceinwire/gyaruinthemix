@@ -1,3 +1,4 @@
+import { decodeMusicTimeline } from './music-reactivity.js';
 /** One persistent HTMLAudioElement, never one element per chunk. Silent until consent. */
 const BASE = '/game-audio/v1';
 export const loadHls = () =>
@@ -26,7 +27,9 @@ export function createStreamAudio({
     generation = 0,
     pending = null,
     recoveries = 0,
-    repeat = true;
+    repeat = true,
+    spectrum = null,
+    spectrumRequest = null;
   let volume = 0.7,
     muted = false,
     sessionQueue = Promise.resolve(),
@@ -48,6 +51,7 @@ export function createStreamAudio({
     muted,
     volume,
     repeat,
+    spectrum,
   });
   const emit = () => {
     if (!destroyed) onState(state());
@@ -166,16 +170,35 @@ export function createStreamAudio({
     if (session?.sessionId !== fresh.sessionId) {
       await attach(fresh, media.currentTime, version);
       if (allowed()) await safePlay();
-    } else session = fresh;
+    } else {
+      session = fresh;
+      if (!spectrum && !spectrumRequest && media.canPlayType('application/vnd.apple.mpegurl')) void loadSpectrum(fresh, generation);
+    }
     scheduleRenew();
+  }
+  async function loadSpectrum(fresh, version) {
+    const expected = `${BASE}/stream/${fresh.trackId}/${fresh.sessionId}/spectrum.bin`;
+    if (fresh.spectrumUrl !== expected) return;
+    const request = new AbortController();
+    spectrumRequest = request;
+    try {
+      const response = await fetchImpl(expected, { credentials: 'same-origin', cache: 'no-store', signal: request.signal });
+      if (!response.ok || Number(response.headers?.get('content-length')) > 1024 * 1024) return;
+      const value = decodeMusicTimeline(await response.arrayBuffer());
+      if (!destroyed && version === generation && !request.signal.aborted) { spectrum = value; emit(); }
+    } catch { /* Visualization never interrupts playback. */ }
+    finally { if (spectrumRequest === request) spectrumRequest = null; }
   }
   async function attach(fresh, position, version) {
     if (version !== generation || destroyed) return;
     session = fresh;
+    spectrumRequest?.abort();
+    spectrum = null;
     hls?.destroy();
     hls = null;
     // Native Safari HLS first. The JS fallback is lazy and local, never a CDN iframe.
     if (media.canPlayType('application/vnd.apple.mpegurl')) {
+      void loadSpectrum(fresh, version);
       media.src = fresh.manifestUrl;
       media.load();
       if (position > 0) media.currentTime = position;
@@ -290,6 +313,8 @@ export function createStreamAudio({
     const resume = desired || !media.paused;
     pause();
     generation++;
+    spectrumRequest?.abort();
+    spectrum = null;
     pending = null;
     hls?.destroy();
     hls = null;
@@ -395,6 +420,8 @@ export function createStreamAudio({
     },
     destroy() {
       destroyed = true;
+      spectrumRequest?.abort();
+      spectrum = null;
       playIntent++;
       desired = false;
       generation++;

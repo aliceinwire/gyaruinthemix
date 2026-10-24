@@ -308,6 +308,7 @@ const browser = await chromium.launch({
 });
 try {
   await checkRadioSpectrum(browser, { root, csp });
+  await checkRadioSpectrum(browser, { root, csp, nativeHls: true });
   await checkClubResume(browser, { root, csp });
   for (const [width, height] of [
     [320, 740],

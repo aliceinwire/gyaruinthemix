@@ -23,3 +23,21 @@ export function readMusicSpectrum(data, sampleRate, fftSize) {
     treble: (bands[3] + bands[4]) / 2, energy: bands.reduce((sum, value) => sum + value, 0) / bands.length,
   });
 }
+
+/** Authenticated, song-derived envelopes for native HLS players. */
+export function decodeMusicTimeline(buffer) {
+  if (!(buffer instanceof ArrayBuffer) || buffer.byteLength < 13 || buffer.byteLength > 1024 * 1024) return null;
+  const bytes = new Uint8Array(buffer), header = new DataView(buffer);
+  const frames = header.getUint32(4, true);
+  if (String.fromCharCode(...bytes.subarray(0, 4)) !== 'GEQ1' || !frames || frames > 7201 * 20 || buffer.byteLength !== 8 + frames * 5) return null;
+  return { frames, data: bytes.subarray(8) };
+}
+
+export function readMusicTimeline(timeline, time) {
+  if (!timeline || !Number.isFinite(time) || time < 0) return SILENT_MUSIC;
+  const frame = Math.floor(time * 20);
+  if (frame >= timeline.frames) return SILENT_MUSIC;
+  const bands = Object.freeze(Array.from(timeline.data.subarray(frame * 5, frame * 5 + 5), value => value / 255));
+  return Object.freeze({ active: true, bands, bass: bands[0], mid: (bands[1] + bands[2]) / 2,
+    treble: (bands[3] + bands[4]) / 2, energy: bands.reduce((sum, value) => sum + value, 0) / 5 });
+}

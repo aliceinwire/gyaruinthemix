@@ -131,11 +131,15 @@ test('library discovery is bounded, deterministic, continuous and isolates corru
     assert.equal(stream.tags.language, 'und');
   }
   const old = JSON.parse(await readFile(cachedPath, 'utf8'));
-  old.packagerVersion = 1;
+  old.packagerVersion = 2;
+  delete old.spectrum;
+  await rm(join(root, '.hls', track.id, 'spectrum.bin'));
   await writeFile(cachedPath, JSON.stringify(old));
   const oldModified = (await stat(file)).mtimeMs;
   const migrated = await packageLibrary({ directory: root, excerpt: true });
-  assert.equal(migrated.catalog.tracks[0].packagerVersion, 2);
+  assert.equal(migrated.catalog.tracks[0].packagerVersion, 3);
+  assert.equal(migrated.catalog.tracks[0].spectrum, 'spectrum.bin');
+  assert.ok((await stat(join(root, '.hls', track.id, 'spectrum.bin'))).size > 8);
   assert.notEqual((await stat(file)).mtimeMs, oldModified);
   const migratedModified = (await stat(file)).mtimeMs;
   await packageLibrary({ directory: root, excerpt: true });
@@ -369,4 +373,37 @@ test('init metadata filtering preserves boxes and rejects malformed or excessive
   let deep = box('free');
   for (let n = 0; n < 10; n++) deep = box('moov', deep);
   assert.throws(() => titleOnlyInit(deep), /Nested/);
+});
+
+test('packaged native-HLS envelopes follow measured bass and treble and repair missing files', async (t) => {
+  const dir = await mkdtemp(join(tmpdir(), 'ga-spectrum-')),
+    root = join(dir, 'assets/music');
+  await mkdir(root, { recursive: true });
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  execFileSync('ffmpeg', [
+    '-v',
+    'error',
+    '-f',
+    'lavfi',
+    '-i',
+    'aevalsrc=if(lt(t\\,1)\\,sin(2*PI*90*t)\\,sin(2*PI*6500*t)):s=48000:d=2',
+    '-metadata',
+    'title=Tone',
+    join(root, 'tone.wav'),
+  ]);
+  const result = await packageLibrary({ directory: root });
+  assert.deepEqual(result.failures, []);
+  const track = result.catalog.tracks[0];
+  assert.equal(track.spectrum, 'spectrum.bin');
+  const path = join(root, '.hls', track.id, track.spectrum),
+    bytes = await readFile(path);
+  assert.equal(bytes.toString('ascii', 0, 4), 'GEQ1');
+  assert.equal(bytes.readUInt32LE(4), 40);
+  assert.equal(bytes.length, 208);
+  assert.ok(bytes[8 + 10 * 5] > bytes[8 + 10 * 5 + 4]);
+  assert.ok(bytes[8 + 30 * 5 + 4] > bytes[8 + 30 * 5]);
+  await rm(path);
+  const repaired = await packageLibrary({ directory: root });
+  assert.deepEqual(repaired.failures, []);
+  assert.deepEqual(await readFile(path), bytes);
 });
