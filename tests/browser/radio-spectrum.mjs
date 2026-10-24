@@ -126,8 +126,12 @@ export async function checkRadioSpectrum(browser, { root, csp }) {
       return samples;
     });
     const heights = value => [...value].map(char => '▁▂▃▄▅▆▇█'.indexOf(char));
-    assert.ok(frames.some(({ bars, music }) => heights(bars)[0] > heights(bars)[4] && music.bass > music.treble), 'Bass tone reaches both the radio and game facade');
-    assert.ok(frames.some(({ bars, music }) => heights(bars)[4] > heights(bars)[0] && music.treble > music.bass), 'Treble tone reaches both the radio and game facade');
+    for (const { bars, music } of frames)
+      assert.deepEqual(heights(bars), music.bands.map(value => Math.round(value * 7)), 'Radio and game share all five frequency bands');
+    // Compare the same bands: treble averages two bands, only one of which the
+    // 6500 Hz tone excites, while smoothing retains some of the preceding bass.
+    assert.ok(frames.some(({ bars, music }) => heights(bars)[0] > heights(bars)[4] && music.bands[0] > music.bands[4]), 'Bass tone reaches both the radio and game facade');
+    assert.ok(frames.some(({ bars, music }) => heights(bars)[4] > heights(bars)[0] && music.bands[4] > music.bands[0]), 'Treble tone reaches both the radio and game facade');
     assert.ok(new Set(frames.map(frame => frame.bars)).size > 2, 'Bars follow changing decoded audio');
     assert.ok(new Set(frames.map(frame => frame.world)).size > 2, 'Speaker artwork follows the decoded signal at a fixed scene time');
     assert.ok(frames.every(frame => frame.unchanged), 'Music rendering leaves simulation state unchanged');
