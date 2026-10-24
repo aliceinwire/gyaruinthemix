@@ -203,3 +203,54 @@ test('music rendering cannot change an identical seeded run and reduced motion i
   assert.deepEqual(loud.fills, quiet.fills);
   assert.deepEqual(loud.calls, quiet.calls);
 });
+
+test('charted club lighting follows sections, its meters follow music, and reduced motion stays still', async () => {
+  const { drawFinale } = await import('../public/game-test/src/campaign.js');
+  const performance = {
+    charted: true,
+    playing: true,
+    intensity: 1,
+    musicTime: 53,
+    color: '#ffda91',
+    phase: 'DROP',
+  };
+  const draw = (options = {}) => {
+    const g = context();
+    drawFinale(g, { performance, music: bass, totalFans: 30, ...options });
+    return g;
+  };
+  const low = draw(),
+    high = draw({ music: treble });
+  const meters = (g) =>
+    g.fills.filter(({ args: [x, , w] }) => x >= 449 && x <= 505 && w === 4);
+  assert.notDeepEqual(meters(low), meters(high));
+  const breakScene = draw({
+    performance: {
+      ...performance,
+      intensity: 0.28,
+      color: '#ff9ed3',
+      phase: 'ONE CREW',
+    },
+  });
+  assert.ok(
+    low.fills.length > breakScene.fills.length,
+    'confetti is reserved for drops and the finale',
+  );
+  const still = draw({ reducedMotion: true });
+  const later = draw({
+    reducedMotion: true,
+    music: treble,
+    performance: { ...performance, musicTime: 60 },
+  });
+  assert.deepEqual(still.fills, later.fills);
+  assert.deepEqual(still.calls, later.calls);
+  const stopped = draw({
+    performance: { ...performance, playing: false },
+    music: bass,
+  });
+  const stoppedTreble = draw({
+    performance: { ...performance, playing: false },
+    music: treble,
+  });
+  assert.deepEqual(stopped.fills, stoppedTreble.fills);
+});

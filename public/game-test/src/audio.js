@@ -11,6 +11,9 @@ export function createGameAudio({ loadConfig = loadGameAudioConfig, streamingFac
     unlock: (...args) => { if (!destroyed) return active.unlock(...args); },
     pause: (...args) => { if (!destroyed) return active.pause(...args); },
     beep: (...args) => { if (!destroyed) return active.beep(...args); },
+    playTrack: (...args) => { if (!destroyed) return active.playTrack(...args); },
+    get tracks() { return destroyed ? [] : active.tracks || []; },
+    get transport() { return destroyed ? null : active.transport; },
     get enabled() { return !destroyed && active.enabled; },
     get reactivity() { return destroyed ? SILENT_MUSIC : active.reactivity || SILENT_MUSIC; },
     destroy() { if (!destroyed) { destroyed = true; active.destroy(); } },
@@ -86,6 +89,18 @@ export function createStreamingAudio(options) {
     unlock,
     pause,
     beep,
+    playTrack(id) {
+      if (destroyed || !canPlay()) return Promise.resolve(false);
+      void stereo.equalizer.unlock();
+      void unlockEffects();
+      return stereo.controller.selectTrack(id, { userGesture: true, autoplay: true });
+    },
+    get tracks() { return destroyed ? [] : stereo.controller.state.catalog; },
+    get transport() {
+      if (destroyed) return null;
+      const state = stereo.controller.state;
+      return { ...state, playing: state.playing && state.enabled && state.status === 'playing' };
+    },
     get reactivity() { return destroyed ? SILENT_MUSIC : stereo.equalizer.reactivity; },
     get enabled() {
       return enabled;

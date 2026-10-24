@@ -30,6 +30,7 @@ export function createStreamAudio({
     repeat = true,
     spectrum = null,
     spectrumRequest = null;
+  let seeking = false, revision = 0, endRevision = 0, endedTrackId = null;
   let volume = 0.7,
     muted = false,
     sessionQueue = Promise.resolve(),
@@ -52,6 +53,9 @@ export function createStreamAudio({
     volume,
     repeat,
     spectrum,
+    seeking, revision, endRevision, endedTrackId,
+    ended: Boolean(media.ended),
+    hidden: Boolean(documentRef?.hidden),
   });
   const emit = () => {
     if (!destroyed) onState(state());
@@ -307,12 +311,14 @@ export function createStreamAudio({
       scheduleRenew();
     }
   }
-  async function selectTrack(id, { userGesture = false } = {}) {
+  async function selectTrack(id, { userGesture = false, autoplay = false } = {}) {
     const selected = catalog.find((t) => t.id === id);
     if (!selected || destroyed) return false;
     const resume = desired || !media.paused;
     pause();
     generation++;
+    revision++;
+    seeking = false;
     spectrumRequest?.abort();
     spectrum = null;
     pending = null;
@@ -323,7 +329,7 @@ export function createStreamAudio({
     media.load();
     track = selected;
     message('ready');
-    return resume ? play({ userGesture }) : true;
+    return resume || autoplay ? play({ userGesture }) : true;
   }
   async function step(delta, { userGesture = false } = {}) {
     if (!catalog.length) await loadCatalog();
@@ -346,6 +352,7 @@ export function createStreamAudio({
       ? media.duration
       : track?.duration || 0;
     if (session && Number.isFinite(seconds)) {
+      revision++;
       media.currentTime = Math.max(0, Math.min(duration, seconds));
       emit();
     }
@@ -363,7 +370,10 @@ export function createStreamAudio({
   }
   listen(media, 'timeupdate', emit);
   listen(media, 'durationchange', emit);
+  listen(media, 'seeking', () => { seeking = true; revision++; emit(); });
+  listen(media, 'seeked', () => { seeking = false; emit(); });
   listen(media, 'playing', () => {
+    seeking = false;
     if (!allowed()) {
       media.pause();
       return;
@@ -377,6 +387,7 @@ export function createStreamAudio({
     if (allowed()) recover();
   });
   listen(media, 'ended', async () => {
+    endedTrackId = track?.id || null; endRevision++; emit();
     if (!allowed()) return;
     if (catalog.length > 1) {
       await step(1);
