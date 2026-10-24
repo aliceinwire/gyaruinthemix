@@ -5,6 +5,15 @@ import { decorateEncounter } from './street-culture.js';
 
 export const SURVIVAL_VERSION = 5;
 export const SURVIVAL_RECORD_KEY = 'gyaruinthemix-survival-records-v5';
+export const SURVIVAL_WEAPON_ROLES = Object.freeze({
+  heart: '前方へ連射。リレーで招待をつなぐ。',
+  flash: '前方の集団をまとめて照らす。',
+  vinyl: 'くるまの近くを、後ろまで守る。',
+  bass: '前後の広い範囲へ、重低音の一撃。',
+  phone: '近い相手へ、少人数の連鎖攻撃。',
+  cd: '遠くのタフな相手を狙い撃ち。',
+  cassette: '近くの同じ場所へ、時間差で追撃。',
+});
 export const SURVIVAL_UPGRADES = Object.freeze([
   { id: 'heart', kind: 'weapon', name: 'ハート連射', family: 'HEART', description: '自動ハートが速くなる。Lv.6とリレーLv.2で3方向のハートストームに進化。' },
   { id: 'relay', name: 'ファンリレー', family: 'HEART', description: 'ハートが近くの相手へ連鎖。レベルごとに届く人数と距離が増える。' },
@@ -19,7 +28,7 @@ export const SURVIVAL_UPGRADES = Object.freeze([
   { id: 'glide', name: 'フェザー浮力', family: 'SUPPORT', description: 'レベルごとに浮力の電池消費を12%減らす。ジャンプ成功でも電池を回復。' },
   { id: 'armor', name: 'ネオンアーマー', family: 'SUPPORT', description: '今すぐ耐久+12。レベルごとに受けるダメージを12%減らす。' },
   { id: 'hype', name: 'フロア熱狂', family: 'SUPPORT', description: 'HEATがたまりやすくなり、FEVERが1秒長くなる。連続招待でスコアを伸ばそ。' },
-].map(item => Object.freeze({ kind: 'support', icon: item.id, maxLevel: item.kind === 'weapon' ? 6 : 3, ...item })));
+].map(item => Object.freeze({ kind: 'support', icon: item.id, maxLevel: item.kind === 'weapon' ? 6 : 3, role: SURVIVAL_WEAPON_ROLES[item.id] || null, ...item })));
 export const SURVIVAL_WEAPONS = Object.freeze(SURVIVAL_UPGRADES.filter(item => item.kind === 'weapon'));
 export const SURVIVAL_STARTERS = SURVIVAL_WEAPONS;
 const AREA_WEAPONS = SURVIVAL_WEAPONS.filter(item => item.id !== 'heart');
@@ -44,7 +53,7 @@ export function dailySurvival(date = new Date()) {
 }
 export function createSurvival(day = '', startingWeapon = 'heart') {
   const weapon = SURVIVAL_STARTERS.some(item => item.id === startingWeapon) ? startingWeapon : 'heart';
-  return { version: SURVIVAL_VERSION, recordEligible: true, day, startingWeapon: weapon, xp: 0, level: 0, upgrades: { [weapon]: 1 }, evolutions: [],
+  return { version: SURVIVAL_VERSION, recordEligible: true, assisted: false, day, startingWeapon: weapon, xp: 0, level: 0, upgrades: { [weapon]: 1 }, evolutions: [],
     quizRoads: [], heat: 0, fever: 0, sinceHit: 0, seconds: 0, wave: 0, waveStats: Array.from({ length: 6 }, () => ({ kills: 0, hits: 0 })), settledWaves: [],
     cleanWaves: 0, kills: 0, elites: 0, bestMultiplier: 1, gems: [], receipts: [],
     flashClock: 0, vinylClock: 0, bassClock: 0, phoneClock: 0, cdClock: 0, cassetteClock: 0, cassetteLoops: [], echoClock: 0, echoPending: null, bestNotified: false };
@@ -59,6 +68,8 @@ export function normalizeSurvivalSave(value) {
   const result = createSurvival(value.day, value.startingWeapon);
   // A continued older-rules tour keeps all progress without entering the new score pool.
   result.recordEligible = value.version === SURVIVAL_VERSION && (value.recordEligible === undefined || value.recordEligible === true);
+  if (value.assisted !== undefined && typeof value.assisted !== 'boolean') return null;
+  result.assisted = value.assisted === true;
   result.upgrades = {};
   let savedLevel = -1;
   for (const item of SURVIVAL_UPGRADES) {
@@ -89,6 +100,30 @@ export function normalizeSurvivalSave(value) {
   result.bestNotified = value.bestNotified === true;
   return result;
 }
+/** Assistance can be switched off, but its score category lasts for this run. */
+export function setSurvivalAssistance(state, enabled) {
+  state.assistMode = enabled === true;
+  if (isSurvival(state) && state.assistMode && state.status !== 'lost' && !state.campaignComplete) {
+    if (!state.survival.assisted) state.survival.bestNotified = false;
+    state.survival.assisted = true;
+  }
+}
+
+function weaponUpgradeBenefit(state, id, next) {
+  const current = survivalWeaponStats({ ...state, survival: { ...state.survival, fever: 0 } }, id);
+  if (!current) return '新しい自動武器';
+  const changes = [];
+  if (next.guardPierce && !current.guardPierce) changes.push('ガードを貫通');
+  if (next.damage > current.damage) changes.push(`威力 ${current.damage} → ${next.damage}`);
+  const targets = stats => (stats.targets + stats.pierce) * stats.heightBands;
+  if (targets(next) > targets(current)) changes.push(`最大 ${targets(current)} → ${targets(next)}体`);
+  if (next.pulses > current.pulses) changes.push(`波 ${current.pulses} → ${next.pulses}回`);
+  if (next.range > current.range) changes.push(`射程 ${current.range} → ${next.range}m`);
+  if (next.behind > current.behind) changes.push(`後方 ${current.behind} → ${next.behind}m`);
+  if (next.interval < current.interval) changes.push(`間隔 ${current.interval.toFixed(2)} → ${next.interval.toFixed(2)}秒`);
+  return changes[0] || null;
+}
+
 export const survivalXpCost = level => 18 + level * 6 + Math.floor(level * level * .9);
 export function survivalMultiplier(state) {
   const s = state.survival;
@@ -202,8 +237,8 @@ export function survivalOffers(state) {
     const targets = weaponStats && (weaponStats.targets + weaponStats.pierce) * weaponStats.heightBands;
     const base = weaponStats && `基礎: 威力${weaponStats.damage} / 射程${weaponStats.range}m / ${weaponStats.interval.toFixed(2)}秒 / 最大${targets}体`;
     const synergy = weaponStats ? item.id === 'cassette' ? `${base} · ${weaponStats.pulses}回 / 追加50%` : base : effects[item.id];
-    return { ...item, familyName: item.family, effect: `Lv.${level} / ${item.maxLevel}`, synergy, weaponStats,
-      evolution: evolution ? { ...evolution, weaponLevel: s.upgrades[evolution.weapon] || 0, supportLevel: s.upgrades[evolution.support] || 0 } : null, evolutionReady };
+    return { ...item, familyName: item.family, effect: `Lv.${level} / ${item.maxLevel}`, synergy, weaponStats, benefit: weaponStats ? weaponUpgradeBenefit(state, item.id, weaponStats) : null,
+      evolution: evolution ? { ...evolution, weaponLevel: s.upgrades[evolution.weapon] || 0, supportLevel: s.upgrades[evolution.support] || 0, nextWeaponLevel: next[evolution.weapon] || 0, nextSupportLevel: next[evolution.support] || 0 } : null, evolutionReady };
   });
 }
 export function survivalView(state) {
@@ -398,7 +433,7 @@ export function survivalEncounterPlan(plan, state, stationRadius) {
 
 export function survivalResult(state) {
   if (!isSurvival(state) || !(state.status === 'lost' || state.campaignComplete)) return null;
-  return { id: state.runId, version: SURVIVAL_VERSION, recordEligible: state.survival.recordEligible !== false, day: state.survival.day, seed: state.seed,
+  return { id: state.runId, version: SURVIVAL_VERSION, recordEligible: state.survival.recordEligible !== false, assisted: state.survival.assisted === true, day: state.survival.day, seed: state.seed,
     score: Math.floor(state.score), seconds: Math.round(state.survival.seconds), road: state.routeIndex + 1,
     waves: state.routeIndex * 6 + state.survival.wave + (state.campaignComplete ? 1 : 0),
     cleanWaves: state.survival.cleanWaves, kills: state.survival.kills, won: state.campaignComplete === true,
@@ -410,24 +445,26 @@ export function normalizeSurvivalRecords(value) {
   const seen = new Set();
   return value.filter(row => {
     if (!row || row.version !== SURVIVAL_VERSION || row.recordEligible === false || typeof row.id !== 'string' || row.id.length > 160 || seen.has(row.id) || !/^\d{4}-\d{2}-\d{2}$/.test(row.day) || !Number.isInteger(row.seed) || row.seed < 0 || row.seed > 0xffffffff) return false;
+    if (row.assisted !== undefined && typeof row.assisted !== 'boolean') return false;
     for (const key of ['score', 'seconds', 'road', 'waves', 'cleanWaves', 'kills']) if (!Number.isFinite(row[key]) || row[key] < 0 || row[key] > 1e8) return false;
     seen.add(row.id); return true;
-  }).map(row => ({ id: row.id, version: SURVIVAL_VERSION, day: row.day, seed: row.seed,
+  }).map(row => ({ id: row.id, version: SURVIVAL_VERSION, assisted: row.assisted === true, day: row.day, seed: row.seed,
     score: Math.floor(row.score), seconds: Math.floor(row.seconds), road: clamp(Math.floor(row.road), 1, 12),
     waves: clamp(Math.floor(row.waves), 0, 72), cleanWaves: clamp(Math.floor(row.cleanWaves), 0, 72), kills: Math.floor(row.kills), won: row.won === true,
     build: Object.fromEntries(SURVIVAL_UPGRADES.map(item => [item.id, clamp(Math.floor(Number(row.build?.[item.id]) || 0), 0, item.maxLevel)])),
     evolutions: SURVIVAL_EVOLUTIONS.map(item => item.id).filter(id => Array.isArray(row.evolutions) && row.evolutions.includes(id)) }))
     .sort((a,b) => b.day.localeCompare(a.day) || b.score - a.score || a.seconds - b.seconds)
-    .filter((row, index, rows) => rows.slice(0, index).filter(other => other.day === row.day).length < 5).slice(0, 90);
+    .filter((row, index, rows) => rows.slice(0, index).filter(other => other.day === row.day && other.assisted === row.assisted).length < 5)
+    .filter((row, index, rows) => rows.slice(0, index).filter(other => other.assisted === row.assisted).length < 90);
 }
 export function createSurvivalRecords(storage) {
   const read = () => { try { return normalizeSurvivalRecords(storage?.getItem(SURVIVAL_RECORD_KEY)); } catch { return []; } };
-  return { read, best: day => read().find(row => row.day === day) || null,
+  return { read, best: (day, assisted = false) => read().find(row => row.day === day && row.assisted === assisted) || null,
     save(state) {
       const result = survivalResult(state), old = read();
       if (!result) return { persisted: false, best: false, records: old };
       if (!result.recordEligible) return { persisted: false, best: false, eligible: false, records: old };
-      const best = !old.some(row => row.day === result.day && row.score >= result.score);
+      const best = !old.some(row => row.day === result.day && row.assisted === result.assisted && row.score >= result.score);
       const records = normalizeSurvivalRecords([result, ...old.filter(row => row.id !== result.id)]);
       try { if (!storage) throw new Error('Storage unavailable'); storage.setItem(SURVIVAL_RECORD_KEY, JSON.stringify(records)); return { persisted: true, best, eligible: true, records }; }
       catch { return { persisted: false, best, eligible: true, records }; }

@@ -82,6 +82,7 @@ test('every survival item and generated effect is translated, including six-leve
   ]) {
     messages.add(item.name);
     if (item.description) messages.add(item.description);
+    if (item.role) messages.add(item.role);
   }
   const state = createState({ mode: 'survival', seed: 175 });
   for (let level = 0; level < 6; level++) {
@@ -99,7 +100,10 @@ test('every survival item and generated effect is translated, including six-leve
     state.survival.xp = survivalXpCost(state.survival.level);
     for (let seed = 1; seed <= 50; seed++) {
       state.seed = seed;
-      for (const offer of survivalOffers(state)) messages.add(offer.synergy);
+      for (const offer of survivalOffers(state)) {
+        messages.add(offer.synergy);
+        if (offer.benefit) messages.add(offer.benefit);
+      }
     }
   }
   for (const { code } of LANGUAGES.filter((item) => item.code !== 'ja')) {

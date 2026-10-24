@@ -1,4 +1,5 @@
-import { isSurvival, dailySurvival, survivalView, chooseSurvivalUpgrade, survivalMultiplier, createSurvivalRecords, SURVIVAL_STARTERS, SURVIVAL_UPGRADES } from './src/survival.js';
+import { setSurvivalAssistance, isSurvival, dailySurvival, survivalView, chooseSurvivalUpgrade, survivalMultiplier, createSurvivalRecords, SURVIVAL_STARTERS, SURVIVAL_UPGRADES } from './src/survival.js';
+import { createDrivingLessons, updateDrivingLessons, getDrivingCue } from './src/driving-lessons.js';
 import { createItemIcon } from './src/item-icons.js';
 import { drawSurvival, renderSurvivalResult } from './src/survival-ui.js';
 import { localizeText, localizeAttribute, localizeHTML, initializeLanguage, installLanguageSelectors } from './src/localized-ui.js';
@@ -10,7 +11,7 @@ import { createStoryDirector } from './src/tour-director.js';
 import { RUN_MOD_CATALOG, getBuildOffers, buyRunMod, describeBuild, getRouteMission } from './src/run-build.js';
 import { getEncounterPhase } from './src/encounter-director.js';
 import { createPerformance, updatePerformance, performanceView } from './src/performance.js';
-import { createRoadFeedback, captureRoadFeedback, updateRoadFeedback, drawRoadFeedback, getRoadCue } from './src/road-feedback.js';
+import { createRoadFeedback, captureRoadFeedback, updateRoadFeedback, drawRoadFeedback } from './src/road-feedback.js';
 import { JOURNEY_STAGE_COUNT, getJourneyChoices, getJourneyNode, getJourneyStage } from "./src/journey.js";
 import { selectCrewDialogue, selectCrewEvent } from "./src/crew-dialogue.js";
 import { createSaveStore } from "./src/save-store.js";
@@ -97,7 +98,7 @@ let state = newTour(),
   visualTime = 0,
   toastTime = 0,
   ready = false;
-let performanceSet = createPerformance(), roadFeedback = createRoadFeedback();
+let performanceSet = createPerformance(), roadFeedback = createRoadFeedback(), drivingLessons = createDrivingLessons();
 let performanceNext = null, terminalRecord = null;
 let lastHud = 0, lastCue = "";
 const frameSamples = [];
@@ -148,10 +149,10 @@ async function resumeTour() {
     // before entering its map or set, and leave the save intact if loading fails.
     await prepareGameArt(restored);
     state = restored;
+    drivingLessons = createDrivingLessons();
     localizeText($("#loading"), "準備できたで。いつでも行こ！");
     storyDirector.beginRun();
     applySettings();
-    survivalBest = isSurvival(state) ? survivalRecords.best(state.survival.day)?.score || 0 : 0;
     roadChoice = state.routeOption;
     if (!state.campaignStarted && state.routeIndex === 0 && state.distance === 0) {
       setScreen("cars"); renderGarage(); $("#cars-ready").focus();
@@ -183,20 +184,25 @@ let settings = settingsStore.load();
 let reducedMotion = settings.reducedMotion;
 function applySettings() {
   reducedMotion = settings.reducedMotion;
-  state.assistMode = !isSurvival(state) && settings.assistMode;
+  setSurvivalAssistance(state, settings.assistMode);
   document.body.dataset.reducedMotion = String(reducedMotion);
   document.body.dataset.assistMode = String(settings.assistMode);
   $('#reduced-motion').checked = reducedMotion;
   $('#assist-mode').checked = state.assistMode;
-  $('#assist-mode').disabled = isSurvival(state);
+  $('#menu-assist-mode').checked = settings.assistMode;
+  localizeText($('#assist-record-note'), isSurvival(state) && state.survival.assisted ? 'このランはゆったり記録。途中で戻しても、通常の記録には入らへん。' : 'ダメージを軽減。ゆったりの記録は、通常の記録と別に残るで。');
+  survivalBest = isSurvival(state) ? survivalRecords.best(state.survival.day, state.survival.assisted)?.score || 0 : 0;
   document.body.dataset.runMode = state.mode;
 }
 function saveSettings() {
   applySettings();
+  refreshSurvivalRecord();
+  if (screen !== "menu") saveTour();
+  hud();
   if (!settingsStore.save(settings)) storageWarning();
 }
 applySettings();
-for (const [id, key] of [['reduced-motion','reducedMotion'], ['assist-mode','assistMode']]) {
+for (const [id, key] of [['reduced-motion','reducedMotion'], ['assist-mode','assistMode'], ['menu-assist-mode','assistMode']]) {
   $('#' + id).addEventListener('change', event => { settings[key] = event.target.checked; saveSettings(); });
 }
 const storyDirector = createStoryDirector({
@@ -429,7 +435,7 @@ function renderStyles() {
     button.dataset[weaponMode ? 'weapon' : 'style'] = style.id;
     button.setAttribute('aria-pressed', String((weaponMode ? state.survival.startingWeapon : current.style) === style.id));
     const name = document.createElement('strong'); localizeText(name, style.name);
-    const detail = document.createElement('span'); localizeText(detail, style.description);
+    const detail = document.createElement('span'); localizeText(detail, style.role || style.description);
     const hint = document.createElement('small'); localizeText(hint, weaponMode ? "自動アタック / Lv.1" : message("{0} / {1}", [style.effect, style.signature]));
     const heading = document.createElement('span'); heading.className = 'item-heading'; heading.append(createItemIcon(style.id), name);
     button.append(heading, detail, hint);
@@ -461,7 +467,7 @@ function showDraft() {
     const card = document.createElement('button'); card.className = 'draft-card'; card.dataset.perkId = perk.id;
     const family = document.createElement('span'); family.className = 'eyebrow'; localizeText(family, perk.familyName || perk.family || 'MIX SKILL');
     const name = document.createElement('strong'); localizeText(name, perk.name);
-    const description = document.createElement('span'); localizeText(description, perk.description);
+    const description = document.createElement('span'); localizeText(description, perk.role ? message('{0} / {1}', [perk.role, perk.benefit]) : perk.description);
     const detail = document.createElement('small'); localizeText(detail, message("{0} / {1}", [perk.effect, perk.synergy]));
     if (perk.kind === 'weapon') detail.className = 'weapon-stats';
     const heading = document.createElement('span'); heading.className = 'item-heading'; heading.append(createItemIcon(perk.id), name);
@@ -470,7 +476,7 @@ function showDraft() {
       const recipe = document.createElement('small'); recipe.className = 'evolution-recipe';
       const label = document.createElement('span'), evo = perk.evolution;
       const weapon = SURVIVAL_UPGRADES.find(item => item.id === evo.weapon), support = SURVIVAL_UPGRADES.find(item => item.id === evo.support);
-      localizeText(label, message('{0} Lv.{1}/{2} + {3} Lv.{4}/{5} → {6}', [weapon.name, evo.weaponLevel, evo.weaponRequired, support.name, Math.min(evo.supportRequired, evo.supportLevel), evo.supportRequired, evo.name]));
+      localizeText(label, message('選ぶと: {0} Lv.{1}/{2} + {3} Lv.{4}/{5} → {6}', [weapon.name, evo.nextWeaponLevel, evo.weaponRequired, support.name, Math.min(evo.supportRequired, evo.nextSupportLevel), evo.supportRequired, evo.name]));
       recipe.append(createItemIcon(evo.id, { size: 24 }), label);
       if (perk.evolutionReady) { const ready = document.createElement('b'); localizeText(ready, 'これで進化！'); recipe.append(ready); }
       card.append(recipe);
@@ -721,7 +727,7 @@ function startClubSet(next) {
 function persistNightfallResult() {
   if (terminalRecord?.id === state.runId && terminalRecord.score === state.score) return terminalRecord;
   const sameRun = terminalRecord?.id === state.runId;
-  const previous = sameRun ? terminalRecord.previous : survivalRecords.best(state.survival.day);
+  const previous = sameRun ? terminalRecord.previous : survivalRecords.best(state.survival.day, state.survival.assisted);
   const result = survivalRecords.save(state);
   if (sameRun && terminalRecord.result.best) result.best = true;
   terminalRecord = { id: state.runId, score: state.score, previous, result };
@@ -813,15 +819,18 @@ function showResult() {
   beep(won ? 880 : 190, 0.25);
 }
 function refreshSurvivalRecord() {
-  const challenge = dailySurvival(), best = survivalRecords.best(challenge.day);
+  const challenge = dailySurvival(), best = survivalRecords.best(challenge.day, settings.assistMode);
+  if (settings.assistMode) {
+    localizeText($('#survival-record'), best ? message('ゆったり自己ベスト {0} · この端末', [number(best.score, { useGrouping: true })]) : 'ゆったりツアー · 通常の記録とは別');
+    return;
+  }
   localizeText($('#survival-record'), best ? message('今日の自己ベスト {0} · この端末', [number(best.score, { useGrouping: true })]) : '今日のコースに挑戦 · 記録はこの端末に保存');
 }
 function startNight(challenge = dailySurvival()) {
   if (!ready) return;
   if (savedTour && isSurvival(savedTour) && !savedTour.campaignComplete && !confirm(t("新しい旅を始めたら、いまの旅のセーブは上書きやで。解禁したくるまとギャルポイントは残るで。始める？"))) return;
   state = newTour(meta, challenge);
-  survivalBest = survivalRecords.best(challenge.day)?.score || 0;
-  pendingNext = false; paused = false; performanceNext = null; terminalRecord = null; roadFeedback = createRoadFeedback();
+  pendingNext = false; paused = false; performanceNext = null; terminalRecord = null; roadFeedback = createRoadFeedback(); drivingLessons = createDrivingLessons();
   applySettings(); roadChoice = 'scenic';
   storyDirector.show('opening', () => {
     setScreen('cars'); renderGarage(); saveTour(); $('#cars-ready').focus();
@@ -918,7 +927,7 @@ function hud() {
   renderRpgHud();
   const rushButton = $('[data-control="rush"]');
   localizeText(rushButton.querySelector("small"), state.rushing ? "無敵やで！ 電池めっちゃ使ってる！" : state.rushCooldown > 0 ? message("あと {0} 秒待ってな", [Math.ceil(state.rushCooldown)]) : "X / SHIFT · 電池めっちゃ使うで");
-  const cue = getRoadCue(state);
+  const cue = getDrivingCue(state, drivingLessons);
   const cueKey = `${cue.label}:${cue.action}`;
   if (cueKey !== lastCue) {
     localizeText($("#road-cue"), cue.label); $("#road-status").dataset.urgency = cue.urgency;
@@ -932,7 +941,7 @@ function hud() {
   }
   const route = state.route;
   localizeText($("#location-label"), message("{0} / {1}", [(getDistrictScene(route.cityId, state.locationIndex || 0) || { name: route.goal }).name, String((state.locationIndex || 0) + 1).padStart(2, "0")]));
-  localizeText($("#mode-label"), isSurvival(state) ? "NIGHTFALL TOUR" : message("クラブ旅 {0} / {1}", [state.routeIndex + 1, JOURNEY_STAGE_COUNT]));
+  localizeText($("#mode-label"), isSurvival(state) ? state.survival.assisted ? 'ゆったりツアー' : "NIGHTFALL TOUR" : message("クラブ旅 {0} / {1}", [state.routeIndex + 1, JOURNEY_STAGE_COUNT]));
   localizeText($("#money"), isSurvival(state) ? number(Math.floor(state.score), { useGrouping: true }) : String(state.money).padStart(3, "0"));
   localizeText($(".wallet > span"), isSurvival(state) ? "スコア" : "コイン");
   $("#combo-bar").style.width =
@@ -954,7 +963,7 @@ function hud() {
   if (isSurvival(state)) {
     localizeText($("#combo"), message("HEAT ×{0} · 招待 {1}", [survivalMultiplier(state), state.survival.kills]));
     localizeText($("#rpg-build"), message("進化 {0} · ノーダメージ {1}", [state.survival.evolutions.length, state.survival.cleanWaves]));
-    if (state.survival.recordEligible !== false && state.score > survivalBest && survivalBest > 0 && !state.survival.bestNotified) { state.survival.bestNotified = true; toast("今日の自己ベスト更新！"); }
+    if (state.survival.recordEligible !== false && state.score > survivalBest && survivalBest > 0 && !state.survival.bestNotified) { state.survival.bestNotified = true; toast(state.survival.assisted ? 'ゆったり自己ベスト更新！' : '今日の自己ベスト更新！'); }
   }
   $("#health-bar").style.width =
     `${(state.integrity / (state.integrityCapacity || 100)) * 100}%`;
@@ -1011,6 +1020,7 @@ function frame(now) {
     accumulator += dt;
     while (accumulator >= 1 / 60) {
       update(state, { ...input, shoot: !isSurvival(state) }, 1 / 60);
+      updateDrivingLessons(drivingLessons, state, 1 / 60);
       handleEvents();
       accumulator -= 1 / 60;
       if (state.status !== "playing") {

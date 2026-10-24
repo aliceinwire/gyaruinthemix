@@ -539,7 +539,7 @@ export function createState({
 /** Starting equipment is chosen once in the garage, before the run begins. */
 export function chooseStartingWeapon(state, id) {
   if (!isSurvival(state) || !SURVIVAL_STARTERS.some(item => item.id === id) || state.status !== "playing" || state.campaignStarted || state.routeIndex !== 0 || state.distance !== 0 || state.elapsed !== 0 || state.survival.level !== 0 || state.survival.xp !== 0) return false;
-  state.survival = { ...createSurvival(state.survival.day, id), recordEligible: state.survival.recordEligible !== false };
+  state.survival = { ...createSurvival(state.survival.day, id), recordEligible: state.survival.recordEligible !== false, assisted: state.survival.assisted === true };
   state.projectiles = [];
   state.shotCooldown = 0;
   state.shooting = false;
@@ -656,8 +656,9 @@ function collide(state, target, hazard) {
     state.buildRuntime.shield = 0; state.buildRuntime.chargeSeconds = 0; state.invulnerability = COLLISION_GRACE;
     emit(state, "shield-block", { distance: target.distance, entityId: target.id }); return;
   }
+  if (isSurvival(state) && state.assistMode) state.survival.assisted = true;
   const damage = Math.round(
-    hazard.damage * (state.routeOption === "express" ? 1.12 : 1) * (isSurvival(state) ? (1.3 + state.routeIndex * .08) * (1 - (state.survival.upgrades.armor || 0) * .12) : state.assistMode === true ? .55 : 1),
+    hazard.damage * (state.routeOption === "express" ? 1.12 : 1) * (isSurvival(state) ? (1.3 + state.routeIndex * .08) * (1 - (state.survival.upgrades.armor || 0) * .12) : 1) * (state.assistMode === true ? .55 : 1),
   );
   state.integrity = Math.max(0, state.integrity - damage);
   state.invulnerability = COLLISION_GRACE;
