@@ -118,6 +118,14 @@ async function finishStory(page) {
   }
   assert.fail('Story did not finish through its reading controls');
 }
+async function resumeThroughLoading(page) {
+  await page.locator('#resume-tour').click();
+  // Resuming waits for the saved city's artwork. A completed click does not
+  // mean the menu has already changed into its map, conversation or club.
+  await page.waitForFunction(
+    () => __HYPERDRIVE__.snapshot().screen !== 'menu',
+  );
+}
 async function assertFrameFits(page, selectors) {
   const faults = await page.evaluate((selectors) => {
     const shell = document.querySelector('.shell').getBoundingClientRect();
@@ -249,7 +257,7 @@ async function loadCampaignFixture(page, save) {
   );
   await page.reload();
   await page.waitForFunction(() => globalThis.__HYPERDRIVE__?.snapshot().ready);
-  await page.locator('#resume-tour').click();
+  await resumeThroughLoading(page);
   await finishStory(page);
 }
 async function loadNightfallFixture(page, state) {
@@ -264,7 +272,7 @@ async function loadNightfallFixture(page, state) {
   );
   await page.reload();
   await page.waitForFunction(() => globalThis.__HYPERDRIVE__?.snapshot().ready);
-  await page.locator('#resume-tour').click();
+  await resumeThroughLoading(page);
   await finishStory(page);
 }
 async function departThroughStory(page) {
@@ -748,7 +756,7 @@ try {
       await page.waitForFunction(
         () => globalThis.__HYPERDRIVE__?.snapshot().ready,
       );
-      await page.locator('#resume-tour').click();
+      await resumeThroughLoading(page);
       await finishStory(page);
       assert.equal(
         await page.evaluate(() => __HYPERDRIVE__.snapshot().screen),
@@ -840,7 +848,7 @@ try {
       await page.evaluate(({ key, save }) => localStorage.setItem(key, JSON.stringify(save)), { key: NIGHTFALL_SAVE_KEY, save: gadgetSave });
       await page.reload();
       await page.waitForFunction(() => globalThis.__HYPERDRIVE__?.snapshot().ready);
-      await page.locator('#resume-tour').click();
+      await resumeThroughLoading(page);
       await finishStory(page);
       assert.deepEqual(await page.evaluate(() => __HYPERDRIVE__.snapshot().state.survival.upgrades), { phone: 1, md: 1 });
       await departThroughStory(page);
@@ -864,7 +872,7 @@ try {
       await page.evaluate(({ key, save }) => localStorage.setItem(key, JSON.stringify(save)), { key: NIGHTFALL_SAVE_KEY, save: exportNightfallSave(clubFixture) });
       await page.reload();
       await page.waitForFunction(() => globalThis.__HYPERDRIVE__?.snapshot().ready);
-      await page.locator('#resume-tour').click();
+      await resumeThroughLoading(page);
       await page.locator('#quiz').waitFor({ state: 'visible' });
       const beforeClubQuiz = await page.evaluate(() => __HYPERDRIVE__.snapshot().state);
       await checkLanguages(page, '#quiz select', ['#quiz .modal-card']);
@@ -894,7 +902,7 @@ try {
       const afterClubScore = await page.evaluate(() => __HYPERDRIVE__.snapshot().state.score);
       await page.reload();
       await page.waitForFunction(() => globalThis.__HYPERDRIVE__?.snapshot().ready);
-      await page.locator('#resume-tour').click();
+      await resumeThroughLoading(page);
       assert.equal(await page.locator('#quiz').isVisible(), false);
       assert.equal(await page.evaluate(() => __HYPERDRIVE__.snapshot().state.score), afterClubScore);
       await page.locator('#finale-home').click();
@@ -1217,7 +1225,7 @@ try {
       await page.waitForFunction(
         () => globalThis.__HYPERDRIVE__?.snapshot().ready,
       );
-      await page.locator('#resume-tour').click();
+      await resumeThroughLoading(page);
       languageBootDelay = 0;
       const rolledBack = await page.evaluate(() => __HYPERDRIVE__.snapshot());
       assert.equal(rolledBack.screen, 'map');
@@ -1330,7 +1338,7 @@ try {
       await page.waitForFunction(
         () => globalThis.__HYPERDRIVE__?.snapshot().ready,
       );
-      await page.locator('#resume-tour').click();
+      await resumeThroughLoading(page);
       await finishStory(page);
       assert.deepEqual(
         (await page.evaluate(() => __HYPERDRIVE__.snapshot())).state.runBuild,
