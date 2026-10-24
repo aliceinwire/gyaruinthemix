@@ -26,13 +26,22 @@ function alternatingTone() {
 }
 
 /** Real HTML media and Web Audio, with only the streaming service replaced. */
-export async function checkRadioSpectrum(browser, { root, csp }) {
+export async function checkRadioSpectrum(browser, { root, csp, nativeHls = false }) {
   const origin = 'http://radio-test.local';
   const context = await browser.newContext({ reducedMotion: 'no-preference' });
+  await context.addInitScript((nativeHls) => {
+    const original = HTMLMediaElement.prototype.canPlayType;
+    HTMLMediaElement.prototype.canPlayType = function(type) { return type === 'application/vnd.apple.mpegurl' ? (nativeHls ? 'probably' : '') : original.call(this, type); };
+    if (nativeHls) AudioContext.prototype.createMediaElementSource = () => { throw new Error('Native HLS must keep its original audio path'); };
+  }, nativeHls);
   const page = await context.newPage();
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   const wav = alternatingTone();
+  const trackId = 't-' + 'a'.repeat(24), sessionId = 'x'.repeat(32);
+  const spectrum = Buffer.alloc(8 + 120 * 5);
+  spectrum.write('GEQ1'); spectrum.writeUInt32LE(120, 4);
+  for (let frame = 0; frame < 120; frame++) spectrum[8 + frame * 5 + (Math.floor(frame / 10) % 2 ? 4 : 0)] = 230;
   await context.route('**/*', async route => {
     const url = new URL(route.request().url());
     if (url.origin !== origin) return route.abort();
@@ -41,6 +50,9 @@ export async function checkRadioSpectrum(browser, { root, csp }) {
       headers: { 'content-security-policy': csp },
       body: '<!doctype html><html lang="en"><head><link rel="stylesheet" href="/game-test/car-stereo.css"></head><body><div id="radio"></div><canvas id="world" width="960" height="540"></canvas></body></html>',
     });
+    if (url.pathname === '/game-audio/v1/catalog') return route.fulfill({ json: { tracks: [{ id: trackId, title: 'Frequency fixture', duration: 6 }] } });
+    if (url.pathname === '/game-audio/v1/session') return route.fulfill({ json: { trackId, sessionId, expiresAt: Date.now() + 120000, renewAfterMs: 40000, manifestUrl: '/tone.wav', spectrumUrl: `/game-audio/v1/stream/${trackId}/${sessionId}/spectrum.bin` } });
+    if (url.pathname.endsWith('/spectrum.bin')) return route.fulfill({ contentType: 'application/octet-stream', body: spectrum });
     if (url.pathname === '/tone.wav') return route.fulfill({ contentType: 'audio/wav', body: wav });
     try {
       return route.fulfill({
@@ -54,7 +66,8 @@ export async function checkRadioSpectrum(browser, { root, csp }) {
   });
   try {
     await page.goto(origin);
-    await page.evaluate(async () => {
+    await page.evaluate(async (nativeHls) => {
+      const { createStreamAudio } = await import('/game-test/src/stream-audio.js');
       const { createCarStereo } = await import('/game-test/src/car-stereo.js');
       const { createGameAudio, createStreamingAudio } = await import('/game-test/src/audio.js');
       const { createState } = await import('/game-test/src/simulation.js');
@@ -87,7 +100,8 @@ export async function checkRadioSpectrum(browser, { root, csp }) {
         streamingFactory: options => createStreamingAudio({
           ...options,
           stereoFactory: stereoOptions => {
-            globalThis.radioFixture = createCarStereo({ ...stereoOptions, controllerFactory });
+            globalThis.radioFixture = createCarStereo({ ...stereoOptions, controllerFactory: nativeHls ? createStreamAudio : controllerFactory });
+            if (nativeHls) radioFixture.controller.setRepeat(false);
             return radioFixture;
           },
         }),
@@ -111,7 +125,7 @@ export async function checkRadioSpectrum(browser, { root, csp }) {
         return { bars: document.querySelector('.stereo-equalizer').textContent, music, world: hash,
           unchanged: before === JSON.stringify(scene) };
       };
-    });
+    }, nativeHls);
     const bars = page.locator('.stereo-equalizer');
     const quiet = await page.evaluate(() => captureMusicWorld());
     assert.equal(await bars.textContent(), '▁▁▁▁▁');
@@ -132,8 +146,8 @@ export async function checkRadioSpectrum(browser, { root, csp }) {
     // 6500 Hz tone excites, while smoothing retains some of the preceding bass.
     assert.ok(frames.some(({ bars, music }) => heights(bars)[0] > heights(bars)[4] && music.bands[0] > music.bands[4]), 'Bass tone reaches both the radio and game facade');
     assert.ok(frames.some(({ bars, music }) => heights(bars)[4] > heights(bars)[0] && music.bands[4] > music.bands[0]), 'Treble tone reaches both the radio and game facade');
-    assert.ok(new Set(frames.map(frame => frame.bars)).size > 2, 'Bars follow changing decoded audio');
-    assert.ok(new Set(frames.map(frame => frame.world)).size > 2, 'Speaker artwork follows the decoded signal at a fixed scene time');
+    assert.ok(new Set(frames.map(frame => frame.bars)).size > (nativeHls ? 1 : 2), 'Bars follow changing decoded audio');
+    assert.ok(new Set(frames.map(frame => frame.world)).size > (nativeHls ? 1 : 2), 'Speaker artwork follows the decoded signal at a fixed scene time');
     assert.ok(frames.every(frame => frame.unchanged), 'Music rendering leaves simulation state unchanged');
     await mkdir(resolve(root, 'artifacts/browser/game-test'), { recursive: true });
     await page.locator('#world').screenshot({ path: resolve(root, 'artifacts/browser/game-test/music-reactive.png') });
@@ -167,7 +181,7 @@ export async function checkRadioSpectrum(browser, { root, csp }) {
     await page.evaluate(() => audioFixture.destroy());
     assert.equal(await page.locator('audio').count(), 0);
     assert.deepEqual(errors, []);
-    console.log('PASS one radio drives speaker artwork with real bass/treble audio and resets on mute/pause/seek/end');
+    console.log(`PASS ${nativeHls ? 'native HLS envelopes' : 'live analyser'} drive radio and world visuals and reset on mute/pause/seek/end`);
   } finally {
     await context.close();
   }
