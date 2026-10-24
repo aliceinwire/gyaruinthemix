@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import {
   getStoryScene,
   getStoryJournal,
@@ -13,12 +14,16 @@ import {
   selectCrewEvent,
 } from '../public/game-test/src/crew-dialogue.js';
 import { getJourneyStage } from '../public/game-test/src/journey.js';
+import {
+  STREET_ROLES,
+  ROUTINE_HAZARDS,
+} from '../public/game-test/src/street-culture.js';
 
 test('the club tour carries original hard bounce and Heisei gyaru culture through all six club stops', () => {
   const opening = getStoryScene({ mode: 'survival' }, 'opening');
   const premise = opening.lines.map((line) => line.text).join(' ');
   for (const theme of [
-    '会社',
+    '周りに合わせ',
     '平成ギャル',
     'ハードバウンス',
     'オリジナル曲',
@@ -44,6 +49,47 @@ test('the club tour carries original hard bounce and Heisei gyaru culture throug
   assert.match(
     finale.lines.map((line) => line.text).join(' '),
     /六つ.*つながった/,
+  );
+});
+
+test('the tour welcomes personal taste without corporate dress rules or compulsory gyaru conversion', async () => {
+  const scenes = [];
+  for (let routeIndex = 0; routeIndex < 12; routeIndex++) {
+    for (const trigger of ['opening', 'departure', 'arrival', 'finale']) {
+      const scene = getStoryScene({ routeIndex, status: 'won' }, trigger);
+      if (scene) scenes.push(scene);
+    }
+  }
+  const html = await readFile(
+    new URL('../public/game-test/index.html', import.meta.url),
+    'utf8',
+  );
+  const cityLines = [
+    'nakano',
+    'shinjuku',
+    'shibuya',
+    'asakusa',
+    'osaka',
+    'kyoto',
+  ].map((cityId) => selectCrewDialogue({ cityId, time: 0 }).text);
+  const text = [
+    html.match(/<p class="menu-copy">(.*?)<\/p>/s)[1],
+    ...scenes.flatMap((scene) => scene.lines.map((line) => line.text)),
+    ...cityLines,
+    ...STREET_ROLES.flatMap((role) => [role.name, role.welcome]),
+    ...ROUTINE_HAZARDS.map((hazard) => hazard.name),
+  ].join('\n');
+  assert.doesNotMatch(
+    text,
+    /会社のルール|巨大企業|指定どおり|規定外|服装チェック|出演許可|承認印|ギャルになった/,
+  );
+  assert.match(text, /初めて来た人/);
+  assert.match(text, /そのままの格好/);
+  assert.match(text, /平成ギャルもスーツも、一緒に踊ってた/);
+  const finale = scenes.find((scene) => scene.id === 'tour:finale');
+  assert.match(
+    finale.lines.map((line) => line.text).join(' '),
+    /好きな格好で、好きな踊り方で/,
   );
 });
 

@@ -19,6 +19,14 @@ import {
 import { getJourneyStage } from '../public/game-test/src/journey.js';
 import { getStoryScene } from '../public/game-test/src/tour-story.js';
 import {
+  CREW_DIALOGUE_BUCKET_SECONDS,
+  selectCrewDialogue,
+} from '../public/game-test/src/crew-dialogue.js';
+import {
+  STREET_ROLES,
+  ROUTINE_HAZARDS,
+} from '../public/game-test/src/street-culture.js';
+import {
   createState,
   exportCampaignSave,
 } from '../public/game-test/src/simulation.js';
@@ -249,6 +257,71 @@ test('all generated journey and story text translates without changing canonical
     ),
     questions,
   );
+});
+
+test('every narrative branch, street invitation, and menu premise has its own translation in all nine languages', async () => {
+  const messages = new Set();
+  for (let routeIndex = 0; routeIndex < 12; routeIndex++) {
+    for (const focus of ['crew', 'discovery']) {
+      for (const trigger of [
+        'opening',
+        'returning',
+        'departure',
+        'arrival',
+        'retry',
+        'breakdown',
+        'finale',
+      ]) {
+        for (const seen of [[], [`retry:${routeIndex}:first`]]) {
+          const scene = getStoryScene(
+            {
+              routeIndex,
+              status: ['retry', 'breakdown'].includes(trigger) ? 'lost' : 'won',
+            },
+            trigger,
+            { seen, choices: { 'tour:opening': focus } },
+          );
+          scene?.lines.forEach((line) => messages.add(line.text));
+        }
+      }
+    }
+  }
+  for (const cityId of [
+    'nakano',
+    'shinjuku',
+    'shibuya',
+    'asakusa',
+    'osaka',
+    'kyoto',
+  ]) {
+    // Include the full idle dialogue rotation for each city.
+    for (let time = 0; time < 360; time += CREW_DIALOGUE_BUCKET_SECONDS)
+      messages.add(selectCrewDialogue({ cityId, time }).text);
+  }
+  for (const role of STREET_ROLES) {
+    messages.add(role.name);
+    messages.add(role.welcome);
+  }
+  ROUTINE_HAZARDS.forEach((hazard) => messages.add(hazard.name));
+  const html = await readFile(
+    new URL('../public/game-test/index.html', import.meta.url),
+    'utf8',
+  );
+  html
+    .match(/<p class="menu-copy">(.*?)<\/p>/s)[1]
+    .split(/<br\s*\/?>/)
+    .forEach((text) => messages.add(text.trim()));
+  const translator = createTranslator({ loadCatalog: readCatalog });
+  for (const { code } of LANGUAGES.filter((item) => item.code !== 'ja')) {
+    const catalog = await readCatalog(code);
+    await translator.setLanguage(code);
+    for (const text of messages) {
+      assert.ok(source.includes(text), `source: ${text}`);
+      assert.ok(Object.hasOwn(catalog, text), `${code}: ${text}`);
+      assert.equal(translator.t(text), catalog[text], `${code}: ${text}`);
+      assert.notEqual(translator.t(text), text, `${code}: ${text}`);
+    }
+  }
 });
 
 test('catalog failure keeps the active language; last requested locale wins; denied storage is harmless', async () => {
