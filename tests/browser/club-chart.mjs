@@ -4,6 +4,7 @@ import { resolve, extname } from 'node:path';
 import { createState, exportNightfallSave } from '../../public/game-test/src/simulation.js';
 import { NIGHTFALL_SAVE_KEY } from '../../public/game-test/src/save-store.js';
 import { CHROME_BOUNCE_CHART as chart } from '../../public/game-test/src/track-charts.js';
+import { checkMusicDrive } from './music-drive.mjs';
 
 export async function checkClubChart(browser, { root, csp }) {
   const origin = 'http://club-chart.local';
@@ -24,7 +25,7 @@ export async function checkClubChart(browser, { root, csp }) {
   const errors = [];
   try {
     await context.addInitScript(({ saved, key }) => {
-      localStorage.setItem(key, JSON.stringify(saved));
+      if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify(saved));
       const canPlayType = HTMLMediaElement.prototype.canPlayType;
       HTMLMediaElement.prototype.canPlayType = function(type) { return type === 'application/vnd.apple.mpegurl' ? 'probably' : canPlayType.call(this, type); };
       AudioContext.prototype.createMediaElementSource = () => { throw new Error('Native HLS must not need an analyser'); };
@@ -118,6 +119,7 @@ export async function checkClubChart(browser, { root, csp }) {
       await page.locator('#pause').click();
       await page.locator('#resume').click();
     }
+    await checkMusicDrive(page, root);
     assert.deepEqual(errors, []);
   } finally { await context.close(); }
   console.log('PASS charted club follows the radio through real seeks, pause, restart and native-HLS track changes');

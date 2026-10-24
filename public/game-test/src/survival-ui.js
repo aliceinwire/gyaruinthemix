@@ -1,7 +1,7 @@
 import { drawItemIcon, createItemIcon } from './item-icons.js';
 import { t, message, number } from './i18n.js';
 import { localizeText } from './localized-ui.js';
-import { isSurvival, survivalMultiplier, survivalResult, SURVIVAL_UPGRADES, SURVIVAL_EVOLUTIONS } from './survival.js';
+import { isSurvival, survivalMultiplier, survivalResult, survivalRecordCategory, SURVIVAL_UPGRADES, SURVIVAL_EVOLUTIONS } from './survival.js';
 
 export function renderSurvivalResult(state, result, previous, host) {
   const row = survivalResult(state);
@@ -12,7 +12,7 @@ export function renderSurvivalResult(state, result, previous, host) {
   };
   host.replaceChildren(); host.classList.add('survival-results');
   const category = document.createElement('p'); category.className = 'survival-record-note';
-  localizeText(category, row.assisted ? 'ゆったりツアー · 通常の記録とは別' : '通常ツアー');
+  localizeText(category, survivalRecordCategory(row));
   host.append(category);
   stat('スコア', number(row.score, { useGrouping: true }));
   stat('生き抜いた時間', `${Math.floor(row.seconds / 60)}:${String(row.seconds % 60).padStart(2, '0')}`);
@@ -20,7 +20,7 @@ export function renderSurvivalResult(state, result, previous, host) {
   stat('フロアへ招待', row.kills);
   if (result.eligible !== false) {
     const best = document.createElement('p'); best.className = 'survival-record-note';
-    localizeText(best, result.best ? row.assisted ? 'ゆったり自己ベスト更新！' : '今日の自己ベスト！' : message('今日の自己ベストまで、あと {0}', [number(Math.max(0, (previous?.score || row.score) - row.score), { useGrouping: true })]));
+    localizeText(best, result.best ? row.musicDriven ? 'ミュージックドライブ自己ベスト更新！' : row.assisted ? 'ゆったり自己ベスト更新！' : '今日の自己ベスト！' : message('今日の自己ベストまで、あと {0}', [number(Math.max(0, (previous?.score || row.score) - row.score), { useGrouping: true })]));
     host.append(best);
   }
   const build = document.createElement('p'); build.className = 'survival-build-recap';
@@ -59,7 +59,7 @@ export function drawSurvival(ctx, state, time, reducedMotion = false) {
   ctx.fillStyle = '#141022df'; ctx.strokeStyle = s.fever > 0 ? '#ffdc91' : '#73567c'; ctx.lineWidth = 1;
   ctx.beginPath(); ctx.roundRect(22, 22, 316, 112, 10); ctx.fill(); ctx.stroke();
   ctx.textAlign = 'left'; ctx.fillStyle = '#ffafd9'; ctx.font = '700 11px system-ui';
-  ctx.fillText(`${t('NIGHTFALL TOUR')}  /  ${t(message('ウェーブ {0} / 72', [state.routeIndex * 6 + s.wave + 1]))}`, 36, 43, 284);
+  ctx.fillText(`${t(s.musicDriven ? survivalRecordCategory(s) : 'NIGHTFALL TOUR')}  /  ${t(message('ウェーブ {0} / 72', [state.routeIndex * 6 + s.wave + 1]))}`, 36, 43, 284);
   ctx.font = '800 28px system-ui'; ctx.fillStyle = '#fff5f9';
   ctx.fillText(t(number(Math.floor(state.score), { useGrouping: true })), 36, 76, 212);
   ctx.textAlign = 'right'; ctx.fillStyle = s.fever > 0 ? '#ffe192' : '#88ffe1'; ctx.font = '800 23px system-ui';

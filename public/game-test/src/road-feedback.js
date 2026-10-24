@@ -130,6 +130,8 @@ export function getThreatSignals(state = {}) {
       }
       if (actor.routineHazard) label = `${actor.routineHazard.name}：${actor.routineHazard.advice}`;
       else if (actor.streetRole) label = `${actor.streetRole.name}：${label}`;
+      if (actor.musicCue) label = 'もうすぐドロップ。音のゲートが開くで';
+      if (actor.musicOpen) label = 'ドロップでゲート開放！ 武器は自動やで';
       return { actor, id: actor.id ?? actor.encounterId, label, action, phase,
         distance: Math.max(0, actor.distance - distance),
         seconds: Math.max(0, (actor.distance - distance - (actor.collisionRadius || 15)) / metresPerSecond),

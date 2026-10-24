@@ -385,7 +385,9 @@ export function updateEncounterActor(entity, state = {}, dt = 0) {
   const elapsed = clamp(finite(source.elapsed), 0, 1e9);
   const distance = clamp(finite(source.distance), 0, 1e9);
   const base = clamp(finite(entity.motionBaseDistance, finite(entity.distance)), 0, 1e9);
-  const speed = clamp(finite(source.speed, 108), 0, ENCOUNTER_RULES.maximumSupportedSpeed) / 3.6;
+  const speedScale = Math.max(1, finite(source.musicDrive?.multiplier, 1));
+  const maximumSpeed = MAX_METRES_PER_SECOND * speedScale;
+  const speed = clamp(finite(source.speed, 108) / 3.6, 0, maximumSpeed);
   const delta = clamp(finite(dt), 0, 1e6);
   const amplitude = clamp(finite(entity.motionAmplitude), 0, ENCOUNTER_RULES.maximumMotion);
   const radius = RADII[entity.type] ?? 15;
@@ -393,7 +395,7 @@ export function updateEncounterActor(entity, state = {}, dt = 0) {
   const minimumWindow = Math.max(ENCOUNTER_RULES.minimumCounterTime, finite(entity.telegraph?.counterWindow, ENCOUNTER_RULES.minimumCounterTime));
   // The top supported rush speed sets the trigger. Accelerating during a tell
   // cannot silently shorten either the anticipation or the response window.
-  const warning = clamp(Math.max(finite(entity.warningDistance, 150), MAX_METRES_PER_SECOND * (anticipation + minimumWindow) + radius + amplitude), 0, ENCOUNTER_RULES.warningViewDistance);
+  const warning = clamp(Math.max(finite(entity.warningDistance, 150), maximumSpeed * (anticipation + minimumWindow) + radius + amplitude), 0, ENCOUNTER_RULES.warningViewDistance * speedScale);
   const telegraphBase = clamp(finite(entity.telegraphBaseDistance, base), 0, 1e9);
   const trigger = telegraphBase - warning;
   if (!Number.isFinite(entity.encounterStartedAt) && distance >= trigger) {
@@ -433,7 +435,7 @@ export function updateEncounterActor(entity, state = {}, dt = 0) {
     const cycle = age % (anticipation + openDuration);
     // Once close, the guard stays open for the complete final counter window.
     // It cannot snap closed on the player at the collision boundary.
-    const finalApproach = relative <= radius + MAX_METRES_PER_SECOND * openDuration;
+    const finalApproach = relative <= radius + maximumSpeed * openDuration;
     entity.shielded = !finalApproach && (!started || cycle < anticipation);
     entity.vulnerable = !entity.shielded;
     entity.behaviorPhase = entity.shielded ? 'guard' : 'open';

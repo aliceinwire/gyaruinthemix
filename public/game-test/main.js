@@ -1,4 +1,5 @@
-import { setSurvivalAssistance, isSurvival, dailySurvival, survivalView, chooseSurvivalUpgrade, survivalMultiplier, createSurvivalRecords, SURVIVAL_STARTERS, SURVIVAL_UPGRADES } from './src/survival.js';
+import { setSurvivalAssistance, isSurvival, dailySurvival, survivalView, chooseSurvivalUpgrade, survivalMultiplier, survivalRecordCategory, createSurvivalRecords, SURVIVAL_STARTERS, SURVIVAL_UPGRADES } from './src/survival.js';
+import { setMusicDrive, suspendMusicDrive } from './src/music-drive.js';
 import { createDrivingLessons, updateDrivingLessons, getDrivingCue } from './src/driving-lessons.js';
 import { createItemIcon } from './src/item-icons.js';
 import { drawSurvival, renderSurvivalResult } from './src/survival-ui.js';
@@ -187,13 +188,17 @@ let reducedMotion = settings.reducedMotion;
 function applySettings() {
   reducedMotion = settings.reducedMotion;
   setSurvivalAssistance(state, settings.assistMode);
+  setMusicDrive(state, settings.musicDrive);
   document.body.dataset.reducedMotion = String(reducedMotion);
   document.body.dataset.assistMode = String(settings.assistMode);
   $('#reduced-motion').checked = reducedMotion;
   $('#assist-mode').checked = state.assistMode;
   $('#menu-assist-mode').checked = settings.assistMode;
+  $('#music-drive').checked = settings.musicDrive;
+  $('#menu-music-drive').checked = settings.musicDrive;
+  localizeText($('#music-drive-note'), state.survival?.musicDriven ? 'このランは音で走る記録。途中で戻しても、通常の記録には入らへん。' : '曲が止まった時や、ほかの曲では通常の速度やで。');
   localizeText($('#assist-record-note'), isSurvival(state) && state.survival.assisted ? 'このランはゆったり記録。途中で戻しても、通常の記録には入らへん。' : 'ダメージを軽減。ゆったりの記録は、通常の記録と別に残るで。');
-  survivalBest = isSurvival(state) ? survivalRecords.best(state.survival.day, state.survival.assisted)?.score || 0 : 0;
+  survivalBest = isSurvival(state) ? survivalRecords.best(state.survival.day, state.survival.assisted, state.survival.musicDriven)?.score || 0 : 0;
   document.body.dataset.runMode = state.mode;
 }
 function saveSettings() {
@@ -204,7 +209,7 @@ function saveSettings() {
   if (!settingsStore.save(settings)) storageWarning();
 }
 applySettings();
-for (const [id, key] of [['reduced-motion','reducedMotion'], ['assist-mode','assistMode'], ['menu-assist-mode','assistMode']]) {
+for (const [id, key] of [['reduced-motion','reducedMotion'], ['assist-mode','assistMode'], ['menu-assist-mode','assistMode'], ['music-drive','musicDrive'], ['menu-music-drive','musicDrive']]) {
   $('#' + id).addEventListener('change', event => { settings[key] = event.target.checked; saveSettings(); });
 }
 const storyDirector = createStoryDirector({
@@ -249,6 +254,7 @@ function setPause(value) {
   accumulator = 0;
   if (paused) {
     suspendPerformance(performanceSet);
+    suspendMusicDrive(state);
     $("#resume").focus();
   } else {
     canvas.focus({ preventScroll: true });
@@ -256,6 +262,7 @@ function setPause(value) {
   }
 }
 function setScreen(value) {
+  if (value !== 'playing') suspendMusicDrive(state);
   screen = value;
   $("#performance-panel").hidden = value !== "finale";
   releaseInput();
@@ -730,7 +737,7 @@ function startClubSet(next) {
 function persistNightfallResult() {
   if (terminalRecord?.id === state.runId && terminalRecord.score === state.score) return terminalRecord;
   const sameRun = terminalRecord?.id === state.runId;
-  const previous = sameRun ? terminalRecord.previous : survivalRecords.best(state.survival.day, state.survival.assisted);
+  const previous = sameRun ? terminalRecord.previous : survivalRecords.best(state.survival.day, state.survival.assisted, state.survival.musicDriven);
   const result = survivalRecords.save(state);
   if (sameRun && terminalRecord.result.best) result.best = true;
   terminalRecord = { id: state.runId, score: state.score, previous, result };
@@ -822,7 +829,12 @@ function showResult() {
   beep(won ? 880 : 190, 0.25);
 }
 function refreshSurvivalRecord() {
-  const challenge = dailySurvival(), best = survivalRecords.best(challenge.day, settings.assistMode);
+  const challenge = dailySurvival(), best = survivalRecords.best(challenge.day, settings.assistMode, settings.musicDrive);
+  if (settings.musicDrive) {
+    const category = survivalRecordCategory({ musicDriven: true, assisted: settings.assistMode });
+    localizeText($('#survival-record'), best ? message('{0} · 自己ベスト {1} · この端末', [category, number(best.score, { useGrouping: true })]) : message('{0} · 記録は別', [category]));
+    return;
+  }
   if (settings.assistMode) {
     localizeText($('#survival-record'), best ? message('ゆったり自己ベスト {0} · この端末', [number(best.score, { useGrouping: true })]) : 'ゆったりツアー · 通常の記録とは別');
     return;
@@ -952,7 +964,7 @@ function hud() {
   }
   const route = state.route;
   localizeText($("#location-label"), message("{0} / {1}", [(getDistrictScene(route.cityId, state.locationIndex || 0) || { name: route.goal }).name, String((state.locationIndex || 0) + 1).padStart(2, "0")]));
-  localizeText($("#mode-label"), isSurvival(state) ? state.survival.assisted ? 'ゆったりツアー' : "NIGHTFALL TOUR" : message("クラブ旅 {0} / {1}", [state.routeIndex + 1, JOURNEY_STAGE_COUNT]));
+  localizeText($("#mode-label"), isSurvival(state) ? state.survival.musicDriven ? survivalRecordCategory(state.survival) : state.survival.assisted ? 'ゆったりツアー' : "NIGHTFALL TOUR" : message("クラブ旅 {0} / {1}", [state.routeIndex + 1, JOURNEY_STAGE_COUNT]));
   localizeText($("#money"), isSurvival(state) ? number(Math.floor(state.score), { useGrouping: true }) : String(state.money).padStart(3, "0"));
   localizeText($(".wallet > span"), isSurvival(state) ? "スコア" : "コイン");
   $("#combo-bar").style.width =
@@ -974,7 +986,7 @@ function hud() {
   if (isSurvival(state)) {
     localizeText($("#combo"), message("HEAT ×{0} · 招待 {1}", [survivalMultiplier(state), state.survival.kills]));
     localizeText($("#rpg-build"), message("進化 {0} · ノーダメージ {1}", [state.survival.evolutions.length, state.survival.cleanWaves]));
-    if (state.survival.recordEligible !== false && state.score > survivalBest && survivalBest > 0 && !state.survival.bestNotified) { state.survival.bestNotified = true; toast(state.survival.assisted ? 'ゆったり自己ベスト更新！' : '今日の自己ベスト更新！'); }
+    if (state.survival.recordEligible !== false && state.score > survivalBest && survivalBest > 0 && !state.survival.bestNotified) { state.survival.bestNotified = true; toast(state.survival.musicDriven ? 'ミュージックドライブ自己ベスト更新！' : state.survival.assisted ? 'ゆったり自己ベスト更新！' : '今日の自己ベスト更新！'); }
   }
   $("#health-bar").style.width =
     `${(state.integrity / (state.integrityCapacity || 100)) * 100}%`;
@@ -1029,8 +1041,9 @@ function frame(now) {
   if (!paused && !["story", "draft", "quiz", "result"].includes(screen)) visualTime += dt;
   if (screen === "playing" && !paused) {
     accumulator += dt;
+    const transport = settings.musicDrive ? audio.transport : null;
     while (accumulator >= 1 / 60) {
-      update(state, { ...input, shoot: !isSurvival(state) }, 1 / 60);
+      update(state, { ...input, shoot: !isSurvival(state) }, 1 / 60, transport);
       updateDrivingLessons(drivingLessons, state, 1 / 60);
       handleEvents();
       accumulator -= 1 / 60;

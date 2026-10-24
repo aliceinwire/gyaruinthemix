@@ -1482,5 +1482,16 @@
   "選ぶと: {0} Lv.{1}/{2} + {3} Lv.{4}/{5} → {6}": "After choosing: {0} Lv.{1}/{2} + {3} Lv.{4}/{5} → {6}",
   "Chrome Bounce Ritual で開演": "Play Chrome Bounce Ritual",
   "ラジオの曲が変わったで。もう一度始めよか。": "The radio track changed. Start the set again?",
-  "{0} / {1} フレーズ · ファン {2}人 · フロアの仲間 {3}人": "{0} / {1} phrases · {2} fans · {3} floor friends"
+  "{0} / {1} フレーズ · ファン {2}人 · フロアの仲間 {3}人": "{0} / {1} phrases · {2} fans · {3} floor friends",
+  "音で走る（試験） / 速度±3%・記録は別": "Music Drive (trial) / ±3% speed, separate records",
+  "Chrome Bounce Ritualで速度が最大±3%。渋谷の音のゲートはドロップでも開くで。": "Chrome Bounce Ritual shifts speed by up to ±3%. Its drops also open the Shibuya speaker gate.",
+  "このランは音で走る記録。途中で戻しても、通常の記録には入らへん。": "This run stays in Music Drive records, even if you switch the option off.",
+  "曲が止まった時や、ほかの曲では通常の速度やで。": "Speed returns to normal when the song stops or another track plays.",
+  "ミュージックドライブ": "Music Drive",
+  "ミュージックドライブ · ゆったり": "Music Drive · Assisted tour",
+  "ミュージックドライブ自己ベスト更新！": "New Music Drive personal best!",
+  "{0} · 自己ベスト {1} · この端末": "{0} · Best {1} · This device",
+  "{0} · 記録は別": "{0} · Separate records",
+  "もうすぐドロップ。音のゲートが開くで": "Drop coming. The speaker gate will open.",
+  "ドロップでゲート開放！ 武器は自動やで": "Drop gate open! Weapons fire automatically."
 }
