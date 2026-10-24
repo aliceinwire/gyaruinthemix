@@ -1,4 +1,5 @@
 import { t } from './i18n.js';
+import { SILENT_MUSIC } from './music-reactivity.js';
 import { preloadArrivalFans, drawArrivalFans } from './arrival-fans.js';
 import { getThreatSignals } from './road-feedback.js';
 import { drawCultureProp, drawSuitUniform, drawRoutineHazard, drawLittleFind, drawFriendlyCat } from './street-culture-art.js';
@@ -135,11 +136,14 @@ export function drawCar(g, x, y, {
   damage = false, shooting = false, charging = false, rushing = false, rushTime = 0, rushGestureTime,
   weather = "sunny", season = "summer", roofClosed = false, mudAmount = 0,
   crewVisuals, carId = "mix-175", appearance = getCarAppearance({equipped:carId}),
+  music = SILENT_MUSIC,
 } = {}) {
   g.save(); g.translate(Math.round(x), Math.round(y)); g.scale(scale, scale);
   g.globalAlpha = Math.max(.08, .28 - jump * .06);
   box(g, -94 + jump * 12, -2, 188 - jump * 24, 5, "#0b1020"); g.globalAlpha = 1;
-  g.translate(0, Math.round(-jump * 95 + (speed > 4 ? Math.sin(time * 9) : 0)));
+  const bodyBob = music.active && !damage && !rushing && jump <= .01
+    ? -music.bass * 2 : Math.sin(time * 9);
+  g.translate(0, Math.round(-jump * 95 + (speed > 4 ? bodyBob : 0)));
   if (rushing) {
     for (let i = 0; i < 17; i++) {
       const age = ((time * 1.7 + i / 17) % 1);
@@ -154,6 +158,11 @@ export function drawCar(g, x, y, {
   const layoutOptions = {carId, x:0, y:4, ...(carId === "heart-limo" ? {height:62} : {})};
   const layout = getCarArtLayout(layoutOptions);
   const roof = roofClosed ? getCarRoofLayout(layoutOptions) : null;
+  if (music.active && music.energy > 0 && !damage) {
+    g.save(); g.globalAlpha = music.energy * .28;
+    box(g, layout.body.x + layout.body.width * .15, 1, layout.body.width * .7, 2, '#ff9ed3');
+    g.restore();
+  }
   if (boost || jump > .15) {
     for (let i=0;i<3;i++) {
       const flame = 12 + Math.round((Math.sin(time * 28 + i) + 1) * 7);
@@ -166,7 +175,7 @@ export function drawCar(g, x, y, {
   // The convertible roof sits behind the crew. Keep their original scale and
   // seat anchors, allowing the big hair to extend above the closed hardtop.
   if (roof) drawCarRoof(g,{...layoutOptions,paint:appearance.paint});
-  const visual = crewVisuals || { time, action: resolveCrewActions({time,boosting:boost,shooting,charging,damage,weather,rushing,rushGestureTime}), weather, season, rushing, rushTime, rushGestureTime };
+  const visual = crewVisuals || { time, music, action: resolveCrewActions({time,boosting:boost,shooting,charging,damage,weather,rushing,rushGestureTime}), weather, season, rushing, rushTime, rushGestureTime, boosting:boost, charging, damage };
   for (const {character, x, y, width, height, cabin} of getCrewSeatLayout(layout)) {
     g.save();
     if (!layout.openTop) { g.beginPath();g.rect(cabin.x-1,cabin.y-1,cabin.width+2,cabin.height+2);g.clip(); }
@@ -213,10 +222,11 @@ function road(g, state, time) {
 /** A tiny stage rig, drawn with the same integer grid as the street. The jam is
  * an object in the fiction; restoring it lights the speakers without changing
  * an NPC's appearance or implying a fight with a passer-by. */
-export function drawSignalHeadliner(g, actor, x, y, time = 0) {
+export function drawSignalHeadliner(g, actor, x, y, time = 0, music = SILENT_MUSIC) {
   const color = actor.headliner?.color || '#ff91cd';
   const restored = actor.converted || actor.type === 'gyaru';
   const guarded = !restored && actor.shielded;
+  const cone = Math.round(music.bass * 2);
   g.save(); g.translate(Math.round(x), Math.round(y));
   box(g, -39, -3, 78, 5, '#10101c');
   // Two cabinets, grill ribs, bass drivers and grounded feet.
@@ -230,7 +240,7 @@ export function drawSignalHeadliner(g, actor, x, y, time = 0) {
     for (const centerY of [-63, -30]) {
       box(g, left + 5, centerY - 8, 14, 16, '#080c17');
       box(g, left + 3, centerY - 5, 18, 10, '#080c17');
-      box(g, left + 8, centerY - 4, 8, 8, guarded ? '#655c81' : color);
+      box(g, left + 8 - cone, centerY - 4 - cone, 8 + cone * 2, 8 + cone * 2, guarded ? '#655c81' : color);
       box(g, left + 10, centerY - 2, 4, 4, '#fff2e5');
     }
     box(g, left - 2, -2, 8, 4, '#8d859d');
@@ -243,9 +253,9 @@ export function drawSignalHeadliner(g, actor, x, y, time = 0) {
   if (guarded) {
     for (let i = 0; i < 5; i++) box(g, -14, -102 + i * 4, 28, 2, '#b7a5d5');
   } else {
-    for (let i = 0; i < 7; i++) {
-      const height = 4 + Math.round((Math.sin(time * 6 + i * 1.2) + 1) * 6);
-      box(g, -13 + i * 4, -84 - height, 2, height, restored ? '#9cf5d5' : color);
+    for (let i = 0; i < music.bands.length; i++) {
+      const height = 2 + Math.round(music.bands[i] * 16);
+      box(g, -12 + i * 5, -84 - height, 3, height, restored ? '#9cf5d5' : color);
     }
   }
   // Center cabling and small status lamp stay inside the obstacle silhouette.
@@ -253,17 +263,17 @@ export function drawSignalHeadliner(g, actor, x, y, time = 0) {
   box(g, -12, -52, 24, 14, '#111321');
   box(g, -8, -48, 16, 4, restored ? '#9cf5d5' : guarded ? '#b7a5d5' : '#ffe1a2');
   if (restored) {
-    for (let i = 0; i < 3; i++) box(g, -25 + i * 24, -115 - Math.round(Math.sin(time * 3 + i) * 3), 3, 3, '#b8ffe3');
+    for (let i = 0; i < 3; i++) box(g, -25 + i * 24, -115 - Math.round(music.bands[i] * 3), 3, 3, '#b8ffe3');
   }
   g.restore();
 }
 
-function entity(g, e, x, y, time, state) {
+function entity(g, e, x, y, time, state, music) {
   const clothing = streetCharacterIdentity(e);
-  if (e.headliner) { drawSignalHeadliner(g, e, x, y, time); return true; }
+  if (e.headliner) { drawSignalHeadliner(g, e, x, y, time, music); return true; }
   if (drawRoutineHazard(g, e, x, y, time) || drawLittleFind(g, e, x, y, time)) return true;
   if (e.type === 'ev') drawFriendlyCat(g, x, y - 68, time);
-  if (drawRoadsideObject(g, { type: e.type, x, y, time, weather: state.weather, season: state.season, charging: state.charging })) return true;
+  if (drawRoadsideObject(g, { type: e.type, x, y, time, music, weather: state.weather, season: state.season, charging: state.charging })) return true;
   if (
     drawStreetCharacter(g, {
       type: clothing,
@@ -300,10 +310,10 @@ function entity(g, e, x, y, time, state) {
 export function render(
   g,
   state,
-  { time = 0, menu = false, reducedMotion = false, crewVisuals } = {},
+  { time = 0, menu = false, reducedMotion = false, crewVisuals, music = SILENT_MUSIC } = {},
 ) {
-  if (reducedMotion) time = 0;
-  crewVisuals ||= resolveCrewVisuals(state, {time, reducedMotion});
+  if (reducedMotion) { time = 0; music = SILENT_MUSIC; }
+  crewVisuals ||= resolveCrewVisuals(state, {time, reducedMotion, music});
   g.imageSmoothingEnabled = false;
   drawScenery(g, {
     cityId: state.route.cityId,
@@ -334,6 +344,7 @@ export function render(
   if (menu) {
     drawCar(g, 690, 443, {
       crewVisuals,
+      music,
       time,
       speed: 0,
       scale: 1.7,
@@ -353,7 +364,7 @@ export function render(
   objects
     .filter((o) => o.e.type === "ev")
     .forEach((o) => {
-      const detailed = entity(g, o.e, o.x, o.y, time, state);
+      const detailed = entity(g, o.e, o.x, o.y, time, state, music);
       if (
         !(
           detailed &&
@@ -367,7 +378,7 @@ export function render(
   objects
     .filter((o) => o.e.type !== "ev")
     .forEach((o) => {
-      const detailed = entity(g, o.e, o.x, o.y, time, state);
+      const detailed = entity(g, o.e, o.x, o.y, time, state, music);
       if (
         !(
           detailed &&
@@ -380,6 +391,7 @@ export function render(
     });
   drawCar(g, 190 + (state.windOffset || 0), 465, {
     crewVisuals,
+    music,
     carId:getCarProfile(state).id, appearance:getCarAppearance(state),
     shooting: state.shooting,
     charging: state.charging,
@@ -425,6 +437,12 @@ export function render(
     box(g, goalX + 2, 300, 38, 23, "#211c30");
     box(g, goalX + 1, 298, 40, 2, "#ff95ce");
     box(g, goalX + 1, 323, 40, 2, "#ff6cb9");
+    if (music.active && music.energy > 0) {
+      g.save(); g.globalAlpha = music.energy * .45;
+      box(g, goalX + 1, 298, 40, 2, '#ffe2f1');
+      box(g, goalX + 1, 323, 40, 2, '#ffe2f1');
+      g.restore();
+    }
     box(g, goalX - 4, 327, 7, 4, "#aaa1bb");
     box(g, goalX + 39, 327, 7, 4, "#aaa1bb");
     text(g, "クラブ", goalX + 6, 311, 9, "#ffe2f1");

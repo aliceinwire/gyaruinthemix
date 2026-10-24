@@ -1,7 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadGameAudioConfig } from '../public/game-test/src/game-audio-config.js';
-import { createGameAudio } from '../public/game-test/src/audio.js';
+import {
+  createGameAudio,
+  createStreamingAudio,
+} from '../public/game-test/src/audio.js';
+import {
+  readMusicSpectrum,
+  SILENT_MUSIC,
+} from '../public/game-test/src/music-reactivity.js';
 
 const pending = () => {
   let resolve;
@@ -169,4 +176,48 @@ test('failed discovery keeps the built-in radio unavailable', async () => {
   });
   assert.equal(await audio.ready, false);
   assert.equal(await available(), false);
+});
+
+test('game audio exposes the same radio sample and clears it on destruction', () => {
+  const spectrum = new Uint8Array(512);
+  spectrum[2] = 255;
+  const sample = readMusicSpectrum(spectrum, 48000, 1024);
+  const f = fixture();
+  assert.equal(f.audio.reactivity, SILENT_MUSIC);
+  f.instance.reactivity = sample;
+  assert.equal(f.audio.reactivity, sample);
+  f.audio.destroy();
+  assert.equal(f.audio.reactivity, SILENT_MUSIC);
+});
+
+test('streaming facade forwards its existing equalizer without starting playback', () => {
+  const sample = readMusicSpectrum(new Uint8Array(512).fill(200), 48000, 1024);
+  let active = sample,
+    mounts = 0,
+    destroyed = 0;
+  const audio = createStreamingAudio({
+    music: new EventTarget(),
+    AudioContextClass: null,
+    stereoFactory() {
+      mounts++;
+      return {
+        equalizer: {
+          get reactivity() {
+            return active;
+          },
+        },
+        destroy() {
+          destroyed++;
+        },
+      };
+    },
+  });
+  assert.equal(audio.reactivity, sample);
+  active = SILENT_MUSIC;
+  assert.equal(audio.reactivity, SILENT_MUSIC);
+  assert.equal(mounts, 1);
+  audio.destroy();
+  active = sample;
+  assert.equal(audio.reactivity, SILENT_MUSIC);
+  assert.equal(destroyed, 1);
 });

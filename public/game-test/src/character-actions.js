@@ -199,10 +199,11 @@ export function resolveCrewActions({
 }
 
 /** One immutable pose clock/event snapshot for every view in a display frame. */
-export function resolveCrewVisuals(state = {}, { time = 0, reducedMotion = false, action } = {}) {
+export function resolveCrewVisuals(state = {}, { time = 0, reducedMotion = false, action, music } = {}) {
   const visual = {
     time: reducedMotion ? 0 : time,
     animate: !reducedMotion,
+    music: reducedMotion ? undefined : music,
     weather: state.weather,
     season: state.season,
     boosting: state.boosting,
@@ -302,7 +303,13 @@ export function resolveCharacterPose(options = {}) {
   if (localAction === 'rush') animationFrame = animate ? Math.min(3, Math.floor(gestureElapsed)) : 0;
   else if (weaponPose) animationFrame = animate ? Math.min(3, Math.floor(Math.max(0, weaponElapsed) / .18)) : 0;
   else animationFrame = characterMotionFrame(localAction, name === 'chana' && options.crewWeaponGesture?.weapon === 'heart' ? weaponElapsed : time, animate);
-  return { name, resolved, localAction, frame, animationFrame };
+  // Only idle/cheering poses follow the bass. Weapon, damage and rush gestures
+  // keep their event clocks and remain identical in the cabin and portrait.
+  const reacts = animate && options.music?.active && !options.invulnerability && !options.damage
+    && !options.boosting && !options.charging && !options.rushing
+    && (name === 'arisu' ? localAction === 'drive' : ['map', 'makeup', 'directions', 'cheer'].includes(localAction));
+  const musicBob = reacts ? -Math.min(1, Math.max(0, options.music.bass || 0)) * (name === 'arisu' ? .01 : .025) : null;
+  return { name, resolved, localAction, frame, animationFrame, musicBob };
 }
 
 export function drawCharacter(ctx, options = {}) {
@@ -318,7 +325,7 @@ export function drawCharacter(ctx, options = {}) {
     season = "summer",
     animate = true,
   } = options;
-  const { name, resolved, localAction, frame, animationFrame } = resolveCharacterPose(options);
+  const { name, resolved, localAction, frame, animationFrame, musicBob } = resolveCharacterPose(options);
   if (name === 'chana' && CHANA_WEAPON_ACTIONS.includes(localAction)) {
     if (!drawChanaWeapon(ctx, { ...options, weapon: localAction, view: 'portrait', animationFrame })) return false;
     return { character: name, action: localAction, frame, animationFrame, ready: true };
@@ -330,7 +337,7 @@ export function drawCharacter(ctx, options = {}) {
   const sourceRect = actionRects[animationFrame];
   const [sx, sy, cellW, cellH] = sourceRect;
   const upbeat = localAction === "cheer" || localAction === "point" || localAction === "hearts";
-  const bob = animate
+  const bob = musicBob !== null ? musicBob * height : animate
     ? Math.sin(time * (upbeat ? 8 : 4)) *
       height *
       (upbeat ? 0.018 : 0.007)

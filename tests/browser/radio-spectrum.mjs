@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readFile, mkdir } from 'node:fs/promises';
 import { extname, resolve } from 'node:path';
 
 function alternatingTone() {
@@ -39,12 +39,12 @@ export async function checkRadioSpectrum(browser, { root, csp }) {
     if (url.pathname === '/') return route.fulfill({
       contentType: 'text/html',
       headers: { 'content-security-policy': csp },
-      body: '<!doctype html><html lang="en"><head><link rel="stylesheet" href="/game-test/car-stereo.css"></head><body><div id="radio"></div></body></html>',
+      body: '<!doctype html><html lang="en"><head><link rel="stylesheet" href="/game-test/car-stereo.css"></head><body><div id="radio"></div><canvas id="world" width="960" height="540"></canvas></body></html>',
     });
     if (url.pathname === '/tone.wav') return route.fulfill({ contentType: 'audio/wav', body: wav });
     try {
       return route.fulfill({
-        contentType: ({ '.js': 'application/javascript', '.css': 'text/css', '.json': 'application/json' })[extname(url.pathname)],
+        contentType: ({ '.js': 'application/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.avif': 'image/avif', '.webp': 'image/webp' })[extname(url.pathname)],
         body: await readFile(resolve(root, 'dist', url.pathname.slice(1))),
       });
     } catch {
@@ -56,9 +56,11 @@ export async function checkRadioSpectrum(browser, { root, csp }) {
     await page.goto(origin);
     await page.evaluate(async () => {
       const { createCarStereo } = await import('/game-test/src/car-stereo.js');
-      globalThis.radioFixture = createCarStereo({
-        mount: document.querySelector('#radio'),
-        controllerFactory: ({ media, onState }) => {
+      const { createGameAudio, createStreamingAudio } = await import('/game-test/src/audio.js');
+      const { createState } = await import('/game-test/src/simulation.js');
+      const { render } = await import('/game-test/src/renderer.js');
+      const { prepareGameArt } = await import('/game-test/src/resources.js');
+      const controllerFactory = ({ media, onState }) => {
           const track = { id: 'tone', title: 'Frequency fixture', duration: 6 };
           media.src = '/tone.wav';
           const state = () => ({ catalog: [track], track, status: media.paused ? 'paused' : 'playing',
@@ -78,50 +80,94 @@ export async function checkRadioSpectrum(browser, { root, csp }) {
             seek: value => { media.currentTime = value; },
             destroy: () => { media.pause(); events.forEach(event => media.removeEventListener(event, emit)); },
           };
-        },
+      };
+      globalThis.audioFixture = createGameAudio({
+        music: document.querySelector('#radio'),
+        loadConfig: async () => true,
+        streamingFactory: options => createStreamingAudio({
+          ...options,
+          stereoFactory: stereoOptions => {
+            globalThis.radioFixture = createCarStereo({ ...stereoOptions, controllerFactory });
+            return radioFixture;
+          },
+        }),
       });
+      const scene = createState({ mode: 'survival', seed: 'music-world' });
+      scene.weather = 'sunny';
+      scene.routeLength = 220;
+      scene.entities = [
+        { id: 1, type: 'ev', distance: 90, radius: 35 },
+        { id: 2, type: 'salaryman', distance: 170, headliner: { color: '#ff91cd' }, hp: 3, maxHp: 3 },
+      ];
+      await prepareGameArt(scene);
+      const before = JSON.stringify(scene);
+      const canvas = document.querySelector('#world'), ctx = canvas.getContext('2d', { willReadFrequently: true });
+      globalThis.captureMusicWorld = () => {
+        const music = audioFixture.reactivity;
+        render(ctx, scene, { time: 0, music });
+        const pixels = ctx.getImageData(645, 345, 90, 120).data;
+        let hash = 2166136261;
+        for (const value of pixels) hash = Math.imul(hash ^ value, 16777619) >>> 0;
+        return { bars: document.querySelector('.stereo-equalizer').textContent, music, world: hash,
+          unchanged: before === JSON.stringify(scene) };
+      };
     });
     const bars = page.locator('.stereo-equalizer');
+    const quiet = await page.evaluate(() => captureMusicWorld());
     assert.equal(await bars.textContent(), '▁▁▁▁▁');
     await page.locator('[data-action="play"]').click();
     await page.waitForFunction(() => document.querySelector('.stereo-equalizer').dataset.active === 'true');
     const frames = await page.evaluate(async () => {
       const samples = [];
       for (let i = 0; i < 24; i++) {
-        samples.push(document.querySelector('.stereo-equalizer').textContent);
+        samples.push(captureMusicWorld());
         await new Promise(resolve => setTimeout(resolve, 75));
       }
       return samples;
     });
     const heights = value => [...value].map(char => '▁▂▃▄▅▆▇█'.indexOf(char));
-    assert.ok(frames.some(value => heights(value)[0] > heights(value)[4]), 'Bass tone drives the bass bar');
-    assert.ok(frames.some(value => heights(value)[4] > heights(value)[0]), 'Treble tone drives the treble bar');
-    assert.ok(new Set(frames).size > 2, 'Bars follow changing decoded audio');
+    for (const { bars, music } of frames)
+      assert.deepEqual(heights(bars), music.bands.map(value => Math.round(value * 7)), 'Radio and game share all five frequency bands');
+    // Compare the same bands: treble averages two bands, only one of which the
+    // 6500 Hz tone excites, while smoothing retains some of the preceding bass.
+    assert.ok(frames.some(({ bars, music }) => heights(bars)[0] > heights(bars)[4] && music.bands[0] > music.bands[4]), 'Bass tone reaches both the radio and game facade');
+    assert.ok(frames.some(({ bars, music }) => heights(bars)[4] > heights(bars)[0] && music.bands[4] > music.bands[0]), 'Treble tone reaches both the radio and game facade');
+    assert.ok(new Set(frames.map(frame => frame.bars)).size > 2, 'Bars follow changing decoded audio');
+    assert.ok(new Set(frames.map(frame => frame.world)).size > 2, 'Speaker artwork follows the decoded signal at a fixed scene time');
+    assert.ok(frames.every(frame => frame.unchanged), 'Music rendering leaves simulation state unchanged');
+    await mkdir(resolve(root, 'artifacts/browser/game-test'), { recursive: true });
+    await page.locator('#world').screenshot({ path: resolve(root, 'artifacts/browser/game-test/music-reactive.png') });
     await page.locator('[data-action="mute"]').click();
     assert.equal(await bars.textContent(), '▁▁▁▁▁');
     assert.equal(await bars.getAttribute('data-active'), 'false');
+    assert.equal((await page.evaluate(() => captureMusicWorld())).world, quiet.world);
     await page.locator('[data-action="mute"]').click();
     await page.waitForFunction(() => document.querySelector('.stereo-equalizer').textContent !== '▁▁▁▁▁');
     await page.locator('[data-action="play"]').click();
     assert.equal(await bars.textContent(), '▁▁▁▁▁');
+    assert.equal((await page.evaluate(() => captureMusicWorld())).music.active, false);
     await page.locator('[data-action="play"]').click();
     await page.waitForFunction(() => document.querySelector('.stereo-equalizer').textContent !== '▁▁▁▁▁');
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.waitForFunction(() => document.querySelector('.stereo-equalizer').dataset.active === 'false');
     assert.equal(await bars.textContent(), '▁▁▁▁▁');
     assert.equal(await page.locator('audio').evaluate(media => media.paused), false);
+    assert.equal((await page.evaluate(() => captureMusicWorld())).world, quiet.world);
     await page.emulateMedia({ reducedMotion: 'no-preference' });
     await page.waitForFunction(() => document.querySelector('.stereo-equalizer').textContent !== '▁▁▁▁▁');
+    await page.evaluate(() => radioFixture.controller.seek(1));
+    await page.waitForFunction(() => !radioFixture.media.seeking && audioFixture.reactivity.active);
     await page.locator('[data-action="next"]').click();
     await page.waitForFunction(() => document.querySelector('.stereo-equalizer').textContent !== '▁▁▁▁▁');
     assert.equal(await page.locator('audio').count(), 1);
     await page.locator('audio').evaluate(media => { media.currentTime = media.duration - .1; });
     await page.waitForFunction(() => document.querySelector('audio').ended);
     assert.equal(await bars.textContent(), '▁▁▁▁▁');
-    await page.evaluate(() => radioFixture.destroy());
+    assert.equal((await page.evaluate(() => captureMusicWorld())).world, quiet.world);
+    await page.evaluate(() => audioFixture.destroy());
     assert.equal(await page.locator('audio').count(), 0);
     assert.deepEqual(errors, []);
-    console.log('PASS radio spectrum follows real bass/treble audio and resets on mute/pause/end');
+    console.log('PASS one radio drives speaker artwork with real bass/treble audio and resets on mute/pause/seek/end');
   } finally {
     await context.close();
   }
