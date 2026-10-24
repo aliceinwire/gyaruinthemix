@@ -8,6 +8,7 @@ COPY config ./config
 COPY public ./public
 COPY assets ./assets
 COPY scripts/images.mjs scripts/check-site-build.mjs scripts/release-version.mjs ./scripts/
+COPY scripts/optimize-game-images.mjs ./scripts/
 COPY deploy/nginx-api.conf deploy/nginx-payment-links.conf ./
 ARG CHECKOUT_MODE=payment_links
 ENV CHECKOUT_MODE=$CHECKOUT_MODE

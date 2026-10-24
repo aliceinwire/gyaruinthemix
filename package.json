@@ -1,6 +1,6 @@
 {
   "name": "gyaruinthemix-store",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "private": true,
   "type": "module",
   "engines": {
@@ -11,7 +11,7 @@
     "dev:api": "node --env-file=.env api/server.mjs",
     "test:ui-api": "node tests/preview-api.mjs",
     "images": "node scripts/images.mjs",
-    "build": "npm run images && astro build && node scripts/check-site-build.mjs",
+    "build": "npm run images && astro build && node scripts/optimize-game-images.mjs && node scripts/check-site-build.mjs",
     "start": "node api/server.mjs",
     "test": "node --test tests/*.test.mjs",
     "lint": "eslint . && prettier --check .github/workflows src config deploy Dockerfile* *.json *.mjs *.md api/*.mjs tests/*.mjs scripts/*.mjs",
