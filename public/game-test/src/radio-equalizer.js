@@ -1,21 +1,11 @@
-/** Five bass-to-treble bands sampled from the radio's persistent audio element. */
-const BANDS = Object.freeze([45, 150, 500, 1600, 5000, 16000]);
+import { readMusicSpectrum, SILENT_MUSIC } from './music-reactivity.js';
+/** One bass-to-treble sample feeds both the radio display and the game artwork. */
 const BLOCKS = '▁▂▃▄▅▆▇█';
 export const RADIO_IDLE_BARS = BLOCKS[0].repeat(5);
+const spectrumBars = music => music.bands.map(value => BLOCKS[Math.round(value * 7)]).join('');
 
 export function radioSpectrumBars(data, sampleRate, fftSize) {
-  if (!data?.length || !(sampleRate > 0) || !(fftSize > 0)) return RADIO_IDLE_BARS;
-  return BANDS.slice(0, -1).map((low, band) => {
-    const first = Math.max(1, Math.floor(low * fftSize / sampleRate));
-    const end = Math.min(data.length, Math.max(first + 1, Math.ceil(BANDS[band + 1] * fftSize / sampleRate)));
-    let peak = 0, sum = 0;
-    for (let bin = first; bin < end; bin++) {
-      peak = Math.max(peak, data[bin]);
-      sum += data[bin];
-    }
-    const energy = peak * .8 + (sum / Math.max(1, end - first)) * .2;
-    return BLOCKS[Math.max(0, Math.min(7, Math.round(energy / 255 * 7)))];
-  }).join('');
+  return spectrumBars(readMusicSpectrum(data, sampleRate, fftSize));
 }
 
 export function createRadioEqualizer({
@@ -31,6 +21,7 @@ export function createRadioEqualizer({
   let context = null, source = null, analyser = null, spectrum = null;
   let frame = null, lastSample = -Infinity, destroyed = false, buffering = false;
   let controllerPlaying = false, resumePending = null, generation = 0;
+  let music = SILENT_MUSIC;
   const disposers = [];
   const listen = (node, event, handler) => {
     node?.addEventListener?.(event, handler);
@@ -41,7 +32,7 @@ export function createRadioEqualizer({
     return preference === undefined ? Boolean(motionQuery?.matches) : preference === 'true';
   };
   const active = () => !destroyed && analyser && context?.state === 'running'
-    && controllerPlaying && !media.paused && !media.ended && !media.muted
+    && controllerPlaying && !media.paused && !media.ended && !media.muted && !media.seeking
     && media.volume > 0 && !buffering && !documentRef?.hidden && !reducedMotion();
   function paint(value) {
     if (display.textContent !== value) display.textContent = value;
@@ -51,6 +42,7 @@ export function createRadioEqualizer({
     if (frame !== null) cancelFrame(frame);
     frame = null;
     lastSample = -Infinity;
+    music = SILENT_MUSIC;
     display.dataset.active = 'false';
     paint(RADIO_IDLE_BARS);
   }
@@ -65,7 +57,8 @@ export function createRadioEqualizer({
     if (!active()) { stop(); return; }
     if (timestamp - lastSample >= 50) {
       analyser.getByteFrequencyData(spectrum);
-      paint(radioSpectrumBars(spectrum, context.sampleRate, analyser.fftSize));
+      music = readMusicSpectrum(spectrum, context.sampleRate, analyser.fftSize);
+      paint(spectrumBars(music));
       lastSample = timestamp;
     }
     schedule();
@@ -119,6 +112,7 @@ export function createRadioEqualizer({
   stop();
   return {
     unlock,
+    get reactivity() { return active() ? music : SILENT_MUSIC; },
     update(state) {
       controllerPlaying = Boolean(state.playing && state.enabled
         && !['paused', 'idle', 'empty', 'unavailable', 'tap-to-play'].includes(state.status));

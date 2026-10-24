@@ -5,6 +5,7 @@ import {
   radioSpectrumBars,
   RADIO_IDLE_BARS,
 } from '../public/game-test/src/radio-equalizer.js';
+import { SILENT_MUSIC } from '../public/game-test/src/music-reactivity.js';
 
 function fixture({ blocked = false, deferred = false, supported = true } = {}) {
   const media = new EventTarget();
@@ -32,6 +33,7 @@ function fixture({ blocked = false, deferred = false, supported = true } = {}) {
       this.sampleRate = 48000;
       this.destination = {};
       this.createdSources = 0;
+      this.createdAnalysers = 0;
       this.samples = 0;
       this.closes = 0;
       this.data = new Uint8Array(512);
@@ -59,6 +61,7 @@ function fixture({ blocked = false, deferred = false, supported = true } = {}) {
       return this.source;
     }
     createAnalyser() {
+      this.createdAnalysers++;
       return {
         frequencyBinCount: 512,
         getByteFrequencyData: (array) => {
@@ -156,6 +159,12 @@ test('one audio graph follows signal changes at a bounded rate across track chan
   f.context().data[2] = 255;
   f.frame(0);
   const bass = f.display.textContent;
+  const shared = f.equalizer.reactivity;
+  assert.ok(shared.bass > shared.treble);
+  assert.ok(Object.isFrozen(shared) && Object.isFrozen(shared.bands));
+  for (let i = 0; i < 50; i++) assert.equal(f.equalizer.reactivity, shared);
+  assert.equal(f.context().samples, 1, 'readers reuse one sample');
+  assert.equal(f.context().createdAnalysers, 1);
   assert.notEqual(bass, RADIO_IDLE_BARS);
   f.context().data.fill(0);
   f.context().data[180] = 255;
@@ -166,6 +175,7 @@ test('one audio graph follows signal changes at a bounded rate across track chan
   assert.equal(f.context().samples, 2);
   f.media.dispatchEvent(new Event('emptied'));
   assert.equal(f.display.textContent, RADIO_IDLE_BARS);
+  assert.equal(f.equalizer.reactivity, SILENT_MUSIC);
   f.playing();
   await f.equalizer.unlock();
   assert.equal(
@@ -207,6 +217,7 @@ test('pause, mute, zero volume, buffering, end and hidden tabs clear and stop th
     assert.equal(f.display.textContent, RADIO_IDLE_BARS, reason);
     assert.equal(f.frames.size, 0, reason);
     assert.equal(f.display.dataset.active, 'false', reason);
+    assert.equal(f.equalizer.reactivity, SILENT_MUSIC, reason);
   }
   f.equalizer.destroy();
 });
@@ -218,6 +229,7 @@ test('reduced-motion changes disable animation and resume cleanly when opted bac
   f.playing();
   f.frame();
   f.reducedMotion(true);
+  assert.equal(f.equalizer.reactivity, SILENT_MUSIC);
   assert.equal(f.display.textContent, RADIO_IDLE_BARS);
   assert.equal(f.frames.size, 0);
   f.reducedMotion(false);
@@ -239,6 +251,7 @@ test('cancelled frames cannot revive old loops after pause or destruction', asyn
   assert.equal(f.context().samples, 0, 'cancelled callbacks cannot sample');
   f.equalizer.destroy();
   staleFrame(200);
+  assert.equal(f.equalizer.reactivity, SILENT_MUSIC);
   assert.equal(f.frames.size, 0);
   assert.equal(f.display.textContent, RADIO_IDLE_BARS);
   f.media.dispatchEvent(new Event('playing'));
@@ -256,6 +269,7 @@ test('unavailable or blocked Web Audio leaves media playback untouched', async (
     assert.equal(f.media.paused, false);
     assert.equal(f.context()?.createdSources || 0, 0);
     assert.equal(f.frames.size, 0);
+    assert.equal(f.equalizer.reactivity, SILENT_MUSIC);
     f.equalizer.destroy();
   }
 });
@@ -268,4 +282,33 @@ test('destroy during a pending resume cannot capture the audio element later', a
   assert.equal(await unlocking, false);
   assert.equal(f.context().createdSources, 0);
   assert.equal(f.frames.size, 0);
+});
+
+test('seeking stays quiet through controller updates and resumes only with a fresh sample', async () => {
+  const f = fixture();
+  await f.equalizer.unlock();
+  f.playing();
+  f.context().data[2] = 255;
+  f.frame(0);
+  assert.ok(f.equalizer.reactivity.bass > 0);
+  f.media.seeking = true;
+  f.media.dispatchEvent(new Event('seeking'));
+  f.equalizer.update({ playing: true, enabled: true, status: 'playing' });
+  assert.equal(f.frames.size, 0);
+  assert.equal(f.equalizer.reactivity, SILENT_MUSIC);
+  f.context().data.fill(0);
+  f.context().data[180] = 255;
+  f.media.seeking = false;
+  f.media.dispatchEvent(new Event('seeked'));
+  assert.equal(f.equalizer.reactivity, SILENT_MUSIC);
+  f.frame(60);
+  assert.equal(f.equalizer.reactivity.bass, 0);
+  assert.ok(f.equalizer.reactivity.treble > 0);
+  f.context().state = 'suspended';
+  assert.equal(
+    f.equalizer.reactivity,
+    SILENT_MUSIC,
+    'suspension is visible before another frame',
+  );
+  f.equalizer.destroy();
 });

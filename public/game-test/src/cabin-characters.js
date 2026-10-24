@@ -27,7 +27,7 @@ export function preloadCabinCharacters() {
 
 /** The same action/frame decision as portraits, projected into dedicated side-view art. */
 export function drawCabinCharacter(ctx, options = {}) {
-  const { name, localAction, frame, animationFrame } = resolveCharacterPose(options);
+  const { name, localAction, frame, animationFrame, musicBob } = resolveCharacterPose(options);
   if (name === 'chana' && CHANA_WEAPON_ACTIONS.includes(localAction)) {
     if (!drawChanaWeapon(ctx, { ...options, weapon: localAction, view: 'cabin', animationFrame })) return false;
     return { character: name, action: localAction, frame, animationFrame, ready: true };
@@ -42,7 +42,7 @@ export function drawCabinCharacter(ctx, options = {}) {
   const [sx, sy, sw, sh] = localAction === 'rush' ? [animationFrame * 443, name === 'arisu' ? 0 : 446, 443, name === 'arisu' ? 438 : 441] : sheet.sourceRects[row][column];
   const { x = 0, y = 0, width = 40, height = 34, time = 0, animate = true } = options;
   const upbeat = ['cheer', 'point', 'hearts'].includes(localAction);
-  const bob = animate ? Math.sin(time * (upbeat ? 8 : 4)) * height * (upbeat ? .018 : .007) : 0;
+  const bob = musicBob !== null ? musicBob * height : animate ? Math.sin(time * (upbeat ? 8 : 4)) * height * (upbeat ? .018 : .007) : 0;
   const scale = localAction === "rush" ? Math.min(width / 560, height / 455) : Math.min(width / 314, height / 238);
   const dx = Math.round(x), dy = Math.round(y + height - sh * scale + bob);
   const dw = Math.round(sw * scale), dh = Math.round(sh * scale);

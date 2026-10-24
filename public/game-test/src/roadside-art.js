@@ -1,3 +1,4 @@
+import { SILENT_MUSIC } from './music-reactivity.js';
 /** Illustrated roadway objects. x is center; y is the object's ground line. */
 const frame = (crop, width, height) => Object.freeze({
   crop: Object.freeze(crop), width, height,
@@ -125,6 +126,7 @@ function drawSurfaceWeather(ctx, type, weather, season, time) {
 export function drawRoadsideObject(ctx, {
   type = '', x = 0, y = 0, time = 0, scale = 1,
   weather = 'sunny', season = 'summer', charging = false,
+  music = SILENT_MUSIC,
 } = {}) {
   const selected = name(type);
   const sprite = Object.hasOwn(ROADSIDE_ART.frames, selected)
@@ -142,6 +144,14 @@ export function drawRoadsideObject(ctx, {
   ctx.translate(Math.round(x - sprite.width * size / 2), Math.round(y - sprite.height * size));
   ctx.scale(size, size);
   ctx.drawImage(atlas, ...sprite.crop, 0, 0, sprite.width, sprite.height);
+  if (selected === 'ev' && music.active && music.energy > 0) {
+    // Small highlights follow the painted canopy tubes, clear of its sign text.
+    ctx.save(); ctx.globalAlpha *= music.energy * .5;
+    ctx.fillStyle = '#d0ffe2';
+    ctx.fillRect(15, 3, 83, 1);
+    ctx.fillRect(15, 17, 83, 1);
+    ctx.restore();
+  }
   // The beacon and charger lights blink within their existing painted lamps.
   if (selected === 'barrier' && Math.floor(t * 2) % 2 === 0) {
     ctx.fillStyle = '#fff6c3';

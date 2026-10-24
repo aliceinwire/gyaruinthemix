@@ -19,6 +19,7 @@ import { prepareRouteArt, prepareGameArt } from "./src/resources.js";
 import { bindGameInput } from "./src/input.js";
 import { createSceneUI } from "./src/scene-ui.js";
 import { createGameAudio } from "./src/audio.js";
+import { SILENT_MUSIC } from './src/music-reactivity.js';
 import { getDistricts, getDistrictScene } from "./src/district-art.js";
 import {
   CAR_CATALOG,
@@ -1049,7 +1050,8 @@ function frame(now) {
     toastTime -= dt;
     if (toastTime <= 0) $("#toast").classList.remove("on");
   }
-  const crewVisuals = resolveCrewVisuals(state, { time: visualTime, reducedMotion, action: screen === "finale" ? "cheer" : undefined });
+  const musicLevels = !paused && !reducedMotion && ['menu', 'playing'].includes(screen) ? audio.reactivity : SILENT_MUSIC;
+  const crewVisuals = resolveCrewVisuals(state, { time: visualTime, reducedMotion, music: musicLevels, action: screen === "finale" ? "cheer" : undefined });
   if (screen === "map") {
     // The directly selectable DOM map owns this screen; do not redraw a hidden canvas.
   } else if (screen === "finale")
@@ -1069,6 +1071,7 @@ function frame(now) {
       menu: screen === "menu",
       crewVisuals,
       reducedMotion,
+      music: musicLevels,
     });
   if (screen === "playing") { drawRoadFeedback(ctx, roadFeedback, state, { reducedMotion }); drawSurvival(ctx, state, visualTime, reducedMotion); }
   const portraits = $("#crew-actions").getContext("2d");

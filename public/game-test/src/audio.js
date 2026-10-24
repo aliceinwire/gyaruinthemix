@@ -1,5 +1,6 @@
 import { loadGameAudioConfig } from './game-audio-config.js';
 import { createCarStereo } from './car-stereo.js';
+import { SILENT_MUSIC } from './music-reactivity.js';
 /** One built-in player for the whole game. Availability never blocks gameplay. */
 export function createGameAudio({ loadConfig = loadGameAudioConfig, streamingFactory = createStreamingAudio, ...options }) {
   const ready = Promise.resolve().then(loadConfig).then(value => value === true).catch(() => false);
@@ -11,6 +12,7 @@ export function createGameAudio({ loadConfig = loadGameAudioConfig, streamingFac
     pause: (...args) => { if (!destroyed) return active.pause(...args); },
     beep: (...args) => { if (!destroyed) return active.beep(...args); },
     get enabled() { return !destroyed && active.enabled; },
+    get reactivity() { return destroyed ? SILENT_MUSIC : active.reactivity || SILENT_MUSIC; },
     destroy() { if (!destroyed) { destroyed = true; active.destroy(); } },
   };
 }
@@ -20,6 +22,7 @@ export function createStreamingAudio(options) {
     music,
     onEnabledChange = () => {},
     canPlay = () => true,
+    stereoFactory = createCarStereo,
     AudioContextClass = globalThis.AudioContext ||
       globalThis.webkitAudioContext,
   } = options;
@@ -31,7 +34,7 @@ export function createStreamingAudio(options) {
   const sync = () => {
     onEnabledChange(enabled);
   };
-  const stereo = createCarStereo({
+  const stereo = stereoFactory({
     mount: music,
     canPlay,
     AudioContextClass,
@@ -83,6 +86,7 @@ export function createStreamingAudio(options) {
     unlock,
     pause,
     beep,
+    get reactivity() { return destroyed ? SILENT_MUSIC : stereo.equalizer.reactivity; },
     get enabled() {
       return enabled;
     },
