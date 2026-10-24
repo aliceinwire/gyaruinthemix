@@ -1,4 +1,5 @@
 /** One-life, seeded club tour. Weapon rules and previews share the same specifications. */
+import { resetCrewWeaponGesture, requestCrewWeaponGesture } from './crew-weapon-state.js';
 import { ENCOUNTER_RULES } from './encounter-director.js';
 import { decorateEncounter } from './street-culture.js';
 
@@ -215,6 +216,7 @@ export function survivalView(state) {
 export function openSurvivalDraft(state) {
   if (state.status !== 'playing' || !survivalOffers(state).length) return false;
   state.status = 'draft'; state.boosting = state.shooting = state.charging = false;
+  resetCrewWeaponGesture(state);
   if (state.rushing) state.rushCooldown = Math.max(state.rushCooldown, state.rushRecovery ?? 5);
   state.rushing = false; state.rushTime = 0; state._rushHeld = false;
   state.events.push({ type: 'rank-up', rank: state.survival.level + 2 });
@@ -338,6 +340,7 @@ export function survivalStep(state, dt, strike) {
     const clock = `${kind}Clock`, stats = survivalWeaponStats(state, kind);
     s[clock] = Math.max(0, (s[clock] || 0) - dt);
     if (stats && !s[clock] && fireArea(kind, stats)) {
+      requestCrewWeaponGesture(state, kind);
       s[clock] = stats.interval;
       if (kind === 'cassette') for (let pulse = 1; pulse < stats.pulses; pulse++)
         s.cassetteLoops.push({ delay: .28 * pulse, distance: state.distance, stats: { ...stats, damage: stats.damage * .5 } });

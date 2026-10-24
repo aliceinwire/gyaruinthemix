@@ -54,6 +54,8 @@ test('one earned fan does not imply an invented crowd', () => {
 test('optional connected console art cannot block starting the game', async () => {
   const OriginalImage = globalThis.Image;
   globalThis.Image = class {
+    naturalWidth = 960;
+    naturalHeight = 540;
     set src(value) {
       if (!value) return;
       queueMicrotask(() => {

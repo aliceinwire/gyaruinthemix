@@ -30,6 +30,7 @@ import { extname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { checkRadioSpectrum } from './radio-spectrum.mjs';
+import { checkClubResume } from './club-resume.mjs';
 import { releaseVersion } from '../../src/data/release.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
@@ -298,6 +299,7 @@ const browser = await chromium.launch({
 });
 try {
   await checkRadioSpectrum(browser, { root, csp });
+  await checkClubResume(browser, { root, csp });
   for (const [width, height] of [
     [320, 740],
     [390, 667],

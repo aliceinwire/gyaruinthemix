@@ -63,6 +63,7 @@ import {
 import { questionForStage } from "./src/questions.js";
 import { render, drawCar } from "./src/renderer.js";
 import { drawMap, drawFinale, preloadJourneyMap, hitTestMapChoice } from "./src/campaign.js";
+import { getClubArt } from './src/club-art.js';
 await initializeLanguage();
 
 const $ = (s) => document.querySelector(s),
@@ -132,20 +133,40 @@ function saveTour() {
   if (!result.persisted) storageWarning();
 }
 syncResume();
-$("#resume-tour").addEventListener("click", () => {
-  if (!ready || !savedTour) return;
-  state = isSurvival(savedTour) ? restoreNightfallSave(exportNightfallSave(savedTour)) : restoreCampaignSave(exportCampaignSave(savedTour));
-  if (!state) return;
-  storyDirector.beginRun();
-  applySettings();
-  survivalBest = isSurvival(state) ? survivalRecords.best(state.survival.day)?.score || 0 : 0;
-  roadChoice = state.routeOption;
-  if (!state.campaignStarted && state.routeIndex === 0 && state.distance === 0) {
-    setScreen("cars"); renderGarage(); $("#cars-ready").focus();
-  } else if (state.status === "won" && state.campaignComplete) showResult();
-  else if (state.status === "won") showResult();
-  else openMap(false);
-});
+let resumingTour = false, retryResume = false;
+async function resumeTour() {
+  if (!ready || !savedTour || resumingTour) return;
+  const restored = isSurvival(savedTour) ? restoreNightfallSave(exportNightfallSave(savedTour)) : restoreCampaignSave(exportCampaignSave(savedTour));
+  if (!restored) return;
+  resumingTour = true;
+  retryResume = false;
+  $("#story").disabled = $("#resume-tour").disabled = true;
+  $("#retry-art").hidden = true;
+  localizeText($("#loading"), "街の灯り、つけてるで…");
+  try {
+    // A fresh page has only the opening city's art. Load the saved destination
+    // before entering its map or set, and leave the save intact if loading fails.
+    await prepareGameArt(restored);
+    state = restored;
+    localizeText($("#loading"), "準備できたで。いつでも行こ！");
+    storyDirector.beginRun();
+    applySettings();
+    survivalBest = isSurvival(state) ? survivalRecords.best(state.survival.day)?.score || 0 : 0;
+    roadChoice = state.routeOption;
+    if (!state.campaignStarted && state.routeIndex === 0 && state.distance === 0) {
+      setScreen("cars"); renderGarage(); $("#cars-ready").focus();
+    } else if (state.status === "won") showResult();
+    else openMap(false);
+  } catch {
+    retryResume = true;
+    localizeText($("#loading"), "絵が読み込めへんかった。下のボタンでもう一回いこ。");
+    $("#retry-art").hidden = false;
+  } finally {
+    resumingTour = false;
+    $("#story").disabled = $("#resume-tour").disabled = false;
+  }
+}
+$("#resume-tour").addEventListener("click", resumeTour);
 const sceneUI = createSceneUI();
 const controls = bindGameInput({
   isPlaying: () => ["playing", "finale"].includes(screen),
@@ -273,6 +294,9 @@ function openMap(next = false) {
   localizeText($("#map-current-location"), previous ? previous.districtName : stageIndex ? "前のクラブ" : "出発ガレージ");
   localizeText($("#map-progress"), message("道のり {0} / {1} · {2}", [stageIndex + 1, JOURNEY_STAGE_COUNT, stage.cityName]));
   localizeText($("#map-next-club"), message("{0} / {1}", [stage.cityName, stage.club]));
+  const destinationClub = getClubArt(stage.club);
+  $('#map-club-art').src = destinationClub.src;
+  $('.map-goal').style.setProperty('--club-accent', destinationClub.accent);
   localizeText($("#map-club-distance"), stage.clubStop ? "この道を走るとクラブ到着" : "この街角 → もう1本の道 → クラブ到着");
   const choices = getJourneyChoices(stageIndex,state.seed);
   selectedNodeId = choices.find(node=>node.nodeId===(next?state.pendingJourneyNodeId:state.journeyNodeId))?.nodeId || choices[0].nodeId;
@@ -684,6 +708,9 @@ $("#quiz-continue").addEventListener("click", () => {
   say("ほな、クラブで会おな！");
 });
 function startClubSet(next) {
+  const venue = getClubArt(state.route.club);
+  $('#performance-panel').style.setProperty('--club-accent', venue?.accent || '#ff9ed3');
+  $('#performance-panel').style.setProperty('--club-floor', venue?.floor || '#201329');
   performanceSet = createPerformance(); performanceNext = next;
   setScreen('finale');
   localizeText($('#finale-home'), state.campaignComplete ? 'ランの記録を見る' : '次の街へ');
@@ -953,7 +980,7 @@ function handleEvents() {
     if (["collision", "hit"].includes(event.type)) {
       beep(110, 0.16);
       toast("いたっ！ロケットでかわして！");
-      say("運転は任せて！ちゃな、ハート頼むで！", "DJありねぇ / 運転");
+      say("おっと、立て直すで。前の道、もう一回確認や。", "DJありねぇ / 運転");
     }
     if (["charge-start", "station-enter"].includes(event.type)) {
       toast("充電所や！ Eを長押ししてな");
@@ -1022,6 +1049,7 @@ function frame(now) {
       totalFans: state.totalFans,
       performance: performanceView(performanceSet),
       club: state.route.club, complete: state.campaignComplete,
+      reducedMotion,
       width: 960,
       height: 540,
     });
@@ -1067,7 +1095,7 @@ async function loadGameArt() {
     console.error(error);
   }
 }
-$("#retry-art").addEventListener("click", loadGameArt);
+$("#retry-art").addEventListener("click", () => retryResume ? resumeTour() : loadGameArt());
 loadGameArt();
 document.querySelectorAll("[data-control]").forEach((b) => (b.disabled = true));
 Object.defineProperty(window, "__HYPERDRIVE__", {

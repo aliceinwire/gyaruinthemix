@@ -1,5 +1,6 @@
 import { isSurvival, createSurvival, SURVIVAL_STARTERS, survivalWeaponStats, queueSurvivalEcho, normalizeSurvivalSave, applySurvivalModifiers, recordSurvivalEvent, survivalStep, openSurvivalDraft, survivalEncounterPlan, finishSurvivalWave } from './survival.js';
 import { createEncounterPlan, updateEncounterActor, getEncounterPhase } from './encounter-director.js';
+import { resetCrewWeaponGesture, requestCrewWeaponGesture, advanceCrewWeaponGesture, settleCrewWeaponGesture } from './crew-weapon-state.js';
 import { DRIVING_PACE } from './pace.js';
 import { littleFindAt } from './street-culture.js';
 import { createRunBuild, normalizeRunBuild, getBuildModifiers, routeMissionProgress, settleRouteReward } from './run-build.js';
@@ -383,6 +384,7 @@ function restoreSnapshot(state, saved) {
   state.buildModifiers = getBuildModifiers(state);
   state.runId = validCampaignRunId(saved.runId) ? saved.runId : state.runId;
   state.campaignStarted = state.campaignStarted === true || saved.campaignStarted === true;
+  resetCrewWeaponGesture(state);
   stats(state);
 }
 export function createState({
@@ -515,6 +517,7 @@ export function createState({
     _fanSpawned: false,
     _fanId: null,
   };
+  resetCrewWeaponGesture(state);
   stats(state);
   state.runBuild = createRunBuild(state.garage.equipped);
   state.buildModifiers = getBuildModifiers(state);
@@ -540,6 +543,7 @@ export function chooseStartingWeapon(state, id) {
   state.projectiles = [];
   state.shotCooldown = 0;
   state.shooting = false;
+  resetCrewWeaponGesture(state);
   state._stageStart = snapshot(state);
   return true;
 }
@@ -596,6 +600,7 @@ function fire(state) {
   });
   if (!weapon) state.buildRuntime.chargedShot = 0;
   state.shotCooldown = weapon?.interval ?? state.shotInterval;
+  requestCrewWeaponGesture(state, "heart");
   emit(state, "shoot");
 }
 function hitTarget(state, target, damage = 1, chain = true, bypassGuard = false, source = "heart") {
@@ -683,6 +688,7 @@ export function cancelRush(state) {
 function finish(state, status, reason) {
   stopRush(state, "finish");
   state.status = status;
+  resetCrewWeaponGesture(state);
   state.reason = reason;
   state.boosting = state.shooting = state.charging = false;
   if (status === "won") {
@@ -698,6 +704,7 @@ function finish(state, status, reason) {
 }
 function step(state, input, dt) {
   state.elapsed += dt;
+  advanceCrewWeaponGesture(state, dt);
   state.rushGestureTime = Math.max(0, (state.rushGestureTime || 0) - dt);
   const environment = updateEnvironment(state, dt);
   state.invulnerability = Math.max(0, state.invulnerability - dt);
@@ -801,6 +808,7 @@ function step(state, input, dt) {
   moveEnemies(state, dt);
   survivalStep(state, dt, (target, damage, chain, bypass, source) => hitTarget(state, target, damage, chain, bypass, source));
   projectilesStep(state, dt);
+  settleCrewWeaponGesture(state);
   for (const item of state.entities) {
     if (item.type !== 'little-find' || item.resolved || state.altitude > 36) continue;
     if (previousDistance > item.distance + 18 || state.distance < item.distance - 18) continue;
@@ -861,6 +869,7 @@ function step(state, input, dt) {
   }
   if (isSurvival(state)) openSurvivalDraft(state);
   else openRpgDraft(state);
+  if (state.status !== "playing") resetCrewWeaponGesture(state);
 }
 /** Mutates state. Pause belongs to caller: do not call update while paused. */
 export function update(state, input = {}, dt = 0) {
@@ -884,6 +893,7 @@ export function beginClubQuiz(state) {
   state._quizAnswered = false;
   state.pendingQuiz = { id: `club-${state.routeIndex}-fan`, entityId: `club-${state.routeIndex}`, routeIndex: state.routeIndex, cityId: state.route.cityId, club: true };
   state.status = "quiz";
+  resetCrewWeaponGesture(state);
   state.events = [];
   emit(state, "quiz", { ...state.pendingQuiz });
   return true;

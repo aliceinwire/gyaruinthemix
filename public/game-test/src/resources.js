@@ -3,6 +3,7 @@ import { preloadScenery, isSceneryReady } from "./scenery.js";
 import { getDistrictScene, preloadDistrictArt } from "./district-art.js";
 import { preloadSprites } from "./renderer.js";
 import { preloadCampaign } from "./campaign.js";
+import { preloadClubArt } from './club-art.js';
 export async function prepareRouteArt({
   cityId,
   locationIndex = 0,
@@ -11,6 +12,7 @@ export async function prepareRouteArt({
   await Promise.all([
     preloadScenery([cityId]),
     preloadDistrictArt(cityId, locationIndex, season),
+    preloadClubArt([cityId]),
   ]);
   if (
     !getDistrictScene(cityId, locationIndex) &&
@@ -26,6 +28,6 @@ export async function prepareGameArt(state) {
       season: state.season,
     }),
     preloadSprites(),
-    preloadCampaign(),
+    preloadCampaign([state.route.cityId]),
   ]);
 }
