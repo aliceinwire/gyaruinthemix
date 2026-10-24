@@ -664,6 +664,7 @@ try {
       version: 1,
       autoHearts: false,
       assistMode: false,
+      musicDrive: false,
       reducedMotion: true,
     };
     assert.deepEqual(

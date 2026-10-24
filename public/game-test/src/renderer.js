@@ -250,6 +250,11 @@ export function drawSignalHeadliner(g, actor, x, y, time = 0, music = SILENT_MUS
   box(g, -18, -108, 36, 31, '#111321');
   box(g, -16, -106, 32, 25, guarded ? '#413951' : '#163a3a');
   box(g, -17, -108, 34, 2, color);
+  if (!restored && (actor.musicCue || actor.musicOpen)) {
+    box(g, -18, -119, 36, 8, actor.musicOpen ? '#9cf5d5' : '#ffe1a2');
+    g.fillStyle = '#111321'; g.font = '700 7px monospace'; g.textAlign = 'center';
+    g.fillText('DROP', 0, -112);
+  }
   if (guarded) {
     for (let i = 0; i < 5; i++) box(g, -14, -102 + i * 4, 28, 2, '#b7a5d5');
   } else {

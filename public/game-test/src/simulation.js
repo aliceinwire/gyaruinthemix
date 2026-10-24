@@ -2,6 +2,7 @@ import { isSurvival, createSurvival, SURVIVAL_STARTERS, survivalWeaponStats, que
 import { createEncounterPlan, updateEncounterActor, getEncounterPhase } from './encounter-director.js';
 import { resetCrewWeaponGesture, requestCrewWeaponGesture, advanceCrewWeaponGesture, settleCrewWeaponGesture } from './crew-weapon-state.js';
 import { DRIVING_PACE } from './pace.js';
+import { createMusicDrive, updateMusicDrive, applyMusicEncounter } from './music-drive.js';
 import { littleFindAt } from './street-culture.js';
 import { createRunBuild, normalizeRunBuild, getBuildModifiers, routeMissionProgress, settleRouteReward } from './run-build.js';
 import { normalizeRpg, recordRpgEvent, openRpgDraft } from './tour-rpg.js';
@@ -290,7 +291,7 @@ function roadSettings(state) {
 /** Enemy distance is the authoritative moving position for renderer, hits and collisions. */
 function moveEnemies(state, dt) {
   for (const target of state.entities) {
-    if (target.directorManaged) { updateEncounterActor(target, state, dt); continue; }
+    if (target.directorManaged) { updateEncounterActor(target, state, dt); applyMusicEncounter(target, state); continue; }
     if (target.motionBaseDistance === undefined || target.converted || target.cleared) continue;
     target.motionOffset = Math.sin(state.elapsed * target.motionRate + target.motionPhase) * target.motionAmplitude;
     target.distance = target.motionBaseDistance + target.motionOffset;
@@ -493,6 +494,8 @@ export function createState({
     runId: validCampaignRunId(runId) ? runId : `run:${numericSeed.toString(16)}`,
     campaignStarted: campaignStarted === true,
     assistMode: false,
+    musicDriveEnabled: false,
+    musicDrive: createMusicDrive(),
     rpg: normalizeRpg(null),
     _rng:
       (numericSeed ^
@@ -539,7 +542,7 @@ export function createState({
 /** Starting equipment is chosen once in the garage, before the run begins. */
 export function chooseStartingWeapon(state, id) {
   if (!isSurvival(state) || !SURVIVAL_STARTERS.some(item => item.id === id) || state.status !== "playing" || state.campaignStarted || state.routeIndex !== 0 || state.distance !== 0 || state.elapsed !== 0 || state.survival.level !== 0 || state.survival.xp !== 0) return false;
-  state.survival = { ...createSurvival(state.survival.day, id), recordEligible: state.survival.recordEligible !== false, assisted: state.survival.assisted === true };
+  state.survival = { ...createSurvival(state.survival.day, id), recordEligible: state.survival.recordEligible !== false, assisted: state.survival.assisted === true, musicDriven: state.survival.musicDriven === true };
   state.projectiles = [];
   state.shotCooldown = 0;
   state.shooting = false;
@@ -742,7 +745,8 @@ function step(state, input, dt) {
     environment.speed *
     (state.rushing ? RUSH_SPEED_MULTIPLIER : 1) *
     (state.hitSlow > 0 ? 0.76 : 1) *
-    (state.landingRecovery > 0 ? 0.8 : 1);
+    (state.landingRecovery > 0 ? 0.8 : 1) *
+    state.musicDrive.multiplier;
   state.atStation = Boolean(station);
   state.stationId = station?.id ?? null;
   const wasCharging = state.charging;
@@ -873,13 +877,14 @@ function step(state, input, dt) {
   if (state.status !== "playing") resetCrewWeaponGesture(state);
 }
 /** Mutates state. Pause belongs to caller: do not call update while paused. */
-export function update(state, input = {}, dt = 0) {
+export function update(state, input = {}, dt = 0, transport = null) {
   state.events = [];
   if (state.status !== "playing" || !Number.isFinite(dt) || dt <= 0)
     return state;
   beginCampaign(state);
   state.buildModifiers = getBuildModifiers(state);
   applySurvivalModifiers(state);
+  updateMusicDrive(state, transport, dt);
   let remaining = dt;
   while (remaining > 1e-10 && state.status === "playing") {
     const delta = Math.min(FIXED_STEP, remaining);
@@ -976,6 +981,7 @@ export function nextRoute(state, routeOption = "scenic", journeyNodeId = null) {
   });
   restoreSnapshot(next, snapshot(state));
   next.assistMode = state.assistMode === true;
+  next.musicDriveEnabled = state.musicDriveEnabled === true;
   if (isSurvival(next)) { next.survival.wave = 0; next.survival.waveStats = Array.from({ length: 6 }, () => ({ kills: 0, hits: 0 })); next.survival.settledWaves = []; next.survival.gems = []; next.survival.receipts = []; next.survival.echoPending = null; next.survival.cassetteLoops = []; }
   next.stageSignals = 0;
   next.locationIndex = getJourneyNode(next.journeyNodeId).locationIndex;
@@ -1007,6 +1013,7 @@ export function retryRoute(state) {
   });
   restoreSnapshot(next, state._stageStart);
   next.assistMode = state.assistMode === true;
+  next.musicDriveEnabled = state.musicDriveEnabled === true;
   next._stageStart = snapshot(next);
   emit(next, "stage-retry", { routeIndex: next.routeIndex });
   Object.assign(state, next);
@@ -1186,6 +1193,7 @@ export function changeRouteBeforeStart(state, routeOption = "scenic", environmen
   const selectedLocation = next.locationIndex;
   restoreSnapshot(next, snapshot(state));
   next.assistMode = state.assistMode === true;
+  next.musicDriveEnabled = state.musicDriveEnabled === true;
   next.locationIndex = selectedLocation;
   next._stageStart = snapshot(next);
   Object.assign(state, next);

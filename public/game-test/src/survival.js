@@ -53,7 +53,7 @@ export function dailySurvival(date = new Date()) {
 }
 export function createSurvival(day = '', startingWeapon = 'heart') {
   const weapon = SURVIVAL_STARTERS.some(item => item.id === startingWeapon) ? startingWeapon : 'heart';
-  return { version: SURVIVAL_VERSION, recordEligible: true, assisted: false, day, startingWeapon: weapon, xp: 0, level: 0, upgrades: { [weapon]: 1 }, evolutions: [],
+  return { version: SURVIVAL_VERSION, recordEligible: true, assisted: false, musicDriven: false, day, startingWeapon: weapon, xp: 0, level: 0, upgrades: { [weapon]: 1 }, evolutions: [],
     quizRoads: [], heat: 0, fever: 0, sinceHit: 0, seconds: 0, wave: 0, waveStats: Array.from({ length: 6 }, () => ({ kills: 0, hits: 0 })), settledWaves: [],
     cleanWaves: 0, kills: 0, elites: 0, bestMultiplier: 1, gems: [], receipts: [],
     flashClock: 0, vinylClock: 0, bassClock: 0, phoneClock: 0, cdClock: 0, cassetteClock: 0, cassetteLoops: [], echoClock: 0, echoPending: null, bestNotified: false };
@@ -70,6 +70,8 @@ export function normalizeSurvivalSave(value) {
   result.recordEligible = value.version === SURVIVAL_VERSION && (value.recordEligible === undefined || value.recordEligible === true);
   if (value.assisted !== undefined && typeof value.assisted !== 'boolean') return null;
   result.assisted = value.assisted === true;
+  if (value.musicDriven !== undefined && typeof value.musicDriven !== 'boolean') return null;
+  result.musicDriven = value.musicDriven === true;
   result.upgrades = {};
   let savedLevel = -1;
   for (const item of SURVIVAL_UPGRADES) {
@@ -431,9 +433,14 @@ export function survivalEncounterPlan(plan, state, stationRadius) {
   return result.sort((a,b) => a.distance - b.distance);
 }
 
+export function survivalRecordCategory(row) {
+  if (row.musicDriven) return row.assisted ? 'ミュージックドライブ · ゆったり' : 'ミュージックドライブ';
+  return row.assisted ? 'ゆったりツアー · 通常の記録とは別' : '通常ツアー';
+}
+
 export function survivalResult(state) {
   if (!isSurvival(state) || !(state.status === 'lost' || state.campaignComplete)) return null;
-  return { id: state.runId, version: SURVIVAL_VERSION, recordEligible: state.survival.recordEligible !== false, assisted: state.survival.assisted === true, day: state.survival.day, seed: state.seed,
+  return { id: state.runId, version: SURVIVAL_VERSION, recordEligible: state.survival.recordEligible !== false, assisted: state.survival.assisted === true, musicDriven: state.survival.musicDriven === true, day: state.survival.day, seed: state.seed,
     score: Math.floor(state.score), seconds: Math.round(state.survival.seconds), road: state.routeIndex + 1,
     waves: state.routeIndex * 6 + state.survival.wave + (state.campaignComplete ? 1 : 0),
     cleanWaves: state.survival.cleanWaves, kills: state.survival.kills, won: state.campaignComplete === true,
@@ -446,25 +453,26 @@ export function normalizeSurvivalRecords(value) {
   return value.filter(row => {
     if (!row || row.version !== SURVIVAL_VERSION || row.recordEligible === false || typeof row.id !== 'string' || row.id.length > 160 || seen.has(row.id) || !/^\d{4}-\d{2}-\d{2}$/.test(row.day) || !Number.isInteger(row.seed) || row.seed < 0 || row.seed > 0xffffffff) return false;
     if (row.assisted !== undefined && typeof row.assisted !== 'boolean') return false;
+    if (row.musicDriven !== undefined && typeof row.musicDriven !== 'boolean') return false;
     for (const key of ['score', 'seconds', 'road', 'waves', 'cleanWaves', 'kills']) if (!Number.isFinite(row[key]) || row[key] < 0 || row[key] > 1e8) return false;
     seen.add(row.id); return true;
-  }).map(row => ({ id: row.id, version: SURVIVAL_VERSION, assisted: row.assisted === true, day: row.day, seed: row.seed,
+  }).map(row => ({ id: row.id, version: SURVIVAL_VERSION, assisted: row.assisted === true, musicDriven: row.musicDriven === true, day: row.day, seed: row.seed,
     score: Math.floor(row.score), seconds: Math.floor(row.seconds), road: clamp(Math.floor(row.road), 1, 12),
     waves: clamp(Math.floor(row.waves), 0, 72), cleanWaves: clamp(Math.floor(row.cleanWaves), 0, 72), kills: Math.floor(row.kills), won: row.won === true,
     build: Object.fromEntries(SURVIVAL_UPGRADES.map(item => [item.id, clamp(Math.floor(Number(row.build?.[item.id]) || 0), 0, item.maxLevel)])),
     evolutions: SURVIVAL_EVOLUTIONS.map(item => item.id).filter(id => Array.isArray(row.evolutions) && row.evolutions.includes(id)) }))
     .sort((a,b) => b.day.localeCompare(a.day) || b.score - a.score || a.seconds - b.seconds)
-    .filter((row, index, rows) => rows.slice(0, index).filter(other => other.day === row.day && other.assisted === row.assisted).length < 5)
-    .filter((row, index, rows) => rows.slice(0, index).filter(other => other.assisted === row.assisted).length < 90);
+    .filter((row, index, rows) => rows.slice(0, index).filter(other => other.day === row.day && other.assisted === row.assisted && other.musicDriven === row.musicDriven).length < 5)
+    .filter((row, index, rows) => rows.slice(0, index).filter(other => other.assisted === row.assisted && other.musicDriven === row.musicDriven).length < 90);
 }
 export function createSurvivalRecords(storage) {
   const read = () => { try { return normalizeSurvivalRecords(storage?.getItem(SURVIVAL_RECORD_KEY)); } catch { return []; } };
-  return { read, best: (day, assisted = false) => read().find(row => row.day === day && row.assisted === assisted) || null,
+  return { read, best: (day, assisted = false, musicDriven = false) => read().find(row => row.day === day && row.assisted === assisted && row.musicDriven === musicDriven) || null,
     save(state) {
       const result = survivalResult(state), old = read();
       if (!result) return { persisted: false, best: false, records: old };
       if (!result.recordEligible) return { persisted: false, best: false, eligible: false, records: old };
-      const best = !old.some(row => row.day === result.day && row.assisted === result.assisted && row.score >= result.score);
+      const best = !old.some(row => row.day === result.day && row.assisted === result.assisted && row.musicDriven === result.musicDriven && row.score >= result.score);
       const records = normalizeSurvivalRecords([result, ...old.filter(row => row.id !== result.id)]);
       try { if (!storage) throw new Error('Storage unavailable'); storage.setItem(SURVIVAL_RECORD_KEY, JSON.stringify(records)); return { persisted: true, best, eligible: true, records }; }
       catch { return { persisted: false, best, eligible: true, records }; }
