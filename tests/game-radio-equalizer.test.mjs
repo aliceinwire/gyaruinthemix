@@ -312,3 +312,24 @@ test('seeking stays quiet through controller updates and resumes only with a fre
   );
   f.equalizer.destroy();
 });
+
+test('confirmed playback resumes the meter even while the media seek flag remains set', async () => {
+  const f = fixture();
+  await f.equalizer.unlock();
+  f.playing();
+  f.context().data[2] = 255;
+  f.frame(0);
+  f.media.seeking = true;
+  f.media.dispatchEvent(new Event('seeking'));
+  assert.equal(f.equalizer.reactivity, SILENT_MUSIC);
+  assert.equal(f.frames.size, 0);
+  f.context().data.fill(0);
+  f.context().data[180] = 255;
+  f.media.dispatchEvent(new Event('playing'));
+  f.equalizer.update({ playing: true, enabled: true, status: 'playing' });
+  f.frame(60);
+  assert.notEqual(f.display.textContent, RADIO_IDLE_BARS);
+  assert.equal(f.equalizer.reactivity.bass, 0);
+  assert.ok(f.equalizer.reactivity.treble > 0);
+  f.equalizer.destroy();
+});

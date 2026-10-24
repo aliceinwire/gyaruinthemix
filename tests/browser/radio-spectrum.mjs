@@ -157,6 +157,12 @@ export async function checkRadioSpectrum(browser, { root, csp }) {
     await page.waitForFunction(() => document.querySelector('.stereo-equalizer').textContent !== '▁▁▁▁▁');
     await page.evaluate(() => radioFixture.controller.seek(1));
     await page.waitForFunction(() => !radioFixture.media.seeking && audioFixture.reactivity.active);
+    await page.evaluate(() => {
+      Object.defineProperty(radioFixture.media, 'seeking', { configurable: true, get: () => true });
+      radioFixture.media.dispatchEvent(new Event('playing'));
+    });
+    await page.waitForFunction(() => radioFixture.media.seeking && audioFixture.reactivity.active);
+    await page.evaluate(() => { delete radioFixture.media.seeking; });
     await page.locator('[data-action="next"]').click();
     await page.waitForFunction(() => document.querySelector('.stereo-equalizer').textContent !== '▁▁▁▁▁');
     assert.equal(await page.locator('audio').count(), 1);

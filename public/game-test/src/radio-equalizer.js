@@ -19,7 +19,7 @@ export function createRadioEqualizer({
   cancelFrame = id => globalThis.cancelAnimationFrame(id),
 } = {}) {
   let context = null, source = null, analyser = null, spectrum = null;
-  let frame = null, lastSample = -Infinity, destroyed = false, buffering = false;
+  let frame = null, lastSample = -Infinity, destroyed = false, buffering = false, seeking = false;
   let controllerPlaying = false, resumePending = null, generation = 0;
   let music = SILENT_MUSIC;
   const disposers = [];
@@ -32,7 +32,7 @@ export function createRadioEqualizer({
     return preference === undefined ? Boolean(motionQuery?.matches) : preference === 'true';
   };
   const active = () => !destroyed && analyser && context?.state === 'running'
-    && controllerPlaying && !media.paused && !media.ended && !media.muted && !media.seeking
+    && controllerPlaying && !media.paused && !media.ended && !media.muted && !seeking
     && media.volume > 0 && !buffering && !documentRef?.hidden && !reducedMotion();
   function paint(value) {
     if (display.textContent !== value) display.textContent = value;
@@ -98,12 +98,13 @@ export function createRadioEqualizer({
       return resumePending;
     } catch { return false; }
   }
-  listen(media, 'playing', () => { buffering = false; controllerPlaying = true; sync(); });
+  // Playback events confirm resumed audio even if the media seek flag lags.
+  listen(media, 'playing', () => { seeking = false; buffering = false; controllerPlaying = true; sync(); });
   for (const event of ['pause', 'ended', 'emptied', 'error'])
     listen(media, event, () => { controllerPlaying = false; stop(); });
   for (const event of ['waiting', 'seeking'])
-    listen(media, event, () => { buffering = true; stop(); });
-  listen(media, 'seeked', () => { buffering = false; sync(); });
+    listen(media, event, () => { if (event === 'seeking') seeking = true; buffering = true; stop(); });
+  listen(media, 'seeked', () => { seeking = false; buffering = false; sync(); });
   listen(media, 'volumechange', sync);
   listen(documentRef, 'visibilitychange', sync);
   listen(motionQuery, 'change', sync);
