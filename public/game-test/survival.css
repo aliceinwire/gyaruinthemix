@@ -113,3 +113,13 @@ body[data-run-mode="survival"] #rpg-build { color: #aaf2df; }
  #draft-options small { padding-top: 3px; line-height: 1.35; }
  #draft-options .weapon-stats { font-size: 11px; }
 }
+
+.menu-assist { display: flex; align-items: center; gap: 8px; margin: 6px 0; font-size: 12px; cursor: pointer; max-width: 100%; }
+.menu-assist input { width: 20px; height: 20px; flex: none; accent-color: #ff9dd1; }
+.assist-record-note { color: #aaf2df; font-size: 12px; line-height: 1.4; margin: 6px 0; }
+@media (max-height:450px) {
+ .menu-assist { margin: 3px 0; font-size: 11px; }
+ #pause-overlay .modal-card { padding: 10px 14px; }
+ #pause-overlay .assist-setting { padding: 5px; margin: 5px 0; }
+ #pause-overlay .assist-record-note { font-size: 11px; margin: 4px 0; }
+}

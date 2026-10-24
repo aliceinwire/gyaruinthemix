@@ -75,6 +75,7 @@
             <p class="tagline">今夜の音は、うちらがつくる。</p>
             <div class="tour-ticket"><span>6 CLUBS</span><span>12 ROADS</span><span>ONE CREW</span></div>
             <p class="menu-copy">会社のルールで色をなくした街へ、うちらの音を。<br />平成ギャルとハードバウンスで、6つのフロアをつなご。</p>
+            <label class="menu-assist"><input id="menu-assist-mode" type="checkbox" aria-describedby="survival-record" /><span>ゆったりツアー / ダメージ軽減・記録は別</span></label>
             <div class="menu-actions"><button id="story" class="primary">新しい夜をはじめる</button><button id="resume-tour" hidden>この旅のつづきから</button></div>
             <p id="survival-record" class="survival-record"></p>
             <button id="retry-art" hidden>もう一回読み込むで</button>
@@ -164,7 +165,8 @@
       </section>
       <section id="pause-overlay" class="pause-overlay modal" hidden role="dialog" aria-modal="true" aria-labelledby="pause-title" tabindex="-1">
         <div class="pause-card modal-card"><p class="eyebrow">TAKE YOUR TIME</p><h2 id="pause-title">ちょい休憩しよ。</h2><p>夜は逃げへん。準備できたら、また一緒に。</p>
-          <label class="assist-setting"><input id="assist-mode" type="checkbox" /><span>ゆったりツアー<small>ぶつかった時のダメージを抑えて、街も音も楽しも。</small></span></label>
+          <label class="assist-setting"><input id="assist-mode" type="checkbox" aria-describedby="assist-record-note" /><span>ゆったりツアー<small>ぶつかった時のダメージを抑えて、街も音も楽しも。</small></span></label>
+          <p id="assist-record-note" class="assist-record-note" role="status"></p>
           <label class="assist-setting"><input id="reduced-motion" type="checkbox" /><span>画面の動きを控えめに<small>揺れや強いエフェクトを減らすで。</small></span></label>
           <div class="modal-actions"><button id="resume" class="primary">ほな、つづき行こ</button><button id="quit">タイトル戻ろか</button></div>
         </div>

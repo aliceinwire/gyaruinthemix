@@ -11,13 +11,16 @@ export function renderSurvivalResult(state, result, previous, host) {
     localizeText(caption, label); localizeText(strong, value); item.append(caption, strong); host.append(item);
   };
   host.replaceChildren(); host.classList.add('survival-results');
+  const category = document.createElement('p'); category.className = 'survival-record-note';
+  localizeText(category, row.assisted ? 'ゆったりツアー · 通常の記録とは別' : '通常ツアー');
+  host.append(category);
   stat('スコア', number(row.score, { useGrouping: true }));
   stat('生き抜いた時間', `${Math.floor(row.seconds / 60)}:${String(row.seconds % 60).padStart(2, '0')}`);
   stat('ノーダメージウェーブ', `${row.cleanWaves} / ${row.waves}`);
   stat('フロアへ招待', row.kills);
   if (result.eligible !== false) {
     const best = document.createElement('p'); best.className = 'survival-record-note';
-    localizeText(best, result.best ? '今日の自己ベスト！' : message('今日の自己ベストまで、あと {0}', [number(Math.max(0, (previous?.score || row.score) - row.score), { useGrouping: true })]));
+    localizeText(best, result.best ? row.assisted ? 'ゆったり自己ベスト更新！' : '今日の自己ベスト！' : message('今日の自己ベストまで、あと {0}', [number(Math.max(0, (previous?.score || row.score) - row.score), { useGrouping: true })]));
     host.append(best);
   }
   const build = document.createElement('p'); build.className = 'survival-build-recap';

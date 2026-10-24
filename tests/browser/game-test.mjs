@@ -417,11 +417,18 @@ try {
       '#menu h1',
       '#menu > .eyebrow',
       '#story',
+      '.menu-assist',
       '.language-picker',
       '.radio-dock',
     ]);
+    await page.locator('#menu-assist-mode').check();
+    assert.equal(await page.evaluate(() => __HYPERDRIVE__.snapshot().settings.assistMode), true);
+    assert.match(await page.locator('#survival-record').textContent(), /ゆったりツアー/);
+    assert.equal(await page.evaluate(key => localStorage.getItem(key), NIGHTFALL_SAVE_KEY), null);
+    await page.locator('#menu-assist-mode').uncheck();
     await page.locator('#story').click();
     assert.equal(await page.locator('#story-panel').isVisible(), true);
+    assert.equal(await page.evaluate(() => __HYPERDRIVE__.snapshot().state.survival.assisted), false);
     assert.equal(
       await page.locator('#story-panel').getAttribute('aria-modal'),
       'true',
@@ -642,7 +649,14 @@ try {
         .evaluate((el) => el === document.activeElement),
       true,
     );
-    assert.equal(await page.locator('#assist-mode').isDisabled(), true);
+    assert.equal(await page.locator('#assist-mode').isDisabled(), false);
+    await page.locator('#assist-mode').check();
+    assert.equal(await page.evaluate(() => __HYPERDRIVE__.snapshot().state.assistMode), true);
+    assert.equal(await page.evaluate(() => __HYPERDRIVE__.snapshot().state.survival.assisted), true);
+    await page.locator('#assist-mode').uncheck();
+    assert.equal(await page.evaluate(() => __HYPERDRIVE__.snapshot().state.assistMode), false);
+    assert.equal(await page.evaluate(() => __HYPERDRIVE__.snapshot().state.survival.assisted), true);
+    assert.match(await page.locator('#assist-record-note').textContent(), /このランはゆったり記録/);
     const expectedSettings = {
       version: 1,
       autoHearts: false,
@@ -757,6 +771,10 @@ try {
       await page.waitForFunction(
         () => globalThis.__HYPERDRIVE__?.snapshot().ready,
       );
+      const savedBeforePreference = await page.evaluate(key => localStorage.getItem(key), NIGHTFALL_SAVE_KEY);
+      await page.locator('#menu-assist-mode').check();
+      await page.locator('#menu-assist-mode').uncheck();
+      assert.equal(await page.evaluate(key => localStorage.getItem(key), NIGHTFALL_SAVE_KEY), savedBeforePreference);
       await resumeThroughLoading(page);
       await finishStory(page);
       assert.equal(
@@ -787,6 +805,9 @@ try {
       await page.waitForFunction(
         () => __HYPERDRIVE__.snapshot().screen === 'draft',
       );
+      const weaponPreview = page.locator('#draft-options button[data-perk-id="bass"]');
+      assert.match(await weaponPreview.textContent(), /前後の広い範囲/);
+      assert.match(await weaponPreview.locator('.evolution-recipe').textContent(), /選ぶと:.*Lv.2\/6/);
       assert.deepEqual(
         await page
           .locator('#draft-options button')
