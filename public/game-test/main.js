@@ -10,7 +10,8 @@ import { createSettingsStore } from './src/tour-settings.js';
 import { createStoryDirector } from './src/tour-director.js';
 import { RUN_MOD_CATALOG, getBuildOffers, buyRunMod, describeBuild, getRouteMission } from './src/run-build.js';
 import { getEncounterPhase } from './src/encounter-director.js';
-import { createPerformance, updatePerformance, performanceView } from './src/performance.js';
+import { createPerformance, updatePerformance, performanceView, suspendPerformance } from './src/performance.js';
+import { chartForTrack } from './src/track-charts.js';
 import { createRoadFeedback, captureRoadFeedback, updateRoadFeedback, drawRoadFeedback } from './src/road-feedback.js';
 import { JOURNEY_STAGE_COUNT, getJourneyChoices, getJourneyNode, getJourneyStage } from "./src/journey.js";
 import { selectCrewDialogue, selectCrewEvent } from "./src/crew-dialogue.js";
@@ -247,6 +248,7 @@ function setPause(value) {
   localizeText($("#pause"), paused ? "ほな、再開" : "ひと休み");
   accumulator = 0;
   if (paused) {
+    suspendPerformance(performanceSet);
     $("#resume").focus();
   } else {
     canvas.focus({ preventScroll: true });
@@ -868,6 +870,14 @@ $("#continue").addEventListener("click", () => {
 });
 // The encore is optional; leaving never changes already-earned completion credit.
 $("#finale-home").addEventListener("click", () => { const next = performanceNext; performanceNext = null; if (next) next(); else home(); });
+$('#performance-track').addEventListener('click', () => {
+  const track = audio.tracks.find(track => chartForTrack(track));
+  if (!track || screen !== 'finale' || paused) return;
+  releaseInput();
+  performanceSet = createPerformance(chartForTrack(track));
+  void audio.playTrack(track.id);
+  canvas.focus({ preventScroll: true });
+});
 function previewMission(node) {
   if (!node) return null;
   const preview = node.nodeId === state.journeyNodeId ? state : createState({ mode: state.mode, routeIndex: node.stageIndex, seed: state.seed, journeyNodeId: node.nodeId, ...mapClimate });
@@ -1036,13 +1046,14 @@ function frame(now) {
     refreshCrewDialogue();
   }
   if (screen === "finale" && !paused) {
-    updatePerformance(performanceSet, input, dt);
+    updatePerformance(performanceSet, input, dt, audio.transport);
     const view = performanceView(performanceSet);
     localizeText($("#performance-title"), view.title);
     localizeText($("#performance-phase"), view.phase);
     $("#performance-progress").style.width = `${view.progress * 100}%`;
-    const completed = `${view.hits} / 8 フレーズ · ファン ${state.totalFans}人 · フロアの仲間 ${state.gyaruConverted}人`;
+    const completed = message('{0} / {1} フレーズ · ファン {2}人 · フロアの仲間 {3}人', [view.hits, view.total, state.totalFans, state.gyaruConverted]);
     if ($("#performance-score").textContent !== t(completed)) localizeText($("#performance-score"), completed);
+    $('#performance-track').hidden = !audio.tracks.some(track => chartForTrack(track));
     document.querySelectorAll("[data-control]").forEach(button => button.classList.toggle("suggested", button.dataset.control === view.action));
   }
   if (screen === "playing" && !paused) updateRoadFeedback(roadFeedback, dt);
@@ -1050,7 +1061,7 @@ function frame(now) {
     toastTime -= dt;
     if (toastTime <= 0) $("#toast").classList.remove("on");
   }
-  const musicLevels = !paused && !reducedMotion && ['menu', 'playing'].includes(screen) ? audio.reactivity : SILENT_MUSIC;
+  const musicLevels = !paused && !reducedMotion && ['menu', 'playing', 'finale'].includes(screen) ? audio.reactivity : SILENT_MUSIC;
   const crewVisuals = resolveCrewVisuals(state, { time: visualTime, reducedMotion, music: musicLevels, action: screen === "finale" ? "cheer" : undefined });
   if (screen === "map") {
     // The directly selectable DOM map owns this screen; do not redraw a hidden canvas.
@@ -1060,6 +1071,7 @@ function frame(now) {
       score: state.score,
       totalFans: state.totalFans,
       performance: performanceView(performanceSet),
+      music: musicLevels,
       club: state.route.club, complete: state.campaignComplete,
       reducedMotion,
       width: 960,

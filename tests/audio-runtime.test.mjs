@@ -221,3 +221,53 @@ test('streaming facade forwards its existing equalizer without starting playback
   assert.equal(audio.reactivity, SILENT_MUSIC);
   assert.equal(destroyed, 1);
 });
+
+test('chart controls share the stereo transport and do not create another player', async () => {
+  const calls = [];
+  const state = {
+    catalog: [{ id: 'track' }],
+    track: { id: 'track' },
+    currentTime: 5,
+    playing: true,
+    enabled: true,
+    status: 'playing',
+  };
+  const audio = createStreamingAudio({
+    music: new EventTarget(),
+    AudioContextClass: null,
+    stereoFactory: () => ({
+      controller: {
+        state,
+        selectTrack: (...args) => {
+          calls.push(args);
+          return Promise.resolve(true);
+        },
+      },
+      equalizer: {
+        unlock() {
+          calls.push('unlock');
+        },
+      },
+      destroy() {},
+    }),
+  });
+  assert.equal(audio.tracks, state.catalog);
+  assert.equal(audio.transport.currentTime, 5);
+  state.currentTime = 6;
+  assert.equal(
+    audio.transport.currentTime,
+    6,
+    'read the media clock fresh each frame',
+  );
+  state.status = 'buffering';
+  assert.equal(audio.transport.playing, false);
+  assert.equal(await audio.playTrack('track'), true);
+  assert.deepEqual(calls, [
+    'unlock',
+    ['track', { userGesture: true, autoplay: true }],
+  ]);
+  audio.destroy();
+  assert.equal(audio.transport, null);
+  assert.deepEqual(audio.tracks, []);
+  assert.equal(await audio.playTrack('track'), false);
+});
