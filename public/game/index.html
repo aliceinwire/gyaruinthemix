@@ -70,14 +70,14 @@
             ></canvas>
           </div>
           <div id="menu" class="screen-menu">
-            <div class="eyebrow">A GYARUINTHEMIX ROAD ROGUELITE</div>
+            <div id="development-label" class="eyebrow">体験版 / 開発中</div>
             <h1>NIGHTFALL<span>TOUR</span></h1>
             <p class="tagline">今夜の音は、うちらがつくる。</p>
+            <p id="development-notice" class="menu-guide">このゲームは開発中の体験版です。内容は今後変更されることがあります。感想やフィードバックを教えてね！</p>
             <div class="tour-ticket"><span>6 CLUBS</span><span>12 ROADS</span><span>ONE CREW</span></div>
             <p class="menu-copy">服も音楽も「みんなと同じ」を求められる街へ。<br />平成ギャルとハードバウンスで、6つのフロアをつなご。</p>
             <label class="menu-assist"><input id="menu-assist-mode" type="checkbox" aria-describedby="survival-record" /><span>ゆったりツアー / ダメージ軽減・記録は別</span></label>
             <div class="menu-actions"><button id="story" class="primary">新しい夜をはじめる</button><button id="resume-tour" hidden>この旅のつづきから</button></div>
-            <p class="menu-guide"><a id="demo-mode" href="/game/?demo=1">体験版で遊ぶ</a></p>
             <p id="survival-record" class="survival-record"></p>
             <p class="menu-guide">曲の展開で速度が最大±3%。ドロップでは音のゲートも開くで。</p>
             <button id="retry-art" hidden>もう一回読み込むで</button>
@@ -163,7 +163,7 @@
         <div class="draft-card modal-card"><p class="eyebrow">REMIX YOUR RUN</p><h2 id="draft-title">次の走り、どう盛る？</h2><p id="draft-copy">ひとつ選んで、この旅だけの組み合わせをつくろ。</p><div id="draft-options" class="draft-options"></div></div>
       </section>
       <section id="result" class="result modal" hidden role="dialog" aria-modal="true" aria-labelledby="result-title" tabindex="-1">
-        <div class="result-card modal-card"><p id="result-eyebrow" class="eyebrow"></p><h2 id="result-title"></h2><p id="result-copy"></p><div id="result-stats"></div><div class="modal-actions"><button id="continue" class="primary">次の音、集めに行こ</button><a id="demo-full" href="/game/" hidden>通常ツアーへ</a><button id="home">タイトル戻ろか</button></div></div>
+        <div class="result-card modal-card"><p id="result-eyebrow" class="eyebrow"></p><h2 id="result-title"></h2><p id="result-copy"></p><div id="result-stats"></div><div class="modal-actions"><button id="continue" class="primary">次の音、集めに行こ</button><button id="home">タイトル戻ろか</button></div></div>
       </section>
       <section id="pause-overlay" class="pause-overlay modal" hidden role="dialog" aria-modal="true" aria-labelledby="pause-title" tabindex="-1">
         <div class="pause-card modal-card"><p class="eyebrow">TAKE YOUR TIME</p><h2 id="pause-title">ちょい休憩しよ。</h2><p>夜は逃げへん。準備できたら、また一緒に。</p>
