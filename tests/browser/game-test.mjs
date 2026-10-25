@@ -392,6 +392,28 @@ try {
         ),
       );
     });
+    // Demo runs share the real UI but cannot consume or overwrite normal progress.
+    await page.goto(origin + '/game/?demo=1&lang=en');
+    await page.waitForFunction(() => globalThis.__HYPERDRIVE__?.snapshot().ready);
+    const demoKeys = [NIGHTFALL_SAVE_KEY, SAVE_KEY, STORY_SAVE_KEY, SURVIVAL_RECORD_KEY,
+      'gyaruinthemix-garage-meta-v1', SETTINGS_KEY];
+    await page.evaluate(keys => keys.forEach(key => localStorage.setItem(key, 'normal-progress-sentinel')), demoKeys);
+    await page.reload();
+    await page.waitForFunction(() => globalThis.__HYPERDRIVE__?.snapshot().ready);
+    assert.equal(await page.locator('#resume-tour').isVisible(), false);
+    assert.equal(await page.locator('#demo-mode').getAttribute('href'), '/game/?lang=en');
+    await assertFrameFits(page, ['#menu']);
+    await page.locator('#story').click();
+    await finishStory(page);
+    assert.equal(await page.locator('#car-select').isVisible(), true);
+    assert.equal((await page.evaluate(() => __HYPERDRIVE__.snapshot())).state.survival.recordEligible, false);
+    await page.locator('#cars-ready').click();
+    assert.equal(await page.locator('#tour-ribbon span').count(), 1);
+    await page.reload();
+    await page.waitForFunction(() => globalThis.__HYPERDRIVE__?.snapshot().ready);
+    assert.equal(await page.locator('#resume-tour').isVisible(), false);
+    assert.deepEqual(await page.evaluate(keys => keys.map(key => localStorage.getItem(key)), demoKeys), demoKeys.map(() => 'normal-progress-sentinel'));
+    await page.evaluate(keys => { keys.forEach(key => localStorage.removeItem(key)); localStorage.removeItem('gyaruinthemix-language-v1'); }, demoKeys);
     await page.goto(origin + '/game/');
     await page.waitForFunction(
       () => globalThis.__HYPERDRIVE__?.snapshot().ready,
