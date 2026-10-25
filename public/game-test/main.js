@@ -1,4 +1,4 @@
-import { setSurvivalAssistance, isSurvival, dailySurvival, survivalView, chooseSurvivalUpgrade, survivalMultiplier, survivalRecordCategory, createSurvivalRecords, SURVIVAL_STARTERS, SURVIVAL_UPGRADES } from './src/survival.js';
+import { setSurvivalAssistance, isSurvival, dailySurvival, survivalView, chooseSurvivalUpgrade, survivalMultiplier, survivalRecordCategory, createSurvivalRecords, SURVIVAL_STARTERS, SURVIVAL_UPGRADES, MUSIC_RULES_VERSION } from './src/survival.js';
 import { setMusicDrive, suspendMusicDrive } from './src/music-drive.js';
 import { createDrivingLessons, updateDrivingLessons, getDrivingCue } from './src/driving-lessons.js';
 import { createItemIcon } from './src/item-icons.js';
@@ -12,7 +12,7 @@ import { createStoryDirector } from './src/tour-director.js';
 import { RUN_MOD_CATALOG, getBuildOffers, buyRunMod, describeBuild, getRouteMission } from './src/run-build.js';
 import { getEncounterPhase } from './src/encounter-director.js';
 import { createPerformance, updatePerformance, performanceView, suspendPerformance } from './src/performance.js';
-import { chartForTrack } from './src/track-charts.js';
+import { chartForTrack, selectChartTrack } from './src/track-charts.js';
 import { createRoadFeedback, captureRoadFeedback, updateRoadFeedback, drawRoadFeedback } from './src/road-feedback.js';
 import { JOURNEY_STAGE_COUNT, getJourneyChoices, getJourneyNode, getJourneyStage } from "./src/journey.js";
 import { selectCrewDialogue, selectCrewEvent } from "./src/crew-dialogue.js";
@@ -198,7 +198,7 @@ function applySettings() {
   $('#menu-music-drive').checked = settings.musicDrive;
   localizeText($('#music-drive-note'), state.survival?.musicDriven ? 'このランは音で走る記録。途中で戻しても、通常の記録には入らへん。' : '曲が止まった時や、ほかの曲では通常の速度やで。');
   localizeText($('#assist-record-note'), isSurvival(state) && state.survival.assisted ? 'このランはゆったり記録。途中で戻しても、通常の記録には入らへん。' : 'ダメージを軽減。ゆったりの記録は、通常の記録と別に残るで。');
-  survivalBest = isSurvival(state) ? survivalRecords.best(state.survival.day, state.survival.assisted, state.survival.musicDriven)?.score || 0 : 0;
+  survivalBest = isSurvival(state) ? survivalRecords.best(state.survival.day, state.survival.assisted, state.survival.musicDriven, state.survival.musicVersion)?.score || 0 : 0;
   document.body.dataset.runMode = state.mode;
 }
 function saveSettings() {
@@ -737,7 +737,7 @@ function startClubSet(next) {
 function persistNightfallResult() {
   if (terminalRecord?.id === state.runId && terminalRecord.score === state.score) return terminalRecord;
   const sameRun = terminalRecord?.id === state.runId;
-  const previous = sameRun ? terminalRecord.previous : survivalRecords.best(state.survival.day, state.survival.assisted, state.survival.musicDriven);
+  const previous = sameRun ? terminalRecord.previous : survivalRecords.best(state.survival.day, state.survival.assisted, state.survival.musicDriven, state.survival.musicVersion);
   const result = survivalRecords.save(state);
   if (sameRun && terminalRecord.result.best) result.best = true;
   terminalRecord = { id: state.runId, score: state.score, previous, result };
@@ -831,7 +831,7 @@ function showResult() {
 function refreshSurvivalRecord() {
   const challenge = dailySurvival(), best = survivalRecords.best(challenge.day, settings.assistMode, settings.musicDrive);
   if (settings.musicDrive) {
-    const category = survivalRecordCategory({ musicDriven: true, assisted: settings.assistMode });
+    const category = survivalRecordCategory({ musicDriven: true, musicVersion: MUSIC_RULES_VERSION, assisted: settings.assistMode });
     localizeText($('#survival-record'), best ? message('{0} · 自己ベスト {1} · この端末', [category, number(best.score, { useGrouping: true })]) : message('{0} · 記録は別', [category]));
     return;
   }
@@ -883,7 +883,7 @@ $("#continue").addEventListener("click", () => {
 // The encore is optional; leaving never changes already-earned completion credit.
 $("#finale-home").addEventListener("click", () => { const next = performanceNext; performanceNext = null; if (next) next(); else home(); });
 $('#performance-track').addEventListener('click', () => {
-  const track = audio.tracks.find(track => chartForTrack(track));
+  const track = selectChartTrack(audio.tracks, audio.transport?.track);
   if (!track || screen !== 'finale' || paused) return;
   releaseInput();
   performanceSet = createPerformance(chartForTrack(track));
@@ -1026,7 +1026,7 @@ function handleEvents() {
       say("電池ない！次のEVで充電せな！");
     }
   }
-  if (crewEvent) { lastDialogueId = crewEvent.id; say(crewEvent.text,crewEvent.speaker,crewEvent.holdSeconds); }
+  if (crewEvent && (!crewEvent.id.startsWith('event:music-') || visualTime >= dialogueUntil)) { lastDialogueId = crewEvent.id; say(crewEvent.text,crewEvent.speaker,crewEvent.holdSeconds); }
 }
 function refreshCrewDialogue() {
   if (visualTime < dialogueUntil) return;
@@ -1066,7 +1066,12 @@ function frame(now) {
     $("#performance-progress").style.width = `${view.progress * 100}%`;
     const completed = message('{0} / {1} フレーズ · ファン {2}人 · フロアの仲間 {3}人', [view.hits, view.total, state.totalFans, state.gyaruConverted]);
     if ($("#performance-score").textContent !== t(completed)) localizeText($("#performance-score"), completed);
-    $('#performance-track').hidden = !audio.tracks.some(track => chartForTrack(track));
+    const track = selectChartTrack(audio.tracks, audio.transport?.track);
+    $('#performance-track').hidden = !track;
+    if (track) {
+      const label = message('{0} で開演', [track.title]);
+      if ($('#performance-track').textContent !== t(label)) localizeText($('#performance-track'), label);
+    }
     document.querySelectorAll("[data-control]").forEach(button => button.classList.toggle("suggested", button.dataset.control === view.action));
   }
   if (screen === "playing" && !paused) updateRoadFeedback(roadFeedback, dt);
@@ -1098,7 +1103,7 @@ function frame(now) {
       reducedMotion,
       music: musicLevels,
     });
-  if (screen === "playing") { drawRoadFeedback(ctx, roadFeedback, state, { reducedMotion }); drawSurvival(ctx, state, visualTime, reducedMotion); }
+  if (screen === "playing") { drawRoadFeedback(ctx, roadFeedback, state, { reducedMotion, music: musicLevels }); drawSurvival(ctx, state, visualTime, reducedMotion, musicLevels); }
   const portraits = $("#crew-actions").getContext("2d");
   portraits.clearRect(0, 0, 240, 128);
   for (const [i, character] of ["arisu", "chana"].entries())

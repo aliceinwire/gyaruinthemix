@@ -62,6 +62,9 @@ const ACTION = {
   rush: ['息合わせていくで！ ありねぇ、運転よろしく！', 'ふたりのタイミング、ぴったりやん！'],
 };
 const EVENTS = {
+  'music-drop': { priority: 47, lines: ['きた、この低音！ 次のフロアにも持っていこ。'] },
+  'music-break': { priority: 47, speaker: 'arisu', lines: ['音が引いたな。街の灯り、よう見える。'] },
+  'music-finale': { priority: 47, lines: ['この曲のラストや。今夜の景色ごと覚えとこ。'] },
   lost: { priority: 100, holdSeconds: 6, speaker: 'arisu', lines: ['安全なピットへ戻ろ。車もふたりも、いったん休憩や。'] },
   won: { priority: 100, holdSeconds: 6, speaker: 'arisu', lines: ['着いたで。ナビも招待も、ええ連携やったな。'] },
   collision: { priority: 90, speaker: 'arisu', lines: ['おっと、立て直すで。前の道、もう一回確認や。', 'ぶつかったな。落ち着いて、ハンドル戻すで。'] },
@@ -121,6 +124,7 @@ export function selectCrewEvent(events, context = {}) {
   let winner;
   for (const event of list) {
     const type = typeof event === 'string' ? event : event?.type;
+    if (type?.startsWith('music-') && (context.atStation || context.charging || context.energy < 20 || context.invulnerability > 0 || context.rushing || context.boosting)) continue;
     if (type === 'shoot' && context.mode === 'survival') continue;
     if (EVENTS[type] && (!winner || EVENTS[type].priority > EVENTS[winner].priority)) winner = type;
   }

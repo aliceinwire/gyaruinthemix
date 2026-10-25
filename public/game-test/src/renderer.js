@@ -1,5 +1,5 @@
 import { t } from './i18n.js';
-import { SILENT_MUSIC } from './music-reactivity.js';
+import { SILENT_MUSIC, weaponMusicLevel } from './music-reactivity.js';
 import { preloadArrivalFans, drawArrivalFans } from './arrival-fans.js';
 import { getThreatSignals } from './road-feedback.js';
 import { drawCultureProp, drawSuitUniform, drawRoutineHazard, drawLittleFind, drawFriendlyCat } from './street-culture-art.js';
@@ -416,6 +416,11 @@ export function render(
   // Hearts leave Chana's passenger-side hand, then follow the gameplay path.
   for (const shot of state.projectiles || []) {
     const {x,y}=heartVisualPosition(state,shot);
+    const glow = weaponMusicLevel('heart', music, reducedMotion);
+    if (glow) {
+      g.save(); g.globalAlpha = glow * .35;
+      text(g, "♥", x, y, 26, "#fff2fb"); g.restore();
+    }
     text(g, "♥", x, y, 22, "#ffa1d7");
     box(g, x - 10, y - 8, 7, 2, "#d867b3");
   }

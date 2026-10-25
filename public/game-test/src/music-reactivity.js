@@ -4,6 +4,13 @@ export const SILENT_MUSIC = Object.freeze({
   active: false, bands: Object.freeze([0, 0, 0, 0, 0]), bass: 0, mid: 0, treble: 0, energy: 0,
 });
 
+const WEAPON_BANDS = Object.freeze({ heart: 'mid', flash: 'treble', vinyl: 'mid', bass: 'bass', phone: 'treble', cd: 'treble', cassette: 'mid', echo: 'mid' });
+/** Presentation only: the same measured radio signal, with no attack-clock changes. */
+export function weaponMusicLevel(kind, music = SILENT_MUSIC, reducedMotion = false) {
+  const value = music?.[WEAPON_BANDS[kind]];
+  return !reducedMotion && music?.active && Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0;
+}
+
 export function readMusicSpectrum(data, sampleRate, fftSize) {
   if (!data?.length || !Number.isFinite(sampleRate) || sampleRate <= 0 ||
       !Number.isFinite(fftSize) || fftSize <= 0) return SILENT_MUSIC;
