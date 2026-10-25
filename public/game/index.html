@@ -76,9 +76,9 @@
             <div class="tour-ticket"><span>6 CLUBS</span><span>12 ROADS</span><span>ONE CREW</span></div>
             <p class="menu-copy">服も音楽も「みんなと同じ」を求められる街へ。<br />平成ギャルとハードバウンスで、6つのフロアをつなご。</p>
             <label class="menu-assist"><input id="menu-assist-mode" type="checkbox" aria-describedby="survival-record" /><span>ゆったりツアー / ダメージ軽減・記録は別</span></label>
-            <label class="menu-assist"><input id="menu-music-drive" type="checkbox" aria-describedby="survival-record" /><span>音で走る（試験） / 速度±3%・記録は別</span></label>
             <div class="menu-actions"><button id="story" class="primary">新しい夜をはじめる</button><button id="resume-tour" hidden>この旅のつづきから</button></div>
             <p id="survival-record" class="survival-record"></p>
+            <p class="menu-guide">曲の展開で速度が最大±3%。ドロップでは音のゲートも開くで。</p>
             <button id="retry-art" hidden>もう一回読み込むで</button>
             <p class="menu-guide">1ライフ、6つのクラブ、72ウェーブ。武器は自動。街の合間で保存、出発したら後戻りなし。</p>
             <div id="loading" class="loading" role="status">街の灯り、つけてるで…</div>
@@ -99,7 +99,7 @@
             <div class="wallet"><span>コイン</span><strong id="money">000</strong><div class="speed-meter"><i id="combo-bar"></i></div></div>
           </div>
         </section>
-        <div id="performance-panel" class="performance-panel" hidden><div><span id="performance-phase" class="eyebrow">THE FINAL SHOW</span><h2 id="performance-title">集めた音、全部鳴らそ。</h2><p id="performance-tip">飛ぶ・充電・加速でフロアを盛り上げよ。見てるだけでもOKやで。</p></div><div class="performance-meter"><i id="performance-progress"></i></div><p id="performance-score" aria-live="polite"></p><div class="performance-actions"><button id="performance-track" hidden>Chrome Bounce Ritual で開演</button><button id="finale-home">タイトル戻ろか</button></div></div>
+        <div id="performance-panel" class="performance-panel" hidden><div><span id="performance-phase" class="eyebrow">THE FINAL SHOW</span><h2 id="performance-title">集めた音、全部鳴らそ。</h2><p id="performance-tip">飛ぶ・充電・加速でフロアを盛り上げよ。見てるだけでもOKやで。</p></div><div class="performance-meter"><i id="performance-progress"></i></div><p id="performance-score" aria-live="polite"></p><div class="performance-actions"><button id="performance-track" hidden>今の曲の続きでアンコール</button><button id="finale-home">タイトル戻ろか</button></div></div>
         <section class="below-stage" aria-label="ふたりの会話と操作">
           <div class="crew">
             <div class="crew-portraits"><canvas id="crew-actions" width="240" height="128" role="img" aria-label="運転するDJありねぇとハートを送るDJちゃな"></canvas></div>
@@ -168,8 +168,6 @@
         <div class="pause-card modal-card"><p class="eyebrow">TAKE YOUR TIME</p><h2 id="pause-title">ちょい休憩しよ。</h2><p>夜は逃げへん。準備できたら、また一緒に。</p>
           <label class="assist-setting"><input id="assist-mode" type="checkbox" aria-describedby="assist-record-note" /><span>ゆったりツアー<small>ぶつかった時のダメージを抑えて、街も音も楽しも。</small></span></label>
           <p id="assist-record-note" class="assist-record-note" role="status"></p>
-          <label class="assist-setting"><input id="music-drive" type="checkbox" aria-describedby="music-drive-note" /><span>音で走る（試験） / 速度±3%・記録は別<small>曲の展開で速度が最大±3%。ドロップでは音のゲートも開くで。</small></span></label>
-          <p id="music-drive-note" class="assist-record-note" role="status"></p>
           <label class="assist-setting"><input id="reduced-motion" type="checkbox" /><span>画面の動きを控えめに<small>揺れや強いエフェクトを減らすで。</small></span></label>
           <div class="modal-actions"><button id="resume" class="primary">ほな、つづき行こ</button><button id="quit">タイトル戻ろか</button></div>
         </div>
@@ -179,7 +177,7 @@
       </section>
 
     <section class="radio-dock" aria-label="カーステレオ"><div id="music" aria-label="ギャルインザミックス 音楽プレイヤー"></div></section>
-    <small class="game-copyright">copyright 2026 ギャルインザミックス. all rights reserved.<span data-release-version="1.2.1" translate="no"> · v1.2.1</span></small>
+    <small class="game-copyright">copyright 2026 ギャルインザミックス. all rights reserved.<span data-release-version="1.2.1" translate="no"> · v1.2.1</span> · <a id="streaming-guidelines" href="/streaming-guidelines/" target="_blank" rel="noopener">実況・配信ルール</a></small>
     </main>
     <script type="module" src="./main.js"></script>
   </body>

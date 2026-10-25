@@ -14,6 +14,7 @@ export const defaultPublicPaths = [
   '/contact/',
   '/legal/',
   '/privacy/',
+  '/streaming-guidelines/',
 ];
 
 export const publicPaths = [

@@ -1,18 +1,17 @@
 import { setSurvivalAssistance, isSurvival, dailySurvival, survivalView, chooseSurvivalUpgrade, survivalMultiplier, survivalRecordCategory, createSurvivalRecords, SURVIVAL_STARTERS, SURVIVAL_UPGRADES, MUSIC_RULES_VERSION } from './src/survival.js';
-import { setMusicDrive, suspendMusicDrive } from './src/music-drive.js';
+import { useCurrentMusicRules, suspendMusicDrive } from './src/music-drive.js';
 import { createDrivingLessons, updateDrivingLessons, getDrivingCue } from './src/driving-lessons.js';
 import { createItemIcon } from './src/item-icons.js';
 import { drawSurvival, renderSurvivalResult } from './src/survival-ui.js';
 import { localizeText, localizeAttribute, localizeHTML, initializeLanguage, installLanguageSelectors } from './src/localized-ui.js';
-import { message, number, t } from './src/i18n.js';
+import { i18n, message, number, t } from './src/i18n.js';
 import { installFrame } from './src/frame.js';
 import { RUN_STYLES, chooseRunStyle, getRpgView, choosePerk } from './src/tour-rpg.js';
 import { createSettingsStore } from './src/tour-settings.js';
 import { createStoryDirector } from './src/tour-director.js';
 import { RUN_MOD_CATALOG, getBuildOffers, buyRunMod, describeBuild, getRouteMission } from './src/run-build.js';
 import { getEncounterPhase } from './src/encounter-director.js';
-import { createPerformance, updatePerformance, performanceView, suspendPerformance } from './src/performance.js';
-import { chartForTrack, selectChartTrack } from './src/track-charts.js';
+import { createPerformance, createRadioPerformance, updatePerformance, performanceView, suspendPerformance } from './src/performance.js';
 import { createRoadFeedback, captureRoadFeedback, updateRoadFeedback, drawRoadFeedback } from './src/road-feedback.js';
 import { JOURNEY_STAGE_COUNT, getJourneyChoices, getJourneyNode, getJourneyStage } from "./src/journey.js";
 import { selectCrewDialogue, selectCrewEvent } from "./src/crew-dialogue.js";
@@ -69,6 +68,11 @@ import { render, drawCar } from "./src/renderer.js";
 import { drawMap, drawFinale, preloadJourneyMap, hitTestMapChoice } from "./src/campaign.js";
 import { getClubArt } from './src/club-art.js';
 await initializeLanguage();
+const updateGuidelinesLink = () => {
+  document.querySelector('#streaming-guidelines').href = i18n.language === 'ja' ? '/streaming-guidelines/' : '/en/streaming-guidelines/';
+};
+updateGuidelinesLink();
+i18n.subscribe(updateGuidelinesLink);
 
 const $ = (s) => document.querySelector(s),
   canvas = $("#game"),
@@ -188,15 +192,12 @@ let reducedMotion = settings.reducedMotion;
 function applySettings() {
   reducedMotion = settings.reducedMotion;
   setSurvivalAssistance(state, settings.assistMode);
-  setMusicDrive(state, settings.musicDrive);
+  useCurrentMusicRules(state);
   document.body.dataset.reducedMotion = String(reducedMotion);
   document.body.dataset.assistMode = String(settings.assistMode);
   $('#reduced-motion').checked = reducedMotion;
   $('#assist-mode').checked = state.assistMode;
   $('#menu-assist-mode').checked = settings.assistMode;
-  $('#music-drive').checked = settings.musicDrive;
-  $('#menu-music-drive').checked = settings.musicDrive;
-  localizeText($('#music-drive-note'), state.survival?.musicDriven ? 'このランは音で走る記録。途中で戻しても、通常の記録には入らへん。' : '曲が止まった時や、ほかの曲では通常の速度やで。');
   localizeText($('#assist-record-note'), isSurvival(state) && state.survival.assisted ? 'このランはゆったり記録。途中で戻しても、通常の記録には入らへん。' : 'ダメージを軽減。ゆったりの記録は、通常の記録と別に残るで。');
   survivalBest = isSurvival(state) ? survivalRecords.best(state.survival.day, state.survival.assisted, state.survival.musicDriven, state.survival.musicVersion)?.score || 0 : 0;
   document.body.dataset.runMode = state.mode;
@@ -209,7 +210,7 @@ function saveSettings() {
   if (!settingsStore.save(settings)) storageWarning();
 }
 applySettings();
-for (const [id, key] of [['reduced-motion','reducedMotion'], ['assist-mode','assistMode'], ['menu-assist-mode','assistMode'], ['music-drive','musicDrive'], ['menu-music-drive','musicDrive']]) {
+for (const [id, key] of [['reduced-motion','reducedMotion'], ['assist-mode','assistMode'], ['menu-assist-mode','assistMode']]) {
   $('#' + id).addEventListener('change', event => { settings[key] = event.target.checked; saveSettings(); });
 }
 const storyDirector = createStoryDirector({
@@ -727,7 +728,7 @@ function startClubSet(next) {
   const venue = getClubArt(state.route.club);
   $('#performance-panel').style.setProperty('--club-accent', venue?.accent || '#ff9ed3');
   $('#performance-panel').style.setProperty('--club-floor', venue?.floor || '#201329');
-  performanceSet = createPerformance(); performanceNext = next;
+  performanceSet = createRadioPerformance(); performanceNext = next;
   setScreen('finale');
   localizeText($('#finale-home'), state.campaignComplete ? 'ランの記録を見る' : '次の街へ');
   localizeText($('#performance-tip'), message('{0} / オリジナル・ハードバウンス、開演！', [state.route.club]));
@@ -790,7 +791,7 @@ function showResult() {
     releaseInput();
     if (state.campaignComplete) {
       storyDirector.show('arrival', () => storyDirector.show('finale', () => {
-        performanceSet = createPerformance();
+        performanceSet = createRadioPerformance();
         setScreen('finale');
         say('6つのクラブの音、ひとつになったで。ここからはうちらの時間や！');
         unlockSound();
@@ -829,18 +830,11 @@ function showResult() {
   beep(won ? 880 : 190, 0.25);
 }
 function refreshSurvivalRecord() {
-  const challenge = dailySurvival(), best = survivalRecords.best(challenge.day, settings.assistMode, settings.musicDrive);
-  if (settings.musicDrive) {
-    const category = survivalRecordCategory({ musicDriven: true, musicVersion: MUSIC_RULES_VERSION, assisted: settings.assistMode });
-    localizeText($('#survival-record'), best ? message('{0} · 自己ベスト {1} · この端末', [category, number(best.score, { useGrouping: true })]) : message('{0} · 記録は別', [category]));
-    return;
-  }
-  if (settings.assistMode) {
-    localizeText($('#survival-record'), best ? message('ゆったり自己ベスト {0} · この端末', [number(best.score, { useGrouping: true })]) : 'ゆったりツアー · 通常の記録とは別');
-    return;
-  }
-  localizeText($('#survival-record'), best ? message('今日の自己ベスト {0} · この端末', [number(best.score, { useGrouping: true })]) : '今日のコースに挑戦 · 記録はこの端末に保存');
+  const challenge = dailySurvival(), best = survivalRecords.best(challenge.day, settings.assistMode, true);
+  const category = survivalRecordCategory({ musicDriven: true, musicVersion: MUSIC_RULES_VERSION, assisted: settings.assistMode });
+  localizeText($('#survival-record'), best ? message('{0} · 自己ベスト {1} · この端末', [category, number(best.score, { useGrouping: true })]) : message('{0} · 記録は別', [category]));
 }
+
 function startNight(challenge = dailySurvival()) {
   if (!ready) return;
   if (savedTour && isSurvival(savedTour) && !savedTour.campaignComplete && !confirm(t("新しい旅を始めたら、いまの旅のセーブは上書きやで。解禁したくるまとギャルポイントは残るで。始める？"))) return;
@@ -867,7 +861,7 @@ $("#continue").addEventListener("click", () => {
   if (isSurvival(state)) { startNight({ seed: state.seed, day: state.survival.day, recordEligible: state.survival.recordEligible }); return; }
   if (state.status === "won") {
     if (state.campaignComplete) {
-      performanceSet = createPerformance();
+      performanceSet = createRadioPerformance();
       setScreen("finale");
       say("DJありねぇとDJちゃな、全員ぶちアゲやー！");
       unlockSound();
@@ -883,13 +877,12 @@ $("#continue").addEventListener("click", () => {
 // The encore is optional; leaving never changes already-earned completion credit.
 $("#finale-home").addEventListener("click", () => { const next = performanceNext; performanceNext = null; if (next) next(); else home(); });
 $('#performance-track').addEventListener('click', () => {
-  const track = selectChartTrack(audio.tracks, audio.transport?.track);
-  if (!track || screen !== 'finale' || paused) return;
+  if (screen !== 'finale' || paused) return;
   releaseInput();
-  performanceSet = createPerformance(chartForTrack(track));
-  void audio.playTrack(track.id);
+  performanceSet = createRadioPerformance();
   canvas.focus({ preventScroll: true });
 });
+
 function previewMission(node) {
   if (!node) return null;
   const preview = node.nodeId === state.journeyNodeId ? state : createState({ mode: state.mode, routeIndex: node.stageIndex, seed: state.seed, journeyNodeId: node.nodeId, ...mapClimate });
@@ -1066,12 +1059,8 @@ function frame(now) {
     $("#performance-progress").style.width = `${view.progress * 100}%`;
     const completed = message('{0} / {1} フレーズ · ファン {2}人 · フロアの仲間 {3}人', [view.hits, view.total, state.totalFans, state.gyaruConverted]);
     if ($("#performance-score").textContent !== t(completed)) localizeText($("#performance-score"), completed);
-    const track = selectChartTrack(audio.tracks, audio.transport?.track);
-    $('#performance-track').hidden = !track;
-    if (track) {
-      const label = message('{0} で開演', [track.title]);
-      if ($('#performance-track').textContent !== t(label)) localizeText($('#performance-track'), label);
-    }
+    $('#performance-track').hidden = !view.done;
+    localizeText($('#performance-track'), '今の曲の続きでアンコール');
     document.querySelectorAll("[data-control]").forEach(button => button.classList.toggle("suggested", button.dataset.control === view.action));
   }
   if (screen === "playing" && !paused) updateRoadFeedback(roadFeedback, dt);

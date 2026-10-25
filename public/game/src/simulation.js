@@ -494,7 +494,6 @@ export function createState({
     runId: validCampaignRunId(runId) ? runId : `run:${numericSeed.toString(16)}`,
     campaignStarted: campaignStarted === true,
     assistMode: false,
-    musicDriveEnabled: false,
     musicDrive: createMusicDrive(),
     rpg: normalizeRpg(null),
     _rng:
@@ -981,7 +980,6 @@ export function nextRoute(state, routeOption = "scenic", journeyNodeId = null) {
   });
   restoreSnapshot(next, snapshot(state));
   next.assistMode = state.assistMode === true;
-  next.musicDriveEnabled = state.musicDriveEnabled === true;
   next.musicDrive = createMusicDrive(state.musicDrive);
   if (isSurvival(next)) { next.survival.wave = 0; next.survival.waveStats = Array.from({ length: 6 }, () => ({ kills: 0, hits: 0 })); next.survival.settledWaves = []; next.survival.gems = []; next.survival.receipts = []; next.survival.echoPending = null; next.survival.cassetteLoops = []; }
   next.stageSignals = 0;
@@ -1014,7 +1012,6 @@ export function retryRoute(state) {
   });
   restoreSnapshot(next, state._stageStart);
   next.assistMode = state.assistMode === true;
-  next.musicDriveEnabled = state.musicDriveEnabled === true;
   next.musicDrive = createMusicDrive(state.musicDrive);
   next._stageStart = snapshot(next);
   emit(next, "stage-retry", { routeIndex: next.routeIndex });
@@ -1195,7 +1192,6 @@ export function changeRouteBeforeStart(state, routeOption = "scenic", environmen
   const selectedLocation = next.locationIndex;
   restoreSnapshot(next, snapshot(state));
   next.assistMode = state.assistMode === true;
-  next.musicDriveEnabled = state.musicDriveEnabled === true;
   next.musicDrive = createMusicDrive(state.musicDrive);
   next.locationIndex = selectedLocation;
   next._stageStart = snapshot(next);

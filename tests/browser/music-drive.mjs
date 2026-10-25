@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { resolve } from 'node:path';
 import { createState, exportNightfallSave } from '../../public/game/src/simulation.js';
-import { SURVIVAL_UPGRADES } from '../../public/game/src/survival.js';
+import { SURVIVAL_UPGRADES, MUSIC_RULES_VERSION } from '../../public/game/src/survival.js';
 import { NIGHTFALL_SAVE_KEY } from '../../public/game/src/save-store.js';
 import { SETTINGS_KEY } from '../../public/game/src/tour-settings.js';
 
@@ -19,14 +19,13 @@ export async function checkMusicDrive(page, root) {
   await page.setViewportSize({ width: 390, height: 667 });
   await page.reload();
   await page.waitForFunction(() => globalThis.__HYPERDRIVE__?.snapshot().ready);
-  assert.equal(await page.locator('#menu-music-drive').isChecked(), false);
-  await page.locator('#menu-music-drive').check();
+  assert.equal(await page.locator('#menu-music-drive, #music-drive').count(), 0);
+  assert.equal(await page.evaluate(() => Object.hasOwn(__HYPERDRIVE__.snapshot().settings, 'musicDrive')), false);
   assert.match(await page.locator('#survival-record').textContent(), /Music Drive/);
   assert.doesNotMatch(await page.locator('#survival-record').textContent(), /Earlier rules/);
   await page.locator('#menu-assist-mode').check();
   assert.match(await page.locator('#survival-record').textContent(), /Assisted/);
   await page.locator('#menu-assist-mode').uncheck();
-  await page.locator('#menu-music-drive').uncheck();
   await page.locator('#resume-tour').click();
   await page.waitForFunction(() => __HYPERDRIVE__.snapshot().screen === 'map');
   await page.locator('#depart').click();
@@ -43,12 +42,8 @@ export async function checkMusicDrive(page, root) {
   await page.locator('audio').evaluate(media => { media.currentTime = 50.5; });
   await page.waitForFunction(() => __HYPERDRIVE__.snapshot().state.musicDrive.cueSeen.includes('chrome-bounce-ritual-v1:3'));
   const ordinary = await page.evaluate(() => __HYPERDRIVE__.snapshot().state);
-  assert.equal(ordinary.musicDrive.multiplier, 1);
-  assert.equal(ordinary.survival.musicDriven, false);
-  assert.equal(ordinary.survival.musicVersion, 0);
-  await page.locator('#pause').click();
-  await page.locator('#music-drive').check();
-  await page.locator('#resume').click();
+  assert.equal(ordinary.survival.musicDriven, true);
+  assert.equal(ordinary.survival.musicVersion, MUSIC_RULES_VERSION);
   await page.waitForFunction(() => __HYPERDRIVE__.snapshot().state.musicDrive.multiplier > 1.015);
   assert.equal(await page.locator('.stereo-equalizer').getAttribute('data-active'), 'true');
   assert.equal(await page.locator('audio').count(), 1);
@@ -60,10 +55,10 @@ export async function checkMusicDrive(page, root) {
   assert.equal(await page.evaluate(() => __HYPERDRIVE__.snapshot().state.distance), distance);
   for (const [width, height] of [[390, 667], [320, 740], [844, 390]]) {
     await page.setViewportSize({ width, height });
-    await page.locator('#music-drive').scrollIntoViewIfNeeded();
+    await page.locator('#reduced-motion').scrollIntoViewIfNeeded();
     await page.screenshot({ path: resolve(root, `artifacts/browser/game-test/music-drive-${width}.png`) });
     assert.ok(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1));
-    assert.equal(await page.locator('#music-drive').isChecked(), true);
+    assert.equal(await page.locator('#music-drive').count(), 0);
     await page.locator('#resume').click();
     await page.locator('#pause').click();
   }
@@ -80,14 +75,12 @@ export async function checkMusicDrive(page, root) {
   await page.locator('[data-action="next"]').click();
   await page.waitForFunction(() => !__HYPERDRIVE__.snapshot().state.musicDrive.active);
   await page.locator('#pause').click();
-  await page.locator('#music-drive').uncheck();
-  assert.match(await page.locator('#music-drive-note').textContent(), /stays in Music Drive/);
   assert.equal(await page.evaluate(() => __HYPERDRIVE__.snapshot().state.survival.musicDriven), true);
-  assert.equal(await page.evaluate(() => __HYPERDRIVE__.snapshot().state.musicDriveEnabled), false);
+  assert.equal(await page.locator('#music-drive').count(), 0);
   await page.locator('#reduced-motion').uncheck();
   await page.locator('#resume').click();
   await page.waitForFunction(() => Math.abs(__HYPERDRIVE__.snapshot().state.musicDrive.multiplier - 1) < .0005);
   assert.equal(await page.locator('.stereo-equalizer').getAttribute('data-active'), 'true');
   assert.equal(await page.locator('audio').count(), 1);
-  console.log('PASS optional Music Drive follows real radio playback, preserves reduced-motion settings and keeps its record category');
+  console.log('PASS default music speed follows real playback, ignores the old opt-out and preserves reduced-motion settings');
 }

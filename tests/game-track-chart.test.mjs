@@ -2,11 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   CHROME_BOUNCE_CHART as chart,
+  TRACK_CHARTS,
   chartForTrack,
   chartSectionAt,
 } from '../public/game/src/track-charts.js';
 import {
   createPerformance,
+  createRadioPerformance,
+  RADIO_PERFORMANCE_LENGTH,
   updatePerformance,
   performanceView,
   suspendPerformance,
@@ -147,4 +150,108 @@ test('watching the whole chart without input completes it without campaign rewar
   assert.equal(set.done, true);
   assert.equal(set.hits, 0);
   assert.equal(Object.hasOwn(set, 'completionPoints'), false);
+});
+
+test('radio encores join every chart at its current position, including the last instant, and span tracks', () => {
+  for (const selected of TRACK_CHARTS) {
+    for (const start of [0, selected.duration / 2, selected.duration - 0.05]) {
+      const set = createRadioPerformance();
+      const current = { id: selected.trackId, duration: selected.duration };
+      tick(set, start, { track: current });
+      assert.equal(
+        set.elapsed,
+        0,
+        'joining never treats earlier music as played',
+      );
+      assert.equal(set.musicTime, start);
+      assert.equal(set.done, false);
+      for (let i = 1; i <= 325; i++) {
+        const seconds = start + i / 10;
+        tick(
+          set,
+          seconds < selected.duration ? seconds : seconds - selected.duration,
+          {
+            track:
+              seconds < selected.duration
+                ? current
+                : { id: 'next-song', duration: 180 },
+            endRevision: seconds < selected.duration ? 0 : 1,
+            endedTrackId: selected.trackId,
+          },
+        );
+      }
+      assert.equal(set.done, true, `${selected.title} at ${start}`);
+      assert.equal(set.interrupted, false);
+      assert.equal(set.elapsed, RADIO_PERFORMANCE_LENGTH);
+      assert.equal(performanceView(set).total, 8);
+      assert.ok(set.hits >= 6 && set.hits <= 8);
+      assert.equal(new Set(set.completed).size, set.hits);
+    }
+  }
+});
+
+test('uncharted recordings and excerpts use playable prompts without claiming authored drops', () => {
+  for (const current of [
+    { id: 'new-release', duration: 200 },
+    { ...track, excerpt: true },
+  ]) {
+    const set = createRadioPerformance();
+    tick(set, 57, { track: current });
+    assert.equal(set.chart, null);
+    assert.equal(performanceView(set).charted, false);
+    assert.ok(
+      ['HANDS UP', 'ONE CREW', 'ALL TOGETHER'].includes(
+        performanceView(set).phase,
+      ),
+    );
+    for (let i = 1; i <= 325; i++) tick(set, 57 + i / 10, { track: current });
+    assert.equal(set.done, true);
+    assert.equal(set.hits, 8);
+    assert.equal(Object.hasOwn(set, 'completionPoints'), false);
+  }
+});
+
+test('live encore progress uses heard media time and cannot be farmed by seeking, muting or stalling', () => {
+  const set = createRadioPerformance();
+  tick(set, 53);
+  for (let i = 1; i <= 10; i++) tick(set, 53 + i / 10);
+  assert.equal(set.hits, 1);
+  const elapsed = set.elapsed;
+  tick(set, 142, { revision: 1 });
+  assert.equal(set.elapsed, elapsed);
+  assert.equal(set.phraseHeld, 0);
+  for (const extra of [
+    {},
+    { playing: false },
+    { muted: true },
+    { volume: 0 },
+    { hidden: true },
+    { seeking: true },
+  ]) {
+    for (let i = 0; i < 100; i++) tick(set, 142, { revision: 1, ...extra });
+    assert.equal(set.elapsed, elapsed);
+    assert.equal(set.hits, 1);
+  }
+  suspendPerformance(set);
+  tick(set, 142.1, { revision: 1 });
+  assert.equal(set.phraseHeld, 0);
+  for (let i = 1; i <= 10; i++) tick(set, 142.1 + i / 10, { revision: 1 });
+  assert.equal(set.hits, 1, 'one cue window can only score once');
+  tick(set, 70, { track: { id: 'new', duration: 200 }, revision: 2 });
+  assert.equal(set.interrupted, false);
+  assert.equal(set.done, false);
+  assert.equal(set.hits, 1);
+});
+
+test('radio encores remain playable offline and adopt music started during the silent performance', () => {
+  const silent = createRadioPerformance();
+  for (let i = 0; i < 370; i++) updatePerformance(silent, all, 0.1, null);
+  assert.equal(silent.done, true);
+  assert.equal(silent.hits, 8);
+  const set = createRadioPerformance();
+  updatePerformance(set, all, 1, null);
+  tick(set, 142);
+  assert.equal(set.elapsed, 0);
+  assert.equal(performanceView(set).phase, 'FINALE');
+  assert.equal(set.musicTime, 142);
 });

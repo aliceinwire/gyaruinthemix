@@ -13,15 +13,13 @@ export function createMusicDrive(previous = null) {
     cueSeen: previous?.cueSeen?.slice(-MAX_MUSIC_CUES) || [], cueCooldown: previous?.cueCooldown || 0 };
 }
 
-/** The preference can change; opting in permanently separates this run's records. */
-export function setMusicDrive(state, enabled) {
-  state.musicDriveEnabled = isSurvival(state) && enabled === true;
-  if (state.musicDriveEnabled && state.status !== 'lost' && !state.campaignComplete) {
+/** New and continued tours use the current rules; completed records stay untouched. */
+export function useCurrentMusicRules(state) {
+  if (isSurvival(state) && state.status !== 'lost' && !state.campaignComplete) {
     if (!state.survival.musicDriven || state.survival.musicVersion !== MUSIC_RULES_VERSION) state.survival.bestNotified = false;
     state.survival.musicDriven = true;
     state.survival.musicVersion = MUSIC_RULES_VERSION;
   }
-  if (!state.musicDriveEnabled) suspendMusicDrive(state);
 }
 
 export function suspendMusicDrive(state) {
@@ -34,12 +32,7 @@ export function suspendMusicDrive(state) {
 export function updateMusicDrive(state, transport, dt) {
   const drive = state.musicDrive;
   if (!drive || !Number.isFinite(dt) || dt <= 0) return;
-  const enabled = isSurvival(state) && state.musicDriveEnabled;
-  if (enabled) {
-    // Presentation follows the radio in every mode; only opting in changes records.
-    state.survival.musicDriven = true;
-    state.survival.musicVersion = MUSIC_RULES_VERSION;
-  }
+  useCurrentMusicRules(state);
   drive.cueCooldown = Math.max(0, drive.cueCooldown - dt);
   const chart = chartForTrack(transport?.track), now = transport?.currentTime;
   const index = chartSectionAt(chart, now);
@@ -72,20 +65,19 @@ export function updateMusicDrive(state, transport, dt) {
   drive.revision = transport?.revision ?? null;
   drive.playing = playing;
   drive.section = index;
-  const intensity = enabled && drive.active ? chart.sections[index].intensity : .5;
+  const intensity = drive.active ? chart.sections[index].intensity : .5;
   const target = 1 + MUSIC_SPEED_LIMIT * (intensity * 2 - 1);
   drive.multiplier += (target - drive.multiplier) * (1 - Math.exp(-dt / 1.2));
   drive.multiplier = Math.max(1 - MUSIC_SPEED_LIMIT, Math.min(1 + MUSIC_SPEED_LIMIT, drive.multiplier));
-  if (!enabled && Math.abs(drive.multiplier - 1) < 1e-6) drive.multiplier = 1;
+  if (!drive.active && Math.abs(drive.multiplier - 1) < 1e-6) drive.multiplier = 1;
 }
 
 /** Existing speakers gain an extra opening. Never replace their ordinary tells,
  * add a hazard, alter HP, or award another conversion for repeating/seeking a song. */
 export function applyMusicEncounter(actor, state) {
   if (!MUSIC_ENCOUNTER_IDS.includes(actor.headliner?.id) || actor.converted || actor.cleared || actor.resolved) return;
-  if (!state.musicDriveEnabled && !actor.musicOpened) { actor.musicCue = false; return; }
   const drive = state.musicDrive;
-  const active = state.musicDriveEnabled && drive?.active && actor.tell;
+  const active = drive?.active && actor.tell;
   const drop = active && drive.dropSection === drive.section && drive.dropSection >= 0;
   const dropKey = drop ? `${drive.trackId}:${drive.revision}:${drive.section}` : null;
   actor.musicCue = Boolean(active && drive.preview && !actor.musicOpened);

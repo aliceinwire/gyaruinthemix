@@ -9,7 +9,6 @@ export function normalizeSettings(value, reducedMotion = false) {
     version: 1,
     autoHearts: source.autoHearts === true,
     assistMode: source.assistMode === true,
-    musicDrive: source.musicDrive === true,
     reducedMotion: typeof source.reducedMotion === 'boolean' ? source.reducedMotion : Boolean(reducedMotion),
   };
 }

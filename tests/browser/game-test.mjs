@@ -426,7 +426,7 @@ try {
     ]);
     await page.locator('#menu-assist-mode').check();
     assert.equal(await page.evaluate(() => __HYPERDRIVE__.snapshot().settings.assistMode), true);
-    assert.match(await page.locator('#survival-record').textContent(), /ゆったりツアー/);
+    assert.match(await page.locator('#survival-record').textContent(), /ミュージックドライブ · ゆったり/);
     assert.equal(await page.evaluate(key => localStorage.getItem(key), NIGHTFALL_SAVE_KEY), null);
     await page.locator('#menu-assist-mode').uncheck();
     await page.locator('#story').click();
@@ -664,7 +664,6 @@ try {
       version: 1,
       autoHearts: false,
       assistMode: false,
-      musicDrive: false,
       reducedMotion: true,
     };
     assert.deepEqual(
