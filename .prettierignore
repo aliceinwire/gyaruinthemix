@@ -7,4 +7,4 @@ package-lock.json
 secrets
 .env
 
-public/game-test/src/vendor/**
+public/game/src/vendor/**

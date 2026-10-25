@@ -14,11 +14,8 @@ import {
   changeRouteBeforeStart,
   exportCampaignSave,
   buyUpgrade,
-} from '../public/game-test/src/simulation.js';
-import {
-  createSaveStore,
-  SAVE_KEY,
-} from '../public/game-test/src/save-store.js';
+} from '../public/game/src/simulation.js';
+import { createSaveStore, SAVE_KEY } from '../public/game/src/save-store.js';
 import {
   dailySurvival,
   survivalOffers,
@@ -36,8 +33,8 @@ import {
   SURVIVAL_EVOLUTIONS,
   SURVIVAL_MAX_LEVEL,
   survivalView,
-} from '../public/game-test/src/survival.js';
-import { getJourneyChoices } from '../public/game-test/src/journey.js';
+} from '../public/game/src/survival.js';
+import { getJourneyChoices } from '../public/game/src/journey.js';
 
 function fresh(seed = 175) {
   return createState({

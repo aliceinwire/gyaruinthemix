@@ -1,4 +1,4 @@
-import { ENCOUNTER_RULES } from '../public/game-test/src/encounter-director.js';
+import { ENCOUNTER_RULES } from '../public/game/src/encounter-director.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
@@ -11,7 +11,7 @@ import {
   exportCampaignSave,
   restoreCampaignSave,
   changeRouteBeforeStart,
-} from '../public/game-test/src/simulation.js';
+} from '../public/game/src/simulation.js';
 import {
   RUN_MOD_CATALOG,
   normalizeRunBuild,
@@ -19,7 +19,7 @@ import {
   getBuildOffers,
   buyRunMod,
   getRouteMission,
-} from '../public/game-test/src/run-build.js';
+} from '../public/game/src/run-build.js';
 import {
   RUN_STYLES,
   PERK_CATALOG,
@@ -30,7 +30,7 @@ import {
   choosePerk,
   recordRpgEvent,
   openRpgDraft,
-} from '../public/game-test/src/tour-rpg.js';
+} from '../public/game/src/tour-rpg.js';
 
 function quiet(style, options = {}) {
   const state = createState(options);

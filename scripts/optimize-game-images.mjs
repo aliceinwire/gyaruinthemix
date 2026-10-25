@@ -2,11 +2,9 @@ import sharp from 'sharp';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { CLUB_ART } from '../public/game-test/src/club-art.js';
+import { CLUB_ART } from '../public/game/src/club-art.js';
 
-const sourceRoot = fileURLToPath(
-  new URL('../public/game-test/', import.meta.url),
-);
+const sourceRoot = fileURLToPath(new URL('../public/game/', import.meta.url));
 const replacements = [
   ['src/club-art.js', '../assets/clubs/${venue.id}.png'],
   [
@@ -27,9 +25,7 @@ const images = [
 
 // Optimize the production copy. Keep the original PNGs available for editing
 // and local development, and keep sprite dimensions and alpha unchanged.
-export async function optimizeGameImages(
-  outputRoot = resolve('dist/game-test'),
-) {
+export async function optimizeGameImages(outputRoot = resolve('dist/game')) {
   const modules = await Promise.all(
     replacements.map(async ([path, original]) => {
       const text = await readFile(join(outputRoot, path), 'utf8');

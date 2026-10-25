@@ -7,14 +7,14 @@ import {
   getClubArt,
   getClubImage,
   preloadClubArt,
-} from '../public/game-test/src/club-art.js';
+} from '../public/game/src/club-art.js';
 import {
   drawFinale,
   drawMap,
   preloadCampaign,
   finaleCrowdCount,
-} from '../public/game-test/src/campaign.js';
-import { getJourneyStage } from '../public/game-test/src/journey.js';
+} from '../public/game/src/campaign.js';
+import { getJourneyStage } from '../public/game/src/journey.js';
 
 class LocalImage {
   set src(url) {
@@ -111,9 +111,7 @@ test('all twelve map destinations and all six sets draw the correct venue withou
 });
 
 test('venue loading is selective, shares in-flight work, and retries only failures', async () => {
-  const module = await import(
-    '../public/game-test/src/club-art.js?isolated-retry'
-  );
+  const module = await import('../public/game/src/club-art.js?isolated-retry');
   const original = globalThis.Image,
     requests = [];
   let fail = true;

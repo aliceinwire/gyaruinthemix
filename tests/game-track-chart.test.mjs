@@ -4,13 +4,13 @@ import {
   CHROME_BOUNCE_CHART as chart,
   chartForTrack,
   chartSectionAt,
-} from '../public/game-test/src/track-charts.js';
+} from '../public/game/src/track-charts.js';
 import {
   createPerformance,
   updatePerformance,
   performanceView,
   suspendPerformance,
-} from '../public/game-test/src/performance.js';
+} from '../public/game/src/performance.js';
 
 const track = {
   id: chart.trackId,

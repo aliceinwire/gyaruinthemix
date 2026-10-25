@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { createSceneUI } from '../public/game-test/src/scene-ui.js';
+import { createSceneUI } from '../public/game/src/scene-ui.js';
 
 function fixture() {
   const nodes = new Map();
@@ -132,7 +132,7 @@ test('scene handling tolerates omitted optional panels during recovery', () => {
 
 test('live world has no text overlays, while accessible story and draft panels retain stable controls', () => {
   const html = readFileSync(
-    new URL('../public/game-test/index.html', import.meta.url),
+    new URL('../public/game/index.html', import.meta.url),
     'utf8',
   );
   const viewport = html.slice(
@@ -180,7 +180,7 @@ test('live world has no text overlays, while accessible story and draft panels r
 
 test('the shared journal remains reachable when the route scene hides the cabinet', () => {
   const html = readFileSync(
-    new URL('../public/game-test/index.html', import.meta.url),
+    new URL('../public/game/index.html', import.meta.url),
     'utf8',
   );
   const header = html.slice(html.indexOf('<header'), html.indexOf('</header>'));

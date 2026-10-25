@@ -71,7 +71,7 @@ test('each HTTP phase has a fresh process across restart, audio stop and recover
   );
   const tracks = await loadCatalog(output);
   const moduleSource = await readFile(
-    join(root, 'public/game-test/src/vendor/hls.light.min.mjs'),
+    join(root, 'public/game/src/vendor/hls.light.min.mjs'),
     'utf8',
   );
   const csp = (
@@ -95,7 +95,8 @@ test('each HTTP phase has a fresh process across restart, audio stop and recover
     let sessions = 0;
     const server = createServer(async (request, response) => {
       response.setHeader('X-Content-Type-Options', 'nosniff');
-      const path = request.url;
+      const url = new URL(request.url, 'http://fixture.local');
+      const path = url.pathname;
       const host = request.headers.host || '';
       if (host.includes('/')) {
         response.writeHead(400).end();
@@ -106,7 +107,9 @@ test('each HTTP phase has a fresh process across restart, audio stop and recover
       } else if (/^www\.gyaruinthemix\.com(?::443|\.)?$/i.test(host)) {
         request.resume();
         response
-          .writeHead(308, { Location: `https://gyaruinthemix.com${path}` })
+          .writeHead(308, {
+            Location: `https://gyaruinthemix.com${request.url}`,
+          })
           .end();
       } else if (path.startsWith('/game-audio/')) {
         if (path === '/game-audio/v1/config') configs++;
@@ -114,9 +117,15 @@ test('each HTTP phase has a fresh process across restart, audio stop and recover
         await handler(request, response);
       } else if (path.includes('/assets/music/')) {
         response.writeHead(path.includes('/.hls/') ? 403 : 404).end();
-      } else if (path === '/game-test') {
-        response.writeHead(308, { Location: '/game-test/' }).end();
-      } else if (path === '/game-test/') {
+      } else if (path === '/game' || path === '/game-test') {
+        response.writeHead(308, { Location: '/game/' + url.search }).end();
+      } else if (path.startsWith('/game-test/')) {
+        response
+          .writeHead(308, {
+            Location: path.replace('/game-test/', '/game/') + url.search,
+          })
+          .end();
+      } else if (path === '/game/') {
         response.setHeader('Content-Security-Policy', csp);
         response.setHeader('X-Robots-Tag', 'noindex, nofollow, noarchive');
         response.end(
@@ -125,10 +134,10 @@ test('each HTTP phase has a fresh process across restart, audio stop and recover
       } else if (path.endsWith('/hls.light.min.mjs')) {
         response.setHeader('Content-Type', 'application/javascript');
         response.end(moduleSource);
-      } else if (path === '/game-test/not-a-real-asset.png') {
+      } else if (path === '/game/not-a-real-asset.png') {
         response.writeHead(404).end();
       } else if (path === '/robots.txt') {
-        response.end('Disallow: /game-test/');
+        response.end('Disallow: /game/\nDisallow: /game-test/');
       } else {
         response.setHeader('Content-Security-Policy', "default-src 'self'");
         response.end('fixture');

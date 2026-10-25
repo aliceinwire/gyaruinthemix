@@ -222,7 +222,7 @@ test('canonical CI covers both checkout modes with default-off and enabled audio
 
 test('served HLS module requires JavaScript MIME, nosniff and valid module syntax', async () => {
   const source = await readFile(
-    join(root, 'public/game-test/src/vendor/hls.light.min.mjs'),
+    join(root, 'public/game/src/vendor/hls.light.min.mjs'),
     'utf8',
   );
   const response = (body, type = 'application/javascript; charset=utf-8') =>

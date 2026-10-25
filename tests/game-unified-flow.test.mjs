@@ -1,16 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {
-  createInputState,
-  KEY_ACTIONS,
-} from '../public/game-test/src/input.js';
-import { createState } from '../public/game-test/src/simulation.js';
+import { createInputState, KEY_ACTIONS } from '../public/game/src/input.js';
+import { createState } from '../public/game/src/simulation.js';
 import {
   createSaveStore,
   NIGHTFALL_SAVE_KEY,
   SAVE_KEY,
-} from '../public/game-test/src/save-store.js';
-import { getRoadCue } from '../public/game-test/src/road-feedback.js';
+} from '../public/game/src/save-store.js';
+import { getRoadCue } from '../public/game/src/road-feedback.js';
 
 test('three independent driving actions release safely and manual attack inputs do nothing', () => {
   const controls = createInputState();

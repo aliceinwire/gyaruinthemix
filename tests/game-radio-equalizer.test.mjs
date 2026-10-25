@@ -4,11 +4,11 @@ import {
   createRadioEqualizer,
   radioSpectrumBars,
   RADIO_IDLE_BARS,
-} from '../public/game-test/src/radio-equalizer.js';
+} from '../public/game/src/radio-equalizer.js';
 import {
   SILENT_MUSIC,
   decodeMusicTimeline,
-} from '../public/game-test/src/music-reactivity.js';
+} from '../public/game/src/music-reactivity.js';
 
 function fixture({
   blocked = false,

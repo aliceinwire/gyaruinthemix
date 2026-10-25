@@ -4,11 +4,11 @@ import {
   STREET_ROLES,
   SUIT_STYLES,
   suitStyleFor,
-} from '../public/game-test/src/street-culture.js';
-import { drawSuitUniform } from '../public/game-test/src/street-culture-art.js';
-import { createState, update } from '../public/game-test/src/simulation.js';
-import { getJourneyChoices } from '../public/game-test/src/journey.js';
-import { normalizeRunBuild } from '../public/game-test/src/run-build.js';
+} from '../public/game/src/street-culture.js';
+import { drawSuitUniform } from '../public/game/src/street-culture-art.js';
+import { createState, update } from '../public/game/src/simulation.js';
+import { getJourneyChoices } from '../public/game/src/journey.js';
+import { normalizeRunBuild } from '../public/game/src/run-build.js';
 
 test('suit strength is visible in distinct cuts and progressively broader jackets', () => {
   assert.deepEqual(

@@ -257,7 +257,7 @@ python3 "$HOME/bouncer/gyaruinthemix/deploy/bouncer/setup-audio.py" --directory 
 
 Recovery restores the prior configuration, selected images, updater state and catalog only when recorded fingerprints and container ownership still match. It retains the private key, generated cache, provisioned directory access and private backups for safe retry. A crash before a new catalog fingerprint is recorded can require local inspection; the pending journal keeps the normal updater blocked until recovery is resolved.
 
-After successful setup, check `https://gyaruinthemix.com/game-audio/v1/config` returns `{"enabled":true}`, then open `/game-test/` and try playback. Later tracks placed in `assets/music` are picked up by the existing updater. The manual steps below remain the reference for prerequisites and deliberate operator-managed installation.
+After successful setup, check `https://gyaruinthemix.com/game-audio/v1/config` returns `{"enabled":true}`, then open `/game/` and try playback. Later tracks placed in `assets/music` are picked up by the existing updater. The manual steps below remain the reference for prerequisites and deliberate operator-managed installation.
 
 ### One-time activation
 
@@ -304,7 +304,7 @@ docker compose ps "${services[@]}"
 curl --fail https://gyaruinthemix.com/game-audio/v1/config
 ```
 
-The config response should contain `{"enabled":true}` and no key or source path. Open `/game-test/`, tap Play and check the player on desktop and phone, including pause/resume and switching tracks. Originals must not be downloadable by filename. Recheck existing pages, checkout mode and shared-service IDs. The route and media policy are built into the web image, scoped to game audio; there is no Nginx file to install separately and no client-source flag to edit. If the sidecar is absent/disabled/unavailable, the car radio shows OFFLINE without delaying gameplay.
+The config response should contain `{"enabled":true}` and no key or source path. Open `/game/`, tap Play and check the player on desktop and phone, including pause/resume and switching tracks. Originals must not be downloadable by filename. Recheck existing pages, checkout mode and shared-service IDs. The route and media policy are built into the web image, scoped to game audio; there is no Nginx file to install separately and no client-source flag to edit. If the sidecar is absent/disabled/unavailable, the car radio shows OFFLINE without delaying gameplay.
 
 Run the normal updater once and resume the existing schedule only after the selected services are healthy:
 

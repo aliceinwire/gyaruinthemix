@@ -4,7 +4,7 @@ import {
   createSettingsStore,
   normalizeSettings,
   SETTINGS_KEY,
-} from '../public/game-test/src/tour-settings.js';
+} from '../public/game/src/tour-settings.js';
 
 test('preferences survive reload without sharing run currencies or accepting coercion', () => {
   const records = new Map();

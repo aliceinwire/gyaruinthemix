@@ -5,32 +5,32 @@ import {
   exportNightfallSave,
   restoreNightfallSave,
   chooseStartingWeapon,
-} from '../public/game-test/src/simulation.js';
+} from '../public/game/src/simulation.js';
 import {
   TRACK_CHARTS,
   chartForTrack,
   selectChartTrack,
-} from '../public/game-test/src/track-charts.js';
+} from '../public/game/src/track-charts.js';
 import {
   createPerformance,
   updatePerformance,
-} from '../public/game-test/src/performance.js';
+} from '../public/game/src/performance.js';
 import {
   setMusicDrive,
   updateMusicDrive,
   suspendMusicDrive,
   applyMusicEncounter,
   MUSIC_ENCOUNTER_IDS,
-} from '../public/game-test/src/music-drive.js';
+} from '../public/game/src/music-drive.js';
 import {
   MUSIC_RULES_VERSION,
   createSurvivalRecords,
   normalizeSurvivalRecords,
   normalizeSurvivalSave,
   survivalRecordCategory,
-} from '../public/game-test/src/survival.js';
-import { updateEncounterActor } from '../public/game-test/src/encounter-director.js';
-import { selectCrewEvent } from '../public/game-test/src/crew-dialogue.js';
+} from '../public/game/src/survival.js';
+import { updateEncounterActor } from '../public/game/src/encounter-director.js';
+import { selectCrewEvent } from '../public/game/src/crew-dialogue.js';
 
 const fresh = (options) =>
   createState({

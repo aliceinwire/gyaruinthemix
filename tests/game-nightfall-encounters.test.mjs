@@ -4,15 +4,15 @@ import {
   createState,
   update,
   ROUTE_OPTIONS,
-} from '../public/game-test/src/simulation.js';
-import { getJourneyChoices } from '../public/game-test/src/journey.js';
+} from '../public/game/src/simulation.js';
+import { getJourneyChoices } from '../public/game/src/journey.js';
 import {
   createEncounterPlan,
   ENCOUNTER_RULES,
   SIGNAL_HEADLINERS,
   updateEncounterActor,
   getHeadlinerView,
-} from '../public/game-test/src/encounter-director.js';
+} from '../public/game/src/encounter-director.js';
 import {
   getThreatSignals,
   getRoadCue,
@@ -20,8 +20,8 @@ import {
   captureRoadFeedback,
   updateRoadFeedback,
   drawRoadFeedback,
-} from '../public/game-test/src/road-feedback.js';
-import { drawSignalHeadliner } from '../public/game-test/src/renderer.js';
+} from '../public/game/src/road-feedback.js';
+import { drawSignalHeadliner } from '../public/game/src/renderer.js';
 
 const maxSpeed = ENCOUNTER_RULES.maximumSupportedSpeed / 3.6;
 

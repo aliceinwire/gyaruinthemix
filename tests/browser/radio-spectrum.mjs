@@ -48,7 +48,7 @@ export async function checkRadioSpectrum(browser, { root, csp, nativeHls = false
     if (url.pathname === '/') return route.fulfill({
       contentType: 'text/html',
       headers: { 'content-security-policy': csp },
-      body: '<!doctype html><html lang="en"><head><link rel="stylesheet" href="/game-test/car-stereo.css"></head><body><div id="radio"></div><canvas id="world" width="960" height="540"></canvas></body></html>',
+      body: '<!doctype html><html lang="en"><head><link rel="stylesheet" href="/game/car-stereo.css"></head><body><div id="radio"></div><canvas id="world" width="960" height="540"></canvas></body></html>',
     });
     if (url.pathname === '/game-audio/v1/catalog') return route.fulfill({ json: { tracks: [{ id: trackId, title: 'Frequency fixture', duration: 6 }] } });
     if (url.pathname === '/game-audio/v1/session') return route.fulfill({ json: { trackId, sessionId, expiresAt: Date.now() + 120000, renewAfterMs: 40000, manifestUrl: '/tone.wav', spectrumUrl: `/game-audio/v1/stream/${trackId}/${sessionId}/spectrum.bin` } });
@@ -67,12 +67,12 @@ export async function checkRadioSpectrum(browser, { root, csp, nativeHls = false
   try {
     await page.goto(origin);
     await page.evaluate(async (nativeHls) => {
-      const { createStreamAudio } = await import('/game-test/src/stream-audio.js');
-      const { createCarStereo } = await import('/game-test/src/car-stereo.js');
-      const { createGameAudio, createStreamingAudio } = await import('/game-test/src/audio.js');
-      const { createState } = await import('/game-test/src/simulation.js');
-      const { render } = await import('/game-test/src/renderer.js');
-      const { prepareGameArt } = await import('/game-test/src/resources.js');
+      const { createStreamAudio } = await import('/game/src/stream-audio.js');
+      const { createCarStereo } = await import('/game/src/car-stereo.js');
+      const { createGameAudio, createStreamingAudio } = await import('/game/src/audio.js');
+      const { createState } = await import('/game/src/simulation.js');
+      const { render } = await import('/game/src/renderer.js');
+      const { prepareGameArt } = await import('/game/src/resources.js');
       const controllerFactory = ({ media, onState }) => {
           const track = { id: 'tone', title: 'Frequency fixture', duration: 6 };
           media.src = '/tone.wav';

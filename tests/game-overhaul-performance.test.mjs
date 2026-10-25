@@ -6,19 +6,19 @@ import {
   performanceView,
   PERFORMANCE_PHRASES,
   PERFORMANCE_LENGTH,
-} from '../public/game-test/src/performance.js';
+} from '../public/game/src/performance.js';
 import {
   createRoadFeedback,
   captureRoadFeedback,
   updateRoadFeedback,
   getRoadCue,
-} from '../public/game-test/src/road-feedback.js';
+} from '../public/game/src/road-feedback.js';
 import {
   createState,
   update,
   exportCampaignSave,
   restoreCampaignSave,
-} from '../public/game-test/src/simulation.js';
+} from '../public/game/src/simulation.js';
 
 test('optional encore uses the same three actions and never needs an exact rhythm', () => {
   const set = createPerformance();

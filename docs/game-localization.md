@@ -4,7 +4,7 @@ The language selector is part of the game header and every reading/pause dialog.
 
 An explicit `?lang=it` (or another supported language code) takes precedence over the saved preference and browser languages. Regional variants resolve to their supported language. Switching updates an existing `lang` parameter and saves only `gyaruinthemix-language-v1`. The tour, quiz seed, route choice, audio element, and journal stay in place. Storage or translation-load failures do not discard progress.
 
-`public/game-test/locales/source.json` lists the canonical message keys. The nine full translation catalogs must contain every key with the same numbered placeholders. `ja.json` only overrides the original English radio and world labels. Names and song titles in quiz answers remain recognizable; live music metadata is displayed verbatim.
+`public/game/locales/source.json` lists the canonical message keys. The nine full translation catalogs must contain every key with the same numbered placeholders. `ja.json` only overrides the original English radio and world labels. Names and song titles in quiz answers remain recognizable; live music metadata is displayed verbatim.
 
 Game and save data remain canonical Japanese. `src/i18n.js` formats messages and loads only the English fallback and selected catalog from this site's static files. `src/localized-ui.js` retains a message's source and parameters on each UI binding. Changing languages refreshes those bindings without recreating controls, advancing dialogue, reshuffling questions, or restarting music. Canvas labels use the same translator.
 

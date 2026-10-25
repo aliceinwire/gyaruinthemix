@@ -1,9 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {
-  hasItemIcon,
-  itemIconRects,
-} from '../public/game-test/src/item-icons.js';
+import { hasItemIcon, itemIconRects } from '../public/game/src/item-icons.js';
 import {
   streetCharacterIdentity,
   resolveStreetPose,
@@ -11,19 +8,19 @@ import {
   drawStreetCharacter,
   preloadStreetCharacters,
   STREET_CHARACTER_SHEET,
-} from '../public/game-test/src/street-characters.js';
-import { createState, update } from '../public/game-test/src/simulation.js';
+} from '../public/game/src/street-characters.js';
+import { createState, update } from '../public/game/src/simulation.js';
 import {
   finaleCrowdCount,
   drawFinale,
   drawFinaleStage,
-} from '../public/game-test/src/campaign.js';
+} from '../public/game/src/campaign.js';
 import {
   createRoadFeedback,
   captureRoadFeedback,
   drawRoadFeedback,
   updateRoadFeedback,
-} from '../public/game-test/src/road-feedback.js';
+} from '../public/game/src/road-feedback.js';
 
 function canvas() {
   const calls = [];

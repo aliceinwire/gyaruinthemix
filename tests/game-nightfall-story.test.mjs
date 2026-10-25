@@ -8,16 +8,16 @@ import {
   markStorySeen,
   chooseStoryOption,
   STORY_SPEAKERS,
-} from '../public/game-test/src/tour-story.js';
+} from '../public/game/src/tour-story.js';
 import {
   selectCrewDialogue,
   selectCrewEvent,
-} from '../public/game-test/src/crew-dialogue.js';
-import { getJourneyStage } from '../public/game-test/src/journey.js';
+} from '../public/game/src/crew-dialogue.js';
+import { getJourneyStage } from '../public/game/src/journey.js';
 import {
   STREET_ROLES,
   ROUTINE_HAZARDS,
-} from '../public/game-test/src/street-culture.js';
+} from '../public/game/src/street-culture.js';
 
 test('the club tour carries original hard bounce and Heisei gyaru culture through all six club stops', () => {
   const opening = getStoryScene({ mode: 'survival' }, 'opening');
@@ -61,7 +61,7 @@ test('the tour welcomes personal taste without corporate dress rules or compulso
     }
   }
   const html = await readFile(
-    new URL('../public/game-test/index.html', import.meta.url),
+    new URL('../public/game/index.html', import.meta.url),
     'utf8',
   );
   const cityLines = [

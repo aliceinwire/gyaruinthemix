@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { resolve } from 'node:path';
-import { createState, exportNightfallSave } from '../../public/game-test/src/simulation.js';
-import { SURVIVAL_UPGRADES } from '../../public/game-test/src/survival.js';
-import { NIGHTFALL_SAVE_KEY } from '../../public/game-test/src/save-store.js';
-import { SETTINGS_KEY } from '../../public/game-test/src/tour-settings.js';
+import { createState, exportNightfallSave } from '../../public/game/src/simulation.js';
+import { SURVIVAL_UPGRADES } from '../../public/game/src/survival.js';
+import { NIGHTFALL_SAVE_KEY } from '../../public/game/src/save-store.js';
+import { SETTINGS_KEY } from '../../public/game/src/tour-settings.js';
 
 /** Uses the same native-HLS radio fixture as the club set, including real media events. */
 export async function checkMusicDrive(page, root) {

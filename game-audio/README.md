@@ -10,6 +10,6 @@ A separate server-only signing key is required. No persistent key is bundled. Wh
 
 The game discovers enabled audio through its same-origin configuration endpoint. Missing or disabled audio never blocks gameplay. Native HLS is preferred; other supported browsers lazy-load the locally bundled, version-pinned hls.js light module. The player requires explicit tap-start and supports pause/resume, background playback, playlist, volume, mute, seeking and error recovery.
 
-Retain the existing third-party licence notices and `public/game-test/src/vendor/HLS-LICENSE.txt`.
+Retain the existing third-party licence notices and `public/game/src/vendor/HLS-LICENSE.txt`.
 
 Switching to another browser tab does not pause the radio. Returning refreshes its playback session if needed, without overriding a manual pause. Closing or navigating away from the game page ends playback; browsers and operating systems may still suspend background media.

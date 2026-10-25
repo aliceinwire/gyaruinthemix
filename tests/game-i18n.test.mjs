@@ -11,35 +11,35 @@ import {
   number,
   verbatim,
   i18n,
-} from '../public/game-test/src/i18n.js';
+} from '../public/game/src/i18n.js';
 import {
   localizeText,
   localizeAttribute,
-} from '../public/game-test/src/localized-ui.js';
-import { getJourneyStage } from '../public/game-test/src/journey.js';
-import { getStoryScene } from '../public/game-test/src/tour-story.js';
+} from '../public/game/src/localized-ui.js';
+import { getJourneyStage } from '../public/game/src/journey.js';
+import { getStoryScene } from '../public/game/src/tour-story.js';
 import {
   CREW_DIALOGUE_BUCKET_SECONDS,
   selectCrewDialogue,
-} from '../public/game-test/src/crew-dialogue.js';
+} from '../public/game/src/crew-dialogue.js';
 import {
   STREET_ROLES,
   ROUTINE_HAZARDS,
-} from '../public/game-test/src/street-culture.js';
+} from '../public/game/src/street-culture.js';
 import {
   createState,
   exportCampaignSave,
-} from '../public/game-test/src/simulation.js';
-import { questionForStage } from '../public/game-test/src/questions.js';
+} from '../public/game/src/simulation.js';
+import { questionForStage } from '../public/game/src/questions.js';
 import {
   SURVIVAL_UPGRADES,
   SURVIVAL_EVOLUTIONS,
   survivalOffers,
   survivalXpCost,
-} from '../public/game-test/src/survival.js';
-import { RUN_MOD_CATALOG } from '../public/game-test/src/run-build.js';
+} from '../public/game/src/survival.js';
+import { RUN_MOD_CATALOG } from '../public/game/src/run-build.js';
 
-const directory = new URL('../public/game-test/locales/', import.meta.url);
+const directory = new URL('../public/game/locales/', import.meta.url);
 const readCatalog = async (code) =>
   JSON.parse(await readFile(new URL(code + '.json', directory), 'utf8'));
 const source = JSON.parse(
@@ -304,7 +304,7 @@ test('every narrative branch, street invitation, and menu premise has its own tr
   }
   ROUTINE_HAZARDS.forEach((hazard) => messages.add(hazard.name));
   const html = await readFile(
-    new URL('../public/game-test/index.html', import.meta.url),
+    new URL('../public/game/index.html', import.meta.url),
     'utf8',
   );
   html

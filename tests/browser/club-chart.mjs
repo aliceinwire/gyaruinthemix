@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { readFile, mkdir } from 'node:fs/promises';
 import { resolve, extname } from 'node:path';
-import { createState, exportNightfallSave } from '../../public/game-test/src/simulation.js';
-import { NIGHTFALL_SAVE_KEY } from '../../public/game-test/src/save-store.js';
-import { CHROME_BOUNCE_CHART as chart, TRACK_CHARTS } from '../../public/game-test/src/track-charts.js';
+import { createState, exportNightfallSave } from '../../public/game/src/simulation.js';
+import { NIGHTFALL_SAVE_KEY } from '../../public/game/src/save-store.js';
+import { CHROME_BOUNCE_CHART as chart, TRACK_CHARTS } from '../../public/game/src/track-charts.js';
 import { checkMusicDrive } from './music-drive.mjs';
 
 function audioFixture(duration) {
@@ -68,7 +68,7 @@ export async function checkClubChart(browser, { root, csp }) {
     });
     const page = await context.newPage();
     page.on('pageerror', error => errors.push(error.message));
-    await page.goto(origin + '/game-test/?lang=en');
+    await page.goto(origin + '/game/?lang=en');
     await page.waitForFunction(() => globalThis.__HYPERDRIVE__?.snapshot().ready);
     await page.locator('#resume-tour').click();
     for (let i = 0; i < 20; i++) {

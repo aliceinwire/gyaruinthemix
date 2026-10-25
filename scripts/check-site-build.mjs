@@ -54,7 +54,7 @@ for (const path of publicPaths) {
     )
       continue;
     assert.ok(
-      !href.includes('/shop-test/') && !href.includes('/game-test/'),
+      !href.includes('/shop-test/') && !href.includes('/game/'),
       `${path}: hidden test pages must stay undiscoverable`,
     );
     if (getLocale(path) === 'en' && !href.startsWith('/en/')) {
@@ -108,9 +108,9 @@ console.log(
 );
 
 assert.match(
-  await read('game-test/index.html'),
+  await read('game/index.html'),
   /name="robots" content="noindex, nofollow, noarchive"/,
 );
-assertReleaseFooter(await read('game-test/index.html'), 'game-test/index.html');
-assert.doesNotMatch(sitemap, /game-test/);
-assert.match(await read('robots.txt'), /Disallow: \/game-test\//);
+assertReleaseFooter(await read('game/index.html'), 'game/index.html');
+assert.doesNotMatch(sitemap, /\/game(?:\/|["\s<>])/);
+assert.match(await read('robots.txt'), /Disallow: \/game\//);

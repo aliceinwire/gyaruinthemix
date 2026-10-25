@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createStreamAudio } from '../../public/game-test/src/stream-audio.js';
+import { createStreamAudio } from '../../public/game/src/stream-audio.js';
 const a = 't-' + 'a'.repeat(24),
   b = 't-' + 'b'.repeat(24),
   settle = () => new Promise((r) => setTimeout(r, 0));

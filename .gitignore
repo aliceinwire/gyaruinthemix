@@ -24,4 +24,5 @@ __pycache__/
 *.py[cod]
 
 /assets/music/
+/public/game/assets/music/
 /public/game-test/assets/music/

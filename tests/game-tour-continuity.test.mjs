@@ -1,16 +1,16 @@
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
-import { campaignEnvironment } from '../public/game-test/src/simulation.js';
+import { campaignEnvironment } from '../public/game/src/simulation.js';
 import {
   getStoryScene,
   storyMemoryForRun,
   markStorySeen,
   chooseStoryOption,
   normalizeStoryMemory,
-} from '../public/game-test/src/tour-story.js';
-import { selectCrewDialogue } from '../public/game-test/src/crew-dialogue.js';
-import { getJourneyChoices } from '../public/game-test/src/journey.js';
+} from '../public/game/src/tour-story.js';
+import { selectCrewDialogue } from '../public/game/src/crew-dialogue.js';
+import { getJourneyChoices } from '../public/game/src/journey.js';
 
 test('each tour keeps its season across all twelve roads, with reproducible changing weather', () => {
   let varied = false;
@@ -89,7 +89,7 @@ test('legacy mid-tour journals migrate without losing their focus or completed s
 
 test('static tour labels describe six club stops rather than six cities', () => {
   const html = readFileSync(
-    new URL('../public/game-test/index.html', import.meta.url),
+    new URL('../public/game/index.html', import.meta.url),
     'utf8',
   );
   assert.match(html, /6 CLUBS/);

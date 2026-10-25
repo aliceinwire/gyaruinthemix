@@ -13,9 +13,9 @@ import {
   getRouteMission,
   routeMissionProgress,
   settleRouteReward,
-} from '../public/game-test/src/run-build.js';
-import { CAR_CATALOG } from '../public/game-test/src/garage.js';
-import { getJourneyChoices } from '../public/game-test/src/journey.js';
+} from '../public/game/src/run-build.js';
+import { CAR_CATALOG } from '../public/game/src/garage.js';
+import { getJourneyChoices } from '../public/game/src/journey.js';
 
 const route = (leg = 0, kind = 'ev', seed = 175) =>
   getJourneyChoices(leg, seed).find((node) => node.kind === kind);
@@ -580,7 +580,7 @@ import {
   retryRoute,
   exportCampaignSave,
   restoreCampaignSave,
-} from '../public/game-test/src/simulation.js';
+} from '../public/game/src/simulation.js';
 const emptyRoad = (target) => {
   target.entities = [];
   target._stations = [];

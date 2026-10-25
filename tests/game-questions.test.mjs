@@ -1,9 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {
-  QUESTIONS,
-  questionForStage,
-} from '../public/game-test/src/questions.js';
+import { QUESTIONS, questionForStage } from '../public/game/src/questions.js';
 
 test('question bank has unique, sourced questions in the requested themes', () => {
   assert.ok(QUESTIONS.length >= 24);

@@ -9,7 +9,7 @@ import {
   exportNightfallSave,
   restoreNightfallSave,
   campaignEnvironment,
-} from '../public/game-test/src/simulation.js';
+} from '../public/game/src/simulation.js';
 import {
   survivalOffers,
   survivalXpCost,
@@ -21,17 +21,17 @@ import {
   applySurvivalModifiers,
   SURVIVAL_VERSION,
   SURVIVAL_STARTERS,
-} from '../public/game-test/src/survival.js';
+} from '../public/game/src/survival.js';
 import {
   normalizeRunBuild,
   getBuildModifiers,
   getBuildOffers,
-} from '../public/game-test/src/run-build.js';
+} from '../public/game/src/run-build.js';
 import {
   createMetaProgress,
   equipStartingCar,
-} from '../public/game-test/src/garage.js';
-import { getJourneyChoices } from '../public/game-test/src/journey.js';
+} from '../public/game/src/garage.js';
+import { getJourneyChoices } from '../public/game/src/journey.js';
 function quiet(weapon = 'heart') {
   const state = createState({
     mode: 'survival',

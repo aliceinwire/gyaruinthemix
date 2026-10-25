@@ -17,6 +17,6 @@ regexes = ['''^(?:(?:sk|rk)_(?:test|live)_UNITTESTONLY|(?:sk|rk)_test_(?:FIXTURE
 [[allowlists]]
 description = "Public localStorage identifier for Neon Survival personal records"
 condition = "AND"
-paths = ['''^public/game-test/src/survival\.js$''']
+paths = ['''^public/game(?:-test)?/src/survival\.js$''']
 regexTarget = "secret"
 regexes = ['''^gyaruinthemix-survival-records-v[12345]$''']

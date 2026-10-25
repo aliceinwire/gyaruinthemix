@@ -1,8 +1,8 @@
 # Unlisted game testing page
 
-The standalone game snapshot is served at `/game-test/`. It is absent from site navigation and the sitemap, and has a robots exclusion plus HTML and HTTP noindex/nofollow/noarchive directives. This is **unlisted, not authentication**: anyone with its URL can open it, and robots.txt itself reveals the path. No private music, keys, account credentials, or backend access is bundled.
+The standalone game snapshot is served at `/game/`. The previous `/game-test` URL and its subpaths permanently redirect here, preserving query strings. It is absent from site navigation and the sitemap, and has a robots exclusion plus HTML and HTTP noindex/nofollow/noarchive directives. This is **unlisted, not authentication**: anyone with its URL can open it, and robots.txt itself reveals the path. No private music, keys, account credentials, or backend access is bundled.
 
-The game runtime is vendored under `public/game-test/`, including its original license notice. `build-info.json` records the base source commit, runtime version and SHA-256 of the frozen snapshot manifest. The current graphics and gameplay snapshot has not been published to the game repository; the base commit does not include these changes. The snapshot hash covers every runtime file except build-info.json, using sorted UTF-8 lines containing each file SHA-256, two spaces, its game-relative path and a newline. There is no cross-repository build download or new deployment credential. Existing shop, fanclub, news, API and bilingual routes are unchanged.
+The game runtime is vendored under `public/game/`, including its original license notice. `build-info.json` records the base source commit, runtime version and SHA-256 of the frozen snapshot manifest. The current graphics and gameplay snapshot has not been published to the game repository; the base commit does not include these changes. The snapshot hash covers every runtime file except build-info.json, using sorted UTF-8 lines containing each file SHA-256, two spaces, its game-relative path and a newline. There is no cross-repository build download or new deployment credential. Existing shop, fanclub, news, API and bilingual routes are unchanged.
 
 The game uses only its built-in car radio, with same-origin scripts and same-origin/blob media. Frames are disabled. The website's global policy remains unchanged; browser autoplay restrictions and audio-service availability still apply.
 
@@ -36,7 +36,7 @@ Keep the existing unit, browser, build and container CI gates. Container coverag
 
 Merge the reviewed PR into main only after all CI gates pass. The existing workflow then builds, tests and publishes the website Docker images. If the VPS updater has already been activated, it polls for the tested images every five minutes; this repository cannot establish its activation state. Otherwise the site operator runs the existing updater as documented in `deploy/bouncer/README.md`.
 
-After rollout, verify `https://gyaruinthemix.com/game-test/build-info.json` matches the reviewed snapshot hash, `/game-test/` returns 200, assets load and the game starts. Test desktop and phone, car radio playback, and existing shop/fanclub routes. A merged PR or published image alone is not proof of a live deployment.
+After rollout, verify `https://gyaruinthemix.com/game/build-info.json` matches the reviewed snapshot hash, `/game/` returns 200, assets load and the game starts. Test desktop and phone, car radio playback, and existing shop/fanclub routes. A merged PR or published image alone is not proof of a live deployment.
 
 ## Refreshing the game
 

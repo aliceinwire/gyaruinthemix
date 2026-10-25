@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   getArrivalSupporters,
   ARRIVAL_FAN_LIMIT,
-} from '../public/game-test/src/arrival-fans.js';
+} from '../public/game/src/arrival-fans.js';
 const state = {
   routeIndex: 11,
   routeLength: 1000,
@@ -66,7 +66,7 @@ test('optional connected console art cannot block starting the game', async () =
   };
   try {
     const { preloadCampaign } = await import(
-      '../public/game-test/src/campaign.js?optional-console'
+      '../public/game/src/campaign.js?optional-console'
     );
     const loaded = await preloadCampaign();
     assert.equal(loaded.length, 6);

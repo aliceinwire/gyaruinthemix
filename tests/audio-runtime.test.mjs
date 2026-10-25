@@ -1,14 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { loadGameAudioConfig } from '../public/game-test/src/game-audio-config.js';
+import { loadGameAudioConfig } from '../public/game/src/game-audio-config.js';
 import {
   createGameAudio,
   createStreamingAudio,
-} from '../public/game-test/src/audio.js';
+} from '../public/game/src/audio.js';
 import {
   readMusicSpectrum,
   SILENT_MUSIC,
-} from '../public/game-test/src/music-reactivity.js';
+} from '../public/game/src/music-reactivity.js';
 
 const pending = () => {
   let resolve;

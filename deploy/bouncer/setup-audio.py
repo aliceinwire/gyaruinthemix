@@ -981,7 +981,7 @@ class AudioSetup(update.Updater):
                 raise Error("Setup failed and recovery remains pending. Run --recover to inspect, then --recover --apply after resolving the blocker. Do not delete the journal or packaging lock.") from None
             raise Error("Setup failed; the previous configuration/images were restored. Review locally before retrying.") from None
         print("Audio is enabled and selected services passed health checks. Shared services and scheduler were not reconciled.")
-        print("Verify /game-test/ playback and existing checkout over HTTPS. Keep private backups until verified.")
+        print("Verify /game/ playback and existing checkout over HTTPS. Keep private backups until verified.")
 
 
 def confirm(token, *, permissions=False):

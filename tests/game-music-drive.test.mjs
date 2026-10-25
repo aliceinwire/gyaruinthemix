@@ -8,13 +8,13 @@ import {
   changeRouteBeforeStart,
   exportNightfallSave,
   restoreNightfallSave,
-} from '../public/game-test/src/simulation.js';
+} from '../public/game/src/simulation.js';
 import {
   setMusicDrive,
   updateMusicDrive,
   suspendMusicDrive,
   applyMusicEncounter,
-} from '../public/game-test/src/music-drive.js';
+} from '../public/game/src/music-drive.js';
 import {
   createSurvivalRecords,
   normalizeSurvivalRecords,
@@ -22,13 +22,13 @@ import {
   survivalResult,
   survivalRecordCategory,
   setSurvivalAssistance,
-} from '../public/game-test/src/survival.js';
+} from '../public/game/src/survival.js';
 import {
   updateEncounterActor,
   ENCOUNTER_RULES,
-} from '../public/game-test/src/encounter-director.js';
-import { CHROME_BOUNCE_CHART as chart } from '../public/game-test/src/track-charts.js';
-import { getRoadCue } from '../public/game-test/src/road-feedback.js';
+} from '../public/game/src/encounter-director.js';
+import { CHROME_BOUNCE_CHART as chart } from '../public/game/src/track-charts.js';
+import { getRoadCue } from '../public/game/src/road-feedback.js';
 
 const fresh = (options = {}) =>
   createState({

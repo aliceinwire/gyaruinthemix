@@ -7,13 +7,13 @@ import {
   getCarRoofLayout,
   drawCarRoof,
   preloadCarArt,
-} from '../public/game-test/src/car-art.js';
-import { preloadCabinCharacters } from '../public/game-test/src/cabin-characters.js';
+} from '../public/game/src/car-art.js';
+import { preloadCabinCharacters } from '../public/game/src/cabin-characters.js';
 import {
   drawCar,
   getCrewSeatLayout,
   heartVisualPosition,
-} from '../public/game-test/src/renderer.js';
+} from '../public/game/src/renderer.js';
 
 class LocalImage {
   set src(url) {
