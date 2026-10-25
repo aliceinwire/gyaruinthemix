@@ -2,7 +2,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import { isSemanticVersion, releaseVersion } from '../src/data/release.mjs';
 
-const gamePath = new URL('../public/game-test/index.html', import.meta.url);
+const gamePath = new URL('../public/game/index.html', import.meta.url);
 const versionSpan =
   /<span data-release-version="[^"]*" translate="no">[^<]*<\/span>/g;
 

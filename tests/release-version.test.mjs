@@ -89,7 +89,7 @@ test('package lock, shared footer and standalone game expose the same release', 
   assert.equal(manifest.version, releaseVersion);
   assert.equal(lock.version, releaseVersion);
   assert.equal(lock.packages[''].version, releaseVersion);
-  const game = await read('public/game-test/index.html');
+  const game = await read('public/game/index.html');
   assert.equal(stampGameRelease(game, releaseVersion), game);
   assert.match(
     game,

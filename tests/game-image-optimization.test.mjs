@@ -15,7 +15,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { optimizeGameImages } from '../scripts/optimize-game-images.mjs';
 
-const source = fileURLToPath(new URL('../public/game-test/', import.meta.url));
+const source = fileURLToPath(new URL('../public/game/', import.meta.url));
 async function outputFixture(t) {
   const output = await mkdtemp(join(tmpdir(), 'gyaru-game-images-'));
   t.after(() => rm(output, { recursive: true, force: true }));

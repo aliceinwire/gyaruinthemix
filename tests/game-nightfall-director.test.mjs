@@ -4,11 +4,11 @@ import {
   createStoryDirector,
   STORY_SAVE_KEY,
   normalizeStorySave,
-} from '../public/game-test/src/tour-director.js';
+} from '../public/game/src/tour-director.js';
 import {
   markStorySeen,
   normalizeStoryMemory,
-} from '../public/game-test/src/tour-story.js';
+} from '../public/game/src/tour-story.js';
 
 function fixture({
   memory,

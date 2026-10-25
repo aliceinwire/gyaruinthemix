@@ -48,7 +48,7 @@ try {
   ])
     await copyFile(new URL(`../${path}`, import.meta.url), join(root, path));
   await chmod(join(root, '.githooks/pre-commit'), 0o755);
-  const storagePath = 'public/game-test/src/survival.js';
+  const storagePath = 'public/game/src/survival.js';
   const storageFile = join(root, storagePath);
   const storageSource = await readFile(
     new URL(`../${storagePath}`, import.meta.url),
@@ -57,8 +57,14 @@ try {
   const storageDeclaration = storageSource.match(
     /^export const SURVIVAL_RECORD_KEY = .*$/m,
   )[0];
-  await mkdir(join(root, 'public/game-test/src'), { recursive: true });
+  await mkdir(join(root, 'public/game/src'), { recursive: true });
   await writeFile(storageFile, storageDeclaration);
+  // The previous directory remains in history after the route migration.
+  await mkdir(join(root, 'public/game-test/src'), { recursive: true });
+  await writeFile(
+    join(root, 'public/game-test/src/survival.js'),
+    storageDeclaration,
+  );
   await writeFile(
     join(root, 'fixture.txt'),
     [

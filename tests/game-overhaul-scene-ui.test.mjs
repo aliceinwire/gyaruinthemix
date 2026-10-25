@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { createSceneUI, SCREENS } from '../public/game-test/src/scene-ui.js';
+import { createSceneUI, SCREENS } from '../public/game/src/scene-ui.js';
 function root() {
   const nodes = new Map();
   return {
@@ -58,7 +58,7 @@ test('garage and route are separate views with matching accessible selection', (
 });
 test('replacement shell has unique stable IDs, safe-area viewport and genuine logical canvas dimensions', () => {
   const html = readFileSync(
-      new URL('../public/game-test/index.html', import.meta.url),
+      new URL('../public/game/index.html', import.meta.url),
       'utf8',
     ),
     ids = [...html.matchAll(/\bid="([^"]+)"/g)].map((m) => m[1]);
@@ -80,7 +80,7 @@ test('replacement shell has unique stable IDs, safe-area viewport and genuine lo
   assert.match(html, /id="game"\s+width="960"\s+height="540"/);
   assert.equal((html.match(/data-control=/g) || []).length, 3);
   const css = readFileSync(
-    new URL('../public/game-test/style.css', import.meta.url),
+    new URL('../public/game/style.css', import.meta.url),
     'utf8',
   );
   assert.match(css, /100dvh/);
@@ -90,7 +90,7 @@ test('replacement shell has unique stable IDs, safe-area viewport and genuine lo
 
 test('car selection lives outside the route garage and has its own scene', () => {
   const html = readFileSync(
-    new URL('../public/game-test/index.html', import.meta.url),
+    new URL('../public/game/index.html', import.meta.url),
     'utf8',
   );
   assert.ok(SCREENS.includes('cars'));

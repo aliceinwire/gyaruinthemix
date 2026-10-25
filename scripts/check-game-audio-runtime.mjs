@@ -42,15 +42,24 @@ export async function checkGameAudioRuntime(
   assert.match(config.headers.get('cache-control'), /no-store/);
   for (const path of [
     `/assets/music/${AUDIO_FIXTURE_SOURCE}`,
-    `/game-test/assets/music/${AUDIO_FIXTURE_SOURCE}`,
+    `/game/assets/music/${AUDIO_FIXTURE_SOURCE}`,
     '/assets/music/.hls/catalog.json',
-    '/game-test/assets/music/.hls/catalog.json',
+    '/game/assets/music/.hls/catalog.json',
   ]) {
     const response = await fetch(new URL(path, base), {
       redirect: 'manual',
       signal: AbortSignal.timeout(15000),
     });
     await assertPrivateAudioDenied(response, path);
+    if (path.startsWith('/game/')) {
+      const legacy = await fetch(
+        new URL(path.replace('/game/', '/game-test/'), base),
+        {
+          signal: AbortSignal.timeout(15000),
+        },
+      );
+      await assertPrivateAudioDenied(legacy, path);
+    }
   }
   if (!enabled) {
     const catalog = await fetch(new URL('/game-audio/v1/catalog', base), {

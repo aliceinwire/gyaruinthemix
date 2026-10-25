@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { resolve, extname } from 'node:path';
-import { createState, exportCampaignSave, exportNightfallSave } from '../../public/game-test/src/simulation.js';
-import { SAVE_KEY, NIGHTFALL_SAVE_KEY } from '../../public/game-test/src/save-store.js';
+import { createState, exportCampaignSave, exportNightfallSave } from '../../public/game/src/simulation.js';
+import { SAVE_KEY, NIGHTFALL_SAVE_KEY } from '../../public/game/src/save-store.js';
 
 export async function checkClubResume(browser, { root, csp }) {
   for (const [city, routeIndex, legacy] of [['shinjuku', 3, false], ['kyoto', 11, true]]) {
@@ -44,7 +44,7 @@ export async function checkClubResume(browser, { root, csp }) {
           return drawImage.call(this, image, ...args);
         };
       }, { key, save });
-      await page.goto('http://club-resume.local/game-test/');
+      await page.goto('http://club-resume.local/game/');
       await page.waitForFunction(() => globalThis.__HYPERDRIVE__?.snapshot().ready);
       assert.ok(requests.every(path => path.endsWith('/nakano.webp')));
       await page.locator('#resume-tour').click();

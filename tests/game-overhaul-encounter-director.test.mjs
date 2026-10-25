@@ -5,13 +5,10 @@ import {
   updateEncounterActor,
   getEncounterPhase,
   ENCOUNTER_RULES,
-} from '../public/game-test/src/encounter-director.js';
-import {
-  createState,
-  ROUTE_OPTIONS,
-} from '../public/game-test/src/simulation.js';
-import { DRIVING_PACE } from '../public/game-test/src/pace.js';
-import { getJourneyChoices } from '../public/game-test/src/journey.js';
+} from '../public/game/src/encounter-director.js';
+import { createState, ROUTE_OPTIONS } from '../public/game/src/simulation.js';
+import { DRIVING_PACE } from '../public/game/src/pace.js';
+import { getJourneyChoices } from '../public/game/src/journey.js';
 
 const METRES_PER_SECOND = ENCOUNTER_RULES.maximumSupportedSpeed / 3.6;
 const RADII = { salaryman: 15, cone: 21, barrier: 27, pothole: 21 };

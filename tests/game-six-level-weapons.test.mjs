@@ -6,7 +6,7 @@ import {
   exportNightfallSave,
   restoreNightfallSave,
   nextRoute,
-} from '../public/game-test/src/simulation.js';
+} from '../public/game/src/simulation.js';
 import {
   SURVIVAL_UPGRADES,
   SURVIVAL_WEAPONS,
@@ -22,7 +22,7 @@ import {
   survivalResult,
   openSurvivalDraft,
   chooseSurvivalUpgrade,
-} from '../public/game-test/src/survival.js';
+} from '../public/game/src/survival.js';
 
 function quiet(weapon = 'cd') {
   const state = createState({

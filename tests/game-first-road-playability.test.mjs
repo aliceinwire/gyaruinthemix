@@ -8,7 +8,7 @@ import {
   exportNightfallSave,
   restoreNightfallSave,
   nextRoute,
-} from '../public/game-test/src/simulation.js';
+} from '../public/game/src/simulation.js';
 import {
   setSurvivalAssistance,
   createSurvivalRecords,
@@ -21,13 +21,13 @@ import {
   survivalWeaponStats,
   SURVIVAL_STARTERS,
   SURVIVAL_EVOLUTIONS,
-} from '../public/game-test/src/survival.js';
+} from '../public/game/src/survival.js';
 import {
   createDrivingLessons,
   updateDrivingLessons,
   getDrivingCue,
-} from '../public/game-test/src/driving-lessons.js';
-import { getRoadCue } from '../public/game-test/src/road-feedback.js';
+} from '../public/game/src/driving-lessons.js';
+import { getRoadCue } from '../public/game/src/road-feedback.js';
 
 const fresh = (options = {}) =>
   createState({

@@ -4,24 +4,24 @@ import {
   readMusicSpectrum,
   SILENT_MUSIC,
   weaponMusicLevel,
-} from '../public/game-test/src/music-reactivity.js';
-import { drawSurvival } from '../public/game-test/src/survival-ui.js';
+} from '../public/game/src/music-reactivity.js';
+import { drawSurvival } from '../public/game/src/survival-ui.js';
 import {
   createRoadFeedback,
   captureRoadFeedback,
   drawRoadFeedback,
-} from '../public/game-test/src/road-feedback.js';
+} from '../public/game/src/road-feedback.js';
 import {
   drawSignalHeadliner,
   drawCar,
   render,
-} from '../public/game-test/src/renderer.js';
-import { CAR_ART } from '../public/game-test/src/car-art.js';
+} from '../public/game/src/renderer.js';
+import { CAR_ART } from '../public/game/src/car-art.js';
 import {
   resolveCrewVisuals,
   resolveCharacterPose,
-} from '../public/game-test/src/character-actions.js';
-import { createState, update } from '../public/game-test/src/simulation.js';
+} from '../public/game/src/character-actions.js';
+import { createState, update } from '../public/game/src/simulation.js';
 
 function signal(bin) {
   const data = new Uint8Array(512);
@@ -220,7 +220,7 @@ test('music rendering cannot change an identical seeded run and reduced motion i
 });
 
 test('charted club lighting follows sections, its meters follow music, and reduced motion stays still', async () => {
-  const { drawFinale } = await import('../public/game-test/src/campaign.js');
+  const { drawFinale } = await import('../public/game/src/campaign.js');
   const performance = {
     charted: true,
     playing: true,

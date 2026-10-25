@@ -7,21 +7,21 @@ import {
   itemIconRects,
   createItemIcon,
   drawItemIcon,
-} from '../public/game-test/src/item-icons.js';
+} from '../public/game/src/item-icons.js';
 import {
   SURVIVAL_UPGRADES,
   SURVIVAL_EVOLUTIONS,
-} from '../public/game-test/src/survival.js';
-import { RUN_MOD_CATALOG } from '../public/game-test/src/run-build.js';
-import { RUN_STYLES, PERK_CATALOG } from '../public/game-test/src/tour-rpg.js';
+} from '../public/game/src/survival.js';
+import { RUN_MOD_CATALOG } from '../public/game/src/run-build.js';
+import { RUN_STYLES, PERK_CATALOG } from '../public/game/src/tour-rpg.js';
 import {
   CAR_CATALOG,
   STARTING_UPGRADE_CATALOG,
   PAINT_OPTIONS,
   WHEEL_OPTIONS,
   DECAL_OPTIONS,
-} from '../public/game-test/src/garage.js';
-import { UPGRADE_CATALOG } from '../public/game-test/src/simulation.js';
+} from '../public/game/src/garage.js';
+import { UPGRADE_CATALOG } from '../public/game/src/simulation.js';
 
 test('each selectable equipment and cosmetic has an explicit pixel icon', () => {
   const equipment = [

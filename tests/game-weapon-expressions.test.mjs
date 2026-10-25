@@ -8,26 +8,26 @@ import {
   exportNightfallSave,
   restoreNightfallSave,
   beginClubQuiz,
-} from '../public/game-test/src/simulation.js';
+} from '../public/game/src/simulation.js';
 import {
   resetCrewWeaponGesture,
   requestCrewWeaponGesture,
   advanceCrewWeaponGesture,
   settleCrewWeaponGesture,
-} from '../public/game-test/src/crew-weapon-state.js';
+} from '../public/game/src/crew-weapon-state.js';
 import {
   resolveCrewVisuals,
   drawCharacter,
   preloadCharacterActions,
-} from '../public/game-test/src/character-actions.js';
+} from '../public/game/src/character-actions.js';
 import {
   drawCabinCharacter,
   preloadCabinCharacters,
-} from '../public/game-test/src/cabin-characters.js';
-import { selectCrewDialogue } from '../public/game-test/src/crew-dialogue.js';
-import { drawCar } from '../public/game-test/src/renderer.js';
-import { CAR_ART } from '../public/game-test/src/car-art.js';
-import { LANGUAGES } from '../public/game-test/src/i18n.js';
+} from '../public/game/src/cabin-characters.js';
+import { selectCrewDialogue } from '../public/game/src/crew-dialogue.js';
+import { drawCar } from '../public/game/src/renderer.js';
+import { CAR_ART } from '../public/game/src/car-art.js';
+import { LANGUAGES } from '../public/game/src/i18n.js';
 
 const weapons = ['heart', 'flash', 'vinyl', 'bass', 'phone', 'cd', 'cassette'];
 const make = (weapon) =>
@@ -65,10 +65,7 @@ for (const weapon of weapons)
         if (code === 'ja') continue;
         const catalog = JSON.parse(
           readFileSync(
-            new URL(
-              `../public/game-test/locales/${code}.json`,
-              import.meta.url,
-            ),
+            new URL(`../public/game/locales/${code}.json`, import.meta.url),
           ),
         );
         assert.ok(

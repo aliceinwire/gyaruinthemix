@@ -9,22 +9,22 @@ import {
   ROUTES,
   ROUTE_OPTIONS,
   RUSH_SPEED_MULTIPLIER,
-} from '../public/game-test/src/simulation.js';
-import { ENCOUNTER_RULES } from '../public/game-test/src/encounter-director.js';
-import { getJourneyChoices } from '../public/game-test/src/journey.js';
+} from '../public/game/src/simulation.js';
+import { ENCOUNTER_RULES } from '../public/game/src/encounter-director.js';
+import { getJourneyChoices } from '../public/game/src/journey.js';
 import {
   STREET_ROLES,
   ROUTINE_HAZARDS,
   LITTLE_FINDS,
-} from '../public/game-test/src/street-culture.js';
+} from '../public/game/src/street-culture.js';
 import {
   drawCultureProp,
   drawRoutineHazard,
   drawLittleFind,
   drawFriendlyCat,
-} from '../public/game-test/src/street-culture-art.js';
-import { getRoadCue } from '../public/game-test/src/road-feedback.js';
-import { selectCrewEvent } from '../public/game-test/src/crew-dialogue.js';
+} from '../public/game/src/street-culture-art.js';
+import { getRoadCue } from '../public/game/src/road-feedback.js';
+import { selectCrewEvent } from '../public/game/src/crew-dialogue.js';
 
 function emptyRoad() {
   const state = createState();

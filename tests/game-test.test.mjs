@@ -4,27 +4,27 @@ import test from 'node:test';
 
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 
-test('game test stays outside navigation and public sitemap', async () => {
-  assert.doesNotMatch(await read('src/data/urls.mjs'), /game-test/);
+test('game stays outside navigation and public sitemap', async () => {
+  assert.doesNotMatch(await read('src/data/urls.mjs'), /\/game(?:\/|["\s<>])/);
+  assert.match(await read('src/pages/robots.txt.js'), /Disallow: \/game\//);
   assert.match(
-    await read('src/pages/robots.txt.js'),
-    /Disallow: \/game-test\//,
-  );
-  assert.match(
-    await read('public/game-test/index.html'),
+    await read('public/game/index.html'),
     /name="robots" content="noindex, nofollow, noarchive"/,
   );
 });
 
 test('game Docker context and scoped audio security policy are included', async () => {
-  assert.match(await read('.dockerignore'), /!public\/game-test\/\*\*/);
+  assert.match(await read('.dockerignore'), /!public\/game\/\*\*/);
   assert.match(
     await read('Dockerfile.web'),
     /COPY deploy\/game-security-headers.conf/,
   );
   const nginx = await read('deploy/nginx.conf');
-  assert.match(nginx, /location = \/game-test \{ return 308 \/game-test\/; \}/);
-  assert.match(nginx, /location \^~ \/game-test\/ \{/);
+  assert.match(
+    nginx,
+    /location = \/game \{ return 308 \/game\/\$is_args\$args; \}/,
+  );
+  assert.match(nginx, /location \^~ \/game\/ \{/);
   assert.match(nginx, /X-Robots-Tag 'noindex, nofollow, noarchive'/);
   const game = await read('deploy/game-security-headers.conf');
   assert.match(game, /script-src 'self';/);
@@ -70,7 +70,7 @@ test('Nginx extends its standard MIME map for the lazy HLS JavaScript module', a
     /http\s*\{\s*include \/etc\/nginx\/mime\.types;[\s\S]*?types\s*\{\s*application\/javascript mjs;\s*\}/,
   );
   assert.match(
-    await read('public/game-test/src/stream-audio.js'),
+    await read('public/game/src/stream-audio.js'),
     /import\('\.\/vendor\/hls\.light\.min\.mjs'\)/,
   );
   assert.match(
@@ -80,7 +80,7 @@ test('Nginx extends its standard MIME map for the lazy HLS JavaScript module', a
 });
 
 test('game runtime is a self-contained static snapshot without private audio', async () => {
-  const manifest = JSON.parse(await read('public/game-test/build-info.json'));
+  const manifest = JSON.parse(await read('public/game/build-info.json'));
   assert.match(manifest.baseSourceCommit, /^[a-f0-9]{40}$/);
   assert.match(manifest.snapshotSha256, /^[a-f0-9]{64}$/);
   assert.match(manifest.sourcePublication, /Local tested snapshot/);
@@ -93,8 +93,8 @@ test('game runtime is a self-contained static snapshot without private audio', a
       else assert.doesNotMatch(name, /\.(mp3|wav|ogg|m4a|key|pem|env)$/i);
     }
   }
-  await walk('public/game-test');
-  const html = await read('public/game-test/index.html');
+  await walk('public/game');
+  const html = await read('public/game/index.html');
   assert.match(html, /src="\.\/main.js"/);
   assert.match(html, /href="\.\/style.css"/);
   assert.doesNotMatch(html, /soundcloud|<iframe/i);

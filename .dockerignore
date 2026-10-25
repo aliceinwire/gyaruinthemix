@@ -18,7 +18,7 @@
 !deploy/nginx-payment-links.conf
 !deploy/security-headers.conf
 !deploy/api-healthcheck.mjs
-!public/game-test/**
+!public/game/**
 !deploy/game-security-headers.conf
 !deploy/game-audio.conf
 !deploy/game-audio-proxy.conf
@@ -29,4 +29,4 @@
 !game-audio/scripts/package-library.mjs
 
 assets/music/**
-public/game-test/assets/music/**
+public/game/assets/music/**

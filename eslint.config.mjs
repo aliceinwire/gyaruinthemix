@@ -6,7 +6,7 @@ export default [
       '.astro/**',
       'artifacts/**',
       'public/assets/**',
-      'public/game-test/src/vendor/**',
+      'public/game/src/vendor/**',
     ],
   },
   {

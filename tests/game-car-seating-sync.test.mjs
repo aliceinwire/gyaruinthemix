@@ -1,20 +1,17 @@
 import {
   drawCabinCharacter,
   preloadCabinCharacters,
-} from '../public/game-test/src/cabin-characters.js';
+} from '../public/game/src/cabin-characters.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { CAR_ART, getCarArtLayout } from '../public/game-test/src/car-art.js';
-import {
-  getCrewSeatLayout,
-  drawCar,
-} from '../public/game-test/src/renderer.js';
+import { CAR_ART, getCarArtLayout } from '../public/game/src/car-art.js';
+import { getCrewSeatLayout, drawCar } from '../public/game/src/renderer.js';
 import {
   resolveCrewVisuals,
   preloadCharacterActions,
   drawCharacter,
-} from '../public/game-test/src/character-actions.js';
+} from '../public/game/src/character-actions.js';
 
 class LocalImage {
   set src(url) {
@@ -142,7 +139,7 @@ test('reduced motion freezes the same keyframe in both views, including rush', (
 
 test('main shares one visual snapshot without changing portrait geometry', () => {
   const main = readFileSync(
-    new URL('../public/game-test/main.js', import.meta.url),
+    new URL('../public/game/main.js', import.meta.url),
     'utf8',
   );
   assert.match(main, /const crewVisuals = resolveCrewVisuals\(state/);

@@ -6,11 +6,11 @@ import {
   update,
   exportCampaignSave,
   exportNightfallSave,
-} from '../../public/game-test/src/simulation.js';
+} from '../../public/game/src/simulation.js';
 import {
   SAVE_KEY,
   NIGHTFALL_SAVE_KEY,
-} from '../../public/game-test/src/save-store.js';
+} from '../../public/game/src/save-store.js';
 import {
   survivalOffers,
   survivalXpCost,
@@ -18,14 +18,14 @@ import {
   SURVIVAL_UPGRADES,
   SURVIVAL_EVOLUTIONS,
   SURVIVAL_RECORD_KEY,
-} from '../../public/game-test/src/survival.js';
+} from '../../public/game/src/survival.js';
 import {
   getRpgView,
   normalizeRpg,
-} from '../../public/game-test/src/tour-rpg.js';
-import { SETTINGS_KEY } from '../../public/game-test/src/tour-settings.js';
-import { LANGUAGES } from '../../public/game-test/src/i18n.js';
-import { STORY_SAVE_KEY } from '../../public/game-test/src/tour-director.js';
+} from '../../public/game/src/tour-rpg.js';
+import { SETTINGS_KEY } from '../../public/game/src/tour-settings.js';
+import { LANGUAGES } from '../../public/game/src/i18n.js';
+import { STORY_SAVE_KEY } from '../../public/game/src/tour-director.js';
 import { extname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
@@ -65,7 +65,7 @@ async function checkLanguages(page, picker, selectors) {
     if (await page.locator('#menu').isVisible()) {
       const catalog = JSON.parse(
         await readFile(
-          resolve(root, `public/game-test/locales/${code}.json`),
+          resolve(root, `public/game/locales/${code}.json`),
           'utf8',
         ),
       );
@@ -338,7 +338,7 @@ try {
       const url = new URL(route.request().url());
       if (url.origin !== origin) return route.abort();
       if (url.pathname.endsWith('.mjs')) moduleRequests.push(url.pathname);
-      if (languageBootDelay && url.pathname.startsWith('/game-test/locales/'))
+      if (languageBootDelay && url.pathname.startsWith('/game/locales/'))
         await new Promise((resolve) => setTimeout(resolve, languageBootDelay));
       if (url.pathname === '/game-audio/v1/config') {
         audioRequests.push(url.pathname);
@@ -392,7 +392,7 @@ try {
         ),
       );
     });
-    await page.goto(origin + '/game-test/');
+    await page.goto(origin + '/game/');
     await page.waitForFunction(
       () => globalThis.__HYPERDRIVE__?.snapshot().ready,
     );
@@ -913,7 +913,7 @@ try {
       assert.ok([1, 2].includes(await page.evaluate(() => __HYPERDRIVE__.snapshot().state.totalFans)));
       await page.screenshot({ path: resolve(root, 'artifacts/browser/game-test/1440-low-fan-club.png'), fullPage: true });
       await page.evaluate(async () => {
-        const { drawFinale } = await import('/game-test/src/campaign.js');
+        const { drawFinale } = await import('/game/src/campaign.js');
         const canvas = document.createElement('canvas');
         canvas.id = 'zero-fan-scene'; canvas.width = 960; canvas.height = 540;
         canvas.style.cssText = 'position:fixed;inset:0;z-index:9999;width:960px;height:540px';
@@ -965,7 +965,7 @@ try {
       await page.locator('#draft-panel select').selectOption('en');
       await page.waitForFunction(() => document.documentElement.lang === 'en');
       const expectedPhoneStats = await page.evaluate(async source =>
-        (await import('/game-test/src/i18n.js')).t(source),
+        (await import('/game/src/i18n.js')).t(source),
       gadgetOffers.find((item) => item.id === 'phone').synergy);
       assert.ok((await phoneCard.locator('.weapon-stats').textContent()).includes(expectedPhoneStats),
         'The phone card translates the same numerical stats used by the simulation');
@@ -1450,13 +1450,13 @@ try {
       // Import-only module smoke, with no media or playback. This complements
       // the controller's synthetic non-native playback tests and catches a MIME
       // or CSP failure when the real vendored module is fetched by the browser.
-      const hlsPath = '/game-test/src/vendor/hls.light.min.mjs';
+      const hlsPath = '/game/src/vendor/hls.light.min.mjs';
       const [moduleResponse, moduleAvailable] = await Promise.all([
         page.waitForResponse(
           (response) => new URL(response.url()).pathname === hlsPath,
         ),
         page.evaluate(async () => {
-          const { loadHls } = await import('/game-test/src/stream-audio.js');
+          const { loadHls } = await import('/game/src/stream-audio.js');
           const Hls = await loadHls();
           return (
             typeof Hls === 'function' && typeof Hls.isSupported === 'function'

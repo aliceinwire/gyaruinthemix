@@ -10,7 +10,7 @@ import {
   upgradePrice,
   ROUTES,
   ROUTE_OPTIONS,
-} from '../public/game-test/src/simulation.js';
+} from '../public/game/src/simulation.js';
 
 function purchase(s, id) {
   s.status = 'won';
