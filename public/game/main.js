@@ -68,12 +68,6 @@ import { render, drawCar } from "./src/renderer.js";
 import { drawMap, drawFinale, preloadJourneyMap, hitTestMapChoice } from "./src/campaign.js";
 import { getClubArt } from './src/club-art.js';
 await initializeLanguage();
-const updateGuidelinesLink = () => {
-  document.querySelector('#streaming-guidelines').href = i18n.language === 'ja' ? '/streaming-guidelines/' : '/en/streaming-guidelines/';
-};
-updateGuidelinesLink();
-i18n.subscribe(updateGuidelinesLink);
-
 const $ = (s) => document.querySelector(s),
   canvas = $("#game"),
   ctx = canvas.getContext("2d", { alpha: false });

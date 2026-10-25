@@ -70,7 +70,7 @@ export async function checkClubChart(browser, { root, csp }) {
     page.on('pageerror', error => errors.push(error.message));
     await page.goto(origin + '/game/?lang=en');
     await page.waitForFunction(() => globalThis.__HYPERDRIVE__?.snapshot().ready);
-    assert.equal(await page.locator('#streaming-guidelines').getAttribute('href'), '/en/streaming-guidelines/');
+    assert.equal(await page.locator('#streaming-guidelines').count(), 0);
     await page.locator('[data-action="play"]').click();
     await page.waitForFunction(() => !document.querySelector('audio').paused);
     await page.locator('audio').evaluate(media => { media.currentTime = 53; });

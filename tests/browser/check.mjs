@@ -26,7 +26,6 @@ const publicPaths = [
   '/contact/',
   '/legal/',
   '/privacy/',
-  '/streaming-guidelines/',
 ];
 const otherPaths = [
   '/shop/success/',
