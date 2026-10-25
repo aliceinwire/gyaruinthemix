@@ -1,6 +1,7 @@
 import { drawItemIcon, createItemIcon } from './item-icons.js';
 import { t, message, number } from './i18n.js';
 import { localizeText } from './localized-ui.js';
+import { SILENT_MUSIC, weaponMusicLevel } from './music-reactivity.js';
 import { isSurvival, survivalMultiplier, survivalResult, survivalRecordCategory, SURVIVAL_UPGRADES, SURVIVAL_EVOLUTIONS } from './survival.js';
 
 export function renderSurvivalResult(state, result, previous, host) {
@@ -34,7 +35,7 @@ export function renderSurvivalResult(state, result, previous, host) {
 }
 
 /** World-space pickups and restrained weapon feedback, independent of crew/car art. */
-export function drawSurvival(ctx, state, time, reducedMotion = false) {
+export function drawSurvival(ctx, state, time, reducedMotion = false, music = SILENT_MUSIC) {
   if (!isSurvival(state)) return;
   const s = state.survival;
   ctx.save();
@@ -51,7 +52,7 @@ export function drawSurvival(ctx, state, time, reducedMotion = false) {
     for (let i = 0; i < discs; i++) {
       const angle = (reducedMotion ? 0 : time * 3) + i * Math.PI * 2 / discs;
       const x = 190 + Math.cos(angle) * 105, y = 410 - state.altitude * .85 + Math.sin(angle) * 22;
-      ctx.fillStyle = '#161324'; ctx.strokeStyle = '#c5a6ff'; ctx.lineWidth = 2;
+      ctx.fillStyle = '#161324'; ctx.strokeStyle = '#c5a6ff'; ctx.lineWidth = 2 + weaponMusicLevel('vinyl', music, reducedMotion);
       ctx.beginPath(); ctx.ellipse(x, y, 13, 7, -.3, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
       ctx.fillStyle = '#ff79be'; ctx.beginPath(); ctx.ellipse(x, y, 4, 2, -.3, 0, Math.PI * 2); ctx.fill();
     }

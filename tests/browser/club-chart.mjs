@@ -3,8 +3,20 @@ import { readFile, mkdir } from 'node:fs/promises';
 import { resolve, extname } from 'node:path';
 import { createState, exportNightfallSave } from '../../public/game-test/src/simulation.js';
 import { NIGHTFALL_SAVE_KEY } from '../../public/game-test/src/save-store.js';
-import { CHROME_BOUNCE_CHART as chart } from '../../public/game-test/src/track-charts.js';
+import { CHROME_BOUNCE_CHART as chart, TRACK_CHARTS } from '../../public/game-test/src/track-charts.js';
 import { checkMusicDrive } from './music-drive.mjs';
+
+function audioFixture(duration) {
+  const samples = Math.ceil(duration * 8000), wav = Buffer.alloc(44 + samples * 2);
+  wav.write('RIFF'); wav.writeUInt32LE(wav.length - 8, 4); wav.write('WAVEfmt ', 8);
+  wav.writeUInt32LE(16, 16); wav.writeUInt16LE(1, 20); wav.writeUInt16LE(1, 22);
+  wav.writeUInt32LE(8000, 24); wav.writeUInt32LE(16000, 28); wav.writeUInt16LE(2, 32); wav.writeUInt16LE(16, 34);
+  wav.write('data', 36); wav.writeUInt32LE(samples * 2, 40);
+  for (let i = 0; i < samples; i++) wav.writeInt16LE(Math.round(Math.sin(i * 2 * Math.PI * 90 / 8000) * 5000), 44 + i * 2);
+  const frames = Math.ceil(duration * 20), spectrum = Buffer.alloc(8 + frames * 5, 140);
+  spectrum.write('GEQ1'); spectrum.writeUInt32LE(frames, 4);
+  return { wav, spectrum };
+}
 
 export async function checkClubChart(browser, { root, csp }) {
   const origin = 'http://club-chart.local';
@@ -12,15 +24,13 @@ export async function checkClubChart(browser, { root, csp }) {
   state.status = 'won'; state.distance = state.routeLength; state.stagesCompleted = 4;
   state.survival.quizRoads = [3];
   const saved = exportNightfallSave(state);
-  const samples = Math.ceil(chart.duration * 8000), wav = Buffer.alloc(44 + samples * 2);
-  wav.write('RIFF'); wav.writeUInt32LE(wav.length - 8, 4); wav.write('WAVEfmt ', 8);
-  wav.writeUInt32LE(16, 16); wav.writeUInt16LE(1, 20); wav.writeUInt16LE(1, 22);
-  wav.writeUInt32LE(8000, 24); wav.writeUInt32LE(16000, 28); wav.writeUInt16LE(2, 32); wav.writeUInt16LE(16, 34);
-  wav.write('data', 36); wav.writeUInt32LE(samples * 2, 40);
-  for (let i = 0; i < samples; i++) wav.writeInt16LE(Math.round(Math.sin(i * 2 * Math.PI * 90 / 8000) * 5000), 44 + i * 2);
-  const frames = Math.ceil(chart.duration * 20), spectrum = Buffer.alloc(8 + frames * 5, 140);
-  spectrum.write('GEQ1'); spectrum.writeUInt32LE(frames, 4);
   const nextTrack = 't-' + 'a'.repeat(24), sessionId = 's'.repeat(32);
+  const catalog = [
+    { id: chart.trackId, title: chart.title, duration: chart.duration, excerpt: false },
+    { id: nextTrack, title: 'Another song', duration: chart.duration, excerpt: false },
+    ...TRACK_CHARTS.slice(1).map(track => ({ id: track.trackId, title: track.title, duration: track.duration, excerpt: false })),
+  ];
+  const fixtures = new Map(catalog.map(track => [track.id, audioFixture(track.duration)]));
   const context = await browser.newContext({ viewport: { width: 390, height: 667 }, locale: 'en-US', reducedMotion: 'no-preference' });
   const errors = [];
   try {
@@ -34,17 +44,15 @@ export async function checkClubChart(browser, { root, csp }) {
       const url = new URL(route.request().url());
       if (url.origin !== origin) return route.abort();
       if (url.pathname === '/game-audio/v1/config') return route.fulfill({ json: { enabled: true } });
-      if (url.pathname === '/game-audio/v1/catalog') return route.fulfill({ json: { tracks: [
-        { id: chart.trackId, title: chart.title, duration: chart.duration, excerpt: false },
-        { id: nextTrack, title: 'Another song', duration: chart.duration, excerpt: false },
-      ] } });
+      if (url.pathname === '/game-audio/v1/catalog') return route.fulfill({ json: { tracks: catalog } });
       if (url.pathname === '/game-audio/v1/session') {
         const { trackId } = route.request().postDataJSON();
         return route.fulfill({ json: { trackId, sessionId, expiresAt: Date.now() + 120000, renewAfterMs: 40000,
-          manifestUrl: '/fixture.wav', spectrumUrl: `/game-audio/v1/stream/${trackId}/${sessionId}/spectrum.bin` } });
+          manifestUrl: `/fixture/${trackId}.wav`, spectrumUrl: `/game-audio/v1/stream/${trackId}/${sessionId}/spectrum.bin` } });
       }
-      if (url.pathname.endsWith('/spectrum.bin')) return route.fulfill({ contentType: 'application/octet-stream', body: spectrum });
-      if (url.pathname === '/fixture.wav') {
+      if (url.pathname.endsWith('/spectrum.bin')) return route.fulfill({ contentType: 'application/octet-stream', body: fixtures.get(url.pathname.split('/')[4]).spectrum });
+      if (url.pathname.startsWith('/fixture/') && url.pathname.endsWith('.wav')) {
+        const { wav } = fixtures.get(url.pathname.slice('/fixture/'.length, -4));
         const range = /^bytes=(\d+)-(\d*)$/.exec(route.request().headers().range || '');
         const start = range ? Number(range[1]) : 0;
         const end = range?.[2] ? Math.min(Number(range[2]), wav.length - 1) : wav.length - 1;
@@ -118,6 +126,30 @@ export async function checkClubChart(browser, { root, csp }) {
       assert.ok(stage.height >= 80, 'performance controls cannot squeeze out the stage');
       await page.locator('#pause').click();
       await page.locator('#resume').click();
+    }
+    for (const selected of TRACK_CHARTS.slice(1)) {
+      await page.setViewportSize({ width: 390, height: 667 });
+      await page.locator('[data-action="list"]').click();
+      await page.locator('.stereo-playlist select').selectOption(selected.trackId);
+      await page.locator('[data-action="list"]').click();
+      await page.waitForFunction(title => document.querySelector('#performance-track').textContent.includes(title), selected.title);
+      await page.locator('#performance-track').click();
+      await page.waitForFunction(id => {
+        const set = __HYPERDRIVE__.snapshot().performanceSet;
+        return set.playing && set.chart.trackId === id;
+      }, selected.trackId);
+      const drop = selected.sections.findIndex(section => section.kind === 'drop');
+      await page.locator('audio').evaluate((media, seconds) => { media.currentTime = seconds; }, selected.sections[drop].start + .2);
+      await page.waitForFunction(index => __HYPERDRIVE__.snapshot().performanceSet.phraseIndex === index, drop);
+      assert.equal(await page.evaluate(() => __HYPERDRIVE__.snapshot().performanceSet.hits), 0);
+      await page.keyboard.down('KeyX');
+      await page.waitForFunction(() => __HYPERDRIVE__.snapshot().performanceSet.hits === 1);
+      await page.keyboard.up('KeyX');
+      await page.locator('audio').evaluate(media => { media.currentTime = media.duration - .15; });
+      await page.waitForFunction(() => __HYPERDRIVE__.snapshot().performanceSet.done);
+      assert.equal(await page.evaluate(() => __HYPERDRIVE__.snapshot().performanceSet.interrupted), false);
+      assert.equal(await page.locator('audio').count(), 1);
+      assert.equal(await page.evaluate(() => JSON.stringify(__HYPERDRIVE__.snapshot().state)), baseline);
     }
     await checkMusicDrive(page, root);
     assert.deepEqual(errors, []);

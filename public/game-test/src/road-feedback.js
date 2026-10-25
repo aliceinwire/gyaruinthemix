@@ -3,6 +3,7 @@ import { drawItemIcon } from './item-icons.js';
 /** Small, bounded feedback layer. Detailed world and character art remain unobscured. */
 import { ENCOUNTER_RULES } from './encounter-director.js';
 import { DRIVING_PACE } from './pace.js';
+import { SILENT_MUSIC, weaponMusicLevel } from './music-reactivity.js';
 const MAX_EFFECTS = 36;
 const finite = (value, fallback = 0) => typeof value === 'number' && Number.isFinite(value) ? value : fallback;
 export function createRoadFeedback() { return { effects: [], time: 0 }; }
@@ -36,16 +37,17 @@ export function updateRoadFeedback(feedback, dt) {
   for (const effect of feedback.effects) effect.age += dt;
   feedback.effects = feedback.effects.filter(effect => effect.age < effect.duration);
 }
-export function drawRoadFeedback(ctx, feedback, state, { reducedMotion = false } = {}) {
+export function drawRoadFeedback(ctx, feedback, state, { reducedMotion = false, music = SILENT_MUSIC } = {}) {
   for (const effect of feedback?.effects || []) {
     const p = effect.age / effect.duration, x = 190 + (effect.distance - state.distance) * 3, y = 300 - (reducedMotion ? 0 : p * 24);
     if (x < -90 || x > 1050) continue;
     ctx.save(); ctx.globalAlpha = Math.min(1, (1 - p) * 2) * (effect.repeat ? .65 : 1);
+    const level = weaponMusicLevel(effect.kind, music, reducedMotion);
     if (effect.kind === 'phone') {
       // Thin signal links stay at street height instead of covering the scene.
       let previous = Math.max(0, Math.min(960, x + 20));
       drawItemIcon(ctx, 'phone', previous - 12, 382, 24);
-      ctx.strokeStyle = effect.color; ctx.lineWidth = 2;
+      ctx.strokeStyle = effect.color; ctx.lineWidth = 2 + level;
       for (const distance of effect.targets) {
         const target = 190 + (distance - state.distance) * 3;
         if (target < 0 || target > 960) continue;
@@ -59,11 +61,14 @@ export function drawRoadFeedback(ctx, feedback, state, { reducedMotion = false }
         previous = target;
       }
     }
-    if (effect.repeat) drawItemIcon(ctx, 'md', x - 10, y + 7, 20);
+    if (effect.repeat) {
+      drawItemIcon(ctx, 'md', x - 10, y + 7, 20);
+      if (level) { ctx.fillStyle = '#d7faff'; ctx.fillRect(x - 5, y + 21, 10 * level, 2); }
+    }
     if (effect.kind === 'cd') {
       const target = 190 + ((effect.targets[0] ?? effect.distance) - state.distance) * 3;
       const discX = reducedMotion ? target : x + (target - x) * Math.min(1, p * 4);
-      ctx.strokeStyle = effect.color; ctx.lineWidth = 2;
+      ctx.strokeStyle = effect.color; ctx.lineWidth = 2 + level;
       ctx.beginPath(); ctx.moveTo(x, 390); ctx.lineTo(discX, 390); ctx.stroke();
       drawItemIcon(ctx, 'cd', discX - 14, 376, 28);
     }
@@ -72,13 +77,13 @@ export function drawRoadFeedback(ctx, feedback, state, { reducedMotion = false }
       ctx.strokeStyle = effect.color; ctx.lineWidth = effect.tapeRepeat ? 1 : 2;
       ctx.beginPath();
       for (let at = left; at <= right; at += 6) {
-        const height = 418 + Math.sin((at - left) / 18 + (reducedMotion ? 0 : p * 8)) * 5;
+        const height = 418 + Math.sin((at - left) / 18 + (reducedMotion ? 0 : p * 8)) * (5 + level * 2);
         if (at === left) ctx.moveTo(at, height); else ctx.lineTo(at, height);
       }
       ctx.stroke(); drawItemIcon(ctx, 'cassette', x - 12, 388, 24);
     }
     if (['flash', 'vinyl', 'bass'].includes(effect.kind)) {
-      ctx.strokeStyle = effect.color; ctx.lineWidth = reducedMotion ? 2 : 3;
+      ctx.strokeStyle = effect.color; ctx.lineWidth = reducedMotion ? 2 : 3 + level;
       const center = effect.kind === 'bass' ? x : x + 50;
       ctx.beginPath(); ctx.ellipse(center, 415, reducedMotion ? 65 : 30 + p * 120, 24 + p * 12, 0, 0, Math.PI * 2); ctx.stroke();
       if (effect.kind === 'bass' && !reducedMotion) {

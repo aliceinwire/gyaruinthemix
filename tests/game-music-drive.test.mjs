@@ -14,7 +14,6 @@ import {
   updateMusicDrive,
   suspendMusicDrive,
   applyMusicEncounter,
-  MUSIC_ENCOUNTER_ID,
 } from '../public/game-test/src/music-drive.js';
 import {
   createSurvivalRecords,
@@ -64,7 +63,7 @@ function quiet(state) {
 function speaker(state) {
   const actor = structuredClone(
     state._encounterPlan.find(
-      (item) => item.headliner?.id === MUSIC_ENCOUNTER_ID,
+      (item) => item.headliner?.id === 'shibuya-feedback',
     ),
   );
   Object.assign(actor, {
@@ -207,7 +206,7 @@ test('the Shibuya speaker opens on a naturally reached drop with a visible cue a
   );
 });
 
-test('seeking, restarting or resuming inside a drop does not grant an opening; other speakers keep ordinary rules', () => {
+test('seeking, restarting or resuming inside a drop does not grant an opening; unknown speakers keep ordinary rules', () => {
   for (const interrupt of [
     (state) => suspendMusicDrive(state),
     (state) => updateMusicDrive(state, radio(90.7, { revision: 2 }), 1 / 60),
@@ -228,6 +227,7 @@ test('seeking, restarting or resuming inside a drop does not grant an opening; o
   const actor = structuredClone(
     state._encounterPlan.find((item) => item.headliner),
   );
+  actor.headliner.id = 'unknown-speaker';
   setMusicDrive(state, true);
   play(state, 88.5, 2.3);
   const before = structuredClone(actor);

@@ -3,7 +3,14 @@ import assert from 'node:assert/strict';
 import {
   readMusicSpectrum,
   SILENT_MUSIC,
+  weaponMusicLevel,
 } from '../public/game-test/src/music-reactivity.js';
+import { drawSurvival } from '../public/game-test/src/survival-ui.js';
+import {
+  createRoadFeedback,
+  captureRoadFeedback,
+  drawRoadFeedback,
+} from '../public/game-test/src/road-feedback.js';
 import {
   drawSignalHeadliner,
   drawCar,
@@ -47,6 +54,14 @@ function context() {
       },
       createLinearGradient() {
         return { addColorStop() {} };
+      },
+      stroke() {
+        calls.push([
+          'stroke',
+          this.lineWidth,
+          this.strokeStyle,
+          this.globalAlpha,
+        ]);
       },
     },
     {
@@ -253,4 +268,110 @@ test('charted club lighting follows sections, its meters follow music, and reduc
     music: treble,
   });
   assert.deepEqual(stopped.fills, stoppedTreble.fills);
+});
+
+test('all weapon families react through presentation only, with neutral mute and reduced-motion output', () => {
+  const music = {
+    active: true,
+    bass: 1,
+    mid: 0.8,
+    treble: 0.6,
+    energy: 0.8,
+    bands: [1, 0.8, 0.8, 0.6, 0.6],
+  };
+  const state = createState({ mode: 'survival', seed: 175 });
+  for (const kind of [
+    'flash',
+    'vinyl',
+    'bass',
+    'phone',
+    'cd',
+    'cassette',
+    'echo',
+  ]) {
+    const feedback = createRoadFeedback();
+    captureRoadFeedback(feedback, [
+      {
+        type: 'survival-attack',
+        kind,
+        distance: 0,
+        radius: 50,
+        behind: 25,
+        targetDistances: [30],
+        repeat: kind === 'echo',
+      },
+    ]);
+    const before = JSON.stringify({ state, feedback });
+    const quiet = context(),
+      loud = context(),
+      still = context(),
+      neutral = context(),
+      muted = context();
+    drawRoadFeedback(quiet, feedback, state);
+    drawRoadFeedback(loud, feedback, state, { music });
+    assert.notDeepEqual(
+      [loud.calls, loud.fills],
+      [quiet.calls, quiet.fills],
+      kind,
+    );
+    drawRoadFeedback(still, feedback, state, { music, reducedMotion: true });
+    drawRoadFeedback(neutral, feedback, state, { reducedMotion: true });
+    assert.deepEqual(
+      [still.calls, still.fills],
+      [neutral.calls, neutral.fills],
+      kind,
+    );
+    drawRoadFeedback(muted, feedback, state, {
+      music: { ...music, active: false },
+    });
+    assert.deepEqual(
+      [muted.calls, muted.fills],
+      [quiet.calls, quiet.fills],
+      kind,
+    );
+    assert.equal(JSON.stringify({ state, feedback }), before);
+  }
+  state.survival.upgrades.vinyl = 1;
+  const quiet = context(),
+    loud = context();
+  drawSurvival(quiet, state, 1);
+  drawSurvival(loud, state, 1, false, music);
+  assert.notDeepEqual(
+    loud.calls,
+    quiet.calls,
+    'the persistent orbit follows the mid band',
+  );
+  update(state, {}, 0.05);
+  assert.ok(state.projectiles.length);
+  const a = context(),
+    b = context();
+  const before = JSON.stringify(state);
+  render(a, state);
+  render(b, state, { music });
+  const hearts = (g) =>
+    g.calls.filter(([name, glyph]) => name === 'fillText' && glyph === '♥');
+  assert.equal(hearts(b).length - hearts(a).length, state.projectiles.length);
+  assert.equal(JSON.stringify(state), before);
+  for (const kind of [
+    'heart',
+    'flash',
+    'vinyl',
+    'bass',
+    'phone',
+    'cd',
+    'cassette',
+    'echo',
+  ]) {
+    assert.ok(weaponMusicLevel(kind, music) > 0);
+    assert.equal(weaponMusicLevel(kind, music, true), 0);
+    assert.equal(
+      weaponMusicLevel(kind, {
+        active: true,
+        bass: NaN,
+        mid: Infinity,
+        treble: -1,
+      }),
+      0,
+    );
+  }
 });

@@ -22,6 +22,7 @@ export async function checkMusicDrive(page, root) {
   assert.equal(await page.locator('#menu-music-drive').isChecked(), false);
   await page.locator('#menu-music-drive').check();
   assert.match(await page.locator('#survival-record').textContent(), /Music Drive/);
+  assert.doesNotMatch(await page.locator('#survival-record').textContent(), /Earlier rules/);
   await page.locator('#menu-assist-mode').check();
   assert.match(await page.locator('#survival-record').textContent(), /Assisted/);
   await page.locator('#menu-assist-mode').uncheck();
