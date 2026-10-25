@@ -76,20 +76,79 @@ function speaker(state) {
   return actor;
 }
 
-test('the default tour ignores every radio input and keeps its seeded simulation', () => {
+test('the default tour follows music cues without changing its seeded gameplay or record category', () => {
   const normal = fresh(),
     withRadio = fresh();
+  const cues = [];
   for (let i = 0; i < 180; i++) {
     update(normal, { boost: i > 90 }, 1 / 60);
-    update(withRadio, { boost: i > 90 }, 1 / 60, radio(52 + i / 60));
+    update(withRadio, { boost: i > 90 }, 1 / 60, radio(50.5 + i / 60));
+    cues.push(
+      ...withRadio.events.filter((event) => event.type.startsWith('music-')),
+    );
+    assert.deepEqual(
+      withRadio.events.filter((event) => !event.type.startsWith('music-')),
+      normal.events,
+    );
   }
-  assert.deepEqual(withRadio, normal);
+  const gameplay = ({ musicDrive: _musicDrive, events: _events, ...state }) =>
+    state;
+  assert.deepEqual(gameplay(withRadio), gameplay(normal));
+  assert.equal(cues.length, 1);
+  assert.equal(cues[0].type, 'music-drop');
   assert.equal(withRadio.musicDrive.multiplier, 1);
+  assert.equal(withRadio.survival.musicDriven, false);
+  assert.equal(withRadio.survival.musicVersion, 0);
   const story = createState();
   setMusicDrive(story, true);
-  play(story, 53, 3);
+  play(story, 50.5, 3);
+  assert.equal(
+    story.events.filter((event) => event.type === 'music-drop').length,
+    1,
+  );
   assert.equal(story.musicDriveEnabled, false);
   assert.equal(story.musicDrive.multiplier, 1);
+});
+
+test('ordinary headliners remain guarded and switching off clears an undelivered drop cue', () => {
+  const state = fresh({ routeIndex: 5 }),
+    actor = speaker(state);
+  play(state, 88.5, 2.3);
+  updateEncounterActor(actor, state, 0);
+  const phase = actor.headlinerPhase,
+    guarded = actor.shielded;
+  applyMusicEncounter(actor, state);
+  assert.equal(actor.headlinerPhase, phase);
+  assert.equal(actor.shielded, guarded);
+  assert.equal(actor.musicOpened, undefined);
+  setMusicDrive(state, true);
+  play(state, 88.5, 1, { revision: 2 });
+  applyMusicEncounter(actor, state);
+  assert.equal(actor.musicCue, true);
+  setMusicDrive(state, false);
+  applyMusicEncounter(actor, state);
+  assert.equal(actor.musicCue, false);
+});
+
+test('crew cue history survives road transitions without carrying old speed or drop openings', () => {
+  const state = fresh();
+  play(state, 50.5, 3);
+  const seen = [...state.musicDrive.cueSeen];
+  const cooldown = state.musicDrive.cueCooldown;
+  state.status = 'won';
+  nextRoute(state);
+  assert.deepEqual(state.musicDrive.cueSeen, seen);
+  assert.equal(state.musicDrive.cueCooldown, cooldown);
+  assert.equal(state.musicDrive.active, false);
+  assert.equal(state.musicDrive.multiplier, 1);
+  assert.equal(state.musicDrive.dropSection, -1);
+  changeRouteBeforeStart(state, 'express');
+  assert.deepEqual(state.musicDrive.cueSeen, seen);
+  play(state, 50.5, 3, { revision: 2 });
+  assert.equal(
+    state.events.filter((event) => event.type === 'music-drop').length,
+    0,
+  );
 });
 
 test('charted intensity eases within ±3% and affects only horizontal driving speed', () => {

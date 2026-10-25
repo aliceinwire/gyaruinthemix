@@ -133,6 +133,13 @@ export async function checkClubChart(browser, { root, csp }) {
       await page.locator('.stereo-playlist select').selectOption(selected.trackId);
       await page.locator('[data-action="list"]').click();
       await page.waitForFunction(title => document.querySelector('#performance-track').textContent.includes(title), selected.title);
+      for (const [width, height] of [[320, 740], [844, 390]]) {
+        await page.setViewportSize({ width, height });
+        const button = await page.locator('#performance-track').boundingBox();
+        assert.ok(button.x >= 0 && button.x + button.width <= width && button.y >= 0 && button.y + button.height <= height, selected.title);
+        assert.ok(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1), selected.title);
+      }
+      await page.setViewportSize({ width: 390, height: 667 });
       await page.locator('#performance-track').click();
       await page.waitForFunction(id => {
         const set = __HYPERDRIVE__.snapshot().performanceSet;
