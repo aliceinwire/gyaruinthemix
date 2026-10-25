@@ -1041,7 +1041,7 @@ function frame(now) {
   if (!paused && !["story", "draft", "quiz", "result"].includes(screen)) visualTime += dt;
   if (screen === "playing" && !paused) {
     accumulator += dt;
-    const transport = settings.musicDrive ? audio.transport : null;
+    const transport = audio.transport;
     while (accumulator >= 1 / 60) {
       update(state, { ...input, shoot: !isSurvival(state) }, 1 / 60, transport);
       updateDrivingLessons(drivingLessons, state, 1 / 60);

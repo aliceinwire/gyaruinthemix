@@ -26,6 +26,7 @@ export async function checkMusicDrive(page, root) {
   await page.locator('#menu-assist-mode').check();
   assert.match(await page.locator('#survival-record').textContent(), /Assisted/);
   await page.locator('#menu-assist-mode').uncheck();
+  await page.locator('#menu-music-drive').uncheck();
   await page.locator('#resume-tour').click();
   await page.waitForFunction(() => __HYPERDRIVE__.snapshot().screen === 'map');
   await page.locator('#depart').click();
@@ -39,7 +40,15 @@ export async function checkMusicDrive(page, root) {
   assert.equal(await page.evaluate(() => __HYPERDRIVE__.snapshot().state.musicDrive.multiplier), 1);
   await page.locator('[data-action="play"]').click();
   await page.waitForFunction(() => !document.querySelector('audio').paused);
-  await page.locator('audio').evaluate(media => { media.currentTime = 53; });
+  await page.locator('audio').evaluate(media => { media.currentTime = 50.5; });
+  await page.waitForFunction(() => __HYPERDRIVE__.snapshot().state.musicDrive.cueSeen.includes('chrome-bounce-ritual-v1:3'));
+  const ordinary = await page.evaluate(() => __HYPERDRIVE__.snapshot().state);
+  assert.equal(ordinary.musicDrive.multiplier, 1);
+  assert.equal(ordinary.survival.musicDriven, false);
+  assert.equal(ordinary.survival.musicVersion, 0);
+  await page.locator('#pause').click();
+  await page.locator('#music-drive').check();
+  await page.locator('#resume').click();
   await page.waitForFunction(() => __HYPERDRIVE__.snapshot().state.musicDrive.multiplier > 1.015);
   assert.equal(await page.locator('.stereo-equalizer').getAttribute('data-active'), 'true');
   assert.equal(await page.locator('audio').count(), 1);

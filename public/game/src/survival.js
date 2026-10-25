@@ -4,7 +4,7 @@ import { ENCOUNTER_RULES } from './encounter-director.js';
 import { decorateEncounter } from './street-culture.js';
 
 export const SURVIVAL_VERSION = 5;
-export const MUSIC_RULES_VERSION = 2;
+export const MUSIC_RULES_VERSION = 3;
 const musicVersion = row => row.musicDriven ? row.musicVersion || 1 : 0;
 const validMusicVersion = row => row.musicVersion === undefined || Number.isInteger(row.musicVersion) && row.musicVersion >= 0 && row.musicVersion <= MUSIC_RULES_VERSION;
 const sameMusicRules = (a, b) => a.musicDriven === b.musicDriven && musicVersion(a) === musicVersion(b);

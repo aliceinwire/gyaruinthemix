@@ -59,8 +59,8 @@ function play(state, chart, start, duration, revision = 1) {
 }
 
 test('every supported master has a complete playable chart and mismatched recordings are rejected', () => {
-  assert.equal(TRACK_CHARTS.length, 3);
-  assert.equal(new Set(TRACK_CHARTS.map((chart) => chart.trackId)).size, 3);
+  assert.equal(TRACK_CHARTS.length, 9);
+  assert.equal(new Set(TRACK_CHARTS.map((chart) => chart.trackId)).size, 9);
   for (const chart of TRACK_CHARTS) {
     assert.equal(chartForTrack(track(chart)), chart);
     assert.ok(
@@ -94,10 +94,63 @@ test('every supported master has a complete playable chart and mismatched record
           s.intensity >= 0 &&
           s.intensity <= 1 &&
           s.start < chart.duration &&
+          (chart.sections[i + 1]?.start ?? chart.duration) - s.start >= 1 &&
           (!i || s.start > chart.sections[i - 1].start),
       ),
     );
   }
+});
+
+test('playing the whole catalog retains every crew cue and replay cannot evict the first song', () => {
+  const state = fresh();
+  const kinds = new Set(['drop', 'break', 'finale']);
+  for (const chart of TRACK_CHARTS)
+    for (let i = 0; i < Math.floor(chart.duration * 10); i++)
+      updateMusicDrive(state, radio(chart, i / 10), 0.1);
+  const expected = TRACK_CHARTS.flatMap((chart) =>
+    chart.sections.flatMap((section, index) =>
+      kinds.has(section.kind) ? [`${chart.id}:${index}`] : [],
+    ),
+  );
+  assert.deepEqual(new Set(state.musicDrive.cueSeen), new Set(expected));
+  assert.equal(state.musicDrive.multiplier, 1);
+  assert.equal(state.survival.musicVersion, 0);
+  state.events = [];
+  const first = TRACK_CHARTS[0],
+    drop = first.sections.find((section) => section.kind === 'drop');
+  play(state, first, drop.start - 2, 4, 2);
+  assert.deepEqual(state.events, []);
+  assert.equal(state.musicDrive.cueSeen.length, expected.length);
+});
+
+test('silent, hidden, interrupted and seeked sections do not deliver ordinary-tour crew cues', () => {
+  for (const changes of [
+    { playing: false },
+    { muted: true },
+    { volume: 0 },
+    { hidden: true },
+    { seeking: true },
+    { ended: true },
+    { track: null },
+  ]) {
+    const state = fresh(),
+      chart = TRACK_CHARTS[0];
+    for (let i = 0; i < 240; i++)
+      updateMusicDrive(
+        state,
+        { ...radio(chart, 50.5 + i / 60), ...changes },
+        1 / 60,
+      );
+    assert.deepEqual(state.events, []);
+    assert.deepEqual(state.musicDrive.cueSeen, []);
+    assert.equal(state.musicDrive.multiplier, 1);
+  }
+  const state = fresh(),
+    chart = TRACK_CHARTS[0];
+  play(state, chart, 50.5, 1);
+  suspendMusicDrive(state);
+  play(state, chart, 53, 2, 2);
+  assert.deepEqual(state.events, []);
 });
 
 test('club selection follows the radio and falls back explicitly when its current recording has no chart', () => {
@@ -218,21 +271,22 @@ test('pilot and expanded Music Drive records remain separate, including assistan
       setItem: (key, value) => data.set(key, value),
     });
   for (const assisted of [false, true])
-    for (const version of [1, MUSIC_RULES_VERSION])
+    for (const version of [1, 2, MUSIC_RULES_VERSION])
       for (let i = 1; i <= 7; i++) {
         const state = fresh({ runId: `${assisted}-${version}-${i}` });
         setMusicDrive(state, true);
         state.survival.assisted = assisted;
         state.survival.musicVersion = version;
         state.status = 'lost';
-        state.score = version === 1 ? 10000 + i : i;
+        state.score = version < MUSIC_RULES_VERSION ? version * 10000 + i : i;
         assert.equal(records.save(state).best, true);
       }
   for (const assisted of [false, true]) {
     assert.equal(records.best('2026-10-25', assisted, true).score, 7);
     assert.equal(records.best('2026-10-25', assisted, true, 1).score, 10007);
+    assert.equal(records.best('2026-10-25', assisted, true, 2).score, 20007);
   }
-  assert.equal(records.read().length, 20);
+  assert.equal(records.read().length, 30);
   const pilot = records.read()[0];
   delete pilot.musicVersion;
   assert.equal(normalizeSurvivalRecords([pilot])[0].musicVersion, 1);
