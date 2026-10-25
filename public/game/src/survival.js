@@ -4,7 +4,7 @@ import { ENCOUNTER_RULES } from './encounter-director.js';
 import { decorateEncounter } from './street-culture.js';
 
 export const SURVIVAL_VERSION = 5;
-export const MUSIC_RULES_VERSION = 3;
+export const MUSIC_RULES_VERSION = 4;
 const musicVersion = row => row.musicDriven ? row.musicVersion || 1 : 0;
 const validMusicVersion = row => row.musicVersion === undefined || Number.isInteger(row.musicVersion) && row.musicVersion >= 0 && row.musicVersion <= MUSIC_RULES_VERSION;
 const sameMusicRules = (a, b) => a.musicDriven === b.musicDriven && musicVersion(a) === musicVersion(b);
@@ -57,7 +57,7 @@ export function dailySurvival(date = new Date()) {
 }
 export function createSurvival(day = '', startingWeapon = 'heart') {
   const weapon = SURVIVAL_STARTERS.some(item => item.id === startingWeapon) ? startingWeapon : 'heart';
-  return { version: SURVIVAL_VERSION, recordEligible: true, assisted: false, musicDriven: false, musicVersion: 0, day, startingWeapon: weapon, xp: 0, level: 0, upgrades: { [weapon]: 1 }, evolutions: [],
+  return { version: SURVIVAL_VERSION, recordEligible: true, assisted: false, musicDriven: true, musicVersion: MUSIC_RULES_VERSION, day, startingWeapon: weapon, xp: 0, level: 0, upgrades: { [weapon]: 1 }, evolutions: [],
     quizRoads: [], heat: 0, fever: 0, sinceHit: 0, seconds: 0, wave: 0, waveStats: Array.from({ length: 6 }, () => ({ kills: 0, hits: 0 })), settledWaves: [],
     cleanWaves: 0, kills: 0, elites: 0, bestMultiplier: 1, gems: [], receipts: [],
     flashClock: 0, vinylClock: 0, bassClock: 0, phoneClock: 0, cdClock: 0, cassetteClock: 0, cassetteLoops: [], echoClock: 0, echoPending: null, bestNotified: false };
@@ -475,7 +475,7 @@ export function normalizeSurvivalRecords(value) {
 }
 export function createSurvivalRecords(storage) {
   const read = () => { try { return normalizeSurvivalRecords(storage?.getItem(SURVIVAL_RECORD_KEY)); } catch { return []; } };
-  return { read, best: (day, assisted = false, musicDriven = false, rules = MUSIC_RULES_VERSION) => read().find(row => row.day === day && row.assisted === assisted && row.musicDriven === musicDriven && (!musicDriven || row.musicVersion === rules)) || null,
+  return { read, best: (day, assisted = false, musicDriven = true, rules = MUSIC_RULES_VERSION) => read().find(row => row.day === day && row.assisted === assisted && row.musicDriven === musicDriven && (!musicDriven || row.musicVersion === rules)) || null,
     save(state) {
       const result = survivalResult(state), old = read();
       if (!result) return { persisted: false, best: false, records: old };

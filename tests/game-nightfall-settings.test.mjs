@@ -18,7 +18,6 @@ test('preferences survive reload without sharing run currencies or accepting coe
     store.save({
       autoHearts: true,
       assistMode: true,
-      musicDrive: true,
       reducedMotion: false,
       money: 999,
     }),
@@ -28,13 +27,15 @@ test('preferences survive reload without sharing run currencies or accepting coe
     version: 1,
     autoHearts: true,
     assistMode: true,
-    musicDrive: true,
     reducedMotion: false,
   });
   assert.equal(JSON.parse(records.get(SETTINGS_KEY)).money, undefined);
   assert.equal(normalizeSettings({ assistMode: 'true' }).assistMode, false);
-  assert.equal(normalizeSettings({ musicDrive: 'true' }).musicDrive, false);
-  assert.equal(normalizeSettings({}).musicDrive, false);
+  for (const musicDrive of [true, false, 'true'])
+    assert.equal(
+      Object.hasOwn(normalizeSettings({ musicDrive }), 'musicDrive'),
+      false,
+    );
 });
 
 test('denied storage and corrupt saved settings do not prevent play', () => {

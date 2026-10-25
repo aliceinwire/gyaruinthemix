@@ -1,0 +1,179 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { getLocale, translator } from '../data/i18n.mjs';
+const t = translator(getLocale(Astro.url.pathname));
+---
+
+<Layout
+  title={t(
+    '実況・配信ルール｜ギャルインザミックス',
+    'Gameplay streaming rules | GYARUINTHEMIX',
+  )}
+>
+  <section class="legal section streaming-guidelines">
+    <p class="eyebrow">GAMEPLAY & STREAMING</p>
+    <h1>{t('実況・配信ルール', 'Gameplay streaming rules')}</h1>
+    <p class="notice">
+      {
+        t(
+          '実況しながら遊んでくれるの、歓迎やで！ ご自身の実況を含むゲームプレイの録画・ライブ配信・動画投稿は、以下のルールの範囲でOKです。',
+          'We welcome your gameplay commentary! You may record, livestream, and post your own gameplay with commentary under the rules below.',
+        )
+      }
+    </p>
+    <p>
+      {
+        t(
+          'このページは、ギャルインザミックスのブラウザゲームを対象としています。ルールの範囲内の実況について、事前の連絡は不要です。',
+          'These rules cover the GYARUINTHEMIX browser game. You do not need to contact us in advance for commentary that follows these rules.',
+        )
+      }
+    </p>
+
+    <h2>{t('OKなこと', 'What is allowed')}</h2>
+    <ul>
+      <li>
+        {
+          t(
+            'ご自身の声や字幕による実況・解説・感想を含む、ゲームプレイの録画と配信。',
+            'Recording and streaming your own gameplay with spoken or written commentary, explanations, or reactions.',
+          )
+        }
+      </li>
+      <li>
+        {
+          t(
+            'その実況のために録画を保存・編集し、動画や配信アーカイブとして公開すること。',
+            'Saving and editing your gameplay recording to make that commentary, and publishing it as a video or stream archive.',
+          )
+        }
+      </li>
+      <li>
+        {
+          t(
+            '実際のゲームプレイに伴って流れる、ゲーム内の音楽や効果音を実況に含めること。',
+            'Including the in-game music and sound effects that accompany your actual gameplay in that commentary.',
+          )
+        }
+      </li>
+    </ul>
+
+    <h2>{t('禁止していること', 'What is prohibited')}</h2>
+    <ul>
+      <li>
+        <strong
+          >{
+            t(
+              '実況目的以外の録音・録画は禁止です。',
+              'Recording audio or video for purposes other than gameplay commentary is prohibited.',
+            )
+          }</strong
+        >{' '}
+        {
+          t(
+            '個人での保存・鑑賞を目的とする場合も含みます。',
+            'This includes recording for personal storage or listening and viewing.',
+          )
+        }
+      </li>
+      <li>
+        {
+          t(
+            '音楽だけを聴かせる動画、BGM集、無言の映像集など、実況を目的としない投稿や配信。',
+            'Posts or streams made for listening to the music alone, soundtrack compilations, or footage compilations without commentary.',
+          )
+        }
+      </li>
+      <li>
+        <strong
+          >{
+            t(
+              'ゲームやゲーム内素材のダウンロードは禁止です。',
+              'Downloading the game or its assets is prohibited.',
+            )
+          }</strong
+        >{' '}
+        {
+          t(
+            '音楽・音声・映像・画像などのデータを抽出・保存したり、再配布したりしないでください。',
+            'Do not extract, save, or redistribute music, audio, video, images, or other asset files.',
+          )
+        }
+      </li>
+      <li>
+        {
+          t(
+            '実況動画や配信から音楽・音声・映像などを切り出し、単独の素材として利用・配布すること。',
+            'Extracting music, audio, or footage from commentary videos or streams for use or distribution as standalone material.',
+          )
+        }
+      </li>
+    </ul>
+    <p>
+      {
+        t(
+          '通常のブラウザプレイに必要な一時的な読み込みと、上記で認めた実況制作のための録画保存は、このダウンロード禁止の対象ではありません。',
+          'Temporary loading needed for normal browser play, and saving your own gameplay recording to make the commentary allowed above, are not covered by this download prohibition.',
+        )
+      }
+    </p>
+
+    <h2>{t('投稿するときのお願い', 'When you post')}</h2>
+    <p>
+      {
+        t(
+          '説明欄などに「ギャルインザミックス」と公式サイトのリンクを添えてもらえるとうれしいです。公式の動画や公認の企画であるかのような表示はしないでください。',
+          'Please consider adding “GYARUINTHEMIX” and a link to our official website in your description. Do not present your video or stream as official or endorsed by us.',
+        )
+      }
+    </p>
+    <p><a href="https://gyaruinthemix.com/">https://gyaruinthemix.com/</a></p>
+    <p>
+      {
+        t(
+          'ゲーム内の音楽・映像・画像などの権利は、それぞれの権利者に帰属します。投稿先のサービスのルールも守ってください。',
+          'Rights to the game’s music, footage, images, and other material remain with their respective rightsholders. Please also follow the rules of the service where you post.',
+        )
+      }
+    </p>
+
+    <h2>{t('わからないことがあったら', 'Questions?')}</h2>
+    <p>
+      {
+        t(
+          'このページに記載のない利用や、判断に迷うことがあれば、公開前にメールでお問い合わせください。',
+          'For uses not described on this page, or if you are unsure whether your use is allowed, please email us before publishing.',
+        )
+      }
+    </p>
+    <p>
+      <a class="guidelines-contact" href="mailto:arisut@riseup.net"
+        >arisut@riseup.net</a
+      >
+    </p>
+    <p>
+      {
+        t(
+          'ルールは更新することがあります。録画・配信・投稿の前に、このページの最新の内容をご確認ください。',
+          'These rules may be updated. Please check the latest version of this page before recording, streaming, or posting.',
+        )
+      }
+    </p>
+  </section>
+</Layout>
+
+<style>
+  .streaming-guidelines {
+    max-width: 850px;
+  }
+  .streaming-guidelines ul {
+    padding-inline-start: 1.4em;
+  }
+  .streaming-guidelines li {
+    margin-block: 0.85em;
+    line-height: 1.8;
+  }
+  .guidelines-contact {
+    overflow-wrap: anywhere;
+  }
+</style>

@@ -10,12 +10,13 @@ import {
   restoreNightfallSave,
 } from '../public/game/src/simulation.js';
 import {
-  setMusicDrive,
+  useCurrentMusicRules,
   updateMusicDrive,
   suspendMusicDrive,
   applyMusicEncounter,
 } from '../public/game/src/music-drive.js';
 import {
+  MUSIC_RULES_VERSION,
   createSurvivalRecords,
   normalizeSurvivalRecords,
   normalizeSurvivalSave,
@@ -76,44 +77,43 @@ function speaker(state) {
   return actor;
 }
 
-test('the default tour follows music cues without changing its seeded gameplay or record category', () => {
-  const normal = fresh(),
-    withRadio = fresh();
-  const cues = [];
-  for (let i = 0; i < 180; i++) {
-    update(normal, { boost: i > 90 }, 1 / 60);
-    update(withRadio, { boost: i > 90 }, 1 / 60, radio(50.5 + i / 60));
-    cues.push(
-      ...withRadio.events.filter((event) => event.type.startsWith('music-')),
+test('music changes speed by default in both modes while silence keeps the seeded simulation', () => {
+  for (const mode of ['survival', 'story']) {
+    const state = fresh({ mode });
+    play(state, 50.5, 3);
+    assert.equal(
+      state.events.filter((event) => event.type === 'music-drop').length,
+      1,
     );
-    assert.deepEqual(
-      withRadio.events.filter((event) => !event.type.startsWith('music-')),
-      normal.events,
+    assert.ok(
+      state.musicDrive.multiplier > 1 && state.musicDrive.multiplier <= 1.03,
+    );
+    assert.equal(Object.hasOwn(state, 'musicDriveEnabled'), false);
+    if (mode === 'survival') {
+      assert.equal(state.survival.musicDriven, true);
+      assert.equal(state.survival.musicVersion, MUSIC_RULES_VERSION);
+    }
+  }
+  const silence = fresh(),
+    muted = fresh();
+  for (let i = 0; i < 180; i++) {
+    update(silence, { boost: i > 90 }, 1 / 60);
+    update(
+      muted,
+      { boost: i > 90 },
+      1 / 60,
+      radio(50.5 + i / 60, { muted: true }),
     );
   }
-  const gameplay = ({ musicDrive: _musicDrive, events: _events, ...state }) =>
-    state;
-  assert.deepEqual(gameplay(withRadio), gameplay(normal));
-  assert.equal(cues.length, 1);
-  assert.equal(cues[0].type, 'music-drop');
-  assert.equal(withRadio.musicDrive.multiplier, 1);
-  assert.equal(withRadio.survival.musicDriven, false);
-  assert.equal(withRadio.survival.musicVersion, 0);
-  const story = createState();
-  setMusicDrive(story, true);
-  play(story, 50.5, 3);
-  assert.equal(
-    story.events.filter((event) => event.type === 'music-drop').length,
-    1,
-  );
-  assert.equal(story.musicDriveEnabled, false);
-  assert.equal(story.musicDrive.multiplier, 1);
+  const gameplay = ({ musicDrive: _musicDrive, ...state }) => state;
+  assert.deepEqual(gameplay(muted), gameplay(silence));
+  assert.equal(muted.musicDrive.multiplier, 1);
 });
 
-test('ordinary headliners remain guarded and switching off clears an undelivered drop cue', () => {
+test('headliners retain their ordinary guard when silent and lose an undelivered cue when music stops', () => {
   const state = fresh({ routeIndex: 5 }),
     actor = speaker(state);
-  play(state, 88.5, 2.3);
+  play(state, 88.5, 2.3, { muted: true });
   updateEncounterActor(actor, state, 0);
   const phase = actor.headlinerPhase,
     guarded = actor.shielded;
@@ -121,11 +121,10 @@ test('ordinary headliners remain guarded and switching off clears an undelivered
   assert.equal(actor.headlinerPhase, phase);
   assert.equal(actor.shielded, guarded);
   assert.equal(actor.musicOpened, undefined);
-  setMusicDrive(state, true);
   play(state, 88.5, 1, { revision: 2 });
   applyMusicEncounter(actor, state);
   assert.equal(actor.musicCue, true);
-  setMusicDrive(state, false);
+  suspendMusicDrive(state);
   applyMusicEncounter(actor, state);
   assert.equal(actor.musicCue, false);
 });
@@ -154,7 +153,6 @@ test('crew cue history survives road transitions without carrying old speed or d
 test('charted intensity eases within ±3% and affects only horizontal driving speed', () => {
   const baseline = quiet(fresh()),
     state = quiet(fresh());
-  setMusicDrive(state, true);
   play(state, 53, 10);
   assert.ok(
     state.musicDrive.multiplier > 1.029 && state.musicDrive.multiplier <= 1.03,
@@ -193,7 +191,6 @@ test('pause, mute, zero volume, buffering, seeking, hiding and unsupported maste
     { currentTime: NaN },
   ]) {
     const state = fresh();
-    setMusicDrive(state, true);
     play(state, 53, 4);
     const before = state.musicDrive.multiplier;
     updateMusicDrive(state, radio(57, changes), 1 / 60);
@@ -208,7 +205,6 @@ test('pause, mute, zero volume, buffering, seeking, hiding and unsupported maste
 
 test('100 ms media clocks stay active but a stopped clock and seek discontinuities do not', () => {
   const state = fresh();
-  setMusicDrive(state, true);
   for (let i = 0; i < 180; i++)
     updateMusicDrive(state, radio(53 + Math.floor(i / 6) / 10), 1 / 60);
   assert.equal(state.musicDrive.active, true);
@@ -223,7 +219,6 @@ test('100 ms media clocks stay active but a stopped clock and seek discontinuiti
 test('the Shibuya speaker opens on a naturally reached drop with a visible cue and a minimum counter window', () => {
   const state = fresh({ routeIndex: 5 }),
     actor = speaker(state);
-  setMusicDrive(state, true);
   play(state, 88.5, 1);
   updateEncounterActor(actor, state, 0);
   applyMusicEncounter(actor, state);
@@ -240,7 +235,7 @@ test('the Shibuya speaker opens on a naturally reached drop with a visible cue a
     1,
   );
   assert.match(getRoadCue(state).label, /開放/);
-  setMusicDrive(state, false);
+  suspendMusicDrive(state);
   state.elapsed = 1;
   updateEncounterActor(actor, state, 0);
   applyMusicEncounter(actor, state);
@@ -255,7 +250,6 @@ test('the Shibuya speaker opens on a naturally reached drop with a visible cue a
   applyMusicEncounter(actor, state);
   assert.equal(actor.musicOpen, false);
   assert.equal(actor.shielded, normal);
-  setMusicDrive(state, true);
   play(state, 88.5, 2.3, { revision: 2 });
   applyMusicEncounter(actor, state);
   assert.equal(
@@ -272,7 +266,6 @@ test('seeking, restarting or resuming inside a drop does not grant an opening; u
   ]) {
     const state = fresh({ routeIndex: 5 }),
       actor = speaker(state);
-    setMusicDrive(state, true);
     play(state, 88.5, 1);
     interrupt(state);
     play(state, 90.8, 2, { revision: 2 });
@@ -287,17 +280,15 @@ test('seeking, restarting or resuming inside a drop does not grant an opening; u
     state._encounterPlan.find((item) => item.headliner),
   );
   actor.headliner.id = 'unknown-speaker';
-  setMusicDrive(state, true);
   play(state, 88.5, 2.3);
   const before = structuredClone(actor);
   applyMusicEncounter(actor, state);
   assert.deepEqual(actor, before);
 });
 
-test('an experiment never closes a normal opening or repeats conversion rewards', () => {
+test('music never closes a normal opening or repeats conversion rewards', () => {
   const state = fresh({ routeIndex: 5 }),
     actor = speaker(state);
-  setMusicDrive(state, true);
   state.distance = 340;
   updateEncounterActor(actor, state, 0);
   applyMusicEncounter(actor, state);
@@ -339,10 +330,9 @@ test('maximum music-assisted rush speed retains the authored reaction window', (
   );
 });
 
-test('music records stay classified through toggling, starter changes, checkpoint reload and the next road', () => {
+test('default music records stay classified through silence, starter changes, checkpoint reload and the next road', () => {
   const state = fresh();
-  setMusicDrive(state, true);
-  setMusicDrive(state, false);
+  suspendMusicDrive(state);
   assert.equal(chooseStartingWeapon(state, 'cassette'), true);
   changeRouteBeforeStart(state, 'express');
   const restored = restoreNightfallSave(
@@ -350,33 +340,37 @@ test('music records stay classified through toggling, starter changes, checkpoin
   );
   assert.equal(restored.survival.musicDriven, true);
   assert.equal(restored.musicDrive.multiplier, 1);
-  setMusicDrive(restored, false);
+  suspendMusicDrive(restored);
   quiet(restored);
   restored.distance = restored.routeLength - 0.01;
   update(restored, {}, 0.01);
   const resumed = restoreNightfallSave(exportNightfallSave(restored));
   assert.equal(resumed.survival.musicDriven, true);
-  setMusicDrive(resumed, true);
   nextRoute(resumed);
-  assert.equal(resumed.musicDriveEnabled, true);
+  assert.equal(resumed.survival.musicVersion, MUSIC_RULES_VERSION);
   assert.equal(resumed.survival.musicDriven, true);
   resumed.status = 'lost';
   assert.equal(survivalResult(resumed).musicDriven, true);
 });
 
-test('old saves are ordinary, malformed categories are rejected, and finished runs cannot be reclassified', () => {
+test('legacy saves adopt current rules on continuation while completed records retain their rules', () => {
   const saved = exportNightfallSave(fresh());
   delete saved.survival.musicDriven;
-  assert.equal(restoreNightfallSave(saved).survival.musicDriven, false);
+  const resumed = restoreNightfallSave(saved);
+  assert.equal(resumed.survival.musicDriven, false);
+  play(resumed, 53, 1);
+  assert.equal(resumed.survival.musicVersion, MUSIC_RULES_VERSION);
   assert.equal(
     normalizeSurvivalSave({ ...saved.survival, musicDriven: 'true' }),
     null,
   );
   for (const complete of [false, true]) {
     const state = fresh();
+    state.survival.musicDriven = false;
+    state.survival.musicVersion = 0;
     state.status = complete ? 'won' : 'lost';
     state.campaignComplete = complete;
-    setMusicDrive(state, true);
+    useCurrentMusicRules(state);
     assert.equal(survivalResult(state).musicDriven, false);
   }
 });
@@ -394,7 +388,8 @@ test('each of the four score categories keeps its own daily best and five record
           runId: `category-${assisted}-${musicDriven}-${i}`,
         });
         setSurvivalAssistance(state, assisted);
-        setMusicDrive(state, musicDriven);
+        state.survival.musicDriven = musicDriven;
+        state.survival.musicVersion = musicDriven ? MUSIC_RULES_VERSION : 0;
         state.score = i * (musicDriven ? 1000 : 10);
         state.status = 'lost';
         assert.equal(records.save(state).best, true);

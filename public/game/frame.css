@@ -519,3 +519,5 @@ body[data-screen="finale"] .performance-actions button { min-width: 0; min-heigh
   body[data-screen="finale"] .performance-panel { grid-column: 2; grid-row: 1 / 3; align-self: center; }
   body[data-screen="finale"] .performance-actions { grid-template-columns: minmax(0,1fr); }
 }
+
+.game-copyright a { color: #a7ded5; text-underline-offset: 2px; padding: 3px 1px; }

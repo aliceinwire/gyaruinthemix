@@ -16,7 +16,7 @@ import {
   updatePerformance,
 } from '../public/game/src/performance.js';
 import {
-  setMusicDrive,
+  useCurrentMusicRules,
   updateMusicDrive,
   suspendMusicDrive,
   applyMusicEncounter,
@@ -113,8 +113,10 @@ test('playing the whole catalog retains every crew cue and replay cannot evict t
     ),
   );
   assert.deepEqual(new Set(state.musicDrive.cueSeen), new Set(expected));
-  assert.equal(state.musicDrive.multiplier, 1);
-  assert.equal(state.survival.musicVersion, 0);
+  assert.ok(
+    state.musicDrive.multiplier >= 0.97 && state.musicDrive.multiplier <= 1.03,
+  );
+  assert.equal(state.survival.musicVersion, MUSIC_RULES_VERSION);
   state.events = [];
   const first = TRACK_CHARTS[0],
     drop = first.sections.find((section) => section.kind === 'drop');
@@ -168,7 +170,6 @@ test('club selection follows the radio and falls back explicitly when its curren
 test('each chart drives natural drop cues and bounded speed, including media clocks rounded to 100 ms', () => {
   for (const chart of TRACK_CHARTS) {
     const state = fresh();
-    setMusicDrive(state, true);
     const drop = chart.sections.find((s) => s.kind === 'drop').start;
     for (let i = 0; i <= 240; i++)
       updateMusicDrive(
@@ -200,7 +201,6 @@ test('all six existing headliners respond to drops without spawning actors or ch
   assert.equal(MUSIC_ENCOUNTER_IDS.length, 6);
   for (const routeIndex of [1, 3, 5, 7, 9, 11]) {
     const state = fresh({ routeIndex });
-    setMusicDrive(state, true);
     const actor = structuredClone(
       state._encounterPlan.find((item) => item.headliner),
     );
@@ -255,7 +255,6 @@ test('crew music reactions yield to driving warnings and retain Arinee at the wh
       assert.equal(selectCrewEvent([{ type }], context), null);
   }
   const state = fresh();
-  setMusicDrive(state, true);
   play(state, TRACK_CHARTS[2], 25.5, 15);
   assert.equal(
     state.events.filter((event) => event.type.startsWith('music-')).length,
@@ -271,10 +270,9 @@ test('pilot and expanded Music Drive records remain separate, including assistan
       setItem: (key, value) => data.set(key, value),
     });
   for (const assisted of [false, true])
-    for (const version of [1, 2, MUSIC_RULES_VERSION])
+    for (const version of [1, 2, 3, MUSIC_RULES_VERSION])
       for (let i = 1; i <= 7; i++) {
         const state = fresh({ runId: `${assisted}-${version}-${i}` });
-        setMusicDrive(state, true);
         state.survival.assisted = assisted;
         state.survival.musicVersion = version;
         state.status = 'lost';
@@ -285,8 +283,9 @@ test('pilot and expanded Music Drive records remain separate, including assistan
     assert.equal(records.best('2026-10-25', assisted, true).score, 7);
     assert.equal(records.best('2026-10-25', assisted, true, 1).score, 10007);
     assert.equal(records.best('2026-10-25', assisted, true, 2).score, 20007);
+    assert.equal(records.best('2026-10-25', assisted, true, 3).score, 30007);
   }
-  assert.equal(records.read().length, 30);
+  assert.equal(records.read().length, 40);
   const pilot = records.read()[0];
   delete pilot.musicVersion;
   assert.equal(normalizeSurvivalRecords([pilot])[0].musicVersion, 1);
@@ -298,20 +297,19 @@ test('pilot and expanded Music Drive records remain separate, including assistan
     );
 });
 
-test('resuming a pilot checkpoint keeps its category until the player enables the expanded mode', () => {
+test('continuing a pilot checkpoint adopts default music rules without losing its progress', () => {
   const state = fresh();
-  setMusicDrive(state, true);
   const saved = exportNightfallSave(state);
   delete saved.survival.musicVersion;
   const resumed = restoreNightfallSave(saved);
   assert.equal(resumed.survival.musicVersion, 1);
-  setMusicDrive(resumed, false);
+  suspendMusicDrive(resumed);
   assert.equal(resumed.survival.musicVersion, 1);
   resumed.survival.bestNotified = true;
-  setMusicDrive(resumed, true);
+  useCurrentMusicRules(resumed);
   assert.equal(resumed.survival.musicVersion, MUSIC_RULES_VERSION);
   assert.equal(resumed.survival.bestNotified, false);
-  setMusicDrive(resumed, false);
+  suspendMusicDrive(resumed);
   chooseStartingWeapon(resumed, 'cassette');
   assert.equal(
     restoreNightfallSave(exportNightfallSave(resumed)).survival.musicVersion,
@@ -323,6 +321,6 @@ test('resuming a pilot checkpoint keeps its category until the player enables th
   );
   assert.equal(
     restoreNightfallSave(exportNightfallSave(fresh())).survival.musicVersion,
-    0,
+    MUSIC_RULES_VERSION,
   );
 });

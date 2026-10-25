@@ -1501,5 +1501,8 @@
   "この曲のラストや。今夜の景色ごと覚えとこ。": "Der letzte Teil des Songs. Merken wir uns diesen Ausblick dazu.",
   "以前のミュージックドライブ": "Music Drive · Frühere Regeln",
   "以前のミュージックドライブ · ゆったり": "Music Drive · Frühere Regeln · Mit Assistenz",
-  "曲の展開で速度が最大±3%。ドロップでは音のゲートも開くで。": "Songabschnitte verändern das Tempo um bis zu ±3 %. Drops öffnen auch die Lautsprechertore."
+  "曲の展開で速度が最大±3%。ドロップでは音のゲートも開くで。": "Songabschnitte verändern das Tempo um bis zu ±3 %. Drops öffnen auch die Lautsprechertore.",
+  "実況・配信ルール": "Regeln für Videos und Streams",
+  "今の曲の続きでアンコール": "Zugabe ab der aktuellen Songposition",
+  "ラジオを再生したら、今の曲に合わせて続けよ。": "Starte das Radio, um zum aktuellen Song weiterzumachen."
 }
