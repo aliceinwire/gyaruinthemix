@@ -32,6 +32,7 @@ import { chromium } from 'playwright';
 import { checkRadioSpectrum } from './radio-spectrum.mjs';
 import { checkClubChart } from './club-chart.mjs';
 import { checkClubResume } from './club-resume.mjs';
+import { checkConditionHud } from './condition-hud.mjs';
 import { releaseVersion } from '../../src/data/release.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
@@ -308,6 +309,7 @@ const browser = await chromium.launch({
     : {}),
 });
 try {
+  await checkConditionHud(browser, { root, csp });
   await checkRadioSpectrum(browser, { root, csp });
   await checkRadioSpectrum(browser, { root, csp, nativeHls: true });
   await checkClubResume(browser, { root, csp });

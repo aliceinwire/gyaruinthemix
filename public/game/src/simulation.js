@@ -170,36 +170,36 @@ export const ROUTE_OPTIONS = Object.freeze({
 });
 export const UPGRADE_CATALOG = Object.freeze(
   [
-    { id: "rushCooler", name: "ラッシュクーラー", description: "ラッシュ再使用 -0.75秒", basePrice: 130, maxLevel: 3 },
-    { id: "heartReach", name: "ワイドハート", description: "ハートの届く幅と高さUP", basePrice: 150, maxLevel: 3 },
-    { id: "evRange", name: "EVキャッチ", description: "充電できる範囲 +10m", basePrice: 110, maxLevel: 3 },
+    { id: "rushCooler", name: "ラッシュクーラー", description: "ラッシュ再使用 -0.75秒", basePrice: 130, maxLevel: 6 },
+    { id: "heartReach", name: "ワイドハート", description: "ハートの届く幅と高さUP", basePrice: 150, maxLevel: 6 },
+    { id: "evRange", name: "EVキャッチ", description: "充電できる範囲 +10m", basePrice: 110, maxLevel: 6 },
     {
       id: "battery",
       name: "バッテリーPLUS",
       description: "容量 +30 / スラスター消費 -2毎秒",
       basePrice: 120,
-      maxLevel: 3,
+      maxLevel: 6,
     },
     {
       id: "hearts",
       name: "ハート連射",
       description: "ハートの発射間隔を短縮",
       basePrice: 140,
-      maxLevel: 3,
+      maxLevel: 6,
     },
     {
       id: "charger",
       name: "急速チャージ",
       description: "EV充電 +18毎秒",
       basePrice: 100,
-      maxLevel: 3,
+      maxLevel: 6,
     },
     {
       id: "armor",
       name: "タフかわボディ",
       description: "耐久上限 +25 / その場で耐久 +25",
       basePrice: 160,
-      maxLevel: 3,
+      maxLevel: 6,
     },
     {
       id: "repair",
@@ -1038,7 +1038,7 @@ function normalizeCheckpoint(value, fallback) {
   checkpoint.locationIndex = Math.floor(clamp(checkpoint.locationIndex, 0, 19));
   checkpoint.upgrades = {};
   for (const id of ["battery", "hearts", "charger", "armor", "rushCooler", "heartReach", "evRange"])
-    checkpoint.upgrades[id] = Math.floor(safeNumber(saved.upgrades?.[id], fallback.upgrades?.[id] || 0, 3));
+    checkpoint.upgrades[id] = Math.floor(safeNumber(saved.upgrades?.[id], fallback.upgrades?.[id] || 0, 6));
   checkpoint.garage = normalizeGarage(saved.garage ?? fallback.garage);
   checkpoint.runBuild = normalizeRunBuild(saved.runBuild ?? fallback.runBuild, { carId: checkpoint.garage.equipped });
   checkpoint.rpg = normalizeRpg(saved.rpg ?? fallback.rpg);

@@ -1,4 +1,5 @@
 import { t } from './i18n.js';
+import { drawZombieCharacter, preloadZombieCharacters } from './zombie-art.js';
 import { SILENT_MUSIC, weaponMusicLevel } from './music-reactivity.js';
 import { preloadArrivalFans, drawArrivalFans } from './arrival-fans.js';
 import { getThreatSignals } from './road-feedback.js';
@@ -50,14 +51,16 @@ function paintLocation(g, options, alpha, slot = 0) {
   g.restore();
 }
 export async function preloadSprites() {
-  const [crew, street, , roadside, roadReady, umbrellasReady] = await Promise.all([
+  const [crew, street, , roadside, roadReady, umbrellasReady, zombiesReady] = await Promise.all([
     Promise.all([preloadCharacterActions(), preloadCabinCharacters()]).then(([crew]) => crew),
     Promise.all([preloadStreetCharacters(), preloadArrivalFans()]).then(([street]) => street),
     preloadCarArt(),
     preloadRoadsideArt(),
     preloadRoadSurfaceArt(),
     preloadUmbrellaArt(),
+    preloadZombieCharacters(),
   ]);
+  if (!zombiesReady) throw new Error("Required zombie character art failed to load");
   if (!umbrellasReady) throw new Error("Required umbrella art failed to load");
   if (!roadReady) throw new Error("Required road surface art failed to load");
   if (!street) throw new Error("Required street character art failed to load");
@@ -275,6 +278,7 @@ export function drawSignalHeadliner(g, actor, x, y, time = 0, music = SILENT_MUS
 
 function entity(g, e, x, y, time, state, music) {
   const clothing = streetCharacterIdentity(e);
+  if (e.zombie && drawZombieCharacter(g, e, x, y, time)) return true;
   if (e.headliner) { drawSignalHeadliner(g, e, x, y, time, music); return true; }
   if (drawRoutineHazard(g, e, x, y, time) || drawLittleFind(g, e, x, y, time)) return true;
   if (e.type === 'ev') drawFriendlyCat(g, x, y - 68, time);

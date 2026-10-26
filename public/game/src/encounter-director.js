@@ -380,7 +380,7 @@ export function createEncounterPlan(options = {}) {
 export function addFlightObstacles(plan, { seed, routeIndex, routeLength, stations, stationRadius, node = {} }) {
   const result = [...plan];
   if (node.lowCeiling || node.maxAltitude < 24) return result;
-  const quota = routeIndex === 0 ? 2 : routeIndex < 4 ? 3 : routeIndex < 8 ? 4 : 5;
+  const quota = routeIndex === 0 ? 2 : routeIndex < 4 ? 4 : routeIndex < 8 ? 5 : 6;
   const random = makeRandom(hashSeed(`${seed}:${routeIndex}:flight`));
   const end = routeLength - ENCOUNTER_RULES.arrivalClearance;
   for (let pass = 0; pass < quota; pass++) {

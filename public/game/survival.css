@@ -123,3 +123,14 @@ body[data-run-mode="survival"] #rpg-build { color: #aaf2df; }
  #pause-overlay .assist-setting { padding: 5px; margin: 5px 0; }
  #pause-overlay .assist-record-note { font-size: 11px; margin: 4px 0; }
 }
+
+/* Keep the live hull and battery beside the route in the fixed portrait row. */
+@media (max-width: 680px) and (orientation: portrait) {
+ body[data-run-mode="survival"][data-screen="playing"] .dashboard { grid-template-columns: minmax(0,1fr) 90px max-content; gap: 8px; align-items: center; }
+ body[data-run-mode="survival"][data-screen="playing"] .objective { grid-column: 1; min-width: 0; }
+ body[data-run-mode="survival"][data-screen="playing"] .condition { grid-column: 2; min-width: 0; gap: 3px; }
+ body[data-run-mode="survival"][data-screen="playing"] .wallet { grid-column: 3; min-width: 0; }
+ body[data-run-mode="survival"][data-screen="playing"] .condition label { font-size: 10px; }
+ body[data-run-mode="survival"][data-screen="playing"] .wallet strong { font-size: 15px; }
+ body[data-run-mode="survival"][data-screen="playing"] .objective-bottom { flex-wrap: wrap; gap: 2px; }
+}

@@ -133,6 +133,7 @@ export function getThreatSignals(state = {}) {
         action = actor.type === 'pothole' || actor.shielded ? 'boost' : null;
         label = actor.type === 'pothole' ? '穴や！ 飛んでかわそ' : actor.shielded ? 'ガード中。飛ぶか、開くのを待とう' : actor.behavior === 'charger' ? '前に動くで！ 距離を見て浮上' : '武器は自動。近づく人波は浮いてかわそ';
       }
+      if (actor.zombie) { label = `${actor.zombie.name}：${label}`; action = 'boost'; }
       if (actor.routineHazard) label = `${actor.routineHazard.name}：${actor.routineHazard.advice}`;
       else if (actor.streetRole) label = `${actor.streetRole.name}：${label}`;
       if (actor.musicCue) label = 'もうすぐドロップ。音のゲートが開くで';

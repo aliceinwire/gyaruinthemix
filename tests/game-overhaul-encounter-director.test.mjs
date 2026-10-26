@@ -137,7 +137,9 @@ test('whole motion envelopes preserve charging zones, response gaps and arrival 
             actor.distance <=
               options.routeLength - ENCOUNTER_RULES.arrivalClearance,
           );
-          assert.ok(actor.hp >= 1 && actor.hp <= 4);
+          assert.ok(
+            actor.hp >= 1 && actor.hp <= (actor.routineHazard?.hp || 4),
+          );
           assert.equal(actor.maxHp, actor.hp);
           assert.ok(
             actor.motionAmplitude >= 0 &&

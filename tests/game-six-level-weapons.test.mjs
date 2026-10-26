@@ -44,7 +44,7 @@ function actor(state, id, distance, hp = 10, extra = {}) {
 
 test('all seven weapons gain something at each of six levels without lowering another stat', () => {
   assert.equal(SURVIVAL_WEAPONS.length, 7);
-  assert.equal(SURVIVAL_MAX_LEVEL, 59);
+  assert.equal(SURVIVAL_MAX_LEVEL, 77);
   for (const item of SURVIVAL_WEAPONS) {
     assert.equal(item.maxLevel, 6);
     const state = quiet(item.id);
@@ -78,7 +78,7 @@ test('all seven weapons gain something at each of six levels without lowering an
   }
   assert.ok(
     SURVIVAL_UPGRADES.filter((item) => item.kind === 'support').every(
-      (item) => item.maxLevel === 3,
+      (item) => item.maxLevel === 6,
     ),
   );
 });
@@ -263,7 +263,7 @@ test('a shared support previews the ready recipe and can evolve both eligible we
   );
 });
 
-test('current saves and score recaps retain level-six weapons; supports cannot exceed three', () => {
+test('current saves and score recaps retain level-six weapons; supports cannot exceed six', () => {
   const state = quiet('cassette');
   state.survival.upgrades = { cassette: 6, cd: 6, glide: 2, armor: 2 };
   state.survival.level = 15;
@@ -274,7 +274,7 @@ test('current saves and score recaps retain level-six weapons; supports cannot e
   assert.deepEqual(restored.survival.evolutions, state.survival.evolutions);
   for (const [id, value] of [
     ['cassette', 7],
-    ['armor', 4],
+    ['armor', 7],
   ]) {
     const corrupt = structuredClone(saved);
     corrupt.survival.upgrades[id] = value;
