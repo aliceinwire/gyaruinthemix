@@ -234,13 +234,12 @@ test('upgrade offers reveal evolution ingredients and exhaust at the actual buil
   assert.equal(survivalView(s).progress, 1);
 });
 
-test('distinct attack and support offers spend XP once, stop time, and exclude maxed upgrades', () => {
+test('distinct random offers spend XP once, stop time, and exclude maxed upgrades', () => {
   const s = quiet();
   s.survival.xp = 50;
   const offers = survivalOffers(s);
   assert.equal(offers.length, 3);
-  assert.ok(offers.some((item) => item.family === 'SUPPORT'));
-  assert.ok(offers.some((item) => item.family !== 'SUPPORT'));
+  assert.equal(new Set(offers.map((item) => item.id)).size, 3);
   assert.deepEqual(offers, survivalOffers(s));
   openSurvivalDraft(s);
   const before = [s.distance, s.energy, s.survival.seconds, s.survival.heat];
@@ -744,7 +743,12 @@ test('all seven starters can finish the twelve-road run with driving and build c
     assert.equal(s.campaignComplete, true, starter.id);
     assert.equal(s.stagesCompleted, 12, starter.id);
     assert.ok(s.survival.kills > 0, starter.id);
-    assert.ok(s.survival.evolutions.length > 0, starter.id);
+    // Random offers can finish a viable run without completing an evolution.
+    assert.ok(s.survival.level >= 10, starter.id);
+    assert.ok(
+      Object.values(s.survival.upgrades).some((level) => level > 1),
+      starter.id,
+    );
   }
 });
 

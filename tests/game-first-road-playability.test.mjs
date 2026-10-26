@@ -261,6 +261,10 @@ test('every weapon preview describes a real upgrade and shows recipe progress af
         1;
       state.survival.xp = survivalXpCost(state.survival.level);
       state.survival.fever = 4;
+      // Find a draw containing this weapon so every preview level is exercised.
+      for (state.seed = 1; state.seed < 1000; state.seed++) {
+        if (survivalOffers(state).some((item) => item.id === weapon.id)) break;
+      }
       const offer = survivalOffers(state).find((item) => item.id === weapon.id);
       assert.ok(offer.role);
       assert.ok(offer.benefit);

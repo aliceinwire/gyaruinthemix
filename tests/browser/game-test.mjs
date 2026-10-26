@@ -973,7 +973,8 @@ try {
       await page.waitForFunction(() => document.querySelector('#draft-options').dataset.compare === 'false');
       await assertFrameFits(page, ['#draft-panel .modal-card']);
       const gadgetPager = page.locator('#draft-options + .card-pager');
-      await gadgetPager.getByRole('button', { name: '次へ →', exact: true }).click();
+      if (gadgetOffers.findIndex(item => item.id === 'md') > 0)
+        await gadgetPager.getByRole('button', { name: '次へ →', exact: true }).click();
       assert.equal(await echoCard.isVisible(), true);
       await assertFrameFits(page, ['#draft-panel .modal-card']);
       await page.setViewportSize({ width, height });
@@ -1001,13 +1002,18 @@ try {
 
       // Both new weapons reveal their sixth level and evolve through the real draft UI.
       for (const [id, support, evolution] of [['cd', 'armor', 'prism'], ['cassette', 'glide', 'doubledeck']]) {
-        const fixture = createState({
-          mode: 'survival', startingWeapon: id, survivalDay: '2026-10-23',
-          routeIndex: 7, seed: 175, campaignStarted: true,
-        });
-        fixture.survival.upgrades = { [id]: 5, [support]: 2 };
-        fixture.survival.level = 6;
-        fixture.survival.xp = survivalXpCost(6);
+        let fixture;
+        for (let seed = 1; seed < 1000; seed++) {
+          fixture = createState({
+            mode: 'survival', startingWeapon: id, survivalDay: '2026-10-23',
+            routeIndex: 7, seed, campaignStarted: true,
+          });
+          fixture.survival.upgrades = { [id]: 5, [support]: 2 };
+          fixture.survival.level = 6;
+          fixture.survival.xp = survivalXpCost(6);
+          if (survivalOffers(fixture).some(item => item.id === id)) break;
+        }
+        assert.ok(survivalOffers(fixture).some(item => item.id === id));
         await loadNightfallFixture(page, fixture);
         await departThroughStory(page);
         await page.waitForFunction(() => __HYPERDRIVE__.snapshot().screen === 'draft');

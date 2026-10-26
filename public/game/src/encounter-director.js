@@ -374,6 +374,46 @@ export function createEncounterPlan(options = {}) {
   return Object.freeze(plan.map(actor => decorateEncounter(actor, stage, source.seed)));
 }
 
+/** Reserve flight-only road gaps before survival crowds are packed around them.
+ * Add only in free space: never move an authored encounter or crowd an EV stop.
+ * Short or blocked roads may contain fewer gaps rather than unsafe placements. */
+export function addFlightObstacles(plan, { seed, routeIndex, routeLength, stations, stationRadius, node = {} }) {
+  const result = [...plan];
+  if (node.lowCeiling || node.maxAltitude < 24) return result;
+  const quota = routeIndex === 0 ? 2 : routeIndex < 4 ? 3 : routeIndex < 8 ? 4 : 5;
+  const random = makeRandom(hashSeed(`${seed}:${routeIndex}:flight`));
+  const end = routeLength - ENCOUNTER_RULES.arrivalClearance;
+  for (let pass = 0; pass < quota; pass++) {
+    const holes = result.filter(actor => actor.type === 'pothole');
+    if (holes.length >= quota) break;
+    const actor = descriptor(actorDefinition('pothole'), routeIndex, random, false);
+    const targets = Array.from({ length: quota }, (_, i) => routeLength * (i + 1) / (quota + 1));
+    const preferred = targets.sort((a, b) => {
+      const gap = value => holes.length ? Math.min(...holes.map(hole => Math.abs(hole.distance - value))) : routeLength - Math.abs(value - routeLength / 2);
+      return gap(b) - gap(a);
+    })[0];
+    const candidates = [];
+    // Preserve the opening tutorial and first XP choice on the first road.
+    const start = routeIndex === 0 ? 800 : actor.warningDistance + actor.collisionRadius;
+    for (let distance = start; distance <= end; distance += 14) {
+      if (!safeAt(distance, actor, stations, stationRadius)) continue;
+      if (distance + actor.collisionRadius >= routeLength * .65 && distance - actor.collisionRadius <= routeLength * .73) continue;
+      if (result.some(other => Math.abs(other.distance - distance) < separation(other, actor))) continue;
+      if (holes.some(hole => Math.abs(hole.distance - distance) < 360)) continue;
+      candidates.push(distance);
+    }
+    candidates.sort((a, b) => Math.abs(a - preferred) - Math.abs(b - preferred) || a - b);
+    const distance = candidates[0];
+    if (distance === undefined) break;
+    const gap = { ...actor, distance, motionBaseDistance: distance, telegraphBaseDistance: distance,
+      encounterId: `flight-${routeIndex}-${pass}`, encounterIndex: pass, phraseIndex: 0, phraseSize: 1,
+      beat: 'flight-gap', routePhase: phaseAt(distance / routeLength, routeIndex),
+      cluster: false, clusterSize: 1, clusterGrace: 0, tutorial: false, threatBudget: 1 };
+    result.push(Object.freeze(decorateEncounter(gap, routeIndex, seed)));
+  }
+  return result.sort((a, b) => a.distance - b.distance);
+}
+
 /** Update the same authoritative actor position used by both render and collision.
  * Animation is an analytic function of simulation time, not a per-frame random
  * walk. dt is used only to interpolate the initial threshold crossing exactly.
