@@ -1,6 +1,6 @@
 /** One-life, seeded club tour. Weapon rules and previews share the same specifications. */
 import { resetCrewWeaponGesture, requestCrewWeaponGesture } from './crew-weapon-state.js';
-import { ENCOUNTER_RULES } from './encounter-director.js';
+import { ENCOUNTER_RULES, addFlightObstacles } from './encounter-director.js';
 import { decorateEncounter } from './street-culture.js';
 
 export const SURVIVAL_VERSION = 5;
@@ -222,13 +222,16 @@ export function survivalOffers(state) {
   if (!isSurvival(state)) return [];
   const s = state.survival;
   if (s.level >= SURVIVAL_MAX_LEVEL || s.xp < survivalXpCost(s.level)) return [];
-  const pool = SURVIVAL_UPGRADES.filter(item => (s.upgrades[item.id] || 0) < item.maxLevel && (item.id !== 'relay' || s.upgrades.heart > 0))
-    .sort((a,b) => hash(`${state.seed}:${s.level}:${a.id}`) - hash(`${state.seed}:${s.level}:${b.id}`));
-  // Six-level builds need a dependable way to deepen equipped weapons and finish recipes.
-  const weapon = pool.find(item => item.kind === 'weapon' && s.upgrades[item.id]) || pool.find(item => item.kind === 'weapon');
-  const support = pool.find(item => item.kind === 'support' && SURVIVAL_EVOLUTIONS.some(recipe => recipe.support === item.id && s.upgrades[recipe.weapon] && (s.upgrades[item.id] || 0) < recipe.supportRequired)) || pool.find(item => item.kind === 'support');
-  const picks = [weapon, support].filter(Boolean);
-  for (const item of pool) if (picks.length < 3 && !picks.includes(item)) picks.push(item);
+  const pool = SURVIVAL_UPGRADES.filter(item => (s.upgrades[item.id] || 0) < item.maxLevel && (item.id !== 'relay' || s.upgrades.heart > 0));
+  // A separate seeded shuffle keeps an open draft stable without reserving slots
+  // for equipped weapons or recipe ingredients, or consuming the road RNG.
+  let roll = hash(`${state.seed}:upgrade:${s.level}`) || 1;
+  for (let i = pool.length - 1; i > 0; i--) {
+    roll ^= roll << 13; roll ^= roll >>> 17; roll ^= roll << 5;
+    const j = Math.floor((roll >>> 0) / 4294967296 * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  const picks = pool.slice(0, 3);
   return picks.map(item => {
     const level = (s.upgrades[item.id] || 0) + 1;
     const effects = { relay: `連鎖+${level} / ${40 + level * 16}m`,
@@ -404,10 +407,10 @@ export function finishSurvivalWave(state, wave = state.survival?.wave) {
 }
 /** Pack followers only into already reserved, readable stretches of road.
  * Never occupy EV windows, breather sections, or another obstacle's envelope. */
-export function survivalEncounterPlan(plan, state, stationRadius) {
+export function survivalEncounterPlan(plan, state, stationRadius, node = {}) {
   const stage = state.routeIndex;
   // Keep the authored jump checks, moving tells and named sound-system encounters.
-  const anchors = plan.filter(actor => actor.type !== 'salaryman' || actor.headliner || actor.elite || actor.behavior !== 'steady');
+  const anchors = addFlightObstacles(plan.filter(actor => actor.type !== 'salaryman' || actor.headliner || actor.elite || actor.behavior !== 'steady'), { seed: state.seed, routeIndex: stage, routeLength: state.routeLength, stations: state._stations, stationRadius, node });
   const result = anchors.map(actor => ({ ...actor, hp: actor.headliner || actor.elite ? 6 + stage : actor.hp,
     maxHp: actor.headliner || actor.elite ? 6 + stage : actor.maxHp }));
   const prototype = plan.find(actor => actor.type === 'salaryman');
@@ -416,7 +419,7 @@ export function survivalEncounterPlan(plan, state, stationRadius) {
   const safe = distance => distance < end &&
     !(distance / state.routeLength > .65 && distance / state.routeLength < .73) &&
     !state._stations.some(ev => Math.abs(ev - distance) < stationRadius + ENCOUNTER_RULES.stationBuffer + 38) &&
-    !anchors.some(actor => Math.abs(actor.distance - distance) < (actor.type === 'salaryman' ? 100 : 150) + (actor.motionAmplitude || 0));
+    !anchors.some(actor => Math.abs(actor.distance - distance) < (actor.type === 'salaryman' ? 100 : (actor.collisionRadius || 27) + 15 + ENCOUNTER_RULES.maximumSupportedSpeed / 3.6 * ENCOUNTER_RULES.minimumCounterTime) + (actor.motionAmplitude || 0));
   let pack = 0;
   for (let cursor = 160; cursor < end;) {
     if (!safe(cursor)) { cursor += 14; continue; }

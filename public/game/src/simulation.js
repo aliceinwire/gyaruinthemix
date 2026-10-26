@@ -533,7 +533,7 @@ export function createState({
       Math.abs(b - state.routeLength * 0.6),
   )[0];
   state._encounterPlan = createEncounterPlan({ seed: state.seed, routeIndex: index, routeLength: state.routeLength, node, stations: state._stations, stationRadius: roadSettings(state).stationRadius });
-  if (isSurvival(state)) state._encounterPlan = survivalEncounterPlan(state._encounterPlan, state, roadSettings(state).stationRadius);
+  if (isSurvival(state)) state._encounterPlan = survivalEncounterPlan(state._encounterPlan, state, roadSettings(state).stationRadius, node);
   populate(state);
   state._stageStart = snapshot(state);
   return state;

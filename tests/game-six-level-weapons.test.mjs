@@ -207,28 +207,33 @@ test('Double deck repeats twice at half power and pause freezes both sweeps', ()
   assert.equal(state.survival.cassetteLoops.length, 0);
 });
 
-test('six-level builds retain an equipped upgrade and matching support across seeded drafts', () => {
-  for (const item of SURVIVAL_WEAPONS)
-    for (let seed = 1; seed <= 30; seed++) {
+test('equipped weapons and recipe supports can appear or miss a seeded XP draft', () => {
+  for (const item of SURVIVAL_WEAPONS) {
+    const recipe = SURVIVAL_EVOLUTIONS.find(
+      (entry) => entry.weapon === item.id,
+    );
+    const seen = new Set(),
+      missed = new Set();
+    for (let seed = 1; seed <= 100; seed++) {
       const state = quiet(item.id);
       state.seed = seed;
-      const recipe = SURVIVAL_EVOLUTIONS.find(
-        (entry) => entry.weapon === item.id,
-      );
       for (let level = 1; level < 6; level++) {
         state.survival.upgrades = { [item.id]: level };
         state.survival.level = level - 1;
         state.survival.xp = survivalXpCost(state.survival.level);
         const offers = survivalOffers(state);
-        assert.ok(offers.some((offer) => offer.id === item.id));
-        assert.ok(offers.some((offer) => offer.id === recipe.support));
         assert.equal(new Set(offers.map((offer) => offer.id)).size, 3);
-        assert.equal(
-          offers.find((offer) => offer.id === item.id).effect,
-          `Lv.${level + 1} / 6`,
-        );
+        for (const id of [item.id, recipe.support]) {
+          if (offers.some((offer) => offer.id === id)) seen.add(id);
+          else missed.add(id);
+        }
+        const weapon = offers.find((offer) => offer.id === item.id);
+        if (weapon) assert.equal(weapon.effect, `Lv.${level + 1} / 6`);
       }
     }
+    assert.deepEqual([...seen].sort(), [item.id, recipe.support].sort());
+    assert.deepEqual([...missed].sort(), [...seen].sort());
+  }
 });
 
 test('a shared support previews the ready recipe and can evolve both eligible weapons', () => {
