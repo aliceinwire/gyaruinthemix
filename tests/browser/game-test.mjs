@@ -403,8 +403,9 @@ try {
     assert.ok(await release.isVisible());
     await assertFrameFits(page, ['.game-copyright']);
     assert.equal(await page.locator('#menu .eyebrow').textContent(), 'ギャルインザミックスのロードローグライト');
-    assert.equal(await page.locator('#development-feedback').getAttribute('href'), 'https://x.com/arisu_gyaru');
+    assert.equal(await page.locator('#development-feedback').getAttribute('href'), 'https://twitter.com/arisu_gyaru');
     assert.equal(await page.locator('#development-feedback').getAttribute('target'), '_blank');
+    assert.equal(await page.locator('#development-feedback').textContent(), 'https://twitter.com/arisu_gyaru');
     assert.equal(await page.locator('#development-label').isVisible(), true);
     assert.equal(await page.locator('#development-notice').isVisible(), true);
     await assertFrameFits(page, ['#development-label', '#development-notice', '#story']);
