@@ -118,7 +118,7 @@ export function getCarAppearance(stateOrGarage, carId) {
 }
 export function getCarStats(carOrId, upgrades = {}) {
   const car = typeof carOrId === "string" ? getCarProfile(carOrId) : carOrId?.stats ? carOrId : getCarProfile(carOrId);
-  const level = (id) => clamp(Math.trunc(Number(upgrades[id]) || 0), 0, 3);
+  const level = (id) => clamp(Math.trunc(Number(upgrades[id]) || 0), 0, 6);
   return {
     energyCapacity: car.stats.energyCapacity + level("battery") * 30,
     integrityCapacity: car.stats.integrityCapacity + level("armor") * 25,
@@ -173,7 +173,7 @@ export function restoreMetaProgress(value) {
     if (carById(id) && !meta.ownedCars.includes(id)) meta.ownedCars.push(id);
   for (const id of Object.keys(meta.upgrades)) {
     const level = value.upgrades?.[id];
-    meta.upgrades[id] = Number.isFinite(level) ? clamp(Math.floor(level), 0, 3) : 0;
+    meta.upgrades[id] = Number.isFinite(level) ? clamp(Math.floor(level), 0, 6) : 0;
   }
   for (const [key, catalog] of Object.entries(COSMETIC_CATALOGS)) {
     const values = value.cosmeticUnlocks?.[key];
@@ -256,10 +256,10 @@ export function customizeCar() { return false; }
 
 const COSMETIC_CATALOGS = Object.freeze({ paint: PAINT_OPTIONS, wheels: WHEEL_OPTIONS, decal: DECAL_OPTIONS });
 export const STARTING_UPGRADE_CATALOG = freezeOptions([
-  { id: "battery", name: "バッテリーPLUS", description: "容量 +30 / スラスター消費 -2毎秒", basePrice: 1, maxLevel: 3 },
-  { id: "hearts", name: "ハート連射", description: "ハートの発射間隔を短縮", basePrice: 1, maxLevel: 3 },
-  { id: "charger", name: "急速チャージ", description: "EV充電 +18毎秒", basePrice: 1, maxLevel: 3 },
-  { id: "armor", name: "タフかわボディ", description: "耐久上限 +25", basePrice: 1, maxLevel: 3 },
+  { id: "battery", name: "バッテリーPLUS", description: "容量 +30 / スラスター消費 -2毎秒", basePrice: 1, maxLevel: 6 },
+  { id: "hearts", name: "ハート連射", description: "ハートの発射間隔を短縮", basePrice: 1, maxLevel: 6 },
+  { id: "charger", name: "急速チャージ", description: "EV充電 +18毎秒", basePrice: 1, maxLevel: 6 },
+  { id: "armor", name: "タフかわボディ", description: "耐久上限 +25", basePrice: 1, maxLevel: 6 },
 ]);
 /** Use this view in the picker; locked vehicles expose no name, art or stats. */
 export function getCarReveal(meta, carId) {

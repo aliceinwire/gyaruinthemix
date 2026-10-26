@@ -234,18 +234,20 @@ test('new pixel props draw bounded finite primitives, including friendly non-tar
   for (const role of STREET_ROLES)
     for (const converted of [false, true])
       drawCultureProp(ctx, { streetRole: role, converted }, 500, 465, 3);
-  for (const hazard of ROUTINE_HAZARDS)
+  for (const hazard of ROUTINE_HAZARDS) {
+    const before = calls.length;
     assert.equal(
       drawRoutineHazard(ctx, { routineHazard: hazard }, 500, 465, 3),
       true,
     );
+    assert.ok(calls.length - before < 40, `${hazard.id}: bounded artwork`);
+  }
   for (const find of LITTLE_FINDS)
     assert.equal(
       drawLittleFind(ctx, { type: 'little-find', find }, 500, 465, 3),
       true,
     );
   drawFriendlyCat(ctx, 500, 397, 3);
-  assert.ok(calls.length < 400);
   assert.ok(
     calls.every(([, ...args]) =>
       args.every(

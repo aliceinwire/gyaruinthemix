@@ -191,8 +191,8 @@ test('club coins buy current-car upgrades and repairs only at stops', () => {
   assert.equal(s.energyCapacity, 130);
   assert.equal(s.energy, 100);
   assert.equal(upgradePrice(s, 'battery'), 240);
-  buyUpgrade(s, 'battery');
-  buyUpgrade(s, 'battery');
+  for (let level = 2; level <= 6; level++)
+    assert.equal(buyUpgrade(s, 'battery'), true);
   assert.equal(upgradePrice(s, 'battery'), null);
   assert.equal(buyUpgrade(s, 'battery'), false);
   assert.equal(buyUpgrade(s, 'unknown'), false);

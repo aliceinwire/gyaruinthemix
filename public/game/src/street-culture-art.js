@@ -134,7 +134,23 @@ export function drawRoutineHazard(ctx, actor, x, y, time = 0) {
   const hazard = actor.routineHazard;
   if (!hazard) return false;
   ctx.save();
-  if (hazard.id === 'paper-stack') {
+  if (hazard.id === 'roadworks') {
+    rect(ctx,x-29,y-48,6,48,ink); rect(ctx,x+23,y-48,6,48,ink);
+    rect(ctx,x-34,y-48,68,15,'#ffce68'); rect(ctx,x-34,y-24,68,12,'#ffce68');
+    for (let i=0;i<5;i++) { rect(ctx,x-29+i*13,y-48,6,15,ink); rect(ctx,x-29+i*13,y-24,6,12,ink); }
+    rect(ctx,x-27,y-58,6,8,'#ff8065'); rect(ctx,x+21,y-58,6,8,'#ff8065');
+  } else if (hazard.id === 'broken-asphalt') {
+    polygon(ctx,x,y,[[-46,-5],[-31,-11],[-17,-7],[-3,-13],[15,-7],[32,-10],[46,-4],[28,3],[-22,3]],ink);
+    for (const [dx,dy] of [[-40,-9],[-18,-12],[13,-12],[33,-9]]) rect(ctx,x+dx,y+dy,10,5,'#88829b');
+    rect(ctx,x-31,y-3,60,3,'#080b17');
+    rect(ctx,x-50,y-17,7,13,'#ffce68'); rect(ctx,x+43,y-17,7,13,'#ffce68');
+  } else if (hazard.id === 'speaker-crates') {
+    for (const [dx,dy,w] of [[-31,-31,62],[-24,-57,48],[-17,-80,34]]) {
+      rect(ctx,x+dx,y+dy,w,25,ink); rect(ctx,x+dx+3,y+dy+3,w-6,19,'#605774');
+      rect(ctx,x+dx+5,y+dy+8,4,9,paper); rect(ctx,x+dx+w-9,y+dy+8,4,9,paper);
+      rect(ctx,x+dx+w/2-5,y+dy+9,10,4,ink);
+    }
+  } else if (hazard.id === 'paper-stack') {
     for(let i=0;i<5;i++) { rect(ctx,x-22+(i%2)*4,y-5-i*6,42,6,ink); rect(ctx,x-20+(i%2)*4,y-5-i*6,38,4,paper); }
   } else if (hazard.id === 'deadline-clock') {
     rect(ctx,x-21,y-47,42,44,ink); rect(ctx,x-17,y-43,34,32,'#ffe1a6');

@@ -34,11 +34,37 @@ export const SUIT_STYLES = Object.freeze({
 for (const style of Object.values(SUIT_STYLES)) Object.freeze(style);
 
 export function suitStyleFor(actor = {}) {
-  if (actor.converted || actor.headliner || actor.elite || actor.type !== 'salaryman') return null;
+  if (actor.zombie || actor.converted || actor.headliner || actor.elite || actor.type !== 'salaryman') return null;
   return SUIT_STYLES[actor.streetRole?.id] || SUIT_STYLES.salaryman;
 }
 
+export const ZOMBIE_TYPES = Object.freeze([
+  Object.freeze({ id: 'shambler', name: '夜ふかしゾンビ', hp: 3, stage: 1, gyaruStyle: 'silver-manba' }),
+  Object.freeze({ id: 'bouncer', name: 'ヘビーゾンビ', hp: 6, stage: 5, gyaruStyle: 'purple-rokku' }),
+]);
+
+/** Replace a few already-spaced crowd members; never add another collision. */
+export function addZombieEncounters(plan, stage, seed) {
+  if (stage < 1) return plan;
+  const candidates = plan.filter(actor => actor.type === 'salaryman' && !actor.headliner && !actor.elite && !actor.tutorial &&
+    (!actor.cluster || actor.phraseIndex === actor.phraseSize - 1))
+    .sort((a, b) => hash(`${seed}:zombie:${a.encounterId}`) - hash(`${seed}:zombie:${b.encounterId}`));
+  const selected = new Map();
+  for (const actor of candidates) {
+    if ([...selected.keys()].some(other => Math.abs(other.distance - actor.distance) < 300)) continue;
+    const zombie = ZOMBIE_TYPES[stage >= 5 && selected.size % 2 === 0 ? 1 : 0];
+    const hp = zombie.hp + Math.floor(stage / 4);
+    selected.set(actor, Object.freeze({ ...actor, zombie, streetRole: undefined, hp, maxHp: hp,
+      telegraph: Object.freeze({ ...actor.telegraph, label: zombie.name }) }));
+    if (selected.size >= 1 + Math.floor(stage / 4)) break;
+  }
+  return plan.map(actor => selected.get(actor) || actor);
+}
+
 export const ROUTINE_HAZARDS = Object.freeze([
+  { id: 'roadworks', name: '工事バリケード', type: 'barrier', hp: 4, clearance: .32, advice: '攻撃で崩すか、上を越えよ', stage: 1 },
+  { id: 'broken-asphalt', name: '崩れた路面', type: 'pothole', hp: 1, clearance: .25, advice: '攻撃は通らへん。飛んで抜けよ', stage: 1 },
+  { id: 'speaker-crates', name: '積み上がった機材ケース', type: 'barrier', hp: 5, clearance: .36, advice: '攻撃で崩すか、上を越えよ', stage: 3 },
   { id: 'paper-stack', name: 'おかわり書類', type: 'cone', hp: 1, clearance: .17, advice: '攻撃で片づく。短く浮いてもOK', stage: 0 },
   { id: 'deadline-clock', name: '締切タイマー', type: 'cone', hp: 1, clearance: .2, advice: '攻撃でオフ。浮いてもOK', stage: 1 },
   { id: 'ad-totem', name: '流行だらけの広告タワー', type: 'barrier', hp: 2, clearance: .4, advice: '攻撃で崩すか、上を越えよ', stage: 1 },

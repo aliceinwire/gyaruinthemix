@@ -210,10 +210,10 @@ test('parts and support choices cannot sell inactive heart-only effects', () => 
 
 test('survival support stacking respects advertised recovery caps', () => {
   const state = install(quiet(), ['air-control', 'rush-pulse', 'combo-flight']);
-  state.survival.upgrades.glide = 3;
+  state.survival.upgrades.glide = 6;
   state.buildModifiers = getBuildModifiers(state);
   applySurvivalModifiers(state);
-  assert.equal(state.buildModifiers.comboFlight, 8);
+  assert.equal(state.buildModifiers.comboFlight, 12);
   state.buildModifiers.conversionEnergy = 6;
   state.survival.upgrades.battery = 3;
   applySurvivalModifiers(state);

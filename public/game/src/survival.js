@@ -1,10 +1,10 @@
 /** One-life, seeded club tour. Weapon rules and previews share the same specifications. */
 import { resetCrewWeaponGesture, requestCrewWeaponGesture } from './crew-weapon-state.js';
 import { ENCOUNTER_RULES, addFlightObstacles } from './encounter-director.js';
-import { decorateEncounter } from './street-culture.js';
+import { decorateEncounter, addZombieEncounters } from './street-culture.js';
 
 export const SURVIVAL_VERSION = 5;
-export const MUSIC_RULES_VERSION = 4;
+export const MUSIC_RULES_VERSION = 5;
 const musicVersion = row => row.musicDriven ? row.musicVersion || 1 : 0;
 const validMusicVersion = row => row.musicVersion === undefined || Number.isInteger(row.musicVersion) && row.musicVersion >= 0 && row.musicVersion <= MUSIC_RULES_VERSION;
 const sameMusicRules = (a, b) => a.musicDriven === b.musicDriven && musicVersion(a) === musicVersion(b);
@@ -29,10 +29,10 @@ export const SURVIVAL_UPGRADES = Object.freeze([
   { id: 'cassette', kind: 'weapon', name: 'カセットリボン', family: 'CASSETTE', description: '近くへテープを広げ、同じ場所を半分の威力でもう一度。Lv.6と浮力Lv.2で3回広がるダブルデッキに進化。' },
   { id: 'md', name: 'MDアンコール', family: 'SUPPORT', description: '当たった相手が残っていたら、0.35秒後に威力半分で1回リピート。連続では発動せず、同じ相手だけに届く。' },
   { id: 'battery', name: 'ときめき電池', family: 'SUPPORT', description: '招待するたびに電池を回復。XPを引き寄せる範囲もレベルごとに広がる。' },
-  { id: 'glide', name: 'フェザー浮力', family: 'SUPPORT', description: 'レベルごとに浮力の電池消費を12%減らす。ジャンプ成功でも電池を回復。' },
+  { id: 'glide', name: 'フェザー浮力', family: 'SUPPORT', description: '浮力の電池消費を減らす。ジャンプ成功でも電池を回復。' },
   { id: 'armor', name: 'ネオンアーマー', family: 'SUPPORT', description: '今すぐ耐久+12。レベルごとに受けるダメージを12%減らす。' },
   { id: 'hype', name: 'フロア熱狂', family: 'SUPPORT', description: 'HEATがたまりやすくなり、FEVERが1秒長くなる。連続招待でスコアを伸ばそ。' },
-].map(item => Object.freeze({ kind: 'support', icon: item.id, maxLevel: item.kind === 'weapon' ? 6 : 3, role: SURVIVAL_WEAPON_ROLES[item.id] || null, ...item })));
+].map(item => Object.freeze({ kind: 'support', icon: item.id, maxLevel: 6, role: SURVIVAL_WEAPON_ROLES[item.id] || null, ...item })));
 export const SURVIVAL_WEAPONS = Object.freeze(SURVIVAL_UPGRADES.filter(item => item.kind === 'weapon'));
 export const SURVIVAL_STARTERS = SURVIVAL_WEAPONS;
 const AREA_WEAPONS = SURVIVAL_WEAPONS.filter(item => item.id !== 'heart');
@@ -211,7 +211,8 @@ export function survivalWeaponStats(state, id) {
   if (state.survival.fever > 0) stats.interval *= .8;
   return stats;
 }
-export const survivalEchoCooldown = level => [0, 3, 2.3, 1.6][Math.max(0, Math.min(3, level || 0))];
+export const survivalEchoCooldown = level => [0, 3, 2.3, 1.6, 1.3, 1.05, .85][Math.max(0, Math.min(6, level || 0))];
+export const survivalGlideReduction = level => Math.min(level || 0, 3) * 12 + Math.max(0, (level || 0) - 3) * 6;
 /** A repeat reserves one original target, never fans out or repeats another repeat. */
 export function queueSurvivalEcho(state, target, damage, bypassGuard = false) {
   if (!isSurvival(state) || !state.survival.upgrades.md || state.survival.echoClock > 0 || state.survival.echoPending || target.hp <= 0 || target.id == null) return;
@@ -236,7 +237,7 @@ export function survivalOffers(state) {
     const level = (s.upgrades[item.id] || 0) + 1;
     const effects = { relay: `連鎖+${level} / ${40 + level * 16}m`,
       md: `リピート50% / 0.35秒 / 間隔${survivalEchoCooldown(level).toFixed(1)}秒`,
-      battery: `招待で電池+${level} / XP回収${48 + level * 25}m`, glide: `浮力消費−${level * 12}% / 回避で電池+${level * 2}`,
+      battery: `招待で電池+${level} / XP回収${48 + level * 25}m`, glide: `浮力消費−${survivalGlideReduction(level)}% / 回避で電池+${level * 2}`,
       armor: `ダメージ−${level * 12}% / 今すぐ耐久+12`, hype: `HEAT+${9 + level * 3} / FEVER ${6 + level}秒` };
     const next = { ...s.upgrades, [item.id]: level };
     const recipes = SURVIVAL_EVOLUTIONS.filter(recipe => recipe.weapon === item.id || recipe.support === item.id)
@@ -288,11 +289,11 @@ export function applySurvivalModifiers(state) {
   if (!isSurvival(state)) return;
   const u = state.survival.upgrades, m = state.buildModifiers;
   m.heartPierce = Math.min(3, m.heartPierce + (survivalWeaponStats(state, 'heart')?.pierce || 0));
-  m.heartChain = Math.min(4, m.heartChain + (u.relay || 0));
+  m.heartChain = Math.min(6, m.heartChain + (u.relay || 0));
   if (u.relay) m.heartChainRange = Math.max(m.heartChainRange, 40 + u.relay * 16);
   m.conversionEnergy = Math.min(6, m.conversionEnergy + (u.battery || 0));
-  m.thrustDrainMultiplier = Math.max(.4, m.thrustDrainMultiplier * (1 - (u.glide || 0) * .12));
-  m.comboFlight = Math.min(8, m.comboFlight + (u.glide || 0) * 2);
+  m.thrustDrainMultiplier = Math.max(.4, m.thrustDrainMultiplier * (1 - survivalGlideReduction(u.glide) / 100));
+  m.comboFlight = Math.min(12, m.comboFlight + (u.glide || 0) * 2);
 }
 export function recordSurvivalEvent(state, event) {
   if (!isSurvival(state)) return;
@@ -439,7 +440,7 @@ export function survivalEncounterPlan(plan, state, stationRadius, node = {}) {
     }
     cursor += 90;
   }
-  return result.sort((a,b) => a.distance - b.distance);
+  return addZombieEncounters(result, stage, state.seed).sort((a,b) => a.distance - b.distance);
 }
 
 export function survivalRecordCategory(row) {

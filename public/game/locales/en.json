@@ -1504,5 +1504,11 @@
   "曲の展開で速度が最大±3%。ドロップでは音のゲートも開くで。": "Song sections vary speed by up to ±3%. Drops also open speaker gates.",
   "実況・配信ルール": "Gameplay streaming rules",
   "今の曲の続きでアンコール": "Encore from the current song position",
-  "ラジオを再生したら、今の曲に合わせて続けよ。": "Play the radio to continue with the current song."
+  "ラジオを再生したら、今の曲に合わせて続けよ。": "Play the radio to continue with the current song.",
+  "浮力の電池消費を減らす。ジャンプ成功でも電池を回復。": "Reduces flight battery drain. Successful jumps also restore battery.",
+  "夜ふかしゾンビ": "Night Owl Zombie",
+  "ヘビーゾンビ": "Heavy Zombie",
+  "工事バリケード": "Roadworks Barrier",
+  "崩れた路面": "Broken Asphalt",
+  "積み上がった機材ケース": "Stacked Equipment Cases"
 }
