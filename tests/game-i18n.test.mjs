@@ -60,6 +60,31 @@ test('all nine translated catalogs cover every source and preserve interpolation
   }
 });
 
+test('DJ set messages and controls have their own translations in every language', async () => {
+  const messages = new Set();
+  for (const module of ['club-rhythm.js', 'club-rhythm-ui.js']) {
+    const text = await readFile(
+      new URL(`../public/game/src/${module}`, import.meta.url),
+      'utf8',
+    );
+    for (const [, value] of text.matchAll(/'([^'\r\n]*)'/g)) {
+      if (/[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}]/u.test(value))
+        messages.add(value);
+    }
+  }
+  assert.ok(messages.size > 0);
+  const translator = createTranslator({ loadCatalog: readCatalog });
+  for (const { code } of LANGUAGES.filter((item) => item.code !== 'ja')) {
+    const catalog = await readCatalog(code);
+    await translator.setLanguage(code);
+    for (const text of messages) {
+      assert.ok(source.includes(text), `source: ${text}`);
+      assert.ok(Object.hasOwn(catalog, text), `${code}: ${text}`);
+      assert.equal(translator.t(text), catalog[text], `${code}: ${text}`);
+    }
+  }
+});
+
 test('Japanese branding uses katakana and survives language switching', async () => {
   const translator = createTranslator({ loadCatalog: readCatalog });
   const branding = {
