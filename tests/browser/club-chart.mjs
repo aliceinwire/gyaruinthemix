@@ -5,6 +5,7 @@ import { createState, exportNightfallSave } from '../../public/game/src/simulati
 import { NIGHTFALL_SAVE_KEY } from '../../public/game/src/save-store.js';
 import { CHROME_BOUNCE_CHART as chart, TRACK_CHARTS } from '../../public/game/src/track-charts.js';
 import { checkMusicDrive } from './music-drive.mjs';
+import { LANGUAGES } from '../../public/game/src/i18n.js';
 
 function audioFixture(duration) {
   const samples = Math.ceil(duration * 8000), wav = Buffer.alloc(44 + samples * 2);
@@ -31,7 +32,7 @@ export async function checkClubChart(browser, { root, csp }) {
     ...TRACK_CHARTS.slice(1).map(track => ({ id: track.trackId, title: track.title, duration: track.duration, excerpt: false })),
   ];
   const fixtures = new Map(catalog.map(track => [track.id, audioFixture(track.duration)]));
-  const context = await browser.newContext({ viewport: { width: 390, height: 667 }, locale: 'en-US', reducedMotion: 'no-preference' });
+  const context = await browser.newContext({ viewport: { width: 390, height: 667 }, hasTouch: true, locale: 'en-US', reducedMotion: 'no-preference' });
   const errors = [];
   try {
     await context.addInitScript(({ saved, key }) => {
@@ -80,7 +81,51 @@ export async function checkClubChart(browser, { root, csp }) {
       else if (await page.evaluate(() => __HYPERDRIVE__.snapshot().screen === 'finale')) break;
       else await page.waitForTimeout(50);
     }
-    await page.waitForFunction(() => __HYPERDRIVE__.snapshot().screen === 'finale' && __HYPERDRIVE__.snapshot().performanceSet.playing);
+    await page.waitForFunction(() => __HYPERDRIVE__.snapshot().screen === 'finale');
+    assert.equal(await page.locator('#performance-track').isVisible(), true);
+    assert.match(await page.locator('#performance-tip').textContent(), /once.*line|line.*once/);
+    assert.match(await page.locator('#finale-home').textContent(), /Skip/);
+    assert.match(await page.locator('#rhythm-status').textContent(), /Optional/);
+    await mkdir(resolve(root, 'artifacts/browser/game-test'), { recursive: true });
+    async function checkLayout(stageName) {
+      for (const [width, height] of [[390, 667], [320, 568], [414, 768], [844, 390]]) {
+        await page.setViewportSize({ width, height });
+        await page.screenshot({ path: resolve(root, `artifacts/browser/game-test/rhythm-${stageName}-${width}.png`) });
+        assert.ok(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1), `${stageName} fits ${width}`);
+        for (const selector of ['#finale-home', '[data-control="boost"]', '[data-control="charge"]', '[data-control="rush"]']) {
+          const b = await page.locator(selector).boundingBox();
+          assert.ok(b && b.x >= 0 && b.x + b.width <= width + 1 && b.y >= 0 && b.y + b.height <= height + 1 && b.height >= 44, `${stageName} ${selector} is reachable on ${width}`);
+          assert.ok(await page.locator(selector).evaluate(el => {
+            const b = el.getBoundingClientRect();
+            return el.contains(document.elementFromPoint(b.x + b.width / 2, b.y + b.height / 2));
+          }), `${stageName} ${selector} is not covered on ${width}`);
+        }
+        const stage = await page.locator('.viewport').boundingBox();
+        assert.ok(stage.height >= 80, `${stageName} stage remains visible on ${width}: ${stage.height}`);
+      }
+      await page.setViewportSize({ width: 390, height: 667 });
+    }
+    await checkLayout('ready');
+    await page.setViewportSize({ width: 320, height: 568 });
+    for (const { code } of LANGUAGES) {
+      await page.locator('.masthead select').selectOption(code);
+      await page.waitForFunction(code => document.documentElement.lang === code, code);
+      await page.screenshot({ path: resolve(root, `artifacts/browser/game-test/rhythm-ready-${code}.png`) });
+      for (const selector of ['#performance-track', '#finale-home', '[data-control="charge"]']) {
+        assert.ok(await page.locator(selector).evaluate(el => {
+          const b = el.getBoundingClientRect();
+          return el.contains(document.elementFromPoint(b.x + b.width / 2, b.bottom - 3));
+        }), `${code} instructions leave ${selector} uncovered`);
+      }
+    }
+    await page.locator('.masthead select').selectOption('en');
+    await page.setViewportSize({ width: 390, height: 667 });
+    assert.equal(await page.evaluate(() => __HYPERDRIVE__.snapshot().performanceSet.elapsed), 0, 'instructions wait for an explicit start');
+    await page.locator('#performance-track').click();
+    await page.waitForFunction(() => __HYPERDRIVE__.snapshot().performanceSet.playing);
+    assert.equal(await page.locator('#rhythm-board').isVisible(), true);
+    assert.match(await page.locator('[data-control="charge"]').textContent(), /Bass/);
+    assert.match(await page.locator('[data-control="rush"]').textContent(), /Drop/);
     assert.ok(await page.locator('audio').evaluate(media => media.currentTime >= 53), 'club entry keeps the current song position');
     assert.equal(await page.locator('#performance-track').isVisible(), false);
     const baseline = await page.evaluate(() => JSON.stringify(__HYPERDRIVE__.snapshot().state));
@@ -92,9 +137,32 @@ export async function checkClubChart(browser, { root, csp }) {
       assert.ok(await page.evaluate(before => __HYPERDRIVE__.snapshot().performanceSet.elapsed < before + 1, before), 'seeking cannot skip the encore');
     }
     assert.equal(await page.evaluate(() => __HYPERDRIVE__.snapshot().performanceSet.hits), 0);
-    await page.keyboard.down('KeyX');
+    // Use real keyboard events during the visible hit window, then hold through later notes.
+    const note = await page.evaluate(() => __HYPERDRIVE__.snapshot().performanceSet.notes.find(note => note.status === 'pending'));
+    await page.waitForFunction(id => {
+      const set = __HYPERDRIVE__.snapshot().performanceSet;
+      const n = set.notes.find(note => note.id === id);
+      return n && n.at - set.elapsed < .1;
+    }, note.id, { polling: 'raf' });
+    const key = { boost: 'Space', charge: 'KeyE', rush: 'KeyX' }[note.action];
+    await page.keyboard.down(key);
     await page.waitForFunction(() => __HYPERDRIVE__.snapshot().performanceSet.hits === 1);
-    await page.keyboard.up('KeyX');
+    await page.keyboard.down(key);
+    await page.waitForTimeout(1700);
+    assert.equal(await page.evaluate(() => __HYPERDRIVE__.snapshot().performanceSet.hits), 1, 'holding and key repeat do not score later notes');
+    await page.keyboard.up(key);
+    await checkLayout('playing');
+    const touchNote = await page.evaluate(() => {
+      const set = __HYPERDRIVE__.snapshot().performanceSet;
+      return set.notes.find(note => note.status === 'pending' && note.at > set.elapsed + .3);
+    });
+    const pad = await page.locator(`[data-control="${touchNote.action}"]`).boundingBox();
+    await page.waitForFunction(id => {
+      const set = __HYPERDRIVE__.snapshot().performanceSet;
+      return set.notes.some(note => note.id === id && note.at - set.elapsed < .1);
+    }, touchNote.id, { polling: 'raf' });
+    await page.touchscreen.tap(pad.x + pad.width / 2, pad.y + pad.height / 2);
+    await page.waitForFunction(() => __HYPERDRIVE__.snapshot().performanceSet.hits === 2);
     await page.locator('[data-action="play"]').click();
     await page.waitForFunction(() => !__HYPERDRIVE__.snapshot().performanceSet.playing);
     assert.equal(await page.locator('[data-control].suggested').count(), 0);
@@ -107,7 +175,7 @@ export async function checkClubChart(browser, { root, csp }) {
     await page.locator('audio').evaluate(media => { media.currentTime = 54; });
     await page.locator('#resume').click();
     await page.waitForFunction(() => __HYPERDRIVE__.snapshot().performanceSet.phraseIndex === 3);
-    assert.equal(await page.evaluate(() => __HYPERDRIVE__.snapshot().performanceSet.hits), 1);
+    assert.equal(await page.evaluate(() => __HYPERDRIVE__.snapshot().performanceSet.hits), 2);
     await page.locator('[data-action="next"]').click();
     await page.waitForFunction(id => {
       const set = __HYPERDRIVE__.snapshot().performanceSet;
@@ -116,7 +184,7 @@ export async function checkClubChart(browser, { root, csp }) {
     await page.locator('audio').evaluate(media => { media.currentTime = 57; });
     assert.equal(await page.evaluate(() => __HYPERDRIVE__.snapshot().performanceSet.interrupted), false);
     await page.waitForFunction(() => __HYPERDRIVE__.snapshot().performanceSet.musicTime >= 57);
-    assert.ok(['HANDS UP', 'ONE CREW', 'ALL TOGETHER'].includes(await page.locator('#performance-phase').textContent()));
+    assert.equal(await page.locator('#performance-phase').textContent(), 'FREE RHYTHM');
     await page.locator('audio').evaluate(media => { media.currentTime = media.duration - .15; });
     await page.waitForFunction(id => {
       const set = __HYPERDRIVE__.snapshot().performanceSet;
@@ -126,15 +194,7 @@ export async function checkClubChart(browser, { root, csp }) {
     await page.waitForFunction(() => __HYPERDRIVE__.snapshot().performanceSet.done, null, { timeout: 45000 });
     assert.equal(await page.evaluate(() => JSON.stringify(__HYPERDRIVE__.snapshot().state)), baseline);
     await mkdir(resolve(root, 'artifacts/browser/game-test'), { recursive: true });
-    for (const [width, height] of [[390, 667], [320, 740], [844, 390]]) {
-      await page.setViewportSize({ width, height });
-      await page.screenshot({ path: resolve(root, `artifacts/browser/game-test/charted-club-${width}.png`) });
-      assert.ok(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1));
-      const button = await page.locator('#performance-track').boundingBox();
-      assert.ok(button.x >= 0 && button.x + button.width <= width && button.y >= 0 && button.y + button.height <= height, 'encore stays in the cabinet');
-      const stage = await page.locator('.viewport').boundingBox();
-      assert.ok(stage.height >= 80, 'performance controls cannot squeeze out the stage');
-    }
+    await checkLayout('done');
     const beforeEncore = await page.locator('audio').evaluate(media => media.currentTime);
     await page.locator('#performance-track').click();
     await page.waitForFunction(() => __HYPERDRIVE__.snapshot().performanceSet.playing);
@@ -156,8 +216,19 @@ export async function checkClubChart(browser, { root, csp }) {
       assert.equal(await page.locator('audio').count(), 1);
       assert.equal(await page.evaluate(() => JSON.stringify(__HYPERDRIVE__.snapshot().state)), baseline);
     }
+    const radioBeforeSkip = await page.locator('audio').evaluate(media => media.currentTime);
+    await page.locator('#finale-home').click();
+    for (let i = 0; i < 30; i++) {
+      if (await page.locator('#story-next').isVisible()) await page.locator('#story-next').click();
+      else if (await page.evaluate(() => __HYPERDRIVE__.snapshot().screen === 'map')) break;
+      else await page.waitForTimeout(40);
+    }
+    await page.waitForFunction(() => __HYPERDRIVE__.snapshot().screen === 'map');
+    assert.ok(await page.locator('audio').evaluate((media, before) => media.currentTime >= before, radioBeforeSkip), 'skipping keeps radio playback');
+    assert.equal(await page.locator('audio').count(), 1);
+    assert.match(await page.locator('[data-control="boost"]').textContent(), /Fly/);
     await checkMusicDrive(page, root);
     assert.deepEqual(errors, []);
   } finally { await context.close(); }
-  console.log('PASS club joins any radio position, handles uncharted songs and track changes, and encores without restarting playback');
+  console.log('PASS optional tap-based club set, mobile controls, immediate skip, radio continuity and replay');
 }

@@ -192,5 +192,8 @@ test('the shared journal remains reachable when the route scene hides the cabine
     ),
     /id="run-journal"/,
   );
-  assert.match(html, /data-control="rush" class="rush">テキーララッシュ/);
+  assert.match(
+    html,
+    /data-control="rush" class="rush"><span class="control-name">テキーララッシュ<\/span>/,
+  );
 });

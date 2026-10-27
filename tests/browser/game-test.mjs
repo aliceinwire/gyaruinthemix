@@ -908,7 +908,8 @@ try {
       assert.deepEqual(await page.evaluate(() => __HYPERDRIVE__.snapshot().state.survival.quizRoads), [1]);
       await page.locator('#quiz-continue').click();
       assert.equal(await page.evaluate(() => __HYPERDRIVE__.snapshot().screen), 'finale');
-      assert.match(await page.locator('#performance-tip').textContent(), /BEAT BASE 175/);
+      assert.match(await page.locator('#performance-tip').textContent(), /1回タップ/);
+      assert.match(await page.locator('#finale-home').textContent(), /スキップ/);
       assert.doesNotMatch(await page.locator('#performance-title').textContent(), /ツアー完走/);
       await assertFrameFits(page, ['#finale-home', '.controls', '.radio-dock']);
       assert.ok([1, 2].includes(await page.evaluate(() => __HYPERDRIVE__.snapshot().state.totalFans)));
