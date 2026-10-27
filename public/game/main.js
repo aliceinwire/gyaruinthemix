@@ -1,3 +1,4 @@
+import { createClubRhythmUI, setClubControls } from './src/club-rhythm-ui.js';
 import { setSurvivalAssistance, isSurvival, dailySurvival, survivalView, chooseSurvivalUpgrade, survivalMultiplier, survivalRecordCategory, createSurvivalRecords, SURVIVAL_STARTERS, SURVIVAL_UPGRADES, MUSIC_RULES_VERSION } from './src/survival.js';
 import { useCurrentMusicRules, suspendMusicDrive } from './src/music-drive.js';
 import { createDrivingLessons, updateDrivingLessons, getDrivingCue } from './src/driving-lessons.js';
@@ -11,7 +12,7 @@ import { createSettingsStore } from './src/tour-settings.js';
 import { createStoryDirector } from './src/tour-director.js';
 import { RUN_MOD_CATALOG, getBuildOffers, buyRunMod, describeBuild, getRouteMission } from './src/run-build.js';
 import { getEncounterPhase } from './src/encounter-director.js';
-import { createPerformance, createRadioPerformance, updatePerformance, performanceView, suspendPerformance } from './src/performance.js';
+import { createPerformance, createRadioPerformance, updatePerformance, performanceView, suspendPerformance, startPerformance, tapPerformance } from './src/performance.js';
 import { createRoadFeedback, captureRoadFeedback, updateRoadFeedback, drawRoadFeedback } from './src/road-feedback.js';
 import { JOURNEY_STAGE_COUNT, getJourneyChoices, getJourneyNode, getJourneyStage } from "./src/journey.js";
 import { selectCrewDialogue, selectCrewEvent } from "./src/crew-dialogue.js";
@@ -176,6 +177,7 @@ async function resumeTour() {
 }
 $("#resume-tour").addEventListener("click", resumeTour);
 const sceneUI = createSceneUI();
+const clubUI = createClubRhythmUI();
 const controls = bindGameInput({
   isPlaying: () => ["playing", "finale"].includes(screen),
   isQuiz: () => screen === "quiz",
@@ -183,6 +185,7 @@ const controls = bindGameInput({
   onPause: setPause,
   onAnswer: chooseAnswer,
   onInteraction: () => unlockSound(),
+  onPress: action => { if (screen === "finale" && !paused) tapPerformance(performanceSet, action, audio.transport); },
 });
 const input = controls.input,
   releaseInput = () => { controls.release(); cancelRush(state); };
@@ -268,7 +271,8 @@ function setScreen(value) {
   $("#performance-panel").hidden = value !== "finale";
   releaseInput();
   sceneUI.show(value);
-  if (value === "finale") { document.querySelectorAll("[data-control]").forEach(button => button.disabled = false); canvas.focus({ preventScroll: true }); }
+  setClubControls(document, value === "finale");
+  if (value === "finale") { renderClubSet(); (performanceSet.started && !performanceSet.done ? canvas : $("#performance-track")).focus({ preventScroll: true }); }
 }
 function showMapPanel(panel) {
   sceneUI.mapPanel(panel);
@@ -730,8 +734,6 @@ function startClubSet(next) {
   $('#performance-panel').style.setProperty('--club-floor', venue?.floor || '#201329');
   performanceSet = createRadioPerformance(); performanceNext = next;
   setScreen('finale');
-  localizeText($('#finale-home'), state.campaignComplete ? 'ランの記録を見る' : '次の街へ');
-  localizeText($('#performance-tip'), message('{0} / オリジナル・ハードバウンス、開演！', [state.route.club]));
   say('看板より大きい音で、うちらの出番や！'); unlockSound();
   $('#pause').disabled = false; localizeText($('#pause'), 'ひと休み');
 }
@@ -879,7 +881,10 @@ $("#finale-home").addEventListener("click", () => { const next = performanceNext
 $('#performance-track').addEventListener('click', () => {
   if (screen !== 'finale' || paused) return;
   releaseInput();
-  performanceSet = createRadioPerformance();
+  if (performanceSet.done) performanceSet = createRadioPerformance();
+  startPerformance(performanceSet);
+  renderClubSet();
+  unlockSound();
   canvas.focus({ preventScroll: true });
 });
 
@@ -942,7 +947,7 @@ canvas.addEventListener("pointerup",event=>{
 function hud() {
   renderRpgHud();
   const rushButton = $('[data-control="rush"]');
-  localizeText(rushButton.querySelector("small"), state.rushing ? "無敵やで！ 電池めっちゃ使ってる！" : state.rushCooldown > 0 ? message("あと {0} 秒待ってな", [Math.ceil(state.rushCooldown)]) : "X / SHIFT · 電池めっちゃ使うで");
+  if (screen !== "finale") localizeText(rushButton.querySelector("small"), state.rushing ? "無敵やで！ 電池めっちゃ使ってる！" : state.rushCooldown > 0 ? message("あと {0} 秒待ってな", [Math.ceil(state.rushCooldown)]) : "X / SHIFT · 電池めっちゃ使うで");
   const cue = getDrivingCue(state, drivingLessons);
   const cueKey = `${cue.label}:${cue.action}`;
   if (cueKey !== lastCue) {
@@ -1027,6 +1032,9 @@ function refreshCrewDialogue() {
   if (!line) return;
   lastDialogueId = line.id; say(line.text,line.speaker,line.holdSeconds);
 }
+function renderClubSet() {
+  clubUI.render(performanceView(performanceSet), { complete: state.campaignComplete, legacy: !isSurvival(state) });
+}
 function frame(now) {
   const frameStart = performance.now();
   const dt = Math.min(0.1, (now - last) / 1000 || 0);
@@ -1053,15 +1061,7 @@ function frame(now) {
   }
   if (screen === "finale" && !paused) {
     updatePerformance(performanceSet, input, dt, audio.transport);
-    const view = performanceView(performanceSet);
-    localizeText($("#performance-title"), view.title);
-    localizeText($("#performance-phase"), view.phase);
-    $("#performance-progress").style.width = `${view.progress * 100}%`;
-    const completed = message('{0} / {1} フレーズ · ファン {2}人 · フロアの仲間 {3}人', [view.hits, view.total, state.totalFans, state.gyaruConverted]);
-    if ($("#performance-score").textContent !== t(completed)) localizeText($("#performance-score"), completed);
-    $('#performance-track').hidden = !view.done;
-    localizeText($('#performance-track'), '今の曲の続きでアンコール');
-    document.querySelectorAll("[data-control]").forEach(button => button.classList.toggle("suggested", button.dataset.control === view.action));
+    renderClubSet();
   }
   if (screen === "playing" && !paused) updateRoadFeedback(roadFeedback, dt);
   if (toastTime > 0) {

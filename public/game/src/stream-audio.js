@@ -176,7 +176,7 @@ export function createStreamAudio({
       if (allowed()) await safePlay();
     } else {
       session = fresh;
-      if (!spectrum && !spectrumRequest && media.canPlayType('application/vnd.apple.mpegurl')) void loadSpectrum(fresh, generation);
+      if (!spectrum && !spectrumRequest) void loadSpectrum(fresh, generation);
     }
     scheduleRenew();
   }
@@ -200,9 +200,10 @@ export function createStreamAudio({
     spectrum = null;
     hls?.destroy();
     hls = null;
+    // The small song envelope also supplies upcoming club rhythm cues.
+    void loadSpectrum(fresh, version);
     // Native Safari HLS first. The JS fallback is lazy and local, never a CDN iframe.
     if (media.canPlayType('application/vnd.apple.mpegurl')) {
-      void loadSpectrum(fresh, version);
       media.src = fresh.manifestUrl;
       media.load();
       if (position > 0) media.currentTime = position;

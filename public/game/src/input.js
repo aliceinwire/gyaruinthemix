@@ -58,13 +58,17 @@ export function bindGameInput({
   onPause,
   onAnswer,
   onInteraction,
+  onPress = () => {},
 }) {
   const buttons = [...root.querySelectorAll("[data-control]")];
-  const state = createInputState((input) =>
-    buttons.forEach((button) =>
-      button.classList.toggle("active", input[button.dataset.control]),
-    ),
-  );
+  const previous = {};
+  const state = createInputState((input) => {
+    buttons.forEach(button => button.classList.toggle('active', input[button.dataset.control]));
+    for (const action of ['boost', 'charge', 'rush']) {
+      if (input[action] && !previous[action]) onPress(action);
+      previous[action] = input[action];
+    }
+  });
   const listeners = [];
   const listen = (node, type, fn) => {
     node.addEventListener(type, fn);
