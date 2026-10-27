@@ -8,7 +8,7 @@ export async function checkClubResume(browser, { root, csp }) {
   for (const [city, routeIndex, legacy] of [['shinjuku', 3, false], ['kyoto', 11, true]]) {
     const state = createState({ mode: legacy ? 'story' : 'survival', survivalDay: '2026-10-23', routeIndex, campaignStarted: true });
     state.status = 'won'; state.distance = state.routeLength;
-    state.stagesCompleted = routeIndex + 1; state.campaignComplete = legacy;
+    state.stagesCompleted = routeIndex + 1; state.campaignComplete = routeIndex === 11;
     if (state.survival) state.survival.quizRoads = [routeIndex];
     const save = legacy ? exportCampaignSave(state) : exportNightfallSave(state);
     assert.ok(save);
@@ -65,6 +65,23 @@ export async function checkClubResume(browser, { root, csp }) {
       await page.waitForFunction(city => clubDraws.some(src => src.endsWith(`/${city}.webp`)), city);
       assert.equal(await page.evaluate(() => __HYPERDRIVE__.snapshot().screen), 'finale');
       assert.ok(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1));
+      const before = await page.evaluate(() => {
+        const {state, performanceSet} = __HYPERDRIVE__.snapshot();
+        return { score: state.score, fans: state.totalFans, parts: state.runMods, started: performanceSet.started };
+      });
+      assert.equal(before.started, false);
+      assert.match(await page.locator('#finale-home').textContent(), /スキップ/);
+      await page.locator('#finale-home').click();
+      for (let i = 0; i < 30; i++) {
+        if (await page.locator('#story-next').isVisible()) await page.locator('#story-next').click();
+        else if (await page.evaluate(() => __HYPERDRIVE__.snapshot().screen !== 'story')) break;
+        else await page.waitForTimeout(40);
+      }
+      assert.equal(await page.evaluate(() => __HYPERDRIVE__.snapshot().screen), legacy ? 'menu' : routeIndex === 11 ? 'result' : 'map');
+      if (!legacy) assert.deepEqual(await page.evaluate(() => {
+        const {state} = __HYPERDRIVE__.snapshot();
+        return { score: state.score, fans: state.totalFans, parts: state.runMods };
+      }), { score: before.score, fans: before.fans, parts: before.parts }, 'immediate skip preserves the run');
       assert.deepEqual(errors, []);
     } finally { await context.close(); }
   }

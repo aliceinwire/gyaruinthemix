@@ -99,16 +99,25 @@
             <div class="wallet"><span>コイン</span><strong id="money">000</strong><div class="speed-meter"><i id="combo-bar"></i></div></div>
           </div>
         </section>
-        <div id="performance-panel" class="performance-panel" hidden><div><span id="performance-phase" class="eyebrow">THE FINAL SHOW</span><h2 id="performance-title">集めた音、全部鳴らそ。</h2><p id="performance-tip">飛ぶ・充電・加速でフロアを盛り上げよ。見てるだけでもOKやで。</p></div><div class="performance-meter"><i id="performance-progress"></i></div><p id="performance-score" aria-live="polite"></p><div class="performance-actions"><button id="performance-track" hidden>今の曲の続きでアンコール</button><button id="finale-home">タイトル戻ろか</button></div></div>
+        <div id="performance-panel" class="performance-panel" hidden>
+          <div><span id="performance-phase" class="eyebrow">DJ RHYTHM</span><h2 id="performance-title">20秒のDJセットで遊ぼ！</h2><p id="performance-tip">ノーツがラインに重なったら、同じ列のボタンを1回タップ。長押しはせんでOK！</p></div>
+          <div class="performance-meter"><i id="performance-progress"></i></div>
+          <p id="performance-score"></p>
+          <div class="performance-actions"><button id="performance-track" class="primary">DJセットで遊ぶ</button><button id="finale-home">スキップして次の街へ</button></div>
+        </div>
         <section class="below-stage" aria-label="ふたりの会話と操作">
           <div class="crew">
             <div class="crew-portraits"><canvas id="crew-actions" width="240" height="128" role="img" aria-label="運転するDJありねぇとハートを送るDJちゃな"></canvas></div>
             <div class="dialogue"><span id="speaker">DJちゃな / ナビ担当</span><p id="dialogue">ありねぇ、運転頼むで！今夜の音、ふたりで集めよ！</p></div>
           </div>
+          <div id="rhythm-board" class="rhythm-board">
+            <div class="rhythm-caption"><strong id="rhythm-status" role="status"></strong><span id="rhythm-source"></span></div>
+            <div class="rhythm-lanes" aria-hidden="true"><div data-rhythm-lane="boost"></div><div data-rhythm-lane="charge"></div><div data-rhythm-lane="rush"></div></div>
+          </div>
           <div class="controls" aria-label="運転中の３つの操作">
-            <button data-control="boost" class="boost">飛ぶで<small>SPACE / ↑ 長押し</small></button>
-            <button data-control="charge" class="charge">充電<small>E / C 充電所で</small></button>
-            <button data-control="rush" class="rush">テキーララッシュ<small>X / SHIFT 電池を使う</small></button>
+            <button data-control="boost" class="boost"><span class="control-name">飛ぶで</span><small>SPACE / ↑ 長押し</small></button>
+            <button data-control="charge" class="charge"><span class="control-name">充電</span><small>E / C 充電所で</small></button>
+            <button data-control="rush" class="rush"><span class="control-name">テキーララッシュ</span><small>X / SHIFT 電池を使う</small></button>
           </div>
         </section>
         <div class="notification-rail" aria-label="旅のお知らせ"><div id="toast" class="toast" role="status" aria-live="polite"></div></div>

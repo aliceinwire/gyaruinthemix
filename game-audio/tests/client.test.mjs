@@ -484,7 +484,7 @@ test('the next track continues while the tab is hidden', async () => {
   f.audio.destroy();
 });
 
-test('only native HLS fetches spectrum data after consent and late tracks cannot replace it', async () => {
+test('native and JS HLS fetch rhythm envelopes after consent and late tracks cannot replace them', async () => {
   const f = fixture({ spectrum: true, delayedSpectrum: true });
   await f.audio.loadCatalog();
   assert.equal(
@@ -505,11 +505,19 @@ test('only native HLS fetches spectrum data after consent and late tracks cannot
   f.audio.destroy();
   assert.equal(f.audio.state.spectrum, null);
   const js = fixture({ native: false, spectrum: true });
-  await js.audio.play({ userGesture: true });
+  await js.audio.loadCatalog();
   assert.equal(
     js.calls.filter((c) => c.url.endsWith('/spectrum.bin')).length,
     0,
   );
+  await js.audio.play({ userGesture: true });
+  await settle();
+  assert.equal(
+    js.calls.filter((c) => c.url.endsWith('/spectrum.bin')).length,
+    1,
+  );
+  assert.equal(js.audio.state.spectrum.data[0], 255);
+  assert.equal(js.audio.state.playing, true);
   js.audio.destroy();
 });
 
@@ -541,7 +549,11 @@ test('a chart launch can start a selected track from silence using the existing 
   f.media.dispatchEvent(new Event('seeking'));
   assert.equal(f.audio.state.seeking, true);
   f.media.dispatchEvent(new Event('playing'));
-  assert.equal(f.audio.state.seeking, false, 'confirmed playback overrides a stale native seek flag');
+  assert.equal(
+    f.audio.state.seeking,
+    false,
+    'confirmed playback overrides a stale native seek flag',
+  );
   f.media.dispatchEvent(new Event('ended'));
   await settle();
   assert.equal(f.audio.state.endedTrackId, b);
