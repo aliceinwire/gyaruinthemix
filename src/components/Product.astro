@@ -1,4 +1,5 @@
 ---
+import ProductGallery from './ProductGallery.astro';
 import { usesCart } from '../data/checkout.mjs';
 import { getLocale, translator } from '../data/i18n.mjs';
 import { localizeProduct } from '../data/shop-i18n.mjs';
@@ -16,17 +17,7 @@ const availability =
 ---
 
 <article class={`product product-${product.slug}`} data-product={product.slug}>
-  <div class="product-art">
-    <span class="product-number">0{index + 1}</span>
-    <img
-      src={product.image}
-      width="900"
-      height="400"
-      loading="lazy"
-      alt={product.imageAlt}
-    />
-    <span class="image-label">{product.imageLabel}</span>
-  </div>
+  <ProductGallery product={product} locale={locale} index={index} />
   <div class="product-body">
     <span class="availability" data-availability
       >{cartEnabled ? t('販売準備中', 'Coming soon') : availability}</span
