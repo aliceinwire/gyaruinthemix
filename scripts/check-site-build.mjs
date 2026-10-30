@@ -54,7 +54,9 @@ for (const path of publicPaths) {
     )
       continue;
     assert.ok(
-      !href.includes('/shop-test/') && !href.includes('/game/'),
+      !href.includes('/shop-test/') &&
+        !href.includes('/game/') &&
+        !href.includes('/streaming-guidelines/'),
       `${path}: hidden test pages must stay undiscoverable`,
     );
     if (getLocale(path) === 'en' && !href.startsWith('/en/')) {
@@ -67,6 +69,8 @@ for (const path of publicPaths) {
   }
 }
 for (const path of [
+  'streaming-guidelines/index.html',
+  'en/streaming-guidelines/index.html',
   'shop/success/index.html',
   'shop/cancel/index.html',
   'shop-test/index.html',
@@ -93,7 +97,7 @@ assert.deepEqual(
 );
 assert.doesNotMatch(
   sitemap,
-  /shop-test|success|cancel|404|alicef\.me|localhost/,
+  /streaming-guidelines|shop-test|success|cancel|404|alicef\.me|localhost/,
 );
 assert.match(
   await read('robots.txt'),

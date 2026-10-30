@@ -20,6 +20,31 @@ Editorial English text is in `config/site.en.json`; source dates, destinations a
 
 API checkout accepts only `ja` or `en` and returns to that language's success/cancel page. Existing saved checkout attempts retain their original language on retry, including after switching the site language, so localization cannot cause a new payment attempt. Language changes do not alter public sales status, payment configuration or shipping rules.
 
+## Product photo galleries
+
+Products in `config/products.json` and `config/test-products.json` can have an
+ordered `images` array. The first photo is the cover; shoppers can swipe/scroll
+through the rest or select a thumbnail. Photos are contained rather than cropped
+or rotated. Existing `image`, `imageAlt`, and `imageLabel` products remain supported
+with their original artwork styling. A one-photo gallery has no thumbnail controls.
+
+For example (replace these illustrative paths with your actual photos under
+`public/assets/products/`):
+
+```json
+"images": [
+  { "src": "/assets/products/shirt-front.webp", "alt": "Tシャツの正面", "altEn": "Front of the T-shirt", "label": "商品写真", "labelEn": "Product photo" },
+  { "src": "/assets/products/shirt-worn.webp", "alt": "Tシャツの着用イメージ", "altEn": "The T-shirt being worn", "label": "着用イメージ", "labelEn": "Worn look" },
+  { "src": "/assets/products/shirt-art.webp", "alt": "Tシャツのアート写真", "altEn": "Artistic photograph of the T-shirt" }
+]
+```
+
+Each image needs a site-local `src` and descriptive Japanese `alt` and English
+`altEn`. Captions (`label` / `labelEn`) are optional. An explicitly configured
+empty/invalid gallery fails the build rather than silently hiding photos. Do not
+add placeholder product photographs to the live catalog; add real supplied photos
+when available. No checkout or Stripe configuration changes are needed.
+
 ## Hidden sandbox shop
 
 `/shop-test/` is a separate testing-only shop with sticker, towel, acrylic keychain and T-shirt. It has no navigation link or sitemap entry, and its index/success/cancel pages carry `noindex`. The URL is **not access control**: anyone who knows it can open it. Test pages clearly state that no real payment or shipment occurs. The T-shirt is a single test SKU with no size selector, and its logo image is a reference rather than a product photograph.

@@ -1,0 +1,74 @@
+---
+import { productImages } from '../data/product-images.mjs';
+import { translator } from '../data/i18n.mjs';
+const { product, locale, index } = Astro.props;
+const images = productImages(product, locale);
+const t = translator(locale);
+const galleryId = `product-gallery-${product.slug}`;
+---
+
+<div class="product-gallery" data-product-gallery>
+  <div
+    id={galleryId}
+    class:list={['product-gallery-track', { 'has-gallery': images.length > 1 }]}
+    tabindex={images.length > 1 ? '0' : undefined}
+    role={images.length > 1 ? 'region' : undefined}
+    aria-label={images.length > 1
+      ? t(`${product.name}の商品画像`, `${product.name} photos`)
+      : undefined}
+  >
+    {
+      images.map((image, imageIndex) => (
+        <figure
+          id={`${galleryId}-${imageIndex + 1}`}
+          class:list={[
+            'product-art',
+            { 'product-photo': product.images !== undefined },
+          ]}
+        >
+          <span class="product-number">0{index + 1}</span>
+          <img
+            src={image.src}
+            width="900"
+            height={product.images === undefined ? '400' : '900'}
+            loading="lazy"
+            alt={image.alt}
+          />
+          {image.label && (
+            <figcaption class="image-label">{image.label}</figcaption>
+          )}
+        </figure>
+      ))
+    }
+  </div>
+  {
+    images.length > 1 && (
+      <nav
+        class="product-gallery-thumbnails"
+        aria-label={t(
+          `${product.name}の画像を選ぶ`,
+          `Choose a photo of ${product.name}`,
+        )}
+      >
+        {images.map((image, imageIndex) => (
+          <a
+            href={`#${galleryId}-${imageIndex + 1}`}
+            data-gallery-image={imageIndex}
+            aria-controls={galleryId}
+            aria-label={t(
+              `画像 ${imageIndex + 1}/${images.length}: ${image.alt}`,
+              `Photo ${imageIndex + 1} of ${images.length}: ${image.alt}`,
+            )}
+          >
+            <img src={image.src} width="56" height="56" loading="lazy" alt="" />
+          </a>
+        ))}
+      </nav>
+    )
+  }
+</div>
+
+<script>
+  import { initProductGalleries } from '../scripts/product-gallery.mjs';
+  initProductGalleries(document);
+</script>
