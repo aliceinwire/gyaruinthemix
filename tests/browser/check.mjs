@@ -668,9 +668,27 @@ async function productImageDialogs() {
         `product image dialog ${path} ${width}`,
         async () => {
           await page.goto(origin + path, { waitUntil: 'networkidle' });
+          const noteText = path.startsWith('/en/')
+            ? 'Illustrative image (details may differ from the actual product)'
+            : 'イメージ画像（実物と細部が異なる場合があります）';
+          const note = page.getByText(noteText, { exact: true });
+          assert.equal(await note.count(), 1);
+          assert.equal(await note.isVisible(), true);
+          assert.equal(
+            await note.evaluate((element) => {
+              const info = document.querySelector('.shop-info');
+              return (
+                info?.nextElementSibling === element &&
+                element.getBoundingClientRect().top >=
+                  info.getBoundingClientRect().bottom
+              );
+            }),
+            true,
+          );
           const gallery = page.locator(
             '.product-keychain [data-product-gallery]',
           );
+          assert.equal(await gallery.locator('.image-label').count(), 0);
           const links = gallery.locator('[data-product-enlarge]');
           const dialog = gallery.locator('dialog');
           const close = dialog.locator('[data-product-image-close]');
@@ -688,9 +706,11 @@ async function productImageDialogs() {
               new URL(await links.nth(index).getAttribute('href'), origin).href,
             );
             assert.ok(await dialog.locator('img').getAttribute('alt'));
-            assert.match(
-              await dialog.locator('p').textContent(),
-              /イメージ画像|Illustrative image/,
+            assert.equal(
+              await dialog
+                .locator('[data-product-image-caption]')
+                .textContent(),
+              '',
             );
             assert.equal(
               await page.evaluate(
