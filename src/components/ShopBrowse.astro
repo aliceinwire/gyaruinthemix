@@ -1,0 +1,68 @@
+---
+import { translator } from '../data/i18n.mjs';
+const { count, locale } = Astro.props;
+const t = translator(locale);
+---
+
+<div class="shop-browse" id="shop-items">
+  <div class="shop-collection-heading">
+    <div>
+      <p class="eyebrow">THE COLLECTION</p>
+      <h2>{t('うちらのグッズ。', 'Find your everyday favourite.')}</h2>
+    </div>
+    <span class="shop-item-count">{count} ITEMS</span>
+  </div>
+  <div class="shop-filters" data-shop-filters hidden>
+    <div role="group" aria-label={t('商品の表示', 'Show products')}>
+      <button type="button" data-product-filter="all" aria-pressed="true">
+        {t('すべて', 'All items')}
+        <span>{count}</span>
+      </button>
+      <button type="button" data-product-filter="saved" aria-pressed="false">
+        {t('お気に入り', 'Saved')}
+        <span data-saved-count>0</span>
+      </button>
+    </div>
+    <p
+      data-storage-note
+      data-unavailable={t(
+        'ブラウザーに保存できないため、このページ内でのみ保持します。',
+        'Browser storage is unavailable. Saved items are kept only until you leave this page.',
+      )}
+    >
+      {
+        t(
+          'ハートを押して、このブラウザーに保存。',
+          'Tap a heart to save on this browser.',
+        )
+      }
+    </p>
+  </div>
+  <p
+    class="sr-only"
+    data-saved-status
+    role="status"
+    aria-live="polite"
+    data-template={t('お気に入り {count}点', '{count} saved items')}
+  >
+  </p>
+  <div class="shop-empty" data-shop-empty hidden>
+    <h3>{t('気になるグッズを、ここに。', 'Keep your favourites here.')}</h3>
+    <p>
+      {
+        t(
+          '商品のハートを押すと、お気に入りに保存できます。',
+          'Tap the heart on an item to save it for later.',
+        )
+      }
+    </p>
+    <button type="button" data-show-all
+      >{t('すべてのグッズを見る', 'See all items')}</button
+    >
+  </div>
+</div>
+
+<script>
+  import { initShopDiscovery } from '../scripts/shop-discovery.mjs';
+  initShopDiscovery(document);
+</script>

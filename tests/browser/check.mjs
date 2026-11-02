@@ -692,6 +692,8 @@ async function productImageDialogs() {
           const links = gallery.locator('[data-product-enlarge]');
           const dialog = gallery.locator('dialog');
           const close = dialog.locator('[data-product-image-close]');
+          const previous = dialog.locator('[data-product-image-prev]');
+          const next = dialog.locator('[data-product-image-next]');
           const thumbnails = gallery.locator('[data-gallery-image]');
           const initialUrl = page.url();
           for (const index of [0, 2, 1, 0]) {
@@ -718,11 +720,49 @@ async function productImageDialogs() {
               ),
               'hidden',
             );
+            const assertImage = async (imageIndex) => {
+              assert.equal(
+                await dialog.locator('img').getAttribute('src'),
+                new URL(
+                  await links.nth(imageIndex).getAttribute('href'),
+                  origin,
+                ).href,
+              );
+              assert.equal(
+                await dialog
+                  .locator('[data-product-image-position]')
+                  .textContent(),
+                `${path.startsWith('/en/') ? 'Image' : '画像'} ${imageIndex + 1} / 3`,
+              );
+              assert.equal(await page.locator('dialog[open]').count(), 1);
+              for (const arrow of [previous, next]) {
+                const box = await arrow.boundingBox();
+                assert.ok(box.width >= 44 && box.height >= 44);
+                assert.ok(box.y >= 0 && box.y + box.height <= 900);
+              }
+            };
+            await next.tap();
+            await assertImage((index + 1) % 3);
+            await page.keyboard.press('ArrowRight');
+            await assertImage((index + 2) % 3);
+            await previous.tap();
+            await assertImage((index + 1) % 3);
+            await page.keyboard.press('ArrowLeft');
+            await assertImage(index);
+            await close.focus();
             await page.keyboard.press('Tab');
             assert.equal(
-              await page.evaluate(
-                () => document.activeElement.closest('dialog') !== null,
-              ),
+              await previous.evaluate((el) => el === document.activeElement),
+              true,
+            );
+            await page.keyboard.press('Shift+Tab');
+            assert.equal(
+              await close.evaluate((el) => el === document.activeElement),
+              true,
+            );
+            await page.keyboard.press('Shift+Tab');
+            assert.equal(
+              await next.evaluate((el) => el === document.activeElement),
               true,
             );
             if (index === 2) await page.keyboard.press('Escape');
@@ -758,9 +798,30 @@ async function productImageDialogs() {
             .first()
             .dispatchEvent('click', { detail: 1, clientX: 30, clientY: 100 });
           assert.equal(await dialog.evaluate((d) => d.open), false);
+          const single = page.locator('.product-sticker');
+          await single.locator('[data-product-enlarge]').tap();
+          const singleDialog = single.locator('dialog');
+          assert.equal(
+            await singleDialog.locator('[data-product-image-prev]').isVisible(),
+            false,
+          );
+          assert.equal(
+            await singleDialog.locator('[data-product-image-next]').isVisible(),
+            false,
+          );
+          const singleImage = await singleDialog
+            .locator('img')
+            .getAttribute('src');
+          await page.keyboard.press('ArrowLeft');
+          await page.keyboard.press('ArrowRight');
+          assert.equal(
+            await singleDialog.locator('img').getAttribute('src'),
+            singleImage,
+          );
+          await page.keyboard.press('Escape');
           check(
             true,
-            `product dialog repeat/tap/keyboard/backdrop/focus/scroll ${path} ${width}`,
+            `product dialog arrows/wrap/isolation/repeat/tap/keyboard/backdrop/focus/scroll ${path} ${width}`,
           );
         },
         page,
@@ -768,6 +829,171 @@ async function productImageDialogs() {
     }
     await ctx.close();
   }
+}
+
+async function shopDiscovery() {
+  for (const width of [375, 1440]) {
+    for (const base of ['/shop/', '/shop-test/']) {
+      const ctx = await context({ viewport: { width, height: 900 } });
+      const page = await ctx.newPage();
+      await scenario(
+        `saved products ${base} ${width}`,
+        async () => {
+          await page.goto(origin + base, { waitUntil: 'networkidle' });
+          const saved = page.locator('[data-product-filter="saved"]');
+          const all = page.locator('[data-product-filter="all"]');
+          const keychain = page.locator(
+            '.product-keychain [data-save-product]',
+          );
+          await saved.click();
+          assert.equal(
+            await page.locator('[data-shop-empty]').isVisible(),
+            true,
+          );
+          assert.equal(await page.locator('[data-product]:visible').count(), 0);
+          await page.locator('[data-show-all]').click();
+          assert.equal(
+            await all.evaluate((el) => el === document.activeElement),
+            true,
+          );
+          await keychain.click();
+          assert.equal(await keychain.getAttribute('aria-pressed'), 'true');
+          assert.equal(
+            await page.locator('[data-saved-count]').textContent(),
+            '1',
+          );
+          await page.reload({ waitUntil: 'networkidle' });
+          assert.equal(await keychain.getAttribute('aria-pressed'), 'true');
+          await page.goto(origin + '/en' + base, { waitUntil: 'networkidle' });
+          assert.equal(await keychain.getAttribute('aria-pressed'), 'true');
+          assert.match(await keychain.getAttribute('aria-label'), /^Remove /);
+          await saved.click();
+          assert.equal(await page.locator('[data-product]:visible').count(), 1);
+          await keychain.click();
+          assert.equal(
+            await page.locator('[data-shop-empty]').isVisible(),
+            true,
+          );
+          assert.equal(
+            await saved.evaluate((el) => el === document.activeElement),
+            true,
+          );
+          await all.click();
+          const sticker = page.locator('.product-sticker [data-save-product]');
+          await sticker.click();
+          await saved.click();
+          if (base === '/shop/') {
+            await page.locator('.shop-hero-feature').click();
+            assert.equal(
+              await page.locator('.product-keychain').isVisible(),
+              true,
+            );
+            assert.equal(await all.getAttribute('aria-pressed'), 'true');
+          }
+          const other = await ctx.newPage();
+          await other.goto(origin + base, { waitUntil: 'networkidle' });
+          await saved.click();
+          await page.locator('.product-sticker [data-product-enlarge]').click();
+          assert.equal(await page.locator('dialog[open]').count(), 1);
+          await other.locator('.product-sticker [data-save-product]').click();
+          await page.waitForFunction(
+            () =>
+              document.querySelector('[data-saved-count]').textContent === '0',
+          );
+          assert.equal(await page.locator('dialog[open]').count(), 0);
+          assert.equal(
+            await saved.evaluate((el) => el === document.activeElement),
+            true,
+          );
+          await other.close();
+          await all.click();
+          await keychain.click();
+          await page.goto(
+            origin + (base === '/shop/' ? '/shop-test/' : '/shop/'),
+            { waitUntil: 'networkidle' },
+          );
+          assert.equal(
+            await page.locator('[data-saved-count]').textContent(),
+            '0',
+          );
+          check(
+            true,
+            `saved products persist across languages, synchronize tabs and isolate test shop ${base} ${width}`,
+          );
+        },
+        page,
+      );
+      await ctx.close();
+    }
+  }
+  for (const operation of ['getItem', 'setItem']) {
+    const ctx = await context();
+    await ctx.addInitScript((operation) => {
+      const original = Storage.prototype[operation];
+      Storage.prototype[operation] = function (key, ...args) {
+        if (key.includes('favorites'))
+          throw new DOMException('Storage blocked', 'SecurityError');
+        return original.call(this, key, ...args);
+      };
+    }, operation);
+    const page = await ctx.newPage();
+    await scenario(
+      `saved products unavailable storage ${operation}`,
+      async () => {
+        await page.goto(origin + '/en/shop/', { waitUntil: 'networkidle' });
+        const button = page.locator('.product-keychain [data-save-product]');
+        await button.click();
+        assert.equal(await button.getAttribute('aria-pressed'), 'true');
+        assert.match(
+          await page.locator('[data-storage-note]').textContent(),
+          /unavailable/,
+        );
+        await page.locator('[data-product-filter="saved"]').click();
+        assert.equal(await page.locator('[data-product]:visible').count(), 1);
+        await button.click();
+        assert.equal(await page.locator('[data-shop-empty]').isVisible(), true);
+        check(
+          true,
+          `saved products usable when storage ${operation} is blocked`,
+        );
+      },
+      page,
+    );
+    await ctx.close();
+  }
+  const noJs = await context({ javaScriptEnabled: false });
+  const page = await noJs.newPage();
+  await scenario(
+    'shop without JavaScript',
+    async () => {
+      await page.goto(origin + '/en/shop/', { waitUntil: 'networkidle' });
+      assert.equal(
+        await page.locator('[data-shop-filters]').isVisible(),
+        false,
+      );
+      assert.equal(
+        await page.locator('[data-save-product]:visible').count(),
+        0,
+      );
+      assert.equal(
+        await page.locator('[data-product]:visible').count(),
+        definitions.length,
+      );
+      assert.match(
+        await page
+          .locator('.product-keychain [data-product-enlarge]')
+          .first()
+          .getAttribute('href'),
+        /^\/assets\//,
+      );
+      check(
+        true,
+        'shop products and original image links available without JavaScript',
+      );
+    },
+    page,
+  );
+  await noJs.close();
 }
 
 try {
@@ -809,6 +1035,7 @@ try {
   );
   await ctx.close();
   await productImageDialogs();
+  await shopDiscovery();
   await cartScenarios();
   check(
     report.pageErrors.length === 0,

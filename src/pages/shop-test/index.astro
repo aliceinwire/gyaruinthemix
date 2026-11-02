@@ -1,9 +1,12 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import Product from '../../components/Product.astro';
+import ShopBrowse from '../../components/ShopBrowse.astro';
+import ShopHelp from '../../components/ShopHelp.astro';
 import products from '../../../config/test-products.json';
 import { getLocale, translator } from '../../data/i18n.mjs';
-const t = translator(getLocale(Astro.url.pathname));
+const locale = getLocale(Astro.url.pathname);
+const t = translator(locale);
 ---
 
 <Layout
@@ -17,7 +20,11 @@ const t = translator(getLocale(Astro.url.pathname));
     'For Stripe Sandbox testing only. No real payment or shipping takes place.',
   )}
 >
-  <section class="section shop-section">
+  <section
+    class="section shop-section"
+    data-shop-discovery
+    data-saved-key="gyaru-test-shop-favorites-v1"
+  >
     <div class="shop-heading">
       <p class="eyebrow">TEST ONLY · Stripe Sandbox</p>
       <h1>{t('テスト専用ショップ', 'Test shop')}<span>♡</span></h1>
@@ -56,10 +63,11 @@ const t = translator(getLocale(Astro.url.pathname));
         }
       </p></noscript
     >
+    <ShopBrowse count={products.length} locale={locale} />
     <div class="product-grid">
       {
         products.map((product, index) => (
-          <Product product={product} index={index} cartEnabled />
+          <Product product={product} index={index} cartEnabled shopTools />
         ))
       }
     </div>
@@ -71,7 +79,7 @@ const t = translator(getLocale(Astro.url.pathname));
         )
       }
     </p>
-    <div class="shop-info">
+    <div class="shop-info" id="shop-guide">
       <div>
         <b>{t('テスト専用', 'For testing only')}</b>
         <p>
@@ -103,5 +111,6 @@ const t = translator(getLocale(Astro.url.pathname));
         )
       }
     </p>
+    <ShopHelp locale={locale} />
   </section>
 </Layout>

@@ -39,6 +39,10 @@ const galleryId = `product-gallery-${product.slug}`;
             href={image.src}
             data-product-enlarge
             data-caption={image.label || ''}
+            data-position={t(
+              `画像 ${imageIndex + 1} / ${images.length}`,
+              `Image ${imageIndex + 1} / ${images.length}`,
+            )}
             aria-haspopup="dialog"
             aria-controls={`${galleryId}-dialog`}
             aria-label={t(
@@ -85,7 +89,7 @@ const galleryId = `product-gallery-${product.slug}`;
     class="product-image-dialog"
     data-product-image-dialog
     aria-labelledby={`${galleryId}-title`}
-    aria-describedby={`${galleryId}-caption`}
+    aria-describedby={`${galleryId}-position`}
   >
     <header>
       <h2 id={`${galleryId}-title`}>{product.name}</h2>
@@ -97,6 +101,34 @@ const galleryId = `product-gallery-${product.slug}`;
     </header>
     <img data-product-image-full alt="" />
     <p id={`${galleryId}-caption`} data-product-image-caption></p>
+    <div class="product-image-navigation">
+      <button
+        type="button"
+        data-product-image-prev
+        hidden={images.length < 2}
+        aria-label={t('前の画像', 'Previous image')}
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true"
+          ><path d="m14 6-6 6 6 6"></path></svg
+        >
+      </button>
+      <span
+        id={`${galleryId}-position`}
+        data-product-image-position
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"></span>
+      <button
+        type="button"
+        data-product-image-next
+        hidden={images.length < 2}
+        aria-label={t('次の画像', 'Next image')}
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true"
+          ><path d="m10 6 6 6-6 6"></path></svg
+        >
+      </button>
+    </div>
   </dialog>
 </div>
 
