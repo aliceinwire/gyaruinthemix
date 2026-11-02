@@ -12,6 +12,9 @@
 !scripts/optimize-game-images.mjs
 !scripts/check-site-build.mjs
 !scripts/release-version.mjs
+!scripts/build-cache.mjs
+!scripts/build-site.mjs
+!scripts/build-game.mjs
 !deploy/nginx.conf
 !deploy/bouncer/nginx-www-redirect.conf
 !deploy/nginx-api.conf

@@ -1,19 +1,44 @@
-FROM node:24.21.0-alpine3.23 AS build
+FROM node:24.21.0-alpine3.23 AS dependencies
 WORKDIR /build
 COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund
+
+FROM dependencies AS site-images
+COPY assets/originals ./assets/originals
+COPY scripts/images.mjs scripts/build-cache.mjs ./scripts/
+RUN node scripts/images.mjs
+
+FROM dependencies AS site-build
 COPY astro.config.mjs ./
 COPY src ./src
 COPY config ./config
-COPY public ./public
-COPY assets ./assets
+COPY assets/originals ./assets/originals
+COPY public/favicon.svg public/leopard.svg ./public/
+COPY --from=site-images /build/public/assets ./public/assets
 COPY scripts/images.mjs scripts/check-site-build.mjs scripts/release-version.mjs ./scripts/
-COPY scripts/optimize-game-images.mjs ./scripts/
+COPY scripts/build-site.mjs scripts/build-cache.mjs ./scripts/
 COPY deploy/nginx-api.conf deploy/nginx-payment-links.conf ./
 ARG CHECKOUT_MODE=payment_links
 ENV CHECKOUT_MODE=$CHECKOUT_MODE
 ENV ASTRO_TELEMETRY_DISABLED=1
-RUN npm run build && if [ "$CHECKOUT_MODE" = "api" ]; then cp nginx-api.conf checkout-location.conf; else cp nginx-payment-links.conf checkout-location.conf; fi
+RUN node scripts/build-site.mjs --skip-images && if [ "$CHECKOUT_MODE" = "api" ]; then cp nginx-api.conf checkout-location.conf; else cp nginx-payment-links.conf checkout-location.conf; fi
+
+FROM dependencies AS game-images
+COPY public/game/assets ./public/game/assets
+COPY public/game/src/club-art.js ./public/game/src/club-art.js
+COPY scripts/optimize-game-images.mjs scripts/build-cache.mjs ./scripts/
+RUN node scripts/optimize-game-images.mjs --artwork-only
+
+FROM dependencies AS game-build
+COPY public/game ./public/game
+COPY src/data/release.mjs ./src/data/release.mjs
+COPY scripts/build-game.mjs scripts/release-version.mjs scripts/optimize-game-images.mjs scripts/build-cache.mjs ./scripts/
+COPY --from=game-images /build/generated-game ./generated-game
+RUN node scripts/build-game.mjs --artwork generated-game
+
+FROM site-build AS build
+COPY --from=game-build /build/dist/game ./dist/game
+RUN node scripts/check-site-build.mjs
 
 FROM nginx:1.30.5-alpine3.24-slim AS production
 COPY deploy/nginx.conf /etc/nginx/nginx.conf

@@ -23,6 +23,7 @@ import {
 import { assertPrivateAudioDenied } from '../scripts/check-game-audio-runtime.mjs';
 import { checkServedHlsModule } from '../scripts/check-game-test.mjs';
 import { assertGameAudioFixturePermissions } from '../scripts/ci-game-audio-packager.mjs';
+import { makePlan } from '../scripts/ci-plan.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 async function temporary(t) {
@@ -207,13 +208,24 @@ test('canonical CI covers both checkout modes with default-off and enabled audio
     join(root, '.github/workflows/ci.yml'),
     'utf8',
   );
-  assert.match(
-    workflow,
-    /mode: \[payment_links, api\]\s+audio: \['false', 'true'\]/,
-  );
+  const plan = makePlan({
+    paths: ['.github/workflows/ci.yml'],
+    revision: 'a'.repeat(40),
+    inputs: {},
+  });
+  assert.deepEqual(plan.containers.include, [
+    { mode: 'payment_links', audio: 'false' },
+    { mode: 'api', audio: 'false' },
+    { mode: 'payment_links', audio: 'true' },
+    { mode: 'api', audio: 'true' },
+  ]);
+  assert.match(workflow, /fromJSON\(needs.changes.outputs.containers\)/);
   assert.match(workflow, /node scripts\/ci-bouncer.mjs --config-only/);
-  assert.match(workflow, /node scripts\/ci-bouncer.mjs --build-audio-only/);
-  assert.match(workflow, /node scripts\/ci-bouncer.mjs --no-build/);
+  const prepare = await readFile(
+    join(root, 'scripts/prepare-release.mjs'),
+    'utf8',
+  );
+  assert.match(prepare, /'scripts\/ci-bouncer.mjs', '--no-build'/);
   assert.doesNotMatch(workflow, /apt-get.*ffmpeg|Install.*audio.*tools/i);
   const smoke = await readFile(join(root, 'scripts/ci-bouncer.mjs'), 'utf8');
   assert.match(smoke, /deploy\/bouncer\/docker-compose.yml/);

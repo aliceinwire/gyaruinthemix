@@ -91,7 +91,7 @@ Choose **one** scheduler. Do not install both. The lock still prevents accidenta
 Use the deployment user's existing `crontab -e`; preserve all existing jobs. Add this single line, adjusting the Python path if necessary:
 
 ```cron
-*/5 * * * * PATH=/usr/local/bin:/usr/bin:/bin /usr/bin/python3 "$HOME/bouncer/gyaruinthemix/deploy/bouncer/update.py" --directory "$HOME/bouncer" 2>&1 | /usr/bin/logger -t gyaruinthemix-update
+* * * * * PATH=/usr/local/bin:/usr/bin:/bin /usr/bin/python3 "$HOME/bouncer/gyaruinthemix/deploy/bouncer/update.py" --directory "$HOME/bouncer" 2>&1 | /usr/bin/logger -t gyaruinthemix-update
 ```
 
 Your existing cron daemon must already run at boot. Confirm the entry with `crontab -l` and check your system's existing syslog for `gyaruinthemix-update`. Cron service installation/enabling depends on the host's init system and is an operator step, not part of this repository. To pause, comment out only this line; restore it to resume. No SSH session has to remain open.
@@ -111,9 +111,22 @@ For a user timer to survive logout/reboot, the account must have user lingering 
 
 Pause with `systemctl --user disable --now gyaruinthemix-update.timer`; resume with `systemctl --user enable --now gyaruinthemix-update.timer`. An already-running service may finish after pausing the timer; check its status before manual operations. The updater lock file also coordinates direct invocations, but plain manual Docker commands do not acquire it.
 
+## Component releases
+
+By default, CI continues publishing every component with the same source revision so existing updater installations keep working. Builds reuse independent website, game and artwork stages. Component reuse is enabled only after every deployment host has migrated:
+
+1. Wait for the first successful release from the new pipeline. It also publishes `ghcr.io/aliceinwire/gyaruinthemix-release`, a metadata-only image containing the release manifest. Give the deployment account read access, or make this package public like the existing website packages after reviewing it.
+2. Pause the existing scheduler, wait for any active update, and install the approved `deploy/bouncer/update.py`. Keep the existing Compose file, secrets, profiles and shared services.
+3. Run the updater once with `--release-manifest` in addition to the existing `--directory` argument. This selects the complete release by immutable component digests and verifies each component's original source revision. Add `--release-manifest` to the existing cron command or installed service's `ExecStart`, then resume that same scheduler. Keep the normal lock and health checks.
+4. Set the repository Actions variable `COMPONENT_RELEASES_ENABLED` to `true`. Subsequent releases reuse unchanged component digests. Leave this variable unset until all hosts use manifest selection. The CI required check is `CI result`; it verifies the selected jobs, including their failures and cancellations.
+
+Each manifest records the release commit, component digests, original component commits and source fingerprints. Its `:main` pointer moves only after every component is available. A game-only change can reuse API, audio-server and packager images. Main comparisons include every change since the last published manifest, including changes from cancelled runs. Missing baselines or unknown source paths trigger full rebuilding.
+
+When using manifests, compare the running image revision with its component entry, not necessarily the release commit. The updater state file records the release commit. Failed health checks restore the exact previous local image IDs. To deliberately select an earlier complete release, pause the scheduler and run the same updater with `--release-manifest --release-sha <full-release-commit>`; retain the `:main` references in Compose. Keep the scheduler paused while investigating, since resuming it selects the latest release again. The manual `--package-game-audio` mode accepts the same manifest flags. Before disabling manifest mode, turn off `COMPONENT_RELEASES_ENABLED` and publish a full same-revision release.
+
 ## Manual maintenance with the same updater
 
-The existing five-minute timer remains **website-only**, including explicitly enabled audio and its local packaging. Two explicit, mutually exclusive manual modes replace the old broad pull/build/down/up script. There is no new daemon, container running in the background, daily task or automatic shared-service/certificate schedule. All updater modes, including first-catalog preparation, use the same nonblocking lock. If one is running, another invocation exits without work; rerun a skipped manual command after it finishes. Plain Docker commands and the old script do not use that lock: retire the old script and avoid concurrent manual changes.
+The one-minute timer remains **website-only**, including explicitly enabled audio and its local packaging. Two explicit, mutually exclusive manual modes replace the old broad pull/build/down/up script. There is no new daemon, container running in the background, daily task or automatic shared-service/certificate schedule. All updater modes, including first-catalog preparation, use the same nonblocking lock. If one is running, another invocation exits without work; rerun a skipped manual command after it finishes. Plain Docker commands and the old script do not use that lock: retire the old script and avoid concurrent manual changes.
 
 Review/install this updater from an approved checkout before use; installing it does not require replacing your existing Compose definitions or changing the timer. Keep backups of ZNC/Limnoria data and enough free disk for old and new images. Run as the existing deployment user with its established Docker access.
 
@@ -151,7 +164,7 @@ This is a manual refresh, **not a renewal hook**. Keep the existing certificate 
 
 ## 4. Verify a merged update
 
-A merge is followed by the complete CI run and registry publication, then the next host check (normally within five minutes, with up to 30 seconds of timer jitter). A failed CI run leaves registry release tags unchanged. The host performs no Git pull and does not execute newly fetched checkout scripts. When audio is explicitly enabled, the installed updater pulls the packager image for the same selected release and runs its baked-in packaging code in an isolated, bounded one-shot container before considering image changes.
+A merge is followed by the checks selected for its changes and registry publication, then the next host check (normally within one minute, with up to five seconds of timer jitter). Existing installed schedules keep their old interval until updated. A failed CI run leaves registry release tags unchanged. The host performs no Git pull and does not execute newly fetched checkout scripts. When audio is explicitly enabled, the installed updater pulls the packager image for the same selected release and runs its baked-in packaging code in an isolated, bounded one-shot container before considering image changes.
 
 Check the **Publish tested main images** job, then the host's cron logs or systemd journal. Inspect the running revision:
 
@@ -162,13 +175,13 @@ docker inspect "$id" --format '{{index .Config.Labels "org.opencontainers.image.
 curl --fail https://YOUR_REAL_DOMAIN/web-health
 ```
 
-Compare it with the merged main commit. Recheck the changed page over public HTTPS. The state file `~/bouncer/.gyaruinthemix-update.json` contains image IDs/revision and rollback bookkeeping, never credentials. Keep it local. This setup logs failures but does not add email or chat notifications; use your existing host monitoring for failed cron jobs/services, disk pressure and health.
+Compare it with the merged main commit, or its component revision in manifest mode. Recheck the changed page over public HTTPS. The state file `~/bouncer/.gyaruinthemix-update.json` contains image IDs/revision and rollback bookkeeping, never credentials. Keep it local. This setup logs failures but does not add email or chat notifications; use your existing host monitoring for failed cron jobs/services, disk pressure and health.
 
 ## Updates to infrastructure, checkout mode and rollback
 
 Only selected service images and an explicitly enabled local music catalog auto-update. Changes to the merged Compose file, `.env`, secret paths, updater or timer need explicit review and manual installation from the approved commit. Do not replace shared infrastructure automatically; use the explicit manual mode above for reviewed image maintenance. Pause the scheduler, ensure no update is active, back up configuration, copy only the reviewed deployment changes, then revalidate/restart only website services. Preserve the API journal/current valid secrets. The running website image is authoritative for website content; an old checkout on the VPS is not rebuilt by the updater. Audio packaging code comes from the matching published release image, not host Node or a script executed from the checkout. Updater/setup changes still require deliberate installation; the image itself follows the same trusted release lifecycle as the serving images.
 
-For an intentional rollback, pause the scheduler first. Choose a verified earlier release SHA from GHCR/CI, set `GYARUINTHEMIX_WEB_IMAGE` to its `:sha-<commit>` tag in `~/bouncer/.env`, and pin every enabled optional image (`GYARUINTHEMIX_API_IMAGE` and/or `GYARUINTHEMIX_GAME_AUDIO_IMAGE`) to the **same** commit too. Pull and activate only the selected services using the scoped first-start command. Validate health/public pages and the implications of old payment links or product configuration. Restore `:main` and resume scheduling only after the failed release is fixed. Pinned tags intentionally cause the updater to stop rather than silently override the operator's choice.
+For a legacy same-revision release rollback, pause the scheduler first. Choose a verified earlier release SHA from GHCR/CI, set `GYARUINTHEMIX_WEB_IMAGE` to its `:sha-<commit>` tag in `~/bouncer/.env`, and pin every enabled optional image (`GYARUINTHEMIX_API_IMAGE` and/or `GYARUINTHEMIX_GAME_AUDIO_IMAGE`) to the **same** commit too. Pull and activate only the selected services using the scoped first-start command. Validate health/public pages and the implications of old payment links or product configuration. Restore `:main` and resume scheduling only after the failed release is fixed. Pinned tags intentionally cause the updater to stop rather than silently override the operator's choice.
 
 For an automatically rejected release, inspect website logs/resources and correct the cause. To deliberately retry that same release after investigation:
 
