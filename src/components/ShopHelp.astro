@@ -1,0 +1,19 @@
+---
+import { localizePath, translator } from '../data/i18n.mjs';
+const { locale } = Astro.props;
+const t = translator(locale);
+---
+
+<nav
+  class="shop-help"
+  aria-label={t('お買い物のご案内', 'Shopping information')}
+>
+  <a href={localizePath('/legal/', locale)}
+    >{t('送料・返品・販売者情報', 'Shipping, returns & seller information')}
+    <span aria-hidden="true">↗</span></a
+  >
+  <a href={localizePath('/contact/', locale)}
+    >{t('商品についてのお問い合わせ', 'Ask us about the merchandise')}
+    <span aria-hidden="true">↗</span></a
+  >
+</nav>

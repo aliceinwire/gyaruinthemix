@@ -4,7 +4,12 @@ import { usesCart } from '../data/checkout.mjs';
 import { getLocale, translator } from '../data/i18n.mjs';
 import { localizeProduct } from '../data/shop-i18n.mjs';
 import { money } from '../scripts/cart.mjs';
-const { product: definition, index = 0, cartEnabled = usesCart } = Astro.props;
+const {
+  product: definition,
+  index = 0,
+  cartEnabled = usesCart,
+  shopTools = false,
+} = Astro.props;
 const locale = getLocale(Astro.url.pathname);
 const t = translator(locale);
 const product = localizeProduct(definition, locale);
@@ -16,12 +21,45 @@ const availability =
       : t('販売準備中', 'Coming soon');
 ---
 
-<article class={`product product-${product.slug}`} data-product={product.slug}>
+<article
+  id={`product-${product.slug}`}
+  class={`product product-${product.slug}`}
+  data-product={product.slug}
+>
   <ProductGallery product={product} locale={locale} index={index} />
   <div class="product-body">
-    <span class="availability" data-availability
-      >{cartEnabled ? t('販売準備中', 'Coming soon') : availability}</span
-    >
+    <div class="product-meta">
+      <span class="availability" data-availability
+        >{cartEnabled ? t('販売準備中', 'Coming soon') : availability}</span
+      >
+      {
+        shopTools && (
+          <button
+            type="button"
+            class="product-save"
+            data-save-product
+            hidden
+            aria-pressed="false"
+            aria-label={t(
+              `${product.name}をお気に入りに保存`,
+              `Save ${product.name}`,
+            )}
+            data-save-label={t(
+              `${product.name}をお気に入りに保存`,
+              `Save ${product.name}`,
+            )}
+            data-remove-label={t(
+              `${product.name}をお気に入りから削除`,
+              `Remove ${product.name} from saved items`,
+            )}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 20S3 14.5 3 8.5A4.5 4.5 0 0 1 12 7a4.5 4.5 0 0 1 9 1.5C21 14.5 12 20 12 20Z" />
+            </svg>
+          </button>
+        )
+      }
+    </div>
     <h3>{product.name}</h3>
     <p>{product.description}</p>
     <div class="product-buy">

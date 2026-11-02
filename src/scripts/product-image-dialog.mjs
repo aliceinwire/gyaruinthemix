@@ -7,10 +7,29 @@ export function initProductImageDialogs(root) {
     const full = dialog.querySelector('[data-product-image-full]');
     const caption = dialog.querySelector('[data-product-image-caption]');
     const close = dialog.querySelector('[data-product-image-close]');
+    const previous = dialog.querySelector('[data-product-image-prev]');
+    const next = dialog.querySelector('[data-product-image-next]');
+    const position = dialog.querySelector('[data-product-image-position]');
     const track = gallery.querySelector('.product-gallery-track');
+    const links = [...gallery.querySelectorAll('[data-product-enlarge]')];
+    let currentIndex = 0;
     let opener;
     let pointerStart;
-    for (const link of gallery.querySelectorAll('[data-product-enlarge]')) {
+    const showImage = (index) => {
+      currentIndex = (index + links.length) % links.length;
+      const link = links[currentIndex];
+      const preview = link.closest('figure').querySelector('img');
+      full.src = link.href;
+      full.alt = preview.alt;
+      caption.textContent = link.dataset.caption || '';
+      position.textContent = link.dataset.position;
+    };
+    const move = (delta) => {
+      if (dialog.open && links.length > 1) showImage(currentIndex + delta);
+    };
+    previous.addEventListener('click', () => move(-1));
+    next.addEventListener('click', () => move(1));
+    links.forEach((link, index) => {
       link.addEventListener('pointerdown', (event) => {
         pointerStart = {
           x: event.clientX,
@@ -19,6 +38,8 @@ export function initProductImageDialogs(root) {
         };
       });
       link.addEventListener('click', (event) => {
+        if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey)
+          return;
         event.preventDefault();
         const start = pointerStart;
         pointerStart = undefined;
@@ -32,21 +53,30 @@ export function initProductImageDialogs(root) {
         )
           return;
         if (dialog.open) return;
-        const preview = link.closest('figure').querySelector('img');
-        full.src = link.href;
-        full.alt = preview.alt;
-        caption.textContent = link.dataset.caption;
+        showImage(index);
         opener = link;
         dialog.showModal();
         close.focus({ preventScroll: true });
       });
-    }
+    });
     close.addEventListener('click', () => dialog.close());
-    // The close button is the viewer's only interactive control.
     dialog.addEventListener('keydown', (event) => {
+      if (!dialog.open || event.ctrlKey || event.metaKey || event.altKey)
+        return;
+      if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+        event.preventDefault();
+        move(event.key === 'ArrowLeft' ? -1 : 1);
+      }
       if (event.key === 'Tab') {
         event.preventDefault();
-        close.focus({ preventScroll: true });
+        const controls = [close, previous, next].filter(
+          (control) => !control.hidden && !control.disabled,
+        );
+        const index = controls.indexOf(root.activeElement);
+        const step = event.shiftKey ? -1 : 1;
+        controls[(index + step + controls.length) % controls.length].focus({
+          preventScroll: true,
+        });
       }
     });
     const outside = (event) => {

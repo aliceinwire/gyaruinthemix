@@ -1,0 +1,63 @@
+---
+import { productImages } from '../data/product-images.mjs';
+import { localizeProduct } from '../data/shop-i18n.mjs';
+import { translator } from '../data/i18n.mjs';
+const { products, locale } = Astro.props;
+const t = translator(locale);
+const featured = products.find((product) => product.slug === 'keychain');
+const product = featured ? localizeProduct(featured, locale) : null;
+const images = product ? productImages(product, locale) : [];
+const image = images[1] || images[0];
+---
+
+<div class:list={['shop-hero', { 'has-featured-product': product }]}>
+  <div class="shop-hero-copy">
+    <p class="eyebrow">GYARUINTHEMIX / OFFICIAL MERCH</p>
+    <h1>
+      {t('好き、を', 'Take what')}<br /><em>{t('連れてこ。', 'you love.')}</em>
+    </h1>
+    <p class="shop-hero-description">
+      {
+        t(
+          'バッグにも、フロアにも。いつもの持ち物に、うちらのテンションを。',
+          'For your bag and the dance floor. A little of our energy, wherever you go.',
+        )
+      }
+    </p>
+    <div class="shop-hero-actions">
+      <a class="button" href="#shop-items"
+        >{t('グッズを見る', 'Explore the collection')}
+        <span aria-hidden="true">→</span></a
+      >
+      <a href="#shop-guide">{t('お買い物ガイド', 'Shopping guide')}</a>
+    </div>
+    <p class="shop-hero-signature">CARRY THE MIX.</p>
+  </div>
+  {
+    product && image && (
+      <a class="shop-hero-feature" href={`#product-${product.slug}`}>
+        <img
+          src={image.src}
+          alt={image.alt}
+          width="1254"
+          height="1254"
+          fetchpriority="high"
+        />
+        <span class="shop-hero-caption">
+          <span>
+            <>
+              <small>
+                {t(
+                  'バッグにつけて、お出かけへ。',
+                  'Ready for your everyday bag.',
+                )}
+              </small>
+              <b>{product.name}</b>
+            </>
+          </span>
+          <span aria-hidden="true">↗</span>
+        </span>
+      </a>
+    )
+  }
+</div>
