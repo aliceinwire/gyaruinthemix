@@ -49,9 +49,21 @@
       "venue": "",
       "timeLabel": "",
       "note": "GYARUINTHEMIX's DJ appearance scheduled for October 3 has been cancelled."
+    },
+    {
+      "title": "アキナのギャルしか勝たん〜ギャルの力で世界を変えよう〜",
+      "venue": "MBS Mainichi Broadcasting (terrestrial channel 4, Kansai)",
+      "timeLabel": "Time TBC (usual slot: November 17, 25:59–26:30 / November 18, 01:59–02:30 JST)",
+      "note": "GYARUINTHEMIX is scheduled to perform on the programme. Times are in Japan Standard Time. Check the MBS schedule for the confirmed November 17 broadcast time. The programme usually offers one week of catch-up viewing on ABEMA after broadcast.",
+      "linkLabel": "MBS programme schedule"
     }
   ],
   "news": [
+    {
+      "category": "Appearances",
+      "title": "A performance on アキナのギャルしか勝たん, Tuesday, November 17.",
+      "text": "GYARUINTHEMIX is scheduled to perform on MBS Mainichi Broadcasting (terrestrial channel 4, Kansai). The usual Tuesday slot is 25:59–26:30, or November 18, 01:59–02:30 JST. The November 17 broadcast time is not yet confirmed. The programme usually offers one week of catch-up viewing on ABEMA after broadcast."
+    },
     {
       "category": "Appearances",
       "title": "MBS appearance, the ABEMA episode page, and a change to our October 3 plans.",
