@@ -152,13 +152,7 @@ test('supplied keychain photos have a product-first bilingual gallery in both sh
       );
       for (const photo of photos) {
         assert.ok(photo.alt.length > 0);
-        assert.ok(photo.label.length > 0);
-        assert.match(
-          photo.label,
-          locale === 'ja'
-            ? /イメージ画像.*実物と細部/
-            : /Illustrative image.*differ/,
-        );
+        assert.equal(photo.label, '');
       }
     }
     assert.equal(product.displayPriceJPY, null);
