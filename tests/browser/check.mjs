@@ -294,7 +294,10 @@ async function inspect(page, pathname, width) {
       ),
       localLinks: [
         ...document.querySelectorAll('a[href^="/"]:not([data-language-link])'),
-      ].map((a) => a.getAttribute('href')),
+      ]
+        .map((a) => a.getAttribute('href'))
+        // Original-image fallbacks are shared assets, not localized page routes.
+        .filter((href) => !href.startsWith('/assets/')),
       brokenImages: [...document.images]
         .filter((i) => i.complete && i.currentSrc && !i.naturalWidth)
         .map((i) => i.currentSrc),
@@ -644,10 +647,112 @@ async function cartScenarios() {
     await failed.close();
   }
 }
+
+async function productImageDialogs() {
+  for (const width of [375, 1440]) {
+    const ctx = await context({
+      viewport: { width, height: 900 },
+      hasTouch: true,
+    });
+    const page = await ctx.newPage();
+    for (const path of [
+      '/shop/',
+      '/en/shop/',
+      '/shop-test/',
+      '/en/shop-test/',
+    ]) {
+      await scenario(
+        `product image dialog ${path} ${width}`,
+        async () => {
+          await page.goto(origin + path, { waitUntil: 'networkidle' });
+          const gallery = page.locator(
+            '.product-keychain [data-product-gallery]',
+          );
+          const links = gallery.locator('[data-product-enlarge]');
+          const dialog = gallery.locator('dialog');
+          const close = dialog.locator('[data-product-image-close]');
+          const thumbnails = gallery.locator('[data-gallery-image]');
+          const initialUrl = page.url();
+          for (const index of [0, 2, 1, 0]) {
+            await thumbnails.nth(index).click();
+            await page.waitForTimeout(500);
+            await links.nth(index).scrollIntoViewIfNeeded();
+            const scroll = await page.evaluate(() => scrollY);
+            await links.nth(index).tap();
+            assert.equal(await dialog.evaluate((d) => d.open), true);
+            assert.equal(
+              await dialog.locator('img').getAttribute('src'),
+              new URL(await links.nth(index).getAttribute('href'), origin).href,
+            );
+            assert.ok(await dialog.locator('img').getAttribute('alt'));
+            assert.match(
+              await dialog.locator('p').textContent(),
+              /イメージ画像|Illustrative image/,
+            );
+            assert.equal(
+              await page.evaluate(
+                () => getComputedStyle(document.body).overflow,
+              ),
+              'hidden',
+            );
+            await page.keyboard.press('Tab');
+            assert.equal(
+              await page.evaluate(
+                () => document.activeElement.closest('dialog') !== null,
+              ),
+              true,
+            );
+            if (index === 2) await page.keyboard.press('Escape');
+            else if (index === 1) await page.mouse.click(1, 1);
+            else await close.tap();
+            assert.equal(await dialog.evaluate((d) => d.open), false);
+            assert.equal(
+              await links
+                .nth(index)
+                .evaluate((a) => document.activeElement === a),
+              true,
+            );
+            assert.ok(
+              Math.abs((await page.evaluate(() => scrollY)) - scroll) < 2,
+            );
+            assert.notEqual(
+              await page.evaluate(
+                () => getComputedStyle(document.body).overflow,
+              ),
+              'hidden',
+            );
+            assert.equal(page.url(), initialUrl);
+          }
+          await links.first().focus();
+          await page.keyboard.press('Enter');
+          assert.equal(await dialog.evaluate((d) => d.open), true);
+          await page.keyboard.press('Escape');
+          // Touch scrolling remains native; a drag/click sequence must not open.
+          await links
+            .first()
+            .dispatchEvent('pointerdown', { clientX: 100, clientY: 100 });
+          await links
+            .first()
+            .dispatchEvent('click', { detail: 1, clientX: 30, clientY: 100 });
+          assert.equal(await dialog.evaluate((d) => d.open), false);
+          check(
+            true,
+            `product dialog repeat/tap/keyboard/backdrop/focus/scroll ${path} ${width}`,
+          );
+        },
+        page,
+      );
+    }
+    await ctx.close();
+  }
+}
+
 try {
   browser = await chromium.launch({
     headless: true,
-    ...(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {}),
+    ...(process.env.CHROMIUM_PATH
+      ? { executablePath: process.env.CHROMIUM_PATH }
+      : {}),
   });
   const ctx = await context();
   const page = await ctx.newPage();
@@ -679,6 +784,7 @@ try {
     page,
   );
   await ctx.close();
+  await productImageDialogs();
   await cartScenarios();
   check(
     report.pageErrors.length === 0,

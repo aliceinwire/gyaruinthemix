@@ -34,6 +34,20 @@ const galleryId = `product-gallery-${product.slug}`;
             loading="lazy"
             alt={image.alt}
           />
+          <a
+            class="product-image-open"
+            href={image.src}
+            data-product-enlarge
+            data-caption={image.label || ''}
+            aria-haspopup="dialog"
+            aria-controls={`${galleryId}-dialog`}
+            aria-label={t(
+              `${image.alt}を大きく見る`,
+              `Enlarge image: ${image.alt}`,
+            )}
+          >
+            <span aria-hidden="true">＋</span>
+          </a>
           {image.label && (
             <figcaption class="image-label">{image.label}</figcaption>
           )}
@@ -66,9 +80,29 @@ const galleryId = `product-gallery-${product.slug}`;
       </nav>
     )
   }
+  <dialog
+    id={`${galleryId}-dialog`}
+    class="product-image-dialog"
+    data-product-image-dialog
+    aria-labelledby={`${galleryId}-title`}
+    aria-describedby={`${galleryId}-caption`}
+  >
+    <header>
+      <h2 id={`${galleryId}-title`}>{product.name}</h2>
+      <button
+        type="button"
+        data-product-image-close
+        aria-label={t('画像を閉じる', 'Close image')}>×</button
+      >
+    </header>
+    <img data-product-image-full alt="" />
+    <p id={`${galleryId}-caption`} data-product-image-caption></p>
+  </dialog>
 </div>
 
 <script>
   import { initProductGalleries } from '../scripts/product-gallery.mjs';
+  import { initProductImageDialogs } from '../scripts/product-image-dialog.mjs';
   initProductGalleries(document);
+  initProductImageDialogs(document);
 </script>
