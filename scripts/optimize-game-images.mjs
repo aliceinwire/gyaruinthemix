@@ -3,6 +3,7 @@ import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { CLUB_ART } from '../public/game/src/club-art.js';
+import { cachedImage } from './build-cache.mjs';
 
 const sourceRoot = fileURLToPath(new URL('../public/game/', import.meta.url));
 const replacements = [
@@ -25,9 +26,12 @@ const images = [
 
 // Optimize the production copy. Keep the original PNGs available for editing
 // and local development, and keep sprite dimensions and alpha unchanged.
-export async function optimizeGameImages(outputRoot = resolve('dist/game')) {
+export async function optimizeGameImages(
+  outputRoot = resolve('dist/game'),
+  { artwork, artworkOnly = false } = {},
+) {
   const modules = await Promise.all(
-    replacements.map(async ([path, original]) => {
+    (artworkOnly ? [] : replacements).map(async ([path, original]) => {
       const text = await readFile(join(outputRoot, path), 'utf8');
       const optimized = original.replace(/\.png$/, '.webp');
       if (!text.includes(original) && !text.includes(optimized)) {
@@ -39,7 +43,11 @@ export async function optimizeGameImages(outputRoot = resolve('dist/game')) {
   const results = [];
   for (const { path, options } of images) {
     const input = await readFile(join(sourceRoot, path));
-    const output = await sharp(input).webp(options).toBuffer();
+    const output = artwork
+      ? await readFile(join(artwork, path.replace(/\.png$/, '.webp')))
+      : await cachedImage(input, { format: 'webp', options }, () =>
+          sharp(input).webp(options).toBuffer(),
+        );
     const target = join(outputRoot, path.replace(/\.png$/, '.webp'));
     await mkdir(dirname(target), { recursive: true });
     await writeFile(target, output);
@@ -49,7 +57,7 @@ export async function optimizeGameImages(outputRoot = resolve('dist/game')) {
   for (const { path, text } of modules) {
     await writeFile(join(outputRoot, path), text);
   }
-  for (const { path } of images) {
+  for (const { path } of artworkOnly ? [] : images) {
     await rm(join(outputRoot, path), { force: true });
   }
   return results;
@@ -59,7 +67,11 @@ if (
   process.argv[1] &&
   import.meta.url === pathToFileURL(resolve(process.argv[1])).href
 ) {
-  const results = await optimizeGameImages();
+  const artworkOnly = process.argv.includes('--artwork-only');
+  const results = await optimizeGameImages(
+    artworkOnly ? resolve('generated-game') : undefined,
+    { artworkOnly },
+  );
   const before = results.reduce((sum, image) => sum + image.before, 0);
   const after = results.reduce((sum, image) => sum + image.after, 0);
   console.log(

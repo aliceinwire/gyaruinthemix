@@ -12,6 +12,7 @@ import {
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { buildImage } from './build-image.mjs';
 import { prepareGameAudioFixturesInContainer } from './ci-game-audio-packager.mjs';
 import {
   assertGameAudioCompose,
@@ -53,14 +54,21 @@ const env = {
   STORE_HOSTS: '',
   SITE_URL: 'https://gyaruinthemix.example',
   LETSENCRYPT_EMAIL: 'ci@example.test',
-  GYARUINTHEMIX_WEB_IMAGE: `gyaruinthemix-web:${process.env.IMAGE_TAG}`,
-  GYARUINTHEMIX_API_IMAGE: `gyaruinthemix-api:${process.env.IMAGE_TAG}`,
-  GYARUINTHEMIX_GAME_AUDIO_IMAGE: `gyaruinthemix-game-audio:${process.env.GAME_AUDIO_IMAGE_TAG || process.env.IMAGE_TAG}`,
+  GYARUINTHEMIX_WEB_IMAGE:
+    process.env.CI_WEB_IMAGE || `gyaruinthemix-web:${process.env.IMAGE_TAG}`,
+  GYARUINTHEMIX_API_IMAGE:
+    process.env.CI_API_IMAGE || `gyaruinthemix-api:${process.env.IMAGE_TAG}`,
+  GYARUINTHEMIX_GAME_AUDIO_IMAGE:
+    process.env.CI_AUDIO_IMAGE ||
+    `gyaruinthemix-game-audio:${process.env.GAME_AUDIO_IMAGE_TAG || process.env.IMAGE_TAG}`,
   STRIPE_MODE: 'test',
   SALES_ENABLED: 'false',
   CI_LAYOUT: 'bouncer',
 };
-const packagerImage = `gyaruinthemix-game-audio-packager:${process.env.GAME_AUDIO_IMAGE_TAG || process.env.IMAGE_TAG}`;
+const packagerImage =
+  process.env.CI_PACKAGER_IMAGE ||
+  `gyaruinthemix-game-audio-packager:${process.env.GAME_AUDIO_IMAGE_TAG || process.env.IMAGE_TAG}`;
+const imageRevisions = JSON.parse(process.env.CI_IMAGE_REVISIONS || '{}');
 const docker = (...args) =>
   execFileSync('docker', args, {
     cwd: directory,
@@ -256,7 +264,23 @@ try {
       `services:\n  gyaruinthemix-web:\n    ports: ["127.0.0.1:8089:8080"]\nnetworks:\n  proxy-tier:\n    name: ${project}-proxy\n`,
     );
     env.COMPOSE_FILE += `:${override}`;
-    if (!noBuild)
+    if (!noBuild && process.env.CI_DOCKER_CACHE === 'true') {
+      for (const service of buildAudioOnly
+        ? [GAME_AUDIO_SERVICE]
+        : appServices) {
+        const name =
+          service === 'gyaruinthemix-web'
+            ? apiMode
+              ? 'web-api'
+              : 'web'
+            : service.replace('gyaruinthemix-', '');
+        buildImage(
+          name,
+          merged.services[service].image,
+          process.env.GYARUINTHEMIX_REVISION,
+        );
+      }
+    } else if (!noBuild)
       docker(
         'compose',
         'build',
@@ -264,7 +288,13 @@ try {
         ...(buildAudioOnly ? [GAME_AUDIO_SERVICE] : appServices),
       );
     if (audioEnabled) {
-      if (!noBuild)
+      if (!noBuild && process.env.CI_DOCKER_CACHE === 'true') {
+        buildImage(
+          'game-audio-packager',
+          packagerImage,
+          process.env.GYARUINTHEMIX_REVISION,
+        );
+      } else if (!noBuild)
         docker(
           'build',
           '--pull',
@@ -298,7 +328,15 @@ try {
       );
       assert.equal(
         image.Config.Labels['org.opencontainers.image.revision'],
-        process.env.GYARUINTHEMIX_REVISION || 'local',
+        imageRevisions[
+          service === 'gyaruinthemix-web'
+            ? apiMode
+              ? 'web-api'
+              : 'web'
+            : service.replace('gyaruinthemix-', '')
+        ] ||
+          process.env.GYARUINTHEMIX_REVISION ||
+          'local',
       );
     }
     started = true;

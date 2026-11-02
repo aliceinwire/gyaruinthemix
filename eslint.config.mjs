@@ -2,6 +2,8 @@ export default [
   {
     ignores: [
       'node_modules/**',
+      '.cache/**',
+      'generated-game/**',
       'dist/**',
       '.astro/**',
       'artifacts/**',

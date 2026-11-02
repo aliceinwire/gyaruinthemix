@@ -4,6 +4,7 @@ import { siteOrigin } from './src/data/urls.mjs';
 export default defineConfig({
   site: siteOrigin,
   output: 'static',
+  publicDir: process.env.SITE_PUBLIC_DIR || './public',
   devToolbar: { enabled: false },
   trailingSlash: 'always',
   server: { allowedHosts: ['terminal.local'] },

@@ -28,6 +28,23 @@ PACKAGER_RUN = "io.gyaruinthemix.packager-run"
 AUDIO_GROUP = 10001
 AUDIO_TIMEOUT = 600
 AUDIO_SECRET = "gyaruinthemix_game_audio_signing_key"
+RELEASE_LABEL = "io.gyaruinthemix.release"
+COMPONENTS = {"web", "web-api", "api", "game-audio", "game-audio-packager"}
+
+
+def validate_release_manifest(value):
+    if (not isinstance(value, dict) or set(value) != {"schema", "revision", "components"} or
+            type(value["schema"]) is not int or value["schema"] != 1 or
+            not isinstance(value["revision"], str) or not re.fullmatch(r"[0-9a-f]{40}", value["revision"]) or
+            not isinstance(value["components"], dict) or set(value["components"]) != COMPONENTS):
+        raise UpdateError("Invalid release manifest; no images were activated.")
+    for entry in value["components"].values():
+        if (not isinstance(entry, dict) or set(entry) != {"digest", "revision", "input"} or
+                not isinstance(entry["digest"], str) or not re.fullmatch(r"sha256:[0-9a-f]{64}", entry["digest"]) or
+                not isinstance(entry["revision"], str) or not re.fullmatch(r"[0-9a-f]{40}", entry["revision"]) or
+                not isinstance(entry["input"], str) or not re.fullmatch(r"[0-9a-f]{64}", entry["input"])):
+            raise UpdateError("Invalid release component; no images were activated.")
+    return value
 
 
 class UpdateError(RuntimeError):
@@ -35,10 +52,12 @@ class UpdateError(RuntimeError):
 
 
 class Updater:
-    def __init__(self, directory, retry=False):
+    def __init__(self, directory, retry=False, release_manifest=False, release_revision=None):
         self.directory = Path(directory).resolve()
         self.state_path = self.directory / ".gyaruinthemix-update.json"
         self.retry = retry
+        self.release_manifest = release_manifest
+        self.release_revision = release_revision
         # Ignore shell-level Compose overrides; use the installed file and .env.
         self.env = {k: v for k, v in os.environ.items()
                     if not k.startswith("COMPOSE_") and not k.startswith("GYARUINTHEMIX_")
@@ -159,6 +178,40 @@ class Updater:
         if not re.fullmatch(r"sha256:[0-9a-f]{64}", identifier):
             raise UpdateError("Could not identify the prepared audio packager image.")
         return identifier
+
+    def read_release_manifest(self):
+        reference = REGISTRY + "release:" + ("sha-" + self.release_revision if self.release_revision else "main")
+        self.docker("pull", reference)
+        image = json.loads(self.docker("image", "inspect", reference))[0]
+        labels = image.get("Config", {}).get("Labels") or {}
+        content = labels.get(RELEASE_LABEL)
+        if (labels.get("org.opencontainers.image.source") != SOURCE or
+                not isinstance(content, str) or len(content) >= 16384):
+            raise UpdateError("Release manifest source or content is invalid; no images were activated.")
+        manifest = validate_release_manifest(json.loads(content))
+        if labels.get("org.opencontainers.image.revision") != manifest["revision"]:
+            raise UpdateError("Release manifest revision does not match its image.")
+        if self.release_revision and manifest["revision"] != self.release_revision:
+            raise UpdateError("Release manifest does not match the requested rollback revision.")
+        return manifest
+
+    def prepare_component(self, name, entry):
+        if name not in COMPONENTS:
+            raise UpdateError("Unknown release component.")
+        reference = REGISTRY + name + "@" + entry["digest"]
+        self.docker("pull", reference)
+        image = json.loads(self.docker("image", "inspect", reference))[0]
+        labels = image.get("Config", {}).get("Labels") or {}
+        if (reference not in image.get("RepoDigests", []) or
+                labels.get("org.opencontainers.image.source") != SOURCE or
+                labels.get("org.opencontainers.image.revision") != entry["revision"] or
+                not re.fullmatch(r"sha256:[0-9a-f]{64}", image.get("Id", ""))):
+            raise UpdateError("Release component digest, source or revision does not match; no images were activated.")
+        if name in ("web", "web-api") and labels.get("io.gyaruinthemix.checkout-mode") != ("api" if name == "web-api" else "payment_links"):
+            raise UpdateError("Release component checkout mode does not match.")
+        if name == "game-audio-packager" and labels.get(PACKAGER_ROLE) != "audio-packager":
+            raise UpdateError("Release component packager role does not match.")
+        return image
 
     def packaging_docker(self, *args, timeout=30):
         # No shell, injected environment variables, logging of private paths or
@@ -371,9 +424,14 @@ class Updater:
             baselines[name] = (identifier, container.get("RestartCount", 0), container["State"].get("StartedAt"))
         images = {}
         revisions = set()
+        release = self.read_release_manifest() if self.release_manifest else None
         for name in services:
-            self.docker("pull", expected[name])
-            image = json.loads(self.docker("image", "inspect", expected[name]))[0]
+            if release:
+                component = expected[name].removeprefix(REGISTRY).removesuffix(":main")
+                image = self.prepare_component(component, release["components"][component])
+            else:
+                self.docker("pull", expected[name])
+                image = json.loads(self.docker("image", "inspect", expected[name]))[0]
             labels = image["Config"].get("Labels") or {}
             revision = labels.get("org.opencontainers.image.revision", "")
             if labels.get("org.opencontainers.image.source") != SOURCE or not re.fullmatch(r"[0-9a-f]{40}", revision):
@@ -384,13 +442,18 @@ class Updater:
                 raise UpdateError("Could not identify the prepared website image.")
             images[name] = image["Id"]
             revisions.add(revision)
-        if len(revisions) != 1:
+        if not release and len(revisions) != 1:
             raise UpdateError("Image publication is incomplete; retry after the same revision is available for every selected service.")
         if images != previous and images == state.get("rejected") and not self.retry:
             raise UpdateError("This release previously failed health checks; waiting for a new release (or an operator --retry).")
         if audio_enabled == "true":
-            self.package_audio(self.prepare_packager(next(iter(revisions))))
+            packager = (self.prepare_component("game-audio-packager", release["components"]["game-audio-packager"])["Id"]
+                        if release else self.prepare_packager(next(iter(revisions))))
+            self.package_audio(packager)
         if images == previous:
+            if release:
+                state.update({"current": images, "revision": release["revision"]})
+                self.save(state)
             print("Website already uses the current release.")
             return
         # A bounded packaging run may take minutes. Plain operator Docker
@@ -411,7 +474,7 @@ class Updater:
             self.activate(previous)
             self.save({"previous": previous, "rejected": images})
             raise UpdateError("New website health checks failed. Previous images restored; this release is blocked.") from None
-        self.save({"previous": previous, "current": images, "revision": revisions.pop()})
+        self.save({"previous": previous, "current": images, "revision": release["revision"] if release else revisions.pop()})
         print("Website updated and healthy; existing proxy, companion, ZNC and Limnoria were not reconciled.")
 
 
@@ -440,6 +503,17 @@ class AudioPackager(Updater):
         repositories = {WEB: REGISTRY + ("web-api" if mode == "api" else "web"), AUDIO: REGISTRY + "game-audio"}
         if mode == "api":
             repositories[API] = REGISTRY + "api"
+        if self.release_manifest:
+            release = self.read_release_manifest()
+            for name, repository in repositories.items():
+                if config["services"][name]["image"] != repository + ":main":
+                    raise UpdateError("Manifest packaging requires unpinned main references; keep pinned releases in legacy mode.")
+                component = repository.removeprefix(REGISTRY)
+                self.prepare_component(component, release["components"][component])
+            packager = self.prepare_component("game-audio-packager", release["components"]["game-audio-packager"])
+            self.package_audio(packager["Id"])
+            print("Game-audio catalog prepared from the selected release manifest; service containers were not changed.")
+            return
         revisions = set()
         for name, repository in repositories.items():
             reference = config["services"][name]["image"]
@@ -825,11 +899,15 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--directory", default=str(Path.home() / "bouncer"))
     parser.add_argument("--retry", action="store_true", help="retry the last rejected image after operator investigation")
+    parser.add_argument("--release-manifest", action="store_true", help="select immutable component digests from the published release manifest")
+    parser.add_argument("--release-sha", help="select an earlier manifest revision while the scheduler is paused")
     modes = parser.add_mutually_exclusive_group()
     modes.add_argument("--shared", action="store_true", help="manually update only the four reviewed shared services; may briefly interrupt traffic")
     modes.add_argument("--znc-cert", action="store_true", help="validate/refresh only the ZNC certificate; restart ZNC only if changed")
     modes.add_argument("--package-game-audio", action="store_true", help="prepare the enabled audio catalog with a matching-release helper under the normal lock; never activate service containers")
     args = parser.parse_args()
+    if args.release_sha and (not args.release_manifest or not re.fullmatch(r"[0-9a-f]{40}", args.release_sha)):
+        parser.error("--release-sha requires --release-manifest and a full commit SHA")
     if args.shared:
         mode, updater_class = "shared", SharedUpdater
     elif args.znc_cert:
@@ -839,6 +917,11 @@ def main():
     else:
         mode, updater_class = "website", Updater
     updater = updater_class(args.directory, retry=args.retry)
+    if args.release_manifest:
+        if args.shared or args.znc_cert:
+            parser.error("--release-manifest applies only to website updates or audio packaging")
+        updater.release_manifest = True
+        updater.release_revision = args.release_sha
     os.umask(0o077)
     try:
         with (updater.directory / ".gyaruinthemix-update.lock").open("a") as lock:

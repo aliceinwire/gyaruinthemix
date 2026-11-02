@@ -27,7 +27,11 @@ export async function prepareGameAudioFixturesInContainer({
   assert.equal(process.env.RUNNER_ENVIRONMENT, 'github-hosted');
   const [packager] = JSON.parse(docker('image', 'inspect', packagerImage));
   const [serving] = JSON.parse(docker('image', 'inspect', servingImage));
-  for (const image of [packager, serving]) {
+  const revisions = JSON.parse(process.env.CI_IMAGE_REVISIONS || '{}');
+  for (const [name, image] of [
+    ['game-audio-packager', packager],
+    ['game-audio', serving],
+  ]) {
     assert.match(image.Id, /^sha256:[0-9a-f]{64}$/);
     assert.equal(
       image.Config.Labels['org.opencontainers.image.source'],
@@ -35,7 +39,7 @@ export async function prepareGameAudioFixturesInContainer({
     );
     assert.equal(
       image.Config.Labels['org.opencontainers.image.revision'],
-      process.env.GYARUINTHEMIX_REVISION || 'local',
+      revisions[name] || process.env.GYARUINTHEMIX_REVISION || 'local',
     );
   }
   assert.equal(

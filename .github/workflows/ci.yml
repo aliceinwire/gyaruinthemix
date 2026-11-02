@@ -9,25 +9,63 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
-
 env:
   ASTRO_TELEMETRY_DISABLED: '1'
 
 jobs:
-  source:
-    name: Tests, lint and static build
+  changes:
+    name: Select affected components
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      packages: read
+    outputs:
+      deploy: ${{ steps.plan.outputs.deploy }}
+      scopes: ${{ steps.plan.outputs.scopes }}
+      browser: ${{ steps.plan.outputs.browser }}
+      containers: ${{ steps.plan.outputs.containers }}
+      static: ${{ steps.plan.outputs.static }}
+      has_browser: ${{ steps.plan.outputs.has_browser }}
+      has_containers: ${{ steps.plan.outputs.has_containers }}
     steps:
-      - name: Check out source
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-      - name: Set up Node.js
-        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+          fetch-depth: 0
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Authenticate baseline reads on main
+        if: github.event_name != 'pull_request'
+        env:
+          GHCR_TOKEN: ${{ github.token }}
+        run: printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+      - name: Read the published baseline and classify changes
+        id: plan
+        env:
+          COMPONENT_RELEASES_ENABLED: ${{ vars.COMPONENT_RELEASES_ENABLED }}
+        run: node scripts/ci-plan.mjs
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: release-plan
+          path: artifacts/release-plan.json
+          retention-days: 2
+
+  source:
+    name: Tests, lint and static build
+    needs: changes
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    concurrency:
+      group: ci-source-${{ github.event.pull_request.number || github.ref }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: '24'
           cache: npm
@@ -36,45 +74,94 @@ jobs:
       - name: Check shell syntax
         run: |
           for script in scripts/*.sh; do bash -n "$script"; done
-      - run: npm test
-      - run: npm run test:deployment
+      - name: Run affected test suites
+        env:
+          CI_SCOPES: ${{ needs.changes.outputs.scopes }}
+        run: node scripts/ci-tests.mjs
+
+  static:
+    name: Build browser artifacts (${{ matrix.mode }})
+    needs: changes
+    if: needs.changes.outputs.has_browser == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.changes.outputs.static) }}
+    concurrency:
+      group: ci-static-${{ matrix.mode }}-${{ github.event.pull_request.number || github.ref }}
+      cancel-in-progress: true
+    env:
+      CHECKOUT_MODE: ${{ matrix.mode }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+          cache: npm
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            .cache/images
+            .cache/site
+          key: ${{ runner.os }}-static-v1-${{ matrix.mode }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-static-v1-${{ matrix.mode }}-
+            ${{ runner.os }}-static-v1-
+      - run: npm ci --no-audit --no-fund
       - run: npm run build
+      - run: tar -cf "$RUNNER_TEMP/site.tar" dist
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: site-${{ matrix.mode }}
+          path: ${{ runner.temp }}/site.tar
+          retention-days: 2
+          compression-level: 0
 
   browser:
-    name: Bilingual browser checks (${{ matrix.mode }})
+    name: Browser checks (${{ matrix.suite }}, ${{ matrix.mode }})
+    needs: [changes, static]
+    if: needs.changes.outputs.has_browser == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     strategy:
       fail-fast: false
-      matrix:
-        mode: [payment_links, api]
+      matrix: ${{ fromJSON(needs.changes.outputs.browser) }}
+    concurrency:
+      group: ci-browser-${{ matrix.suite }}-${{ matrix.mode }}-${{ github.event.pull_request.number || github.ref }}
+      cancel-in-progress: true
     env:
       CHECKOUT_MODE: ${{ matrix.mode }}
     steps:
-      - name: Check out source
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-      - name: Set up Node.js
-        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: '24'
-          cache: npm
-      - run: npm ci --no-audit --no-fund
+          package-manager-cache: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: site-${{ matrix.mode }}
+          path: ${{ runner.temp }}/site-artifact
+      - run: tar -xf "$RUNNER_TEMP/site-artifact/site.tar"
       - name: Install isolated browser test tools
         run: |
           npm install --prefix tests/browser --ignore-scripts --no-audit --no-fund
           tests/browser/node_modules/.bin/playwright install --with-deps chromium
-      - run: npm run build
-      - name: Check unlisted game subpath and scoped CSP offline
+      - name: Check game interactions and scoped CSP
+        if: matrix.suite == 'game'
         run: node tests/browser/game-test.mjs
-      - name: Check responsive layouts and repeated interactions offline
+      - name: Check bilingual website interactions and layouts
+        if: matrix.suite == 'site'
         run: node tests/browser/check.mjs
       - name: Save browser screenshots and results
-        if: always()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: bilingual-browser-${{ matrix.mode }}
+          name: browser-${{ matrix.suite }}-${{ matrix.mode }}
           path: artifacts/browser/
           if-no-files-found: warn
           retention-days: 7
@@ -83,14 +170,16 @@ jobs:
     name: Secret scanning
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    concurrency:
+      group: ci-secrets-${{ github.event.pull_request.number || github.ref }}
+      cancel-in-progress: true
     steps:
       - name: Check out complete history
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
           fetch-depth: 0
-      - name: Set up Node.js
-        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: '24'
           package-manager-cache: false
@@ -98,21 +187,21 @@ jobs:
         run: |
           bash scripts/install-gitleaks.sh "$RUNNER_TEMP/gyaru-security-tools"
           echo "$RUNNER_TEMP/gyaru-security-tools" >> "$GITHUB_PATH"
-      - name: Verify detection and redaction with synthetic fixtures
-        run: npm run test:secret-scan
-      - name: Scan full fetched history (redacted output)
-        run: npm run security:scan
+      - run: npm run test:secret-scan
+      - run: npm run security:scan
 
   containers:
     name: Bouncer containers (${{ matrix.mode }}, audio=${{ matrix.audio }})
-    needs: [source, secrets]
+    needs: changes
+    if: needs.changes.outputs.has_containers == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     strategy:
       fail-fast: false
-      matrix:
-        mode: [payment_links, api]
-        audio: ['false', 'true']
+      matrix: ${{ fromJSON(needs.changes.outputs.containers) }}
+    concurrency:
+      group: ci-containers-${{ matrix.mode }}-${{ matrix.audio }}-${{ github.event.pull_request.number || github.ref }}
+      cancel-in-progress: true
     env:
       COMPOSE_PROJECT_NAME: gyaruinthemix-ci-${{ github.run_id }}-${{ github.run_attempt }}
       IMAGE_TAG: ci-${{ matrix.mode }}-audio-${{ matrix.audio }}-${{ github.run_id }}-${{ github.run_attempt }}
@@ -120,91 +209,118 @@ jobs:
       GAME_AUDIO_ENABLED: ${{ matrix.audio }}
       GYARUINTHEMIX_REVISION: ${{ github.sha }}
       CI_PAYMENT_LINK_FIXTURE: 'true'
+      CI_DOCKER_CACHE: 'true'
     steps:
-      - name: Check out source
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-      - name: Set up Node.js
-        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: '24'
           package-manager-cache: false
-      - name: Configure offline fixtures on this disposable runner
-        run: node scripts/ci-fixtures.mjs
-      - name: Validate only the canonical bouncer Compose configuration
-        run: node scripts/ci-bouncer.mjs --config-only
-      - name: Build, check and restart only the selected website services
-        run: node scripts/ci-bouncer.mjs
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/docker
+          key: ${{ runner.os }}-fixtures-v1-${{ matrix.mode }}-${{ matrix.audio }}-${{ github.sha }}
+          restore-keys: ${{ runner.os }}-fixtures-v1-${{ matrix.mode }}-${{ matrix.audio }}-
+      - run: node scripts/ci-fixtures.mjs
+      - run: node scripts/ci-bouncer.mjs --config-only
+      - run: node scripts/ci-bouncer.mjs
 
-  publish:
-    name: Publish tested main images
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'aliceinwire/gyaruinthemix'
-    needs: [source, secrets, containers, browser]
+  prepare:
+    name: Prepare tested production images
+    needs: changes
+    if: (github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')) && github.repository == 'aliceinwire/gyaruinthemix' && needs.changes.outputs.deploy == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    concurrency:
+      group: ci-prepare-${{ github.event.pull_request.number || github.ref }}
+      cancel-in-progress: true
     permissions:
       contents: read
-      packages: write
+      packages: read
     env:
       COMPOSE_PROJECT_NAME: gyaruinthemix-ci-${{ github.run_id }}-${{ github.run_attempt }}
       GYARUINTHEMIX_REVISION: ${{ github.sha }}
       CI_PAYMENT_LINK_FIXTURE: 'false'
-      GAME_AUDIO_ENABLED: 'false'
-      GAME_AUDIO_IMAGE_TAG: release-audio-${{ github.sha }}
     steps:
-      - name: Check out the exact passing main commit
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          ref: ${{ github.sha }}
           persist-credentials: false
-      - name: Set up Node.js
-        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: '24'
           package-manager-cache: false
-      # These are real release sources, never the synthetic Payment Link fixture.
-      # Audio media and its public placeholder key are temporary runtime mounts,
-      # excluded from every image and removed after each smoke test.
-      - name: Build and smoke-test the actual static release image
-        env:
-          CHECKOUT_MODE: payment_links
-          IMAGE_TAG: release-links-${{ github.sha }}
-        run: node scripts/ci-bouncer.mjs
-      - name: Build and test exact serving and offline packager release images
-        env:
-          CHECKOUT_MODE: payment_links
-          GAME_AUDIO_ENABLED: 'true'
-          IMAGE_TAG: release-links-${{ github.sha }}
-        run: node scripts/ci-bouncer.mjs --build-audio-only
-      - name: Create only offline API secret fixtures
-        env:
-          CHECKOUT_MODE: api
-        run: node scripts/ci-fixtures.mjs
-      - name: Build and smoke-test the actual optional API release images
-        env:
-          CHECKOUT_MODE: api
-          IMAGE_TAG: release-api-${{ github.sha }}
-        run: node scripts/ci-bouncer.mjs
-      - name: Test the same API, serving and packager images without rebuilding
-        env:
-          CHECKOUT_MODE: api
-          GAME_AUDIO_ENABLED: 'true'
-          IMAGE_TAG: release-api-${{ github.sha }}
-        run: node scripts/ci-bouncer.mjs --no-build
-      - name: Check this commit is still main before moving release tags
-        id: current
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          current=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq .object.sha)
-          if [ "$current" = "$GITHUB_SHA" ]; then
-            echo 'publish=true' >> "$GITHUB_OUTPUT"
-          else
-            echo 'A newer main commit exists; leaving release tags unchanged.'
-          fi
-      - name: Publish the exact tested images
-        if: steps.current.outputs.publish == 'true'
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/docker
+          key: ${{ runner.os }}-release-v1-${{ github.sha }}
+          restore-keys: ${{ runner.os }}-release-v1-
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release-plan
+          path: artifacts
+      - name: Authenticate component reads on main
+        if: github.event_name == 'push'
         env:
           GHCR_TOKEN: ${{ github.token }}
-        run: bash scripts/publish-images.sh
+        run: printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+      - name: Build or reuse components and check the complete release
+        run: node scripts/prepare-release.mjs
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: tested-release
+          path: artifacts/release/
+          retention-days: 2
+          compression-level: 0
+
+  gate:
+    name: CI result
+    if: always()
+    needs: [changes, source, static, browser, secrets, containers, prepare]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Require every selected check to succeed
+        env:
+          CI_RESULTS: ${{ toJSON(needs) }}
+        run: node scripts/ci-result.mjs
+
+  publish:
+    name: Publish tested main images
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'aliceinwire/gyaruinthemix' && needs.changes.outputs.deploy == 'true'
+    needs: [changes, gate, prepare]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    concurrency:
+      group: publish-main
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: tested-release
+          path: artifacts/release
+      - name: Publish the exact tested images and release manifest
+        env:
+          GHCR_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/publish-release.mjs
