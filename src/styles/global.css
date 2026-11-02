@@ -1069,3 +1069,86 @@ body:has(dialog[open]) {
 .product-buy a:hover {
   background: var(--pink);
 }
+
+/* Keep the existing gallery layout and swipe surface; only taps enlarge. */
+.product-image-open {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  cursor: zoom-in;
+  color: var(--ink);
+}
+.product-image-open span {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #fffffff0;
+  font-size: 1.5rem;
+}
+.product-image-open:focus-visible {
+  outline: 3px solid var(--pink);
+  outline-offset: -4px;
+}
+.product-art .image-label {
+  z-index: 2;
+  pointer-events: none;
+}
+.product-image-dialog {
+  width: min(1000px, 94vw);
+  max-width: 94vw;
+  max-height: 94dvh;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--ink);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.product-image-dialog::backdrop {
+  background: #160914cc;
+}
+.product-image-dialog header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.product-image-dialog h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+.product-image-dialog button {
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  color: var(--ink);
+  background: #fff;
+  cursor: pointer;
+  font-size: 1.5rem;
+}
+.product-image-dialog > img {
+  display: block;
+  width: 100%;
+  height: min(70dvh, 900px);
+  object-fit: contain;
+}
+.product-image-dialog > p {
+  margin: 10px 0 0;
+  font-size: 0.8125rem;
+}
+@media (max-width: 600px) {
+  .product-image-dialog {
+    width: 98vw;
+    max-width: 98vw;
+    padding: 8px;
+  }
+}
