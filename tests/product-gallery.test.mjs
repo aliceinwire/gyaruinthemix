@@ -135,3 +135,37 @@ test('thumbnail navigation is scoped, repeat-safe and updates selection after sw
   handlers.scroll();
   assert.equal(links[1].attributes['aria-current'], 'true');
 });
+
+test('supplied keychain photos have a product-first bilingual gallery in both shops', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const expected = ['keychain-product', 'keychain-bag', 'keychain-styled'];
+  for (const file of ['products.json', 'test-products.json']) {
+    const catalog = JSON.parse(
+      await readFile(new URL(`../config/${file}`, import.meta.url), 'utf8'),
+    );
+    const product = catalog.find(({ slug }) => slug === 'keychain');
+    for (const locale of ['ja', 'en']) {
+      const photos = productImages(localizeProduct(product, locale), locale);
+      assert.deepEqual(
+        photos.map(({ src }) => src),
+        expected.map((name) => `/assets/${name}.webp`),
+      );
+      for (const photo of photos) {
+        assert.ok(photo.alt.length > 0);
+        assert.ok(photo.label.length > 0);
+        assert.match(
+          photo.label,
+          locale === 'ja'
+            ? /イメージ画像.*実物と細部/
+            : /Illustrative image.*differ/,
+        );
+      }
+    }
+    assert.equal(product.displayPriceJPY, null);
+    assert.equal(product.paymentLink, null);
+    assert.equal(
+      product.availability,
+      file === 'products.json' ? 'coming_soon' : 'available',
+    );
+  }
+});

@@ -4,6 +4,9 @@ import { mkdir } from 'node:fs/promises';
 await mkdir('public/assets', { recursive: true });
 for (const [source, name, width] of [
   ['gyaruinthemix_logo.PNG', 'logo', 1200],
+  ['keychain-product.webp', 'keychain-product', 1254],
+  ['keychain-bag.webp', 'keychain-bag', 1254],
+  ['keychain-styled.webp', 'keychain-styled', 1254],
   ['gyaruinthemix_artists_photo.JPG', 'artists', 900],
   ['portrait.jpeg', 'portrait', 1108],
   ['live.jpeg', 'live', 900],
