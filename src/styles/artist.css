@@ -33,6 +33,8 @@
 }
 .artist-header .desktop-navigation {
   gap: 22px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   margin-left: auto;
   font-size: 0.875rem;
 }
