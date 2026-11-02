@@ -294,7 +294,10 @@ async function inspect(page, pathname, width) {
       ),
       localLinks: [
         ...document.querySelectorAll('a[href^="/"]:not([data-language-link])'),
-      ].map((a) => a.getAttribute('href')),
+      ]
+        .map((a) => a.getAttribute('href'))
+        // Original-image fallbacks are shared assets, not localized page routes.
+        .filter((href) => !href.startsWith('/assets/')),
       brokenImages: [...document.images]
         .filter((i) => i.complete && i.currentSrc && !i.naturalWidth)
         .map((i) => i.currentSrc),
