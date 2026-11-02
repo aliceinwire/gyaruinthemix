@@ -65,11 +65,21 @@ test('Japanese remains the default and English preserves canonical editorial fac
     published,
     category,
     date,
+    endDate,
     startAt,
     endAt,
     cancelled,
     url,
-  }) => ({ published, category, date, startAt, endAt, cancelled, url });
+  }) => ({
+    published,
+    category,
+    date,
+    endDate,
+    startAt,
+    endAt,
+    cancelled,
+    url,
+  });
   assert.deepEqual(en.events.map(eventFacts), site.events.map(eventFacts));
   const photoFacts = ({ image, width, height }) => ({ image, width, height });
   assert.deepEqual(en.photos.map(photoFacts), site.photos.map(photoFacts));
@@ -80,14 +90,17 @@ test('English editorial data retains cancellations, broadcast precision, and pen
   const cancelled = en.events.find((event) => event.cancelled);
   assert.match(cancelled.title, /October 3.*cancelled/);
   assert.match(cancelled.note, /has been cancelled/);
-  const media = en.events.find((event) => event.category === 'media');
+  const media = en.events.find((event) => event.date === '2026-09-30');
   assert.equal(media.title, 'アキナのギャルしか勝たん');
   assert.equal(media.startAt, '2026-09-30T01:59:00+09:00');
   assert.equal(media.endAt, '2026-09-30T02:29:00+09:00');
   assert.match(media.note, /Japan Standard Time/);
   assert.match(media.timeLabel, /September 30.*September 29/);
   assert.equal(media.linkLabel, 'ABEMA episode page');
-  assert.match(en.news[1].text, /will be announced once confirmed/);
+  assert.match(
+    en.news.find((item) => item.category === 'Merch').text,
+    /will be announced once confirmed/,
+  );
   assert.match(en.fanClub.membershipNote, /when registration opens/);
   for (const photo of en.photos) {
     assert.ok(photo.alt.length > 15);

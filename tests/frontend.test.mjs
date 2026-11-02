@@ -33,7 +33,7 @@ function eventGroup(period, events) {
   };
 }
 
-test('an old static render refreshes on the client into the correct upcoming and archive sections', () => {
+test('an old static render archives finished broadcasts while preserving later overnight appearances', () => {
   const media = site.events.filter((event) => event.category === 'media');
   const upcoming = eventGroup('upcoming', media);
   const archive = eventGroup('past', media);
@@ -45,15 +45,25 @@ test('an old static render refreshes on the client into the correct upcoming and
   assert.equal(archive.empty.hidden, false);
   refreshEventLists(root, new Date('2026-10-02T07:00:00Z'));
   assert.equal(upcoming.rows[0].hidden, true);
-  assert.equal(upcoming.list.hidden, true);
-  assert.equal(upcoming.empty.hidden, false);
+  assert.equal(upcoming.rows[1].hidden, false);
+  assert.equal(upcoming.list.hidden, false);
+  assert.equal(upcoming.empty.hidden, true);
   assert.equal(archive.rows[0].hidden, false);
+  assert.equal(archive.rows[1].hidden, true);
   assert.equal(archive.list.hidden, false);
   assert.equal(archive.empty.hidden, true);
   // Repeated refreshes must not duplicate or change the visibility state.
   refreshEventLists(root, new Date('2026-10-02T07:00:01Z'));
-  assert.equal(archive.rows.length, 1);
+  assert.equal(archive.rows.length, 2);
   assert.equal(archive.rows[0].hidden, false);
+  // A broadcast without a confirmed end time stays visible after midnight.
+  refreshEventLists(root, new Date('2026-11-17T16:59:00Z'));
+  assert.equal(upcoming.rows[1].hidden, false);
+  assert.equal(archive.rows[1].hidden, true);
+  refreshEventLists(root, new Date('2026-11-18T15:00:00Z'));
+  assert.equal(upcoming.list.hidden, true);
+  assert.equal(upcoming.empty.hidden, false);
+  assert.equal(archive.rows[1].hidden, false);
 });
 
 test('client updates promptly at exact broadcast and Japan midnight boundaries', () => {
@@ -88,7 +98,7 @@ test('client keeps cancelled events separate before and after the advertised dat
 });
 
 test('published media has the actual JST times and a neutral ABEMA episode link', () => {
-  const broadcast = site.events.find((event) => event.category === 'media');
+  const broadcast = site.events.find((event) => event.date === '2026-09-30');
   assert.equal(broadcast.date, '2026-09-30');
   assert.equal(broadcast.startAt, '2026-09-30T01:59:00+09:00');
   assert.equal(broadcast.endAt, '2026-09-30T02:29:00+09:00');
@@ -96,7 +106,7 @@ test('published media has the actual JST times and a neutral ABEMA episode link'
   assert.equal(broadcast.linkLabel, 'ABEMAのエピソードページ');
   assert.doesNotMatch(JSON.stringify(broadcast), /無料|配信期限|無料期間/);
   assert.deepEqual(
-    selectEvents(site.events, { now: new Date('2026-10-02T07:00:00Z') }),
+    selectEvents([broadcast], { now: new Date('2026-10-02T07:00:00Z') }),
     [],
   );
 });
