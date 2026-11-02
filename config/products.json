@@ -29,13 +29,33 @@
     "slug": "keychain",
     "name": "アクリルキーホルダー",
     "description": "バッグにつけて、お出かけもギャル仕様に。",
-    "image": "/assets/logo.webp",
-    "imageAlt": "ギャルインザミックスのロゴデザイン",
-    "imageLabel": "ロゴデザイン参考",
     "priceEnv": "STRIPE_PRICE_KEYCHAIN",
     "availability": "coming_soon",
     "maxQuantity": 5,
     "displayPriceJPY": null,
-    "paymentLink": null
+    "paymentLink": null,
+    "images": [
+      {
+        "src": "/assets/keychain-product.webp",
+        "alt": "白い背景に置いた、ピンクのボールチェーン付きロゴアクリルキーホルダー",
+        "altEn": "Logo acrylic keychain with a pink ball chain on a white background",
+        "label": "イメージ画像（実物と細部が異なる場合があります）",
+        "labelEn": "Illustrative image (details may differ from the actual product)"
+      },
+      {
+        "src": "/assets/keychain-bag.webp",
+        "alt": "黒いスタッズ付きバッグに取り付けたロゴアクリルキーホルダー",
+        "altEn": "Logo acrylic keychain attached to a black studded bag",
+        "label": "イメージ画像（実物と細部が異なる場合があります）",
+        "labelEn": "Illustrative image (details may differ from the actual product)"
+      },
+      {
+        "src": "/assets/keychain-styled.webp",
+        "alt": "ピンクの布と光沢のある黒い背景に置いたロゴアクリルキーホルダー",
+        "altEn": "Logo acrylic keychain on a glossy black background beside pink fabric",
+        "label": "イメージ画像（実物と細部が異なる場合があります）",
+        "labelEn": "Illustrative image (details may differ from the actual product)"
+      }
+    ]
   }
 ]
