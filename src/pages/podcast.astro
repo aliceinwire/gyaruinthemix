@@ -1,0 +1,528 @@
+---
+import Layout from '../layouts/Layout.astro';
+import data from '../../config/podcast.json';
+import { getPodcast } from '../data/podcast.mjs';
+import { getSite } from '../data/site.mjs';
+import { getLocale, localizePath, translator } from '../data/i18n.mjs';
+
+const locale = getLocale(Astro.url.pathname);
+const t = translator(locale);
+const site = getSite(locale);
+const { platforms, episodes } = getPodcast(data, locale);
+const latest = episodes[0];
+const dateFormat = new Intl.DateTimeFormat(
+  locale === 'en' ? 'en-US' : 'ja-JP',
+  {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'Asia/Tokyo',
+  },
+);
+---
+
+<Layout
+  title={t('ポッドキャスト｜ギャルインザミックス', 'Podcast | GYARUINTHEMIX')}
+  description={t(
+    'DJありねぇとDJちゃなのポッドキャスト。ギャルインザミックスの番組紹介、エピソード、配信情報をまとめてチェック。',
+    'The podcast from DJ Arinee and DJ Chana. Meet GYARUINTHEMIX, explore episodes, and find where to listen.',
+  )}
+>
+  <section class="podcast-hero" aria-labelledby="podcast-title">
+    <div class="podcast-hero-copy">
+      <p class="eyebrow">GYARUINTHEMIX / PODCAST</p>
+      <h1 id="podcast-title">
+        {t('うちらの', 'Our voices.')}<br /><em
+          >{t('ポッドキャスト。', 'Our podcast.')}</em
+        >
+      </h1>
+      <p class="podcast-intro">
+        {t('DJありねぇ × DJちゃな。', 'DJ Arinee × DJ Chana.')}<br />
+        {
+          t(
+            'フロアの外でも、声でつながろ。',
+            'Beyond the dance floor. Into your headphones.',
+          )
+        }
+      </p>
+      <div class="hero-actions">
+        <a class="button button-pink" href={latest ? latest.url : '#episodes'}>
+          {
+            latest
+              ? t('最新エピソードを聴く', 'Listen to the latest episode')
+              : t('配信情報を見る', 'Explore the podcast')
+          }
+          <span aria-hidden="true">{latest ? '↗' : '↓'}</span>
+        </a>
+        <a class="podcast-host-link" href="#hosts"
+          >{t('ふたりのこと', 'Meet the hosts')}</a
+        >
+      </div>
+    </div>
+    <figure class="podcast-cover">
+      <div class="podcast-cover-label" aria-hidden="true">
+        <span>GYARUINTHEMIX</span><span>PODCAST</span>
+      </div>
+      <picture>
+        <source
+          type="image/avif"
+          srcset="/assets/duo-camera-small.avif 540w, /assets/duo-camera.avif 1536w"
+          sizes="(max-width: 760px) 90vw, 42vw"
+        />
+        <img
+          src="/assets/duo-camera.webp"
+          srcset="/assets/duo-camera-small.webp 540w, /assets/duo-camera.webp 1536w"
+          sizes="(max-width: 760px) 90vw, 42vw"
+          width="1536"
+          height="1024"
+          alt={t(
+            'ピンクのデコカメラを持つDJありねぇとDJちゃな',
+            'DJ Arinee and DJ Chana with a pink decorated camera',
+          )}
+        />
+      </picture>
+      <figcaption>
+        <span>{t('声でも、うちららしく。', 'Two voices. All gyaru.')}</span>
+        <span class="podcast-wave" aria-hidden="true"
+          ><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span
+        >
+      </figcaption>
+    </figure>
+  </section>
+
+  {
+    platforms.length > 0 && (
+      <section class="podcast-listen" aria-labelledby="listen-title">
+        <h2 id="listen-title">
+          {t('いつものアプリで聴く', 'Listen your way')}
+        </h2>
+        <nav aria-label={t('ポッドキャストの配信先', 'Podcast platforms')}>
+          {platforms.map((platform) => (
+            <a
+              href={platform.url}
+              type={platform.id === 'rss' ? 'application/rss+xml' : undefined}
+            >
+              {platform.label}
+              <span aria-hidden="true">↗</span>
+            </a>
+          ))}
+        </nav>
+      </section>
+    )
+  }
+
+  <section
+    class="section podcast-section"
+    id="episodes"
+    aria-labelledby="episodes-title"
+  >
+    <div class="section-heading editorial-heading">
+      <div>
+        <p class="eyebrow">EPISODES</p>
+        <h2 id="episodes-title">
+          {t('ふたりの声、ここから。', 'Press play on us.')}
+        </h2>
+      </div>
+      {
+        episodes.length > 0 && (
+          <p class="podcast-order">
+            {t('新しいエピソードから', 'Newest episodes first')}
+          </p>
+        )
+      }
+    </div>
+    {
+      episodes.length ? (
+        <ol class="podcast-episodes">
+          {episodes.map((episode, index) => (
+            <li>
+              <article
+                class:list={[
+                  'podcast-episode',
+                  { 'podcast-latest': index === 0 },
+                ]}
+                id={`episode-${episode.id}`}
+              >
+                <div class="podcast-episode-meta">
+                  {index === 0 && (
+                    <span class="podcast-status">
+                      {t('最新エピソード', 'Latest episode')}
+                    </span>
+                  )}
+                  <time datetime={episode.date}>
+                    {dateFormat.format(
+                      new Date(`${episode.date}T00:00:00+09:00`),
+                    )}
+                  </time>
+                  {episode.durationMinutes && (
+                    <span>
+                      {t(
+                        `${episode.durationMinutes}分`,
+                        `${episode.durationMinutes} min`,
+                      )}
+                    </span>
+                  )}
+                </div>
+                <h3>{episode.title}</h3>
+                <p>{episode.description}</p>
+                <div class="podcast-episode-actions">
+                  <a
+                    class="button"
+                    href={episode.url}
+                    aria-label={t(
+                      `${episode.title}を聴く`,
+                      `Listen to ${episode.title}`,
+                    )}
+                  >
+                    {t('エピソードを聴く', 'Listen to episode')}
+                    <span aria-hidden="true">↗</span>
+                  </a>
+                  {episode.transcriptUrl && (
+                    <a href={episode.transcriptUrl}>
+                      {t('文字起こしを読む', 'Read transcript')}
+                    </a>
+                  )}
+                </div>
+              </article>
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <div class="podcast-empty" data-podcast-empty>
+          <div>
+            <p class="podcast-status">{t('準備中', 'Coming soon')}</p>
+            <h3>
+              {t(
+                '最初のトークを、お楽しみに。',
+                'Our first conversation is on its way.',
+              )}
+            </h3>
+            <p>
+              {t(
+                'エピソードはまだ公開されていません。公開後はこちらでご案内します。',
+                'No episodes have been published yet. You’ll find them here when they’re ready.',
+              )}
+            </p>
+          </div>
+          <a class="button" href={localizePath('/music/', locale)}>
+            {t('うちらの音楽を聴く', 'Explore our music')}
+            <span aria-hidden="true">↗</span>
+          </a>
+        </div>
+      )
+    }
+  </section>
+
+  <section class="podcast-hosts" id="hosts" aria-labelledby="hosts-title">
+    <div class="section podcast-hosts-inner">
+      <div>
+        <p class="eyebrow">MEET THE HOSTS</p>
+        <h2 id="hosts-title">
+          {t('DJありねぇ × DJちゃな', 'DJ Arinee × DJ Chana')}
+        </h2>
+        <p>
+          {
+            t(
+              'ギャルインザミックスは、DJありねぇとDJちゃなのB2B DJユニット。かわいさも、強さも、自分たちらしく。',
+              'GYARUINTHEMIX is the B2B DJ duo of DJ Arinee and DJ Chana. Cute, fierce, and always ourselves.',
+            )
+          }
+        </p>
+        <a class="text-link" href={localizePath('/about/', locale)}
+          >{t('ふたりをもっと知る', 'More about us')} ↗</a
+        >
+      </div>
+      <div class="podcast-connect">
+        <p class="eyebrow">STAY IN THE MIX</p>
+        <p>
+          {
+            t(
+              'フロアの外でも、つながってこ。',
+              'Keep in touch beyond the dance floor.',
+            )
+          }
+        </p>
+        <nav aria-label={t('ふたりの公式SNS', 'Our official social accounts')}>
+          {
+            site.socials.map((social) => (
+              <a href={social.url}>
+                {social.label}
+                <span aria-hidden="true">↗</span>
+              </a>
+            ))
+          }
+        </nav>
+      </div>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .podcast-hero {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    align-items: center;
+    gap: clamp(24px, 5vw, 80px);
+    padding: 64px max(5%, calc((100vw - 1170px) / 2));
+    color: #fff;
+    background:
+      radial-gradient(ellipse at top left, #57112f, transparent 65%), #191218;
+    border-bottom: 4px solid #ed1689;
+  }
+  .podcast-hero-copy {
+    min-width: 0;
+  }
+  .podcast-hero .eyebrow {
+    color: #ffa2d1;
+  }
+  .podcast-hero h1 {
+    font-size: clamp(2.2rem, 4.3vw, 4.2rem);
+    line-height: 1.35;
+    margin-bottom: 24px;
+  }
+  .podcast-hero em {
+    color: #ff91c8;
+  }
+  .podcast-intro {
+    color: #ecdae6;
+    font-size: 1.0625rem;
+  }
+  .podcast-host-link {
+    padding-block: 12px;
+  }
+  .podcast-hero :focus-visible {
+    outline-color: #ffc1e1;
+  }
+  .podcast-cover {
+    margin: 0;
+    min-width: 0;
+    padding: 7px;
+    background: var(--chrome-label);
+    border: 1px solid #e9dfe7;
+    box-shadow: 10px 10px 0 #0005;
+  }
+  .podcast-cover-label {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    justify-content: space-between;
+    padding: 14px;
+    background: #24151f;
+    color: #ffc1e1;
+    font-size: 0.75rem;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+  }
+  .podcast-cover img {
+    width: 100%;
+    aspect-ratio: 3 / 2;
+    object-fit: cover;
+  }
+  .podcast-cover figcaption {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    padding: 20px 14px;
+    color: #21121c;
+    font-weight: 800;
+  }
+  .podcast-wave {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: 32px;
+  }
+  .podcast-wave i {
+    width: 4px;
+    height: 12px;
+    background: #a8095e;
+    border-radius: 2px;
+  }
+  .podcast-wave i:nth-child(2n) {
+    height: 24px;
+  }
+  .podcast-wave i:nth-child(3n) {
+    height: 32px;
+  }
+  .podcast-listen {
+    padding: 28px 5%;
+    background: #fff1f8;
+    text-align: center;
+    border-bottom: 1px solid #e9d3df;
+  }
+  .podcast-listen h2 {
+    font-size: 1rem;
+    margin-bottom: 16px;
+  }
+  .podcast-listen nav {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+  }
+  .podcast-listen a {
+    display: inline-flex;
+    gap: 24px;
+    align-items: center;
+    min-height: 48px;
+    padding: 12px 20px;
+    border: 1px solid #b58b9f;
+    background: #fff;
+    text-decoration: none;
+    font-weight: 700;
+  }
+  .podcast-listen a:hover {
+    border-color: #a8095e;
+    background: #ffe5f2;
+  }
+  .podcast-section {
+    scroll-margin-top: 24px;
+  }
+  .podcast-order {
+    color: #71606a;
+    font-size: 0.875rem;
+    margin: 0;
+  }
+  .podcast-empty {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 24px;
+    padding: clamp(24px, 4vw, 48px);
+    background: #fff5fa;
+    border: 1px solid #e9d3df;
+    border-left: 5px solid #ed1689;
+  }
+  .podcast-empty > div {
+    flex: 1 1 340px;
+  }
+  .podcast-empty h3 {
+    font-size: clamp(1.35rem, 3vw, 1.9rem);
+  }
+  .podcast-empty p:last-child {
+    margin-bottom: 0;
+  }
+  .podcast-status {
+    display: inline-block;
+    width: fit-content;
+    padding: 5px 12px;
+    background: #28111f;
+    color: #ffc1e1;
+    font-size: 0.8125rem;
+    font-weight: 700;
+  }
+  .podcast-episodes {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 24px;
+  }
+  .podcast-episode {
+    padding: clamp(24px, 4vw, 44px);
+    border: 1px solid #e9d3df;
+    scroll-margin-top: 24px;
+    overflow-wrap: anywhere;
+  }
+  .podcast-latest {
+    border-top: 4px solid #ed1689;
+    background: #fff5fa;
+  }
+  .podcast-episode-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 20px;
+    margin-bottom: 20px;
+    color: #71606a;
+    font-size: 0.875rem;
+  }
+  .podcast-episode h3 {
+    font-size: clamp(1.4rem, 3vw, 2rem);
+  }
+  .podcast-episode p {
+    max-width: 75ch;
+  }
+  .podcast-episode-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 24px;
+  }
+  .podcast-hosts {
+    background: #fff1f8;
+    border-top: 1px solid #e9d3df;
+    scroll-margin-top: 24px;
+  }
+  .podcast-hosts-inner {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 64px;
+  }
+  .podcast-hosts h2 {
+    font-size: clamp(1.5rem, 3vw, 2.2rem);
+  }
+  .podcast-hosts .eyebrow {
+    color: #914267;
+  }
+  .podcast-connect {
+    border-left: 1px solid #cfafc0;
+    padding-left: 40px;
+  }
+  .podcast-connect nav {
+    display: grid;
+    gap: 8px;
+  }
+  .podcast-connect a {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding-block: 12px;
+    border-bottom: 1px solid #dfc4d2;
+    font-size: 0.875rem;
+    text-decoration: none;
+    overflow-wrap: anywhere;
+  }
+  .podcast-connect a:hover {
+    color: #a8095e;
+  }
+  @media (max-width: 760px) {
+    .podcast-hero {
+      grid-template-columns: minmax(0, 1fr);
+      padding-block: 40px;
+      gap: 36px;
+    }
+    .podcast-cover {
+      max-width: 540px;
+      box-shadow: 5px 5px 0 #0005;
+    }
+    .podcast-hero h1 {
+      font-size: clamp(2.1rem, 6.8vw, 3.5rem);
+    }
+    .podcast-hero .hero-actions {
+      gap: 12px 24px;
+    }
+    .podcast-hosts-inner {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 32px;
+    }
+    .podcast-connect {
+      border-left: 0;
+      border-top: 1px solid #cfafc0;
+      padding: 32px 0 0;
+    }
+    .podcast-empty .button,
+    .podcast-episode .button {
+      width: 100%;
+    }
+    .podcast-episode .button {
+      gap: 16px;
+      padding-inline: 20px;
+    }
+    .podcast-cover figcaption {
+      font-size: 0.875rem;
+    }
+  }
+</style>

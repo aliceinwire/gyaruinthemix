@@ -7,6 +7,7 @@ export const defaultPublicPaths = [
   '/',
   '/about/',
   '/music/',
+  '/podcast/',
   '/live/',
   '/news/',
   '/fanclub/',

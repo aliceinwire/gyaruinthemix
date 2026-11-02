@@ -19,6 +19,7 @@ const publicPaths = [
   '/',
   '/about/',
   '/music/',
+  '/podcast/',
   '/live/',
   '/news/',
   '/fanclub/',
@@ -340,7 +341,9 @@ async function inspect(page, pathname, width) {
   }
   if (
     [375, 1440].includes(width) &&
-    ['/en/', '/en/fanclub/', '/en/shop/'].includes(pathname)
+    ['/en/', '/en/fanclub/', '/en/shop/', '/podcast/', '/en/podcast/'].includes(
+      pathname,
+    )
   )
     await screenshot(page, label);
   if (width <= 900) {
@@ -762,6 +765,7 @@ try {
       '/en/404/',
       '/',
       '/about/',
+      '/podcast/',
       '/fanclub/',
       '/shop/',
     ])
