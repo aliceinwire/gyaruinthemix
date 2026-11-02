@@ -69,11 +69,12 @@ const env = {
   CI_AUDIO_IMAGE: localImage('game-audio', plan.revision),
   CI_PACKAGER_IMAGE: localImage('game-audio-packager', plan.revision),
 };
-execFileSync(process.execPath, ['scripts/ci-fixtures.mjs'], {
-  stdio: 'inherit',
-  env: { ...env, CHECKOUT_MODE: 'api' },
-});
 for (const mode of ['payment_links', 'api']) {
+  if (mode === 'api')
+    execFileSync(process.execPath, ['scripts/ci-fixtures.mjs'], {
+      stdio: 'inherit',
+      env: { ...env, CHECKOUT_MODE: mode },
+    });
   for (const audio of ['false', 'true']) {
     execFileSync(process.execPath, ['scripts/ci-bouncer.mjs', '--no-build'], {
       stdio: 'inherit',
