@@ -1,6 +1,13 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdir, mkdtemp, rename, rm, writeFile } from 'node:fs/promises';
+import {
+  mkdir,
+  mkdtemp,
+  readFile,
+  rename,
+  rm,
+  writeFile,
+} from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -41,6 +48,63 @@ const plan = (paths, extra = {}) =>
     componentReleases: true,
     ...extra,
   });
+
+const workflow = await readFile(
+  new URL('../.github/workflows/ci.yml', import.meta.url),
+  'utf8',
+);
+
+test('main runs stay independent while superseded PR workflows share a group', () => {
+  const concurrency = workflow.match(/^concurrency:\n(?: {2}.+\n)+/m)?.[0];
+  assert.ok(
+    concurrency,
+    'cancel superseded PRs before their jobs are scheduled',
+  );
+  assert.match(
+    concurrency,
+    /cancel-in-progress: \$\{\{ github.event_name == 'pull_request' \}\}/,
+  );
+  const template = concurrency.match(/^  group: (.+)$/m)[1];
+  const group = (event, run, pr) => {
+    const context = {
+      github: {
+        workflow: 'CI',
+        event_name: event,
+        event: { pull_request: { number: pr } },
+        run_id: run,
+        ref: 'refs/heads/main',
+      },
+    };
+    return template.replace(/\$\{\{\s*(.*?)\s*\}\}/g, (_, expression) =>
+      expression
+        .split(/\s*\|\|\s*/)
+        .map((path) =>
+          path.split('.').reduce((value, key) => value?.[key], context),
+        )
+        .find(Boolean),
+    );
+  };
+  assert.notEqual(group('push', 173), group('push', 171));
+  assert.notEqual(group('workflow_dispatch', 174), group('push', 173));
+  assert.equal(group('pull_request', 175, 62), group('pull_request', 176, 62));
+  assert.notEqual(
+    group('pull_request', 175, 62),
+    group('pull_request', 177, 63),
+  );
+  assert.notEqual(group('pull_request', 175, 62), group('push', 62));
+});
+
+test('delayed jobs cannot cancel newer checks or evict a waiting publisher', () => {
+  const jobs = workflow.slice(workflow.indexOf('\njobs:\n'));
+  const beforePublish = jobs.slice(0, jobs.indexOf('\n  publish:\n'));
+  assert.doesNotMatch(beforePublish, /^    concurrency:/m);
+  const publish = jobs.slice(jobs.indexOf('\n  publish:\n'));
+  const concurrency = publish.match(/^    concurrency:\n(?: {6}.+\n)+/m)?.[0];
+  assert.ok(concurrency, 'publishers must serialize registry updates');
+  assert.match(concurrency, /group: publish-main/);
+  assert.match(concurrency, /cancel-in-progress: false/);
+  assert.match(concurrency, /queue: max/);
+});
 
 test('game logic rebuilds only web variants and selects game checks', () => {
   const result = plan(['public/game/src/simulation.js']);
