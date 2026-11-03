@@ -1,16 +1,30 @@
 [
   {
     "slug": "sticker",
-    "name": "ロゴステッカー",
+    "name": "ロゴシール",
     "description": "いつもの持ち物に、ギャルの主張を。",
-    "image": "/assets/logo.webp",
-    "imageAlt": "ギャルインザミックスのロゴデザイン",
-    "imageLabel": "ロゴデザイン参考",
     "priceEnv": "STRIPE_PRICE_STICKER",
     "availability": "available",
     "maxQuantity": 5,
     "displayPriceJPY": null,
-    "paymentLink": null
+    "paymentLink": null,
+    "images": [
+      {
+        "src": "/assets/logo-seal-white.webp",
+        "alt": "白い背景に置いたロゴシールの実物写真",
+        "altEn": "Actual logo sticker photographed on a white background"
+      },
+      {
+        "src": "/assets/logo-seal-collection.webp",
+        "alt": "ピンクのヒョウ柄の布に並べた複数のロゴシールの実物写真",
+        "altEn": "Actual logo stickers arranged on pink leopard-print fabric"
+      },
+      {
+        "src": "/assets/logo-seal-black.webp",
+        "alt": "黒い背景とピンクのヒョウ柄の布に置いたロゴシールの実物写真",
+        "altEn": "Actual logo sticker photographed on black with pink leopard-print fabric"
+      }
+    ]
   },
   {
     "slug": "towel",

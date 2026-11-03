@@ -578,7 +578,7 @@ async function cartScenarios() {
         await page.locator('[data-open-cart]').first().click();
         check(
           (await page.locator('#cart-items').innerText()).includes(
-            'ロゴステッカー',
+            'ロゴシール',
           ),
           base + ' cross-language bag kept',
         );
@@ -685,120 +685,125 @@ async function productImageDialogs() {
             }),
             true,
           );
-          const gallery = page.locator(
-            '.product-keychain [data-product-gallery]',
-          );
-          assert.equal(await gallery.locator('.image-label').count(), 0);
-          const links = gallery.locator('[data-product-enlarge]');
-          const dialog = gallery.locator('dialog');
-          const close = dialog.locator('[data-product-image-close]');
-          const previous = dialog.locator('[data-product-image-prev]');
-          const next = dialog.locator('[data-product-image-next]');
-          const thumbnails = gallery.locator('[data-gallery-image]');
-          const initialUrl = page.url();
-          for (const index of [0, 2, 1, 0]) {
-            await thumbnails.nth(index).click();
-            await page.waitForTimeout(500);
-            await links.nth(index).scrollIntoViewIfNeeded();
-            const scroll = await page.evaluate(() => scrollY);
-            await links.nth(index).tap();
-            assert.equal(await dialog.evaluate((d) => d.open), true);
-            assert.equal(
-              await dialog.locator('img').getAttribute('src'),
-              new URL(await links.nth(index).getAttribute('href'), origin).href,
+          for (const slug of ['keychain', 'sticker']) {
+            const gallery = page.locator(
+              `.product-${slug} [data-product-gallery]`,
             );
-            assert.ok(await dialog.locator('img').getAttribute('alt'));
-            assert.equal(
-              await dialog
-                .locator('[data-product-image-caption]')
-                .textContent(),
-              '',
-            );
-            assert.equal(
-              await page.evaluate(
-                () => getComputedStyle(document.body).overflow,
-              ),
-              'hidden',
-            );
-            const assertImage = async (imageIndex) => {
+            assert.equal(await gallery.locator('.image-label').count(), 0);
+            const links = gallery.locator('[data-product-enlarge]');
+            const imageCount = await links.count();
+            assert.equal(imageCount, 3);
+            const dialog = gallery.locator('dialog');
+            const close = dialog.locator('[data-product-image-close]');
+            const previous = dialog.locator('[data-product-image-prev]');
+            const next = dialog.locator('[data-product-image-next]');
+            const thumbnails = gallery.locator('[data-gallery-image]');
+            const initialUrl = page.url();
+            for (const index of [0, imageCount - 1, 1, 0]) {
+              await thumbnails.nth(index).click();
+              await page.waitForTimeout(500);
+              await links.nth(index).scrollIntoViewIfNeeded();
+              const scroll = await page.evaluate(() => scrollY);
+              await links.nth(index).tap();
+              assert.equal(await dialog.evaluate((d) => d.open), true);
               assert.equal(
                 await dialog.locator('img').getAttribute('src'),
-                new URL(
-                  await links.nth(imageIndex).getAttribute('href'),
-                  origin,
-                ).href,
+                new URL(await links.nth(index).getAttribute('href'), origin)
+                  .href,
               );
+              assert.ok(await dialog.locator('img').getAttribute('alt'));
               assert.equal(
                 await dialog
-                  .locator('[data-product-image-position]')
+                  .locator('[data-product-image-caption]')
                   .textContent(),
-                `${path.startsWith('/en/') ? 'Image' : '画像'} ${imageIndex + 1} / 3`,
+                '',
               );
-              assert.equal(await page.locator('dialog[open]').count(), 1);
-              for (const arrow of [previous, next]) {
-                const box = await arrow.boundingBox();
-                assert.ok(box.width >= 44 && box.height >= 44);
-                assert.ok(box.y >= 0 && box.y + box.height <= 900);
-              }
-            };
-            await next.tap();
-            await assertImage((index + 1) % 3);
-            await page.keyboard.press('ArrowRight');
-            await assertImage((index + 2) % 3);
-            await previous.tap();
-            await assertImage((index + 1) % 3);
-            await page.keyboard.press('ArrowLeft');
-            await assertImage(index);
-            await close.focus();
-            await page.keyboard.press('Tab');
-            assert.equal(
-              await previous.evaluate((el) => el === document.activeElement),
-              true,
-            );
-            await page.keyboard.press('Shift+Tab');
-            assert.equal(
-              await close.evaluate((el) => el === document.activeElement),
-              true,
-            );
-            await page.keyboard.press('Shift+Tab');
-            assert.equal(
-              await next.evaluate((el) => el === document.activeElement),
-              true,
-            );
-            if (index === 2) await page.keyboard.press('Escape');
-            else if (index === 1) await page.mouse.click(1, 1);
-            else await close.tap();
+              assert.equal(
+                await page.evaluate(
+                  () => getComputedStyle(document.body).overflow,
+                ),
+                'hidden',
+              );
+              const assertImage = async (imageIndex) => {
+                assert.equal(
+                  await dialog.locator('img').getAttribute('src'),
+                  new URL(
+                    await links.nth(imageIndex).getAttribute('href'),
+                    origin,
+                  ).href,
+                );
+                assert.equal(
+                  await dialog
+                    .locator('[data-product-image-position]')
+                    .textContent(),
+                  `${path.startsWith('/en/') ? 'Image' : '画像'} ${imageIndex + 1} / ${imageCount}`,
+                );
+                assert.equal(await page.locator('dialog[open]').count(), 1);
+                for (const arrow of [previous, next]) {
+                  const box = await arrow.boundingBox();
+                  assert.ok(box.width >= 44 && box.height >= 44);
+                  assert.ok(box.y >= 0 && box.y + box.height <= 900);
+                }
+              };
+              await next.tap();
+              await assertImage((index + 1) % imageCount);
+              await page.keyboard.press('ArrowRight');
+              await assertImage((index + 2) % imageCount);
+              await previous.tap();
+              await assertImage((index + 1) % imageCount);
+              await page.keyboard.press('ArrowLeft');
+              await assertImage(index);
+              await close.focus();
+              await page.keyboard.press('Tab');
+              assert.equal(
+                await previous.evaluate((el) => el === document.activeElement),
+                true,
+              );
+              await page.keyboard.press('Shift+Tab');
+              assert.equal(
+                await close.evaluate((el) => el === document.activeElement),
+                true,
+              );
+              await page.keyboard.press('Shift+Tab');
+              assert.equal(
+                await next.evaluate((el) => el === document.activeElement),
+                true,
+              );
+              if (index === imageCount - 1) await page.keyboard.press('Escape');
+              else if (index === 1) await page.mouse.click(1, 1);
+              else await close.tap();
+              assert.equal(await dialog.evaluate((d) => d.open), false);
+              assert.equal(
+                await links
+                  .nth(index)
+                  .evaluate((a) => document.activeElement === a),
+                true,
+              );
+              assert.ok(
+                Math.abs((await page.evaluate(() => scrollY)) - scroll) < 2,
+              );
+              assert.notEqual(
+                await page.evaluate(
+                  () => getComputedStyle(document.body).overflow,
+                ),
+                'hidden',
+              );
+              assert.equal(page.url(), initialUrl);
+            }
+            await links.first().focus();
+            await page.keyboard.press('Enter');
+            assert.equal(await dialog.evaluate((d) => d.open), true);
+            await page.keyboard.press('Escape');
+            // Touch scrolling remains native; a drag/click sequence must not open.
+            await links
+              .first()
+              .dispatchEvent('pointerdown', { clientX: 100, clientY: 100 });
+            await links
+              .first()
+              .dispatchEvent('click', { detail: 1, clientX: 30, clientY: 100 });
             assert.equal(await dialog.evaluate((d) => d.open), false);
-            assert.equal(
-              await links
-                .nth(index)
-                .evaluate((a) => document.activeElement === a),
-              true,
-            );
-            assert.ok(
-              Math.abs((await page.evaluate(() => scrollY)) - scroll) < 2,
-            );
-            assert.notEqual(
-              await page.evaluate(
-                () => getComputedStyle(document.body).overflow,
-              ),
-              'hidden',
-            );
-            assert.equal(page.url(), initialUrl);
           }
-          await links.first().focus();
-          await page.keyboard.press('Enter');
-          assert.equal(await dialog.evaluate((d) => d.open), true);
-          await page.keyboard.press('Escape');
-          // Touch scrolling remains native; a drag/click sequence must not open.
-          await links
-            .first()
-            .dispatchEvent('pointerdown', { clientX: 100, clientY: 100 });
-          await links
-            .first()
-            .dispatchEvent('click', { detail: 1, clientX: 30, clientY: 100 });
-          assert.equal(await dialog.evaluate((d) => d.open), false);
-          const single = page.locator('.product-sticker');
+          const single = page.locator('.product-towel');
           await single.locator('[data-product-enlarge]').tap();
           const singleDialog = single.locator('dialog');
           assert.equal(
@@ -893,7 +898,10 @@ async function shopDiscovery() {
           const other = await ctx.newPage();
           await other.goto(origin + base, { waitUntil: 'networkidle' });
           await saved.click();
-          await page.locator('.product-sticker [data-product-enlarge]').click();
+          await page
+            .locator('.product-sticker [data-product-enlarge]')
+            .first()
+            .click();
           assert.equal(await page.locator('dialog[open]').count(), 1);
           await other.locator('.product-sticker [data-save-product]').click();
           await page.waitForFunction(
