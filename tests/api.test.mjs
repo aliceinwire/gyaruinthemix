@@ -172,6 +172,26 @@ async function setup(t, overrides = {}) {
   };
 }
 
+test('retired test-shop endpoints cannot be enabled by a stale configuration', async (t) => {
+  for (const enabled of [false, true]) {
+    const x = await setup(t, { config: { testShopEnabled: enabled } });
+    for (const [method, path] of [
+      ['GET', 'catalog'],
+      ['POST', 'checkout'],
+      ['POST', 'checkout-status'],
+    ]) {
+      const response = await x.app.inject({
+        method,
+        url: `/api/test-shop/${path}`,
+        ...(method === 'POST' ? { payload: {} } : {}),
+      });
+      assert.equal(response.statusCode, 404);
+    }
+    assert.equal((await x.app.inject('/api/catalog')).statusCode, 200);
+    assert.equal(x.calls.length, 0);
+  }
+});
+
 test('valid cart uses trusted Price IDs, Japan shipping and fixed return URLs', async (t) => {
   const x = await setup(t);
   const r = await x.checkout();

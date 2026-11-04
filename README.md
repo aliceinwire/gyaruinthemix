@@ -22,7 +22,7 @@ API checkout accepts only `ja` or `en` and returns to that language's success/ca
 
 ## Product photo galleries
 
-Products in `config/products.json` and `config/test-products.json` can have an
+Products in `config/products.json` can have an
 ordered `images` array. The first photo is the cover; shoppers can swipe/scroll
 through the rest or select a thumbnail. Photos are contained rather than cropped
 or rotated. Existing `image`, `imageAlt`, and `imageLabel` products remain supported
@@ -44,46 +44,6 @@ Each image needs a site-local `src` and descriptive Japanese `alt` and English
 empty/invalid gallery fails the build rather than silently hiding photos. Do not
 add placeholder product photographs to the live catalog; add real supplied photos
 when available. No checkout or Stripe configuration changes are needed.
-
-## Hidden sandbox shop
-
-`/shop-test/` is a separate testing-only shop with sticker, towel, acrylic keychain and T-shirt. It has no navigation link or sitemap entry, and its index/success/cancel pages carry `noindex`. The URL is **not access control**: anyone who knows it can open it. Test pages clearly state that no real payment or shipment occurs. The T-shirt is a single test SKU with no size selector, and its logo image is a reference rather than a product photograph.
-
-The ordinary `/shop/`, `config/products.json` and Payment Links settings remain unchanged. Sandbox definitions live only in `config/test-products.json`; no real Stripe IDs or invented display prices are committed. The test cart and checkout-attempt storage are isolated from the normal shop. The hidden page requires the existing **API web image and `checkout-api` profile**; a Payment Links-only deployment has no test checkout API.
-
-To prepare it on the API deployment, add the following non-secret settings to the existing bouncer `.env`, preserving the other site settings:
-
-```dotenv
-STRIPE_MODE=test
-SALES_ENABLED=false
-TEST_SHOP_ENABLED=false
-STRIPE_PRICE_STICKER=
-STRIPE_PRICE_TOWEL=
-STRIPE_PRICE_KEYCHAIN=
-STRIPE_PRICE_TSHIRT=
-STRIPE_SHIPPING_RATE_JP=
-```
-
-Fill the five IDs from the same Stripe sandbox as the existing `rk_test_` and webhook secret files. Each Price must be active, one-time, JPY, per-unit, a positive integer amount, inclusive-tax and attached to an active product. The shipping rate must be active, test-mode, fixed-amount JPY, inclusive-tax and a nonnegative integer amount; the configured rate applies once per checkout and delivery addresses are Japan-only. Verify the actual amounts and tax behavior in Stripe before enabling. Product `default_price` IDs alone do not prove those Price settings.
-
-After the updated images **and Compose definition** are deliberately installed, set `TEST_SHOP_ENABLED=true` and recreate only the API service using the documented bouncer workflow. The image updater does not install Compose changes or apply `.env` changes on its own. Public `SALES_ENABLED` stays `false`; `STORE_DETAILS_REVIEWED` and `LIVE_MODE_ACK` do not need to change for this test-only shop. Set `TEST_SHOP_ENABLED=false` and recreate the API to close it again.
-
-The API refuses startup if hidden tests are enabled with live mode, a non-test restricted key, enabled public sales, missing Price IDs, or invalid sandbox prices/shipping. The app independently checks the mode/key/sales boundary. `/api/test-shop/catalog` and `/api/test-shop/checkout` do not exist while disabled. Enabled tests never open `/api/checkout`; test sessions use `gyaruinthemix-test` metadata and return to `/shop-test/success/` or `/shop-test/cancel/`. The shared signed webhook accepts matching test events and records observations only; it does not fulfill orders. Visiting a success page is not payment evidence.
-
-Verify after activation:
-
-- `/api/catalog` still reports `salesEnabled: false`, and `/shop/` is still closed with its original three products.
-- `/api/test-shop/catalog` reports `mode: test`, four available test products and the reviewed JPY shipping amount.
-- Complete an authorized Stripe test checkout with test payment data, confirm its test-mode record and signed webhook observation in Stripe, then check cancellation/back navigation and separate carts.
-- Turn the switch off and confirm the hidden API returns 404 while the ordinary site remains healthy.
-
-### Returning from sandbox checkout
-
-Sandbox checkout protocol v2 records the submitted cart snapshot and a browser-local attempt UUID. The API binds that UUID to the Checkout Session, and retrieves current session status before returning a hosted checkout URL or confirming payment. The status endpoint returns only test mode, session ID and `open` / `paid` / `pending` / `expired`; it never returns customer or payment details. The restricted key must allow Checkout Session retrieval as well as creation. A successful page visit alone is not payment proof.
-
-After a verified paid result, an unchanged test bag is cleared and its retry attempt retired. If the bag was edited in another tab or since checkout, it is kept for review so newer additions are not deleted. Cancelled/open, pending, mismatched or unverifiable returns preserve the bag; expired sessions retire only the retry key. Retries check the saved session before following its URL. An old unknown attempt is not silently renewed beyond the idempotency window. If browser storage cannot retain the return receipt, the browser stays on the shop rather than losing its recovery information.
-
-Attempts created before v2 lack a Session ID/proof and cannot be verified retrospectively. The test bag therefore asks the user to check Stripe, remove already-paid items, and explicitly acknowledge starting a new attempt. Old cached clients are rejected by the sandbox protocol gate and must reload. Public-shop cart behavior is unchanged. These checks use mocked Stripe methods in tests; no payment is made by the test suite.
 
 ## Your VPS: deploy only from ~/bouncer
 
@@ -369,7 +329,7 @@ The 64 MiB nginx / 192 MiB API / 96 MiB audio memory limits are **provisional ca
 
 ## 5. Domain, proxy and TLS
 
-The public canonical domain is **https://gyaruinthemix.com**. `src/data/urls.mjs` drives Astro's site URL, canonical/Open Graph metadata, `robots.txt` and the sitemap. Its explicit public-page list excludes hidden sandbox pages, checkout returns and errors, which remain `noindex`. Update that list when adding an indexable page. These URLs are built into both frontend image modes; local development and the API's runtime `SITE_URL` remain separate.
+The public canonical domain is **https://gyaruinthemix.com**. `src/data/urls.mjs` drives Astro's site URL, canonical/Open Graph metadata, `robots.txt` and the sitemap. Its explicit public-page list excludes checkout returns and errors, which remain `noindex`. Update that list when adding an indexable page. These URLs are built into both frontend image modes; local development and the API's runtime `SITE_URL` remain separate.
 
 To move the existing `gyaruinthemix.alicef.me` deployment, use the [staged domain migration guide](deploy/bouncer/DOMAIN-MIGRATION.md). It covers DNS/TLS, optional routing aliases, origin-scoped carts, pending sandbox sessions and the existing Stripe webhook destination. Merging a code change does not perform that migration or install an old-domain redirect.
 

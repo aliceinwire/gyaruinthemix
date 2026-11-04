@@ -1,6 +1,5 @@
 ---
 import { getLocale, translator } from '../data/i18n.mjs';
-const { testShop = false } = Astro.props;
 const t = translator(getLocale(Astro.url.pathname));
 ---
 
@@ -8,11 +7,11 @@ const t = translator(getLocale(Astro.url.pathname));
   id="cart-dialog"
   class="cart-dialog"
   aria-labelledby="cart-title"
-  data-shop-scope={testShop ? 'test' : 'public'}
+  data-shop-scope="public"
 >
   <div class="cart-heading">
     <h2 id="cart-title">
-      {testShop ? t('テスト用バッグ', 'Test bag') : t('マイバッグ', 'My bag')}
+      {t('マイバッグ', 'My bag')}
       <span aria-hidden="true">♡</span>
     </h2><button
       class="icon-button"
@@ -20,7 +19,7 @@ const t = translator(getLocale(Astro.url.pathname));
       aria-label={t('バッグを閉じる', 'Close bag')}>×</button
     >
   </div>
-  <p id="cart-mode" class="notice" hidden={!testShop}>
+  <p id="cart-mode" class="notice" hidden>
     {
       t(
         'テストショップです。実際の購入・発送はありません。',
@@ -36,66 +35,30 @@ const t = translator(getLocale(Astro.url.pathname));
       >
     </div><p id="cart-shipping" class="muted">
       {
-        testShop
-          ? t(
-              'テスト専用です。実際のお支払い・商品の発送はありません。',
-              'For testing only. No real payment or shipping takes place.',
-            )
-          : t(
-              '送料は販売開始時にご案内します。',
-              'Shipping costs will be announced when sales open.',
-            )
+        t(
+          '送料は販売開始時にご案内します。',
+          'Shipping costs will be announced when sales open.',
+        )
       }
     </p>
   </div>
   <p id="cart-error" class="error" role="alert"></p>
-  {
-    testShop && (
-      <>
-        <p id="test-checkout-status" class="notice" role="status" />
-        <button id="test-checkout-reset" class="text-button" hidden>
-          {t(
-            '結果とバッグを確認して、新しいテスト決済を始める',
-            'Review the result and bag, then start a new test checkout',
-          )}
-        </button>
-      </>
-    )
-  }
   <button class="button checkout" id="checkout" disabled>
-    {
-      testShop
-        ? t('テスト決済へ進む', 'Continue to test checkout')
-        : t('決済へ進む', 'Continue to checkout')
-    }
+    {t('決済へ進む', 'Continue to checkout')}
     <span aria-hidden="true">↗</span>
   </button>
   <p class="cart-note">
     {
-      testShop ? (
-        <>
-          {t(
-            'Stripe Sandboxの動作確認専用です。',
-            'For Stripe Sandbox testing only.',
-          )}
-          <br />
-          {t(
-            '実際のお支払い・商品の発送はありません。',
-            'No real payment or shipping takes place.',
-          )}
-        </>
-      ) : (
-        <>
-          {t(
-            'お支払いはStripeの決済ページで。',
-            'Payment is handled on Stripe’s checkout page.',
-          )}
-          <br />
-          {t(
-            'お届け先は日本国内のみです。',
-            'Shipping is available within Japan only.',
-          )}
-        </>
+      t(
+        'お支払いはStripeの決済ページで。',
+        'Payment is handled on Stripe’s checkout page.',
+      )
+    }
+    <br />
+    {
+      t(
+        'お届け先は日本国内のみです。',
+        'Shipping is available within Japan only.',
       )
     }
   </p>

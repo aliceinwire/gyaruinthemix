@@ -25,6 +25,13 @@ test('file secrets load; defaults are TEST with sales disabled', async (t) => {
   assert.equal(config.mode, 'test');
   assert.equal(config.salesEnabled, false);
 });
+test('a retired test-shop environment flag cannot enable a separate catalog', async (t) => {
+  const env = await configuration(t);
+  const config = readConfig({ ...env, TEST_SHOP_ENABLED: 'true' });
+  assert.equal(config.salesEnabled, false);
+  assert.equal(Object.hasOwn(config, 'testShopEnabled'), false);
+  assert.equal(Object.hasOwn(config, 'testProducts'), false);
+});
 test('HTTP production, malformed origin and mode changes fail closed', async (t) => {
   const env = await configuration(t);
   for (const overrides of [

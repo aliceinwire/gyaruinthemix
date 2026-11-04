@@ -23,8 +23,8 @@ test('the last product keeps the same stacked card layout for odd and even catal
   assert.doesNotMatch(styles, /\.product-art[^}]*min-height:\s*100%/);
 });
 
-test('public and hidden test shops use the same product component and grid', async () => {
-  for (const path of ['shop/index.astro', 'shop-test/index.astro']) {
+test('public shop uses the shared product component and grid', async () => {
+  for (const path of ['shop/index.astro']) {
     const page = await readFile(
       new URL(`../src/pages/${path}`, import.meta.url),
       'utf8',

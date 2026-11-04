@@ -12,7 +12,7 @@ import { GET as sitemap } from '../src/pages/sitemap.xml.js';
 test('Japanese stays the default and only the en route segment selects English', () => {
   for (const path of ['/', '/about/', '/english/', '/shop/?locale=en'])
     assert.equal(getLocale(path), 'ja');
-  for (const path of ['/en', '/en/', '/en/shop-test/success/'])
+  for (const path of ['/en', '/en/', '/en/shop/success/'])
     assert.equal(getLocale(path), 'en');
   assert.equal(translator('ja')('日本語', 'English'), '日本語');
   assert.equal(translator('en')('日本語', 'English'), 'English');
@@ -23,9 +23,6 @@ test('equivalent language links preserve fragments and receipts without localizi
     ...defaultPublicPaths,
     '/shop/success/',
     '/shop/cancel/',
-    '/shop-test/',
-    '/shop-test/success/',
-    '/shop-test/cancel/',
   ]) {
     assert.equal(localizePath(path, 'en'), `/en${path}`);
     assert.equal(localizePath(`/en${path}`, 'ja'), path);
@@ -33,8 +30,8 @@ test('equivalent language links preserve fragments and receipts without localizi
   }
   assert.equal(localizePath('/fanclub/#photos', 'en'), '/en/fanclub/#photos');
   assert.equal(
-    localizePath('/en/shop-test/success/?session_id=cs_test#receipt', 'ja'),
-    '/shop-test/success/?session_id=cs_test#receipt',
+    localizePath('/en/shop/success/?session_id=cs_test#receipt', 'ja'),
+    '/shop/success/?session_id=cs_test#receipt',
   );
   for (const path of [
     '/assets/logo.webp',
@@ -72,14 +69,11 @@ test('English routes reuse templates and nginx serves the English 404 for Englis
     ...defaultPublicPaths,
     '/shop/success/',
     '/shop/cancel/',
-    '/shop-test/',
-    '/shop-test/success/',
-    '/shop-test/cancel/',
   ]) {
     const file =
       path === '/'
         ? 'index'
-        : path.slice(1, -1).replace(/^(shop(?:-test)?)$/, '$1/index');
+        : path.slice(1, -1).replace(/^(shop)$/, '$1/index');
     const source = await readFile(`src/pages/en/${file}.astro`, 'utf8');
     assert.match(source, /import Page from/);
     assert.match(source, /<Page \/>/);

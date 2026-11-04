@@ -33,9 +33,6 @@ const otherPaths = [
   '/streaming-guidelines/',
   '/shop/success/',
   '/shop/cancel/',
-  '/shop-test/',
-  '/shop-test/success/',
-  '/shop-test/cancel/',
 ];
 const paths = [...publicPaths, ...otherPaths];
 const report = {
@@ -139,14 +136,11 @@ async function screenshot(page, name) {
 const definitions = JSON.parse(
   await readFile(resolve(repo, 'config/products.json'), 'utf8'),
 );
-const testDefinitions = JSON.parse(
-  await readFile(resolve(repo, 'config/test-products.json'), 'utf8'),
-);
-const catalog = (testShop = false, enabled = false) => ({
+const catalog = (enabled = false) => ({
   mode: 'test',
   salesEnabled: enabled,
   version: 'offline-browser-fixture-v1',
-  products: (testShop ? testDefinitions : definitions).map((p) => ({
+  products: definitions.map((p) => ({
     ...p,
     availability: enabled ? 'available' : 'coming_soon',
     amount: enabled ? 800 : null,
@@ -184,9 +178,8 @@ async function context(options = {}, fixture = {}) {
           });
           return;
         }
-        const isTest = url.pathname.startsWith('/api/test-shop/');
         await route.fulfill({
-          json: catalog(isTest, Boolean(fixture.enabled)),
+          json: catalog(Boolean(fixture.enabled)),
         });
       } else if (url.pathname.endsWith('/checkout')) {
         fixture.checkoutRequests?.push({
@@ -280,10 +273,10 @@ async function inspect(page, pathname, width) {
     if (!separated) await screenshot(page, 'hero-overlap-' + label);
   }
   const en = pathname.startsWith('/en/');
-  if (['/shop/', '/shop-test/'].includes(pathname.replace(/^\/en/, ''))) {
+  if (['/shop/'].includes(pathname.replace(/^\/en/, ''))) {
     await checkProductDetails(page, {
       en,
-      staticStock: mode === 'payment_links' && !pathname.includes('shop-test'),
+      staticStock: mode === 'payment_links',
     });
   }
   check(
@@ -489,9 +482,9 @@ async function switchLanguage(page) {
 }
 async function cartScenarios() {
   // Closed sales, unavailable API, persisted contents and error-only mock checkout.
-  for (const testShop of [false, true]) {
-    if (!testShop && mode !== 'api') continue;
-    const base = testShop ? '/shop-test/' : '/shop/';
+  if (mode !== 'api') return;
+  {
+    const base = '/shop/';
     for (const width of [320, 375, 960, 1440]) {
       const ctx = await context({ viewport: { width, height: 900 } });
       const page = await ctx.newPage();
@@ -589,7 +582,7 @@ async function cartScenarios() {
           ),
           base + ' cross-language bag kept',
         );
-        if (!testShop) {
+        {
           await page.locator('#checkout').click();
           await page
             .locator('#cart-error')
@@ -614,20 +607,6 @@ async function cartScenarios() {
           origin + '/en' + base + 'success/?session_id=cs_test_QA',
           { waitUntil: 'networkidle' },
         );
-        if (testShop) {
-          const returnStatus = await page
-            .locator('#test-return-status')
-            .innerText();
-          const cautious =
-            /No verifiable checkout|previous test checkout/i.test(returnStatus);
-          check(
-            cautious,
-            base + ' unverified return remains cautious',
-            returnStatus,
-          );
-          if (!cautious)
-            await screenshot(page, 'unverified-test-return-status');
-        }
       },
       page,
     );
@@ -665,12 +644,7 @@ async function productImageDialogs() {
       hasTouch: true,
     });
     const page = await ctx.newPage();
-    for (const path of [
-      '/shop/',
-      '/en/shop/',
-      '/shop-test/',
-      '/en/shop-test/',
-    ]) {
+    for (const path of ['/shop/', '/en/shop/']) {
       await scenario(
         `product image dialog ${path} ${width}`,
         async () => {
@@ -845,7 +819,7 @@ async function productImageDialogs() {
 
 async function shopDiscovery() {
   for (const width of [375, 1440]) {
-    for (const base of ['/shop/', '/shop-test/']) {
+    for (const base of ['/shop/']) {
       const ctx = await context({ viewport: { width, height: 900 } });
       const page = await ctx.newPage();
       await scenario(
@@ -923,17 +897,9 @@ async function shopDiscovery() {
           await other.close();
           await all.click();
           await keychain.click();
-          await page.goto(
-            origin + (base === '/shop/' ? '/shop-test/' : '/shop/'),
-            { waitUntil: 'networkidle' },
-          );
-          assert.equal(
-            await page.locator('[data-saved-count]').textContent(),
-            '0',
-          );
           check(
             true,
-            `saved products persist across languages, synchronize tabs and isolate test shop ${base} ${width}`,
+            `saved products persist across languages, synchronize tabs ${base} ${width}`,
           );
         },
         page,

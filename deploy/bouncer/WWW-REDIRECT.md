@@ -4,7 +4,7 @@ The web image redirects `www.gyaruinthemix.com` to **https://gyaruinthemix.com**
 
 The destination is fixed in `nginx-www-redirect.conf`; it cannot be changed through a request's Host or forwarding headers. Nginx matches only the exact www hostname (also accepting normal case, port and trailing-dot variants). The apex, localhost and unrelated hosts keep their existing behavior. This does not restore or redirect the retired `gyaruinthemix.alicef.me` hostname.
 
-`STORE_HOSTS` controls public routing and certificate names, not the image's redirect logic. Leaving it blank keeps the single-host deployment. The apex must already work over valid HTTPS and `STORE_DOMAIN` must remain `gyaruinthemix.com` before adding www. The API's exact origin, canonical metadata, checkout returns, sales settings and hidden test-shop settings do not change.
+`STORE_HOSTS` controls public routing and certificate names, not the image's redirect logic. Leaving it blank keeps the single-host deployment. The apex must already work over valid HTTPS and `STORE_DOMAIN` must remain `gyaruinthemix.com` before adding www. The API's exact origin, canonical metadata, checkout returns and sales settings do not change.
 
 ## Operator rollout
 
@@ -28,7 +28,7 @@ This procedure is manual. A PR or source/image update does not edit DNS, the ins
    STORE_HOSTS=gyaruinthemix.com,www.gyaruinthemix.com
    ```
 
-   Keep the apex first, matching the companion's certificate base-name convention. Preserve the existing checkout mode and image family: `gyaruinthemix-web:main` for Payment Links or `gyaruinthemix-web-api:main` for API mode. Do not switch modes, enable public sales, change `TEST_SHOP_ENABLED` or edit any Stripe setting for this redirect.
+   Keep the apex first, matching the companion's certificate base-name convention. Preserve the existing checkout mode and image family: `gyaruinthemix-web:main` for Payment Links or `gyaruinthemix-web-api:main` for API mode. Do not switch modes, enable public sales, or edit any Stripe setting for this redirect.
 
 5. Pull the reviewed web image, confirm its revision is the intended merged release, then recreate **only web**. The updater can skip unchanged images, so a `.env` edit alone is not sufficient.
 
@@ -65,7 +65,7 @@ curl --silent --show-error --output /dev/null --dump-header - \
 # redirects HTTPS www to the HTTPS apex. Verify the final host/path/query.
 ```
 
-Also check apex pages, assets and `/shop-test/` according to its existing enabled/disabled state. In API mode, apex `/api/health` remains healthy, and `/api/catalog` retains its existing test/sales-disabled settings. In Payment Links mode, `/api/*` remains 404 on the apex. Compare shared-service container IDs/start times and real ZNC/Limnoria connections with the recorded baseline. Resume only the existing website updater after these checks pass.
+Also check apex pages, assets and `/shop/`. In API mode, apex `/api/health` remains healthy, and `/api/catalog` retains its existing test/sales-disabled settings. In Payment Links mode, `/api/*` remains 404 on the apex. Compare shared-service container IDs/start times and real ZNC/Limnoria connections with the recorded baseline. Resume only the existing website updater after these checks pass.
 
 ### Health, ACME and API details
 

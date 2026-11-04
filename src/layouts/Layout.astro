@@ -10,9 +10,7 @@ const site = getSite(locale);
 import { canonicalUrl, publicPaths } from '../data/urls.mjs';
 import { usesCart } from '../data/checkout.mjs';
 import Cart from '../components/Cart.astro';
-import TestCart from '../components/TestCart.astro';
 const {
-  testShop = false,
   title = t(
     'ギャルインザミックス｜オフィシャルサイト',
     'GYARUINTHEMIX | Official Website',
@@ -23,7 +21,7 @@ const {
   ),
 } = Astro.props;
 const current = Astro.url.pathname;
-const indexable = !testShop && publicPaths.includes(current);
+const indexable = publicPaths.includes(current);
 const canonical = canonicalUrl(current);
 const navigation = [
   ['/about/', t('ふたりのこと', 'About us')],
@@ -91,21 +89,6 @@ const navigation = [
   </head>
   <body>
     <a class="skip" href="#main">{t('本文へ', 'Skip to content')}</a>
-    {
-      testShop && (
-        <aside
-          class="test-shop-banner"
-          aria-label={t('テスト専用の注意', 'Test-only notice')}
-        >
-          TEST ONLY · Stripe Sandbox
-          <br />
-          {t(
-            '実際のお支払い・商品の発送はありません。',
-            'No real payments or shipments.',
-          )}
-        </aside>
-      )
-    }
     <div class="topline">
       {site.artist.aesthetic}
       <span aria-hidden="true">♥</span>
@@ -161,15 +144,14 @@ const navigation = [
         }
       </nav>
       {
-        (usesCart || testShop) && (
+        usesCart && (
           <button
             class="cart-trigger"
             data-open-cart
             aria-haspopup="dialog"
             aria-controls="cart-dialog"
           >
-            {testShop ? t('テスト用バッグ', 'Test bag') : t('バッグ', 'Bag')}{' '}
-            <span data-cart-count>0</span>
+            {t('バッグ', 'Bag')} <span data-cart-count>0</span>
           </button>
         )
       }
@@ -246,7 +228,7 @@ const navigation = [
         ></small
       >
     </footer>
-    {testShop ? <TestCart /> : usesCart && <Cart />}
+    {usesCart && <Cart />}
     <script>
       // Preserve fragments and checkout return parameters only in the user's browser.
       for (const link of document.querySelectorAll<HTMLAnchorElement>(
@@ -258,18 +240,3 @@ const navigation = [
     </script>
   </body>
 </html>
-
-<style>
-  .test-shop-banner {
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    padding: 10px 16px;
-    background: #fff0ad;
-    color: #211800;
-    border-bottom: 2px solid #211800;
-    text-align: center;
-    font-weight: 800;
-    line-height: 1.5;
-  }
-</style>
