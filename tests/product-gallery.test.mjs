@@ -155,7 +155,10 @@ test('supplied keychain photos have a product-first bilingual gallery in both sh
         assert.equal(photo.label, '');
       }
     }
-    assert.equal(product.displayPriceJPY, null);
+    assert.equal(
+      product.displayPriceJPY,
+      file === 'products.json' ? 1500 : null,
+    );
     assert.equal(product.paymentLink, null);
     assert.equal(
       product.availability,

@@ -227,7 +227,7 @@ test('enabled hidden sandbox leaves public catalog and checkout closed', async (
   const publicCatalog = (await x.app.inject('/api/catalog')).json();
   assert.equal(publicCatalog.salesEnabled, false);
   assert.equal(publicCatalog.shipping, null);
-  assert.equal(publicCatalog.products.length, 3);
+  assert.equal(publicCatalog.products.length, 4);
   assert.ok(
     publicCatalog.products.every(
       (p) => p.availability === 'coming_soon' && p.amount === null,
