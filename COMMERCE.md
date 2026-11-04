@@ -17,6 +17,8 @@ journal is single-process). Other services in the bouncer Compose file are uncha
 
 `config/inventory.json` is a one-time bootstrap manifest, isolated by `test:public`,
 `test:sandbox` and `live:public`. The only sample count is **10 sandbox keychains**.
+The `test:sandbox` namespace is retained for existing ledger compatibility only;
+the separate sandbox shop and its checkout routes have been removed.
 It is not an assertion of live stock. All other counts are unset and fail closed.
 Configure actual initial quantities before first startup. Changing the bootstrap
 manifest after initialization fails startup, rather than silently resetting sales.

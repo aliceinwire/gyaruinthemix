@@ -41,7 +41,7 @@ test('deployment defaults use the new domain without changing local or sales def
   assert.match(sample, /^STORE_HOSTS=$/m);
   assert.match(sample, /^STRIPE_MODE=test$/m);
   assert.match(sample, /^SALES_ENABLED=false$/m);
-  assert.match(sample, /^TEST_SHOP_ENABLED=false$/m);
+  assert.doesNotMatch(sample, /TEST_SHOP_ENABLED/);
   assert.match(
     await read('.env.example'),
     /^SITE_URL=http:\/\/localhost:4321$/m,

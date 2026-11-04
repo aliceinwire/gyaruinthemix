@@ -441,6 +441,25 @@ em {
   color: #665d64;
   min-height: 3.6em;
 }
+.product-details {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 16px;
+  font-size: 0.8125rem;
+  color: #665d64;
+}
+.product-details > div {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 8px;
+}
+.product-details dt {
+  font-weight: 600;
+}
+.product-details dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
 .product-buy {
   border-top: 1px solid var(--line);
   padding-top: 16px;

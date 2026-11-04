@@ -37,22 +37,21 @@ curl --fail https://gyaruinthemix.com/web-health
 
 Wait for valid HTTPS on **both** hosts and verify normal artist pages, assets and HTTP-to-HTTPS redirects. Never use `curl -k`. Stop and restore the previous routing settings/recreate web if the existing hostname regresses. Container health alone does not check external DNS/TLS.
 
-The new hostname can now serve pages and receive signed webhooks. Browser checkout and sandbox session-status requests on the new hostname still return 403 because the API intentionally accepts only the old origin at this stage. Do not widen CORS or the origin allowlist to work around this. Do not open a checkout to test DNS or certificates.
+The new hostname can now serve pages and receive signed webhooks. Browser checkout requests on the new hostname still return 403 because the API intentionally accepts only the old origin at this stage. Do not widen CORS or the origin allowlist to work around this. Do not open a checkout to test DNS or certificates.
 
-## 3. Reconcile sandbox attempts before switching the API origin
+## 3. Reconcile checkout attempts before switching the API origin
 
 Keep `STRIPE_MODE=test` and public `SALES_ENABLED=false`. Keep the existing checkout mode, image family, Price/shipping IDs, restricted test key, `STORE_DETAILS_REVIEWED` and `LIVE_MODE_ACK` unchanged. For the migration, review any old-domain checkout attempts in the same Stripe sandbox and resolve their status before disabling the hidden shop. Do not pay again to reconcile an uncertain result; wait for pending payments or deliberately expire unwanted open sessions in Stripe after review. A domain change is not evidence of any charge, refund or cancellation.
 
 Already-created sessions retain their original success/cancel URLs. Old-domain cart and checkout-attempt receipts live in that origin's browser storage and do not transfer to the new domain. Retain those browser records while reconciling. The new domain may show an empty bag even though an older Stripe session exists; a bag is not payment history. The API journal and Stripe records remain authoritative for their respective observations/transactions.
 
-After reconciling old attempts, temporarily set `TEST_SHOP_ENABLED=false`, set the new primary domain, and leave both routing aliases in place:
+After reconciling old attempts, set the new primary domain, and leave both routing aliases in place:
 
 ```dotenv
 STORE_DOMAIN=gyaruinthemix.com
 STORE_HOSTS=gyaruinthemix.alicef.me,gyaruinthemix.com
 STRIPE_MODE=test
 SALES_ENABLED=false
-TEST_SHOP_ENABLED=false
 ```
 
 For an existing **API-mode deployment only**, apply the new origin by recreating just the API:
@@ -65,9 +64,9 @@ curl --fail https://gyaruinthemix.com/api/health
 curl --fail https://gyaruinthemix.com/api/catalog
 ```
 
-Confirm the public catalog reports `mode: test` and `salesEnabled: false`, and hidden API routes return 404 while paused. In Payment Links mode there is no API service or webhook; keep that mode and recreate only web to apply its environment. Review any configured Payment Link post-payment redirects in Stripe separately; changing source code does not edit them.
+Confirm the public catalog reports `mode: test` and `salesEnabled: false`, and retired test-shop API routes return 404. In Payment Links mode there is no API service or webhook; keep that mode and recreate only web to apply its environment. Review any configured Payment Link post-payment redirects in Stripe separately; changing source code does not edit them.
 
-The image updater alone does not apply `.env` changes when images are unchanged. New API sessions will use `https://gyaruinthemix.com/shop/success/` and `/shop/cancel/`; if sandbox testing is later re-enabled, its paths remain `/shop-test/success/?session_id={CHECKOUT_SESSION_ID}` and `/shop-test/cancel/`. Old-host and `www` browser origins remain rejected by checkout/status endpoints.
+The image updater alone does not apply `.env` changes when images are unchanged. New API sessions will use `https://gyaruinthemix.com/shop/success/` and `/shop/cancel/`. Old-host and `www` browser origins remain rejected by checkout endpoints.
 
 ## 4. Move the existing sandbox webhook destination
 
@@ -87,7 +86,7 @@ Do not redirect the old webhook URL: Stripe treats HTTP 3xx as failed delivery. 
 
 Check new-host artist pages, `/contact/`, canonical/OG URLs, `/robots.txt`, `/sitemap.xml`, assets and TLS. The sitemap must omit `/shop-test/` and checkout-return pages. Check the unchanged ZNC/Limnoria container IDs/start times and real client connections. Public sales stay disabled.
 
-Re-enabling the hidden sandbox and running a fresh hosted checkout is a separate deliberate test decision. Do not turn it on or make a payment just to complete the hostname migration. When testing is authorized, use a fresh new-domain attempt and verify cancellation, return/status behavior and signed webhook observations in the same sandbox; never infer success from the bag or success page alone.
+Running a fresh hosted test-mode checkout is a separate deliberate test decision. Do not enable sales or make a payment just to complete the hostname migration. When testing is authorized, use a fresh new-domain attempt and verify cancellation, return behavior and signed webhook observations in the same sandbox; never infer success from the bag or success page alone.
 
 No old-host redirect is installed by this change. While both aliases are retained, old artist links keep loading; after the API-origin switch, old-host checkout/status requests are rejected. Move saved shop links to the apex. Once pending sessions and webhook delivery are settled, a reviewed path/query-preserving browser redirect can be added at the existing edge, with explicit `/api/*` handling. Inspect that edge's actual configuration before implementing it; do not blindly add a second public proxy or a blanket webhook redirect. Removing the old alias before arranging the redirect would break old links.
 

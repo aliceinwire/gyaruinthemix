@@ -82,9 +82,6 @@ export function readConfig(env = process.env) {
     /^whsec_[A-Za-z0-9]+$/,
   );
   const salesEnabled = bool('SALES_ENABLED');
-  const testShopEnabled = bool('TEST_SHOP_ENABLED');
-  // The hidden sandbox must never share an enabled public or live checkout.
-  if (testShopEnabled && (mode !== 'test' || salesEnabled)) fail();
   if (salesEnabled && !bool('STORE_DETAILS_REVIEWED')) fail();
   if (salesEnabled && mode === 'live') {
     const details = JSON.parse(
@@ -98,11 +95,7 @@ export function readConfig(env = process.env) {
       fail();
   }
   const shippingRate = env.STRIPE_SHIPPING_RATE_JP || '';
-  if (
-    (salesEnabled || testShopEnabled) &&
-    !/^shr_[A-Za-z0-9]+$/.test(shippingRate)
-  )
-    fail();
+  if (salesEnabled && !/^shr_[A-Za-z0-9]+$/.test(shippingRate)) fail();
   function loadProducts(filename, enabled) {
     const products = JSON.parse(
       readFileSync(new URL(`../config/${filename}`, import.meta.url), 'utf8'),
@@ -133,7 +126,6 @@ export function readConfig(env = process.env) {
     return products;
   }
   const products = loadProducts('products.json', salesEnabled);
-  const testProducts = loadProducts('test-products.json', testShopEnabled);
   // Counts seed a new durable ledger once; changing this file cannot restock it.
   const inventory = JSON.parse(
     readFileSync(new URL('../config/inventory.json', import.meta.url), 'utf8'),
@@ -219,8 +211,6 @@ export function readConfig(env = process.env) {
     secretKey,
     webhookSecret,
     salesEnabled,
-    testShopEnabled,
-    testProducts,
     shippingRate,
     products,
     port,

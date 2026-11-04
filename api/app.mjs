@@ -12,38 +12,6 @@ const supportedEvents = new Set([
 const idPattern = /^[A-Za-z0-9_]{1,255}$/;
 const attemptPattern =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
-const testSessionPattern = /^cs_test_[A-Za-z0-9_]{1,247}$/;
-const testAttemptProof = (token) =>
-  createHash('sha256')
-    .update(`gyaruinthemix-test:checkout-v2:${token.toLowerCase()}`)
-    .digest('hex');
-
-function testSessionMatches(session, sessionId, token) {
-  return (
-    session?.id === sessionId &&
-    testSessionPattern.test(sessionId) &&
-    session.livemode === false &&
-    session.mode === 'payment' &&
-    session.metadata?.store === 'gyaruinthemix-test' &&
-    session.metadata?.checkout_attempt === testAttemptProof(token)
-  );
-}
-
-// Only confirmed, paid completion can clear a cart. A closed but unpaid
-// Checkout stays pending; it must never receive a fresh payment URL.
-function testSessionStatus(session) {
-  if (session.status === 'complete') {
-    if (session.payment_status === 'paid') return 'paid';
-    if (['unpaid', 'no_payment_required'].includes(session.payment_status))
-      return 'pending';
-  }
-  if (
-    ['open', 'expired'].includes(session.status) &&
-    session.payment_status === 'unpaid'
-  )
-    return session.status;
-  throw new Error('Unverified test checkout status');
-}
 const englishErrors = Object.freeze({
   '処理できませんでした。時間をおいてお試しください。':
     'Something went wrong. Please try again later.',
@@ -109,20 +77,6 @@ export async function buildApp({
     },
   });
   const catalog = createCatalog(config, stripe);
-  const testShopAllowed =
-    config.testShopEnabled === true &&
-    config.mode === 'test' &&
-    /^rk_test_[A-Za-z0-9]+$/.test(config.secretKey) &&
-    config.salesEnabled === false;
-  if (config.testShopEnabled && !testShopAllowed)
-    throw new Error('Invalid test shop configuration');
-  const testConfig = {
-    ...config,
-    mode: 'test',
-    salesEnabled: testShopAllowed,
-    products: config.testProducts || [],
-  };
-  const testCatalog = createCatalog(testConfig, stripe);
   await app.register(rateLimit, {
     global: false,
     max: rateMax,
@@ -175,20 +129,12 @@ export async function buildApp({
     }
     return { status: 'ok' };
   });
-  function registerShop(
-    apiPrefix,
-    pagePrefix,
-    storeConfig,
-    storeCatalog,
-    sandbox = false,
-  ) {
-    const inventoryScope = `${config.mode}:${sandbox ? 'sandbox' : 'public'}`;
+  function registerShop(apiPrefix, pagePrefix, storeConfig, storeCatalog) {
+    const inventoryScope = `${config.mode}:public`;
     app.get(
       `${apiPrefix}/catalog`,
       { config: { rateLimit: { max: 120 } } },
       async (request, reply) => {
-        if (sandbox && !testShopAllowed)
-          return reply.code(404).send(errorBody('見つかりません。', request));
         try {
           const current = await storeCatalog.get();
           return inventory
@@ -238,8 +184,6 @@ export async function buildApp({
         },
       },
       async (request, reply) => {
-        if (sandbox && !testShopAllowed)
-          return reply.code(404).send(errorBody('見つかりません。', request));
         if (request.headers.origin !== storeConfig.siteUrl)
           return reply
             .code(403)
@@ -249,15 +193,7 @@ export async function buildApp({
           return reply
             .code(400)
             .send(errorBody('ショップからもう一度お試しください。', request));
-        if (sandbox && request.headers['x-checkout-protocol'] !== '2')
-          return reply
-            .code(409)
-            .send(
-              errorBody(
-                'ページを再読み込みして、カートを確認してください。',
-                request,
-              ),
-            );
+
         if (!storeConfig.salesEnabled)
           return reply
             .code(503)
@@ -307,14 +243,13 @@ export async function buildApp({
           // second session after a language change. Stripe rejects changed
           // parameters for an existing key; the client preserves attempt locale.
           const key =
-            (sandbox ? 'gyaru-test-v2-' : 'gyaru-') +
+            'gyaru-' +
             createHash('sha256')
               .update(
                 JSON.stringify({
-                  token: sandbox ? token.toLowerCase() : token,
+                  token,
                   lines,
                   version: current.version,
-                  ...(sandbox ? { scope: apiPrefix } : {}),
                 }),
               )
               .digest('hex');
@@ -326,15 +261,14 @@ export async function buildApp({
             adaptive_pricing: { enabled: false },
             shipping_address_collection: { allowed_countries: ['JP'] },
             shipping_options: [{ shipping_rate: storeConfig.shippingRate }],
-            success_url: `${storeConfig.siteUrl}${returnPrefix}/success/${sandbox ? '?session_id={CHECKOUT_SESSION_ID}' : ''}`,
+            success_url: `${storeConfig.siteUrl}${returnPrefix}/success/`,
             cancel_url: `${storeConfig.siteUrl}${returnPrefix}/cancel/`,
             metadata: {
-              store: sandbox ? 'gyaruinthemix-test' : 'gyaruinthemix',
-              ...(sandbox ? { checkout_attempt: testAttemptProof(token) } : {}),
+              store: 'gyaruinthemix',
             },
             payment_intent_data: {
               metadata: {
-                store: sandbox ? 'gyaruinthemix-test' : 'gyaruinthemix',
+                store: 'gyaruinthemix',
               },
             },
           };
@@ -348,30 +282,7 @@ export async function buildApp({
             : await stripe.checkout.sessions.create(params, {
                 idempotencyKey: key,
               });
-          if (sandbox) {
-            if (
-              session.livemode !== false ||
-              !testSessionPattern.test(session.id || '')
-            )
-              throw new Error('Invalid test checkout session');
-            // Idempotent create returns its original cached response even after
-            // payment or expiry. Retrieve current state before returning a URL.
-            const currentSession = await stripe.checkout.sessions.retrieve(
-              session.id,
-            );
-            if (!testSessionMatches(currentSession, session.id, token))
-              throw new Error('Invalid test checkout scope');
-            const result = {
-              mode: 'test',
-              sessionId: session.id,
-              status: testSessionStatus(currentSession),
-            };
-            if (result.status !== 'open') return result;
-            const target = new URL(currentSession.url);
-            if (target.origin !== 'https://checkout.stripe.com')
-              throw new Error('Invalid checkout destination');
-            return { ...result, url: target.href };
-          }
+
           if (inventory && session.status !== 'open')
             return reply
               .code(409)
@@ -414,64 +325,6 @@ export async function buildApp({
         }
       },
     );
-    if (sandbox)
-      app.post(
-        `${apiPrefix}/checkout-status`,
-        {
-          config: { rateLimit: { max: rateMax } },
-          schema: {
-            body: {
-              type: 'object',
-              additionalProperties: false,
-              required: ['sessionId', 'attemptId'],
-              properties: {
-                sessionId: {
-                  type: 'string',
-                  pattern: testSessionPattern.source,
-                },
-                attemptId: {
-                  type: 'string',
-                  pattern: attemptPattern.source,
-                },
-              },
-            },
-          },
-        },
-        async (request, reply) => {
-          if (!testShopAllowed)
-            return reply.code(404).send(errorBody('見つかりません。', request));
-          if (request.headers.origin !== storeConfig.siteUrl)
-            return reply
-              .code(403)
-              .send(errorBody('ショップからもう一度お試しください。', request));
-          const { sessionId, attemptId } = request.body;
-          try {
-            const session = await stripe.checkout.sessions.retrieve(sessionId);
-            if (!testSessionMatches(session, sessionId, attemptId))
-              return reply
-                .code(404)
-                .send(errorBody('決済情報を確認できません。', request));
-            return {
-              mode: 'test',
-              sessionId,
-              status: testSessionStatus(session),
-            };
-          } catch {
-            app.log.error({
-              event: 'checkout_status_unavailable',
-              requestId: request.id,
-            });
-            return reply
-              .code(503)
-              .send(
-                errorBody(
-                  '決済情報を確認できません。時間をおいてお試しください。',
-                  request,
-                ),
-              );
-          }
-        },
-      );
   }
   if (memberAccess) memberAccess.registerRoutes(app);
   if (membership) {
@@ -541,8 +394,6 @@ export async function buildApp({
     );
   }
   registerShop('/api', '/shop', config, catalog);
-  if (testShopAllowed)
-    registerShop('/api/test-shop', '/shop-test', testConfig, testCatalog, true);
   await app.register(async (webhook) => {
     webhook.removeContentTypeParser('application/json');
     webhook.addContentTypeParser(
@@ -583,11 +434,7 @@ export async function buildApp({
         if (!supportedEvents.has(event.type)) return { received: true };
         const session = event.data?.object;
         const store = session?.metadata?.store;
-        if (
-          store !== 'gyaruinthemix' &&
-          !(store === 'gyaruinthemix-test' && testShopAllowed)
-        )
-          return { received: true };
+        if (store !== 'gyaruinthemix') return { received: true };
         if (
           !idPattern.test(event.id || '') ||
           !idPattern.test(session.id || '') ||
@@ -628,7 +475,6 @@ export async function buildApp({
   app.addHook('onClose', () => journal.close());
   app.decorate('validateCatalog', async () => {
     await catalog.get();
-    if (testShopAllowed) await testCatalog.get();
     if (membership) await membership.getPlan();
   });
   return app;

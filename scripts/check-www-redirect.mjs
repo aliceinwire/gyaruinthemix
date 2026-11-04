@@ -31,8 +31,8 @@ export async function checkWwwRedirect(base) {
     '/music/?from=www&tag=a%2Fb&tag=two+words',
     '/%E3%82%AE%E3%83%A3%E3%83%AB/%2F?value=%26%3D',
     '//other.example/path?next=https://other.example/',
-    '/shop-test/success/?session_id=cs_test_www_probe',
-    '/shop-test/cancel/',
+    '/shop/success/?session_id=cs_test_www_probe',
+    '/shop/cancel/',
     '/api/health',
     '/api/stripe/webhook',
   ]) {

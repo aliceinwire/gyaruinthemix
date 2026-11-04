@@ -136,10 +136,10 @@ test('thumbnail navigation is scoped, repeat-safe and updates selection after sw
   assert.equal(links[1].attributes['aria-current'], 'true');
 });
 
-test('supplied keychain photos have a product-first bilingual gallery in both shops', async () => {
+test('supplied keychain photos have a product-first bilingual gallery in the shop', async () => {
   const { readFile } = await import('node:fs/promises');
   const expected = ['keychain-product', 'keychain-bag', 'keychain-styled'];
-  for (const file of ['products.json', 'test-products.json']) {
+  for (const file of ['products.json']) {
     const catalog = JSON.parse(
       await readFile(new URL(`../config/${file}`, import.meta.url), 'utf8'),
     );
@@ -155,14 +155,8 @@ test('supplied keychain photos have a product-first bilingual gallery in both sh
         assert.equal(photo.label, '');
       }
     }
-    assert.equal(
-      product.displayPriceJPY,
-      file === 'products.json' ? 1500 : null,
-    );
+    assert.equal(product.displayPriceJPY, 1500);
     assert.equal(product.paymentLink, null);
-    assert.equal(
-      product.availability,
-      file === 'products.json' ? 'coming_soon' : 'available',
-    );
+    assert.equal(product.availability, 'coming_soon');
   }
 });

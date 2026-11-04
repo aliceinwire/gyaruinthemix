@@ -17,6 +17,7 @@ function assertReleaseFooter(html, path) {
 }
 for (const path of publicPaths) {
   const html = await read(`${path.slice(1)}index.html`);
+  assert.doesNotMatch(html, /shop-test|test-store/);
   assertReleaseFooter(html, path);
   assert.ok(
     html.includes(`rel="canonical" href="${canonicalUrl(path)}"`),
@@ -54,9 +55,7 @@ for (const path of publicPaths) {
     )
       continue;
     assert.ok(
-      !href.includes('/shop-test/') &&
-        !href.includes('/game/') &&
-        !href.includes('/streaming-guidelines/'),
+      !href.includes('/game/') && !href.includes('/streaming-guidelines/'),
       `${path}: hidden test pages must stay undiscoverable`,
     );
     if (getLocale(path) === 'en' && !href.startsWith('/en/')) {
@@ -73,15 +72,9 @@ for (const path of [
   'en/streaming-guidelines/index.html',
   'shop/success/index.html',
   'shop/cancel/index.html',
-  'shop-test/index.html',
-  'shop-test/success/index.html',
-  'shop-test/cancel/index.html',
   '404.html',
   'en/shop/success/index.html',
   'en/shop/cancel/index.html',
-  'en/shop-test/index.html',
-  'en/shop-test/success/index.html',
-  'en/shop-test/cancel/index.html',
   'en/404/index.html',
 ]) {
   const html = await read(path);
@@ -89,6 +82,13 @@ for (const path of [
   assert.match(html, /name="robots" content="noindex, nofollow, noarchive"/);
   assert.doesNotMatch(html, /rel="canonical"|property="og:url"/);
   assert.ok(html.includes(`<html lang="${getLocale('/' + path)}"`));
+}
+for (const locale of ['', 'en/']) {
+  for (const page of ['', 'success/', 'cancel/']) {
+    await assert.rejects(read(`${locale}shop-test/${page}index.html`), {
+      code: 'ENOENT',
+    });
+  }
 }
 const sitemap = await read('sitemap.xml');
 assert.deepEqual(
@@ -108,7 +108,7 @@ assert.ok(
     .length > 0,
 );
 console.log(
-  `PASS canonical URLs, Open Graph, sitemap, robots and ${publicPaths.length} public pages; sandbox/returns remain noindex`,
+  `PASS canonical URLs, Open Graph, sitemap, robots and ${publicPaths.length} public pages; test shop removed and returns remain noindex`,
 );
 
 assert.match(
