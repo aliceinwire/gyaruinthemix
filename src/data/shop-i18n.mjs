@@ -3,6 +3,7 @@ const englishProducts = {
   sticker: {
     name: 'Logo sticker',
     description: 'Add a little gyaru attitude to your everyday essentials.',
+    size: 'Backing sheet: W76 × H31 mm',
     imageAlt: 'Gyaru in the Mix logo design',
     imageLabel: 'Logo design reference',
   },
@@ -16,6 +17,7 @@ const englishProducts = {
   keychain: {
     name: 'Acrylic keychain',
     description: 'Clip it to your bag and take your gyaru spirit everywhere.',
+    size: '50 × 70 mm',
     imageAlt: 'Gyaru in the Mix logo design',
     imageLabel: 'Logo design reference',
   },

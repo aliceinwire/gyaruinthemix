@@ -13,6 +13,7 @@ test('English product presentation cannot change catalog identity, prices or ava
         [
           english.name,
           english.description,
+          english.size,
           english.imageAlt,
           english.imageLabel,
         ].join(' '),
@@ -20,7 +21,9 @@ test('English product presentation cannot change catalog identity, prices or ava
       );
       for (const key of Object.keys(definition).filter(
         (key) =>
-          !['name', 'description', 'imageAlt', 'imageLabel'].includes(key),
+          !['name', 'description', 'size', 'imageAlt', 'imageLabel'].includes(
+            key,
+          ),
       ))
         assert.equal(english[key], definition[key]);
       assert.equal(localizeProduct(definition), definition);

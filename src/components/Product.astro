@@ -13,6 +13,13 @@ const {
 const locale = getLocale(Astro.url.pathname);
 const t = translator(locale);
 const product = localizeProduct(definition, locale);
+// Payment Links stock is maintained in the catalog, not a live API balance.
+const stockQuantity =
+  !cartEnabled &&
+  Number.isSafeInteger(product.stockQuantity) &&
+  product.stockQuantity >= 0
+    ? product.stockQuantity
+    : null;
 const availability =
   product.availability === 'sold_out'
     ? t('売り切れ', 'Sold out')
@@ -62,6 +69,24 @@ const availability =
     </div>
     <h3>{product.name}</h3>
     <p>{product.description}</p>
+    {
+      (product.size || stockQuantity !== null) && (
+        <dl class="product-details">
+          {product.size && (
+            <div>
+              <dt>{t('サイズ', 'Size')}</dt>
+              <dd>{product.size}</dd>
+            </div>
+          )}
+          {stockQuantity !== null && (
+            <div>
+              <dt>{t('在庫', 'Stock')}</dt>
+              <dd>{t(`${stockQuantity}個`, `${stockQuantity} units`)}</dd>
+            </div>
+          )}
+        </dl>
+      )
+    }
     <div class="product-buy">
       <span class="price" data-price
         >{

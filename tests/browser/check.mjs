@@ -5,6 +5,7 @@ import { readFile, mkdir, writeFile, stat } from 'node:fs/promises';
 import { extname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+import { checkProductDetails } from './product-details.mjs';
 import { releaseVersion } from '../../src/data/release.mjs';
 
 const repo = fileURLToPath(new URL('../../', import.meta.url));
@@ -279,6 +280,12 @@ async function inspect(page, pathname, width) {
     if (!separated) await screenshot(page, 'hero-overlap-' + label);
   }
   const en = pathname.startsWith('/en/');
+  if (['/shop/', '/shop-test/'].includes(pathname.replace(/^\/en/, ''))) {
+    await checkProductDetails(page, {
+      en,
+      staticStock: mode === 'payment_links' && !pathname.includes('shop-test'),
+    });
+  }
   check(
     (await page.locator('html').getAttribute('lang')) === (en ? 'en' : 'ja'),
     label + ' document language',
