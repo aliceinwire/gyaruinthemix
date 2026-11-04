@@ -6,7 +6,7 @@
     "priceEnv": "STRIPE_PRICE_STICKER",
     "availability": "coming_soon",
     "maxQuantity": 5,
-    "displayPriceJPY": null,
+    "displayPriceJPY": 300,
     "paymentLink": null,
     "images": [
       {
@@ -36,7 +36,7 @@
     "priceEnv": "STRIPE_PRICE_TOWEL",
     "availability": "coming_soon",
     "maxQuantity": 5,
-    "displayPriceJPY": null,
+    "displayPriceJPY": 2900,
     "paymentLink": null
   },
   {
@@ -46,7 +46,7 @@
     "priceEnv": "STRIPE_PRICE_KEYCHAIN",
     "availability": "coming_soon",
     "maxQuantity": 5,
-    "displayPriceJPY": null,
+    "displayPriceJPY": 1500,
     "paymentLink": null,
     "images": [
       {
@@ -65,5 +65,18 @@
         "altEn": "Logo acrylic keychain on a glossy black background beside pink fabric"
       }
     ]
+  },
+  {
+    "slug": "tshirt",
+    "name": "Tシャツ",
+    "description": "ギャルインザミックスのTシャツ。",
+    "image": "/assets/logo.webp",
+    "imageAlt": "ギャルインザミックスのロゴデザイン",
+    "imageLabel": "ロゴデザイン参考（商品写真ではありません）",
+    "priceEnv": "STRIPE_PRICE_TSHIRT",
+    "availability": "coming_soon",
+    "maxQuantity": 5,
+    "displayPriceJPY": 5000,
+    "paymentLink": null
   }
 ]
