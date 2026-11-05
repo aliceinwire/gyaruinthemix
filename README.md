@@ -20,6 +20,60 @@ Editorial English text is in `config/site.en.json`; source dates, destinations a
 
 API checkout accepts only `ja` or `en` and returns to that language's success/cancel page. Existing saved checkout attempts retain their original language on retry, including after switching the site language, so localization cannot cause a new payment attempt. Language changes do not alter public sales status, payment configuration or shipping rules.
 
+## Podcast distribution
+
+`https://gyaruinthemix.com/podcast/rss.xml` is generated during each website
+build from `config/podcast.json`. The Japanese and English podcast pages link
+to the same Japanese-language show feed.
+
+Before publishing the first episode, set `feed.artworkUrl` to a public, square
+JPEG or PNG (1400–3000 pixels per side, no transparency) and `feed.ownerEmail`
+to a monitored show email. This email is public in the RSS and is used for
+ownership verification. Review the show title, description, category and
+explicit-content setting in `feed`.
+
+Add an entry to `episodes`, using your actual title, description, date and
+media details. This is a schema example, not an episode to publish unchanged:
+
+```json
+{
+  "id": "episode-001",
+  "published": false,
+  "date": "2026-11-05",
+  "title": { "ja": "エピソード名", "en": "Episode title" },
+  "description": { "ja": "エピソードの説明", "en": "Episode description" },
+  "audio": {
+    "url": "https://example.com/podcast/episode-001.mp3",
+    "length": 12345678,
+    "type": "audio/mpeg"
+  },
+  "explicit": false,
+  "durationSeconds": 1200
+}
+```
+
+`audio.length` is the actual file size in bytes, not the duration. Supported
+types are `audio/mpeg` for MP3 and `audio/mp4` for M4A. Media and artwork URLs
+must be stable public HTTPS URLs; the host must support HEAD and byte-range
+requests without login or expiring access tokens. Files under `public/podcast/`
+ship with the website; an external public media host can also be used. Do not
+use the signed game-music HLS URLs for podcast distribution.
+
+Set `published` to `true` when ready, then build and deploy the website. Drafts
+are excluded from both the page and RSS. Published episodes require audio,
+an explicit-content rating and the show artwork/email. `durationSeconds` is
+optional; `durationMinutes` is an optional website display value. An optional
+`url` overrides the website's listening link, which otherwise opens the audio.
+Keep the `id` unchanged after publication; it determines the stable RSS GUID.
+Each episode needs its own audio URL. Dates use midnight in Asia/Tokyo.
+
+After the first episode is deployed, register the RSS URL once in Spotify for
+Creators and Apple Podcasts Connect. Their validation/review is separate from
+website publication. Later deployed episode updates are picked up from the
+same feed. Add the resulting show URLs to `platforms.spotify` and
+`platforms.applePodcasts`. Until an episode is published, the RSS remains an
+empty feed and is not ready for directory submission.
+
 ## Product photo galleries
 
 Products in `config/products.json` can have an

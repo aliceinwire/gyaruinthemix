@@ -290,9 +290,14 @@ async function inspect(page, pathname, width) {
       description: document.querySelector('meta[name=description]')?.content,
       canonical: document.querySelector('link[rel=canonical]')?.href,
       robots: document.querySelector('meta[name=robots]')?.content,
-      alternates: [...document.querySelectorAll('link[rel=alternate]')].map(
-        (a) => [a.hreflang, a.href],
-      ),
+      alternates: [
+        ...document.querySelectorAll('link[rel=alternate][hreflang]'),
+      ].map((a) => [a.hreflang, a.href]),
+      feeds: [
+        ...document.querySelectorAll(
+          'link[rel=alternate][type="application/rss+xml"]',
+        ),
+      ].map((a) => a.href),
       localLinks: [
         ...document.querySelectorAll('a[href^="/"]:not([data-language-link])'),
       ]
@@ -327,6 +332,20 @@ async function inspect(page, pathname, width) {
         data.alternates,
       );
     } else check(/noindex/.test(data.robots || ''), label + ' noindex');
+    if (base === '/podcast/') {
+      const feed = 'https://gyaruinthemix.com/podcast/rss.xml';
+      check(
+        data.feeds.length === 1 && data.feeds[0] === feed,
+        label + ' podcast RSS discovery',
+        data.feeds,
+      );
+      check(
+        (await page
+          .locator(`a[type="application/rss+xml"][href="${feed}"]`)
+          .count()) === 1,
+        label + ' podcast RSS subscription link',
+      );
+    }
     if (en)
       check(
         data.localLinks.every((href) => href.startsWith('/en/')),

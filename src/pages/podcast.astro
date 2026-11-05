@@ -28,6 +28,13 @@ const dateFormat = new Intl.DateTimeFormat(
     'The podcast from DJ Arinee and DJ Chana. Meet GYARUINTHEMIX, explore episodes, and find where to listen.',
   )}
 >
+  <link
+    slot="head"
+    rel="alternate"
+    type="application/rss+xml"
+    title="ギャルインザミックス Podcast"
+    href={platforms.find((platform) => platform.id === 'rss')?.url}
+  />
   <section class="podcast-hero" aria-labelledby="podcast-title">
     <div class="podcast-hero-copy">
       <p class="eyebrow">GYARUINTHEMIX / PODCAST</p>
