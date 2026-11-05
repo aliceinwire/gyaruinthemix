@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { getLocale, localizePath } from '../src/data/i18n.mjs';
 import { canonicalUrl, publicPaths, siteOrigin } from '../src/data/urls.mjs';
 import { releaseVersion } from '../src/data/release.mjs';
+import { GET as getRobots } from '../src/pages/robots.txt.js';
 import {
   createPodcastFeed,
   podcastFeedUrl,
@@ -125,6 +126,7 @@ assert.match(
   await read('robots.txt'),
   new RegExp(`Sitemap: ${siteOrigin.replaceAll('.', '\\.')}\/sitemap\\.xml`),
 );
+assert.equal(await read('robots.txt'), await getRobots().text());
 assert.ok(
   (await readFile(new URL('../dist/assets/logo.webp', import.meta.url)))
     .length > 0,
