@@ -86,6 +86,7 @@ const navigation = [
     }
     <title>{title}</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <slot name="head" />
   </head>
   <body>
     <a class="skip" href="#main">{t('本文へ', 'Skip to content')}</a>

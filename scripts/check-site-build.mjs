@@ -3,6 +3,11 @@ import { readFile } from 'node:fs/promises';
 import { getLocale, localizePath } from '../src/data/i18n.mjs';
 import { canonicalUrl, publicPaths, siteOrigin } from '../src/data/urls.mjs';
 import { releaseVersion } from '../src/data/release.mjs';
+import {
+  createPodcastFeed,
+  podcastFeedUrl,
+} from '../src/data/podcast-feed.mjs';
+import podcast from '../config/podcast.json' with { type: 'json' };
 
 const read = (path) =>
   readFile(new URL(`../dist/${path}`, import.meta.url), 'utf8');
@@ -91,6 +96,23 @@ for (const locale of ['', 'en/']) {
   }
 }
 const sitemap = await read('sitemap.xml');
+assert.equal(await read('podcast/rss.xml'), createPodcastFeed(podcast));
+for (const path of ['podcast/index.html', 'en/podcast/index.html']) {
+  const html = await read(path);
+  const head = html.split('</head>')[0];
+  assert.ok(
+    head.includes('type="application/rss+xml"'),
+    `${path}: RSS discovery`,
+  );
+  assert.ok(
+    head.includes(`href="${podcastFeedUrl}"`),
+    `${path}: canonical RSS URL`,
+  );
+  assert.ok(
+    html.split('</head>')[1].includes(`href="${podcastFeedUrl}"`),
+    `${path}: visible RSS subscription`,
+  );
+}
 assert.deepEqual(
   [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]),
   publicPaths.map(canonicalUrl),

@@ -1,8 +1,18 @@
 {
+  "feed": {
+    "title": "ギャルインザミックス",
+    "description": "DJありねぇとDJちゃなのポッドキャスト。フロアの外でも、声でつながろ。",
+    "author": "DJありねぇ × DJちゃな",
+    "language": "ja",
+    "category": "Society & Culture",
+    "explicit": false,
+    "artworkUrl": "",
+    "ownerEmail": ""
+  },
   "platforms": {
     "spotify": "",
     "applePodcasts": "",
-    "rss": ""
+    "rss": "https://gyaruinthemix.com/podcast/rss.xml"
   },
   "episodes": []
 }

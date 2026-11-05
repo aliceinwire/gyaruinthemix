@@ -6,7 +6,7 @@ const platformLabels = {
   rss: 'RSS',
 };
 
-function httpsLink(value, field) {
+export function httpsLink(value, field) {
   if (value === undefined || value === '') return '';
   try {
     const url = new URL(value);
@@ -16,6 +16,24 @@ function httpsLink(value, field) {
     // Invalid destinations must not become public listening links.
   }
   throw new Error(`Podcast ${field} must use HTTPS without credentials`);
+}
+
+function episodeAudio(audio) {
+  if (audio === undefined) return undefined;
+  const url = httpsLink(audio?.url, 'audio URL');
+  if (!url || new URL(url).hash)
+    throw new Error(
+      'Podcast audio needs a direct HTTPS file URL without a fragment',
+    );
+  if (!Number.isSafeInteger(audio.length) || audio.length <= 0)
+    throw new Error(
+      'Podcast audio length must be its positive integer byte size',
+    );
+  if (!['audio/mpeg', 'audio/mp4'].includes(audio.type))
+    throw new Error(
+      'Podcast audio type must be audio/mpeg (MP3) or audio/mp4 (M4A)',
+    );
+  return { url, length: audio.length, type: audio.type };
 }
 
 function localizedText(value, field, locale) {
@@ -56,7 +74,8 @@ export function getPodcast(data, locale = 'ja') {
           episode.durationMinutes <= 0)
       )
         throw new Error('Podcast durationMinutes must be a positive integer');
-      const url = httpsLink(episode.url, 'episode URL');
+      const audio = episodeAudio(episode.audio);
+      const url = httpsLink(episode.url, 'episode URL') || audio?.url;
       if (!url)
         throw new Error('Published podcast episodes need a listening URL');
       return {
@@ -67,6 +86,7 @@ export function getPodcast(data, locale = 'ja') {
         durationMinutes: episode.durationMinutes,
         url,
         transcriptUrl: httpsLink(episode.transcriptUrl, 'transcript URL'),
+        ...(audio ? { audio } : {}),
       };
     })
     .sort((a, b) => b.date.localeCompare(a.date));
