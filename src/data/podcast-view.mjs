@@ -24,17 +24,39 @@ function playerSource(episode) {
   const url = new URL(episode.audio.url);
   // The website serves its own enclosures. Off-site listening links still open normally.
   if (url.origin !== siteOrigin) return '';
+  const upload = /^\/podcast\/audio\/([^./][^/]*)\.([mM][pP]3)$/.exec(
+    url.pathname,
+  );
+  if (upload) return `/podcast/play/${upload[1]}/${upload[2]}${url.search}`;
   return url.pathname.replace(/^\/+/, '/') + url.search;
+}
+
+function pageLink(value, enclosure) {
+  if (!value) return '';
+  const url = new URL(value);
+  url.hash = '';
+  if (
+    url.href === enclosure ||
+    /(?:\.|%2e)(?:mp3|m4a|mp4)\/?$/i.test(url.pathname) ||
+    (url.origin === siteOrigin &&
+      /^\/podcast\/(?:audio|play)\//.test(url.pathname))
+  )
+    return '';
+  return value;
 }
 
 export function latestLink(episode, locale) {
   const t = translator(locale);
-  const label = episode
-    ? t('最新エピソードを聴く', 'Listen to the latest episode')
-    : t('配信情報を見る', 'Explore the podcast');
   const inline = Boolean(playerSource(episode));
-  const href = inline ? `#episode-${episode.id}` : episode?.url || '#episodes';
-  return `<a class="button button-pink" href="${esc(href)}"${inline ? ' data-play-latest' : ''}>${label} <span aria-hidden="true">${episode && !inline ? '↗' : '↓'}</span></a>`;
+  const external = inline ? '' : pageLink(episode?.url, episode?.audio?.url);
+  const label =
+    inline || external
+      ? t('最新エピソードを聴く', 'Listen to the latest episode')
+      : episode
+        ? t('最新エピソードを見る', 'View the latest episode')
+        : t('配信情報を見る', 'Explore the podcast');
+  const href = external || (episode ? `#episode-${episode.id}` : '#episodes');
+  return `<a class="button button-pink" href="${esc(href)}"${inline ? ' data-play-latest' : ''}>${label} <span aria-hidden="true">${external ? '↗' : '↓'}</span></a>`;
 }
 
 export function episodeList(episodes, locale) {
@@ -53,10 +75,11 @@ export function episodeList(episodes, locale) {
       englishDates.format(new Date(`${episode.date}T00:00:00+09:00`)),
     );
     const source = playerSource(episode);
-    const directAudio = source && episode.url === episode.audio.url;
-    const listenLabel = directAudio
-      ? t('音声ファイルを開く', 'Open audio file')
-      : t('エピソードを聴く', 'Listen to episode');
+    const listeningUrl = pageLink(episode.url, episode.audio?.url);
+    const transcriptUrl = pageLink(episode.transcriptUrl, episode.audio?.url);
+    const visibleTags = (tags || []).filter(
+      (tag) => !/^podcast$/i.test(tag.trim()),
+    );
     return `<li><article class="podcast-episode${index === 0 ? ' podcast-latest' : ''}" id="episode-${esc(episode.id)}">
       ${artworkUrl ? `<img class="podcast-episode-cover" src="${esc(artworkUrl)}" alt="" width="160" height="160" loading="lazy">` : ''}
       <div class="podcast-episode-meta">
@@ -65,11 +88,16 @@ export function episodeList(episodes, locale) {
         ${durationMinutes ? `<span>${t(`${durationMinutes}分`, `${durationMinutes} min`)}</span>` : ''}
       </div>
       <h3>${esc(title)}</h3>
-      ${source ? `<audio class="podcast-player" controls preload="none" aria-label="${esc(t(`${title}を再生`, `Play ${title}`))}"><source src="${esc(source)}" type="${esc(episode.audio.type)}"></audio>` : ''}
-      ${description ? `<p class="podcast-notes">${esc(description)}</p>` : ''}
-      ${tags?.length ? `<ul class="podcast-tags" aria-label="${t('タグ', 'Tags')}">${tags.map((tag) => `<li>${esc(tag)}</li>`).join('')}</ul>` : ''}
-      <div class="podcast-episode-actions"><a class="${source ? 'text-link' : 'button'}" href="${esc(episode.url)}" aria-label="${esc(`${listenLabel} · ${title}`)}">${listenLabel} <span aria-hidden="true">↗</span></a>
-      ${episode.transcriptUrl ? `<a href="${esc(episode.transcriptUrl)}">${t('文字起こしを読む', 'Read transcript')}</a>` : ''}</div>
+      ${source ? `<audio class="podcast-player" controls controlslist="nodownload" preload="none" aria-label="${esc(t(`${title}を再生`, `Play ${title}`))}"><source src="${esc(source)}" type="${esc(episode.audio.type)}"></audio>` : ''}
+      ${description && !/^podcast$/i.test(description.trim()) ? `<p class="podcast-notes">${esc(description)}</p>` : ''}
+      ${visibleTags.length ? `<ul class="podcast-tags" aria-label="${t('タグ', 'Tags')}">${visibleTags.map((tag) => `<li>${esc(tag)}</li>`).join('')}</ul>` : ''}
+      ${
+        listeningUrl || transcriptUrl
+          ? `<div class="podcast-episode-actions">
+        ${listeningUrl ? `<a class="${source ? 'text-link' : 'button'}" href="${esc(listeningUrl)}" aria-label="${esc(t(`${title}を聴く`, `Listen to ${title}`))}">${t('エピソードを聴く', 'Listen to episode')} <span aria-hidden="true">↗</span></a>` : ''}
+        ${transcriptUrl ? `<a href="${esc(transcriptUrl)}">${t('文字起こしを読む', 'Read transcript')}</a>` : ''}</div>`
+          : ''
+      }
     </article></li>`;
   });
   return `<p class="podcast-order">${t('新しいエピソードから', 'Newest episodes first')}</p><ol class="podcast-episodes">${cards.join('')}</ol>`;

@@ -81,7 +81,7 @@ test('drop, retag and remove a real MP3 across both pages, artwork and the RSS',
     field('TDRL', '2026-11-06'),
     frame('COMM', Buffer.from('\x03jpn\x00台本なし & ごはん')),
     field('TCON', 'Talk'),
-    field('TXXX', 'TAGS\x00日常;東京;Talk'),
+    field('TXXX', 'TAGS\x00日常;東京;Talk;Podcast'),
     frame(
       'APIC',
       Buffer.concat([Buffer.from('\x03image/png\x00\x03\x00'), png]),
@@ -95,6 +95,7 @@ test('drop, retag and remove a real MP3 across both pages, artwork and the RSS',
   assert.match(xml, /<title>ギャル &lt;ふたり&gt;<\/title>/);
   assert.match(xml, /<description>台本なし &amp; ごはん<\/description>/);
   assert.match(xml, /<category>東京<\/category>/);
+  assert.match(xml, /<category>Podcast<\/category>/);
   assert.match(xml, /<itunes:duration>1<\/itunes:duration>/);
   assert.match(xml, /05 Nov 2026 15:00:00 GMT/);
   assert.ok(xml.includes(encodeURIComponent(name)));
@@ -115,15 +116,20 @@ test('drop, retag and remove a real MP3 across both pages, artwork and the RSS',
     const player = html.match(/<audio\b[^>]*>[\s\S]*?<\/audio>/g) || [];
     assert.equal(player.length, 1);
     assert.match(player[0], /\bcontrols\b/);
+    assert.match(player[0], /controlslist="nodownload"/);
     assert.match(player[0], /preload="none"/);
     assert.doesNotMatch(player[0], /\bautoplay\b/);
     assert.ok(
       player[0].includes(
-        `src="/podcast/audio/${encodeURIComponent(name)}" type="audio/mpeg"`,
+        `src="/podcast/play/${encodeURIComponent(name.slice(0, -4))}/MP3" type="audio/mpeg"`,
       ),
     );
     const anchor = html.match(/<article[^>]+id="(episode-[^"]+)"/)[1];
     assert.ok(html.includes(`href="#${anchor}"`));
+    assert.doesNotMatch(
+      html,
+      /\/podcast\/audio\/|音声ファイルを開く|Open audio file|<li>Podcast<\/li>|podcast-episode-actions/i,
+    );
     for (const value of [
       cover,
       '日常',

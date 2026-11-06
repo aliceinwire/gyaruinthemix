@@ -241,7 +241,7 @@ async function checkPodcastPlayback(page) {
   await page.route(origin + '/podcast/', (route) =>
     route.fulfill({ contentType: 'text/html; charset=utf-8', body: html }),
   );
-  await page.route(origin + '/podcast/audio/*.mp3', (route) => {
+  await page.route(origin + '/podcast/play/*/mp3', (route) => {
     requests++;
     return route.fulfill({ contentType: 'audio/mpeg', body: mp3 });
   });
@@ -249,6 +249,21 @@ async function checkPodcastPlayback(page) {
   await page.goto(origin + '/podcast/', { waitUntil: 'networkidle' });
   const players = page.locator('audio[controls]');
   assert.equal(await players.count(), 2);
+  assert.equal(
+    await players.first().getAttribute('controlslist'),
+    'nodownload',
+  );
+  assert.equal(await page.locator('a[href*="/podcast/audio/"]').count(), 0);
+  assert.ok(
+    await players
+      .first()
+      .evaluate(
+        (audio) =>
+          !audio.dispatchEvent(
+            new MouseEvent('contextmenu', { bubbles: true, cancelable: true }),
+          ),
+      ),
+  );
   assert.equal(requests, 0);
   await page.getByRole('link', { name: '最新エピソードを聴く' }).click();
   await page.waitForFunction(
@@ -427,9 +442,7 @@ async function inspect(page, pathname, width) {
         .getByRole('link', { name: 'AntennaPod' })
         .getAttribute('href');
       check(
-        (await chooser
-          .locator(`a[href="${feed.replace(/^https:/, 'pcast:')}"]`)
-          .isVisible()) &&
+        (await chooser.locator('a[href^="pcast:"]').count()) === 0 &&
           pocket ===
             'https://pocketcasts.com/follow/' + encodeURIComponent(feed) &&
           new URL(antenna).searchParams.get('url') === feed,
