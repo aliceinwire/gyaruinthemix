@@ -2,6 +2,7 @@ import {
   escapeMarkup as xml,
   getPodcast,
   isFeedArtwork,
+  podcastEmail,
   showArtwork,
 } from './podcast.mjs';
 import { canonicalUrl } from './urls.mjs';
@@ -33,16 +34,7 @@ export function createPodcastFeed(data, library = []) {
     throw new Error('Podcast feed language must be a language code');
   if (typeof feed.explicit !== 'boolean')
     throw new Error('Podcast feed explicit must be true or false');
-  const configuredEmail = feed.ownerEmail ?? '';
-  const email =
-    typeof configuredEmail === 'string'
-      ? configuredEmail.trim() || 'arisut@riseup.net'
-      : configuredEmail;
-  if (
-    typeof email !== 'string' ||
-    !/^[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+$/.test(email)
-  )
-    throw new Error('Podcast feed ownerEmail must be a valid email address');
+  const email = podcastEmail(feed);
 
   const { episodes } = getPodcast(data, 'ja', library);
   const artwork = showArtwork(feed, episodes).feed;

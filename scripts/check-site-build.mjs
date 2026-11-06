@@ -115,7 +115,8 @@ for (const locale of ['', 'en/']) {
   }
 }
 const sitemap = await read('sitemap.xml');
-assert.equal(await read('podcast/rss.xml'), createPodcastFeed(podcast));
+const podcastRss = await read('podcast/rss.xml');
+assert.equal(podcastRss, createPodcastFeed(podcast));
 for (const path of ['podcast/index.html', 'en/podcast/index.html']) {
   const html = await read(path);
   const head = html.split('</head>')[0];
@@ -130,6 +131,14 @@ for (const path of ['podcast/index.html', 'en/podcast/index.html']) {
   assert.ok(
     html.split('</head>')[1].includes(`href="${podcastFeedUrl}"`),
     `${path}: visible RSS subscription`,
+  );
+  const recipient = html.match(/href="mailto:([^"]+)"/)?.[1];
+  assert.ok(
+    recipient &&
+      podcastRss.includes(
+        `<itunes:email>${escapeMarkup(decodeURIComponent(recipient))}</itunes:email>`,
+      ),
+    `${path}: listener email link matches the RSS contact`,
   );
 }
 assert.deepEqual(

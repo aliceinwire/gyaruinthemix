@@ -7,7 +7,7 @@ import {
   latestLink,
   sharingImageTags,
 } from '../data/podcast-view.mjs';
-import { getPodcast } from '../data/podcast.mjs';
+import { getPodcast, podcastEmail } from '../data/podcast.mjs';
 import { getSite } from '../data/site.mjs';
 import { getLocale, localizePath, translator } from '../data/i18n.mjs';
 
@@ -15,6 +15,8 @@ const locale = getLocale(Astro.url.pathname);
 const t = translator(locale);
 const site = getSite(locale);
 const { platforms, episodes } = getPodcast(data, locale);
+const email = podcastEmail(data.feed);
+const mailto = `mailto:${encodeURIComponent(email).replace('%40', '@')}`;
 ---
 
 <Layout
@@ -161,6 +163,15 @@ const { platforms, episodes } = getPodcast(data, locale);
       )
     }
     <Fragment set:html="<!--/podcast-list-->" />
+    <p class="collection-note">
+      {
+        t(
+          '番組の感想やご意見、うちらへの質問はメールで送ってな。',
+          'Email us your comments, questions or feedback about the show.',
+        )
+      }
+      <a href={mailto}>{email}</a>
+    </p>
   </section>
 
   <section class="podcast-hosts" id="hosts" aria-labelledby="hosts-title">

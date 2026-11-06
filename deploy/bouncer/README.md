@@ -78,8 +78,8 @@ tag. A full release or recording date is preferred; otherwise the first
 indexed file modification date (Japan time) is kept across tag edits.
 The newest available cover supplies the podcast link preview on both language
 pages. RSS uses the newest JPEG or PNG for the show cover. To pin a show cover,
-set `feed.artworkUrl` in `config/podcast.json`. The public RSS owner email
-defaults to `arisut@riseup.net`. Set `feed.ownerEmail` to override it.
+set `feed.artworkUrl` in `config/podcast.json`. The listener feedback link and
+RSS owner email default to `arisut@riseup.net`. Set `feed.ownerEmail` to change both.
 Review the explicit rating before directory submission. Keep only public episodes
 in the upload folder. Original recordings and private game music belong
 elsewhere.
