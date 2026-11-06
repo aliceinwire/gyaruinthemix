@@ -1,6 +1,13 @@
 import { execFileSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { open, rename, rm } from 'node:fs/promises';
+import {
+  mkdtemp,
+  open,
+  readFile,
+  rename,
+  rm,
+  writeFile,
+} from 'node:fs/promises';
 import { join } from 'node:path';
 import { podcastReleaseTime } from '../src/data/podcast.mjs';
 
@@ -21,32 +28,41 @@ function frame(id, ...body) {
   return [Buffer.from(id), tagSize(byteLength(body)), Buffer.alloc(2), ...body];
 }
 
-function cleanCover(cover) {
+async function cleanCover(directory, cover) {
   if (!cover) return;
-  // Rebuild pixels so the embedded picture cannot carry EXIF, XMP or PNG times.
-  const jpeg = cover.extension === 'jpg';
-  const codec = jpeg ? 'mjpeg' : 'png';
-  // prettier-ignore
-  const args = [
-    '-nostdin', '-v', 'error', '-threads', '1', '-filter_threads', '1',
-    '-f', 'image2pipe', '-protocol_whitelist', 'pipe', '-max_pixels', '20000000', '-i', 'pipe:0',
-    '-frames:v', '1', '-vf', 'sidedata=mode=delete', '-map_metadata', '-1', '-c:v', codec, '-threads:v', '1',
-    ...(jpeg ? ['-q:v', '2'] : []), '-fflags', '+bitexact', '-f', 'image2pipe', 'pipe:1',
-  ];
-  let bytes;
+  // Strip the image container on disk, without decoding full-size album art
+  // into pixels alongside the indexer in the web container.
+  const stage = await mkdtemp(join(directory, '.cover-'));
+  const input = join(stage, 'input.' + cover.extension);
+  const output = join(stage, 'public.' + cover.extension);
   try {
-    bytes = execFileSync('ffmpeg', args, {
-      input: cover.bytes,
-      stdio: ['pipe', 'pipe', 'pipe'],
-      maxBuffer: 32 * 1024 * 1024,
-    });
-  } catch (error) {
-    if (error.code && error.code !== 'ENOBUFS') throw error;
-    console.warn('Omitting unreadable embedded podcast artwork');
-    return;
+    await writeFile(input, cover.bytes);
+    try {
+      execFileSync(
+        'exiftool',
+        [
+          '-config',
+          '',
+          '-all=',
+          '-trailer:all=',
+          '-tagsfromfile',
+          '@',
+          '-Orientation',
+          '-o',
+          output,
+          input,
+        ],
+        { stdio: ['ignore', 'ignore', 'pipe'] },
+      );
+    } catch (error) {
+      if (error.code || error.signal) throw error;
+      console.warn('Omitting unreadable embedded podcast artwork');
+      return;
+    }
+    return { extension: cover.extension, bytes: await readFile(output) };
+  } finally {
+    await rm(stage, { recursive: true, force: true });
   }
-  if (!bytes.length) return;
-  return { extension: jpeg ? 'jpg' : 'png', bytes };
 }
 
 function publicTag(episode, cover, common, midnight) {
@@ -76,7 +92,8 @@ function publicTag(episode, cover, common, midnight) {
       ...frame('COMM', Buffer.from('\x03jpn\x00' + episode.description)),
     );
   if (cover) {
-    const mime = cover.extension === 'jpg' ? 'image/jpeg' : 'image/png';
+    const mime =
+      'image/' + (cover.extension === 'jpg' ? 'jpeg' : cover.extension);
     parts.push(
       ...frame('APIC', Buffer.from(`\x03${mime}\x00\x03\x00`), cover.bytes),
     );
@@ -92,7 +109,7 @@ export async function preparePodcastMedia(
   common,
 ) {
   const midnight = podcastReleaseTime(result.episode.date);
-  const cover = cleanCover(result.cover);
+  const cover = await cleanCover(directory, result.cover);
   const tag = publicTag(result.episode, cover, common, midnight);
   const temp = join(directory, `.${randomUUID()}.tmp`);
   const file = await open(temp, 'wx');

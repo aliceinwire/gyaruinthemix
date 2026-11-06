@@ -26,7 +26,7 @@ const frame = (id, data) =>
   Buffer.concat([Buffer.from(id), size(data.length), Buffer.alloc(2), data]);
 const field = (id, text) => frame(id, Buffer.from('\x03' + text));
 const png = Buffer.from(
-  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aDeUAAAAASUVORK5CYII=',
+  'iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFElEQVR4nGP8z1Dxn4GBgYGJAQoAJh8CegWQX6EAAAAASUVORK5CYII=',
   'base64',
 );
 const payload = Buffer.from('tEXtCreation Time\x001991:02:03 04:05:06');
@@ -35,11 +35,11 @@ length.writeUInt32BE(payload.length - 4);
 const checksum = Buffer.alloc(4);
 checksum.writeUInt32BE(crc32(payload));
 const datedPng = Buffer.concat([
-  png.subarray(0, -12),
+  png.subarray(0, 33),
   length,
   payload,
   checksum,
-  png.subarray(-12),
+  png.subarray(33),
 ]);
 
 function mp3(frames = []) {
@@ -177,7 +177,11 @@ test('drop, retag and remove a real MP3 across both pages, artwork and the RSS',
   assert.ok(item.includes(`<itunes:image href="${imageUrl}"`));
   const publishedCover = await readFile(join(f.cache, 'artwork', cover));
   assert.ok(sanitized.includes(publishedCover));
-  assert.deepEqual(publishedCover.subarray(0, 8), png.subarray(0, 8));
+  assert.deepEqual(
+    publishedCover,
+    png,
+    'remove only the added picture metadata',
+  );
   assert.ok(!publishedCover.includes(Buffer.from('1991:02')));
   for (const locale of ['ja', 'en']) {
     const html = await f.read(`${locale}.html`);

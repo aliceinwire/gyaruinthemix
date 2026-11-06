@@ -226,8 +226,7 @@ test('canonical CI covers both checkout modes with default-off and enabled audio
     'utf8',
   );
   assert.match(prepare, /'scripts\/ci-bouncer.mjs', '--no-build'/);
-  const bouncerJobs = workflow.slice(workflow.indexOf('\n  containers:'));
-  assert.doesNotMatch(bouncerJobs, /apt-get.*ffmpeg|Install.*audio.*tools/i);
+  assert.doesNotMatch(workflow, /apt-get.*ffmpeg|Install.*audio.*tools/i);
   const smoke = await readFile(join(root, 'scripts/ci-bouncer.mjs'), 'utf8');
   assert.match(smoke, /deploy\/bouncer\/docker-compose.yml/);
   assert.doesNotMatch(smoke, /docker-compose\.game-audio/);

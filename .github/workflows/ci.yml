@@ -78,9 +78,9 @@ jobs:
       - name: Provide podcast media dependencies
         if: contains(fromJSON(needs.changes.outputs.scopes), 'site')
         run: |
-          if ! command -v mpg123-strip >/dev/null || ! command -v ffmpeg >/dev/null; then
+          if ! command -v mpg123-strip >/dev/null || ! command -v exiftool >/dev/null; then
             sudo apt-get update
-            sudo apt-get install -y --no-install-recommends ffmpeg mpg123
+            sudo apt-get install -y --no-install-recommends libimage-exiftool-perl mpg123
           fi
       - name: Run affected test suites
         env:

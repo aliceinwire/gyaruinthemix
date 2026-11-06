@@ -262,8 +262,11 @@ export async function refreshPodcast({
     if (file.isFile() && /^[a-f0-9]{64}\.mp3$/.test(file.name))
       existingMedia.add(file.name);
     // The production scanner holds the volume lock. A temp file here survived an interruption.
-    else if (/^\.[a-f0-9-]{36}\.tmp$/.test(file.name))
-      await rm(join(mediaDir, file.name), { force: true });
+    else if (
+      /^\.[a-f0-9-]{36}\.tmp$/.test(file.name) ||
+      /^\.cover-[a-zA-Z0-9]{6}$/.test(file.name)
+    )
+      await rm(join(mediaDir, file.name), { recursive: true, force: true });
   }
   const configuredDates = new Map(
     config.episodes
