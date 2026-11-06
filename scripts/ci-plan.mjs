@@ -79,6 +79,7 @@ export function classify(path) {
     path === 'scripts/images.mjs' ||
     path === 'scripts/build-podcast-index.mjs' ||
     path === 'scripts/podcast-index.mjs' ||
+    path === 'scripts/podcast-media.mjs' ||
     path === 'deploy/podcast-web.sh' ||
     path === 'scripts/build-site.mjs'
   )

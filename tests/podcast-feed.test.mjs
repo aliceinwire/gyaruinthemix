@@ -345,3 +345,20 @@ test('production prefers the live feed and falls back to revalidated static RSS'
   assert.match(location, /Cache-Control 'no-cache'/);
   assert.match(location, /try_files \/\.podcast-live\/rss\.xml \$uri =404/);
 });
+
+test('both uploaded media routes resolve through the published podcast edition', async () => {
+  const nginx = await readFile('deploy/nginx.conf', 'utf8');
+  for (const [route, filename] of [
+    ['play', '$1.$2'],
+    ['audio', '$1'],
+  ]) {
+    const location = nginx
+      .split(`location ~ "^/podcast/${route}/`)[1]
+      .split('\n    }')[0];
+    assert.ok(
+      location.includes(`alias /tmp/podcast-pages/current/audio/${filename};`),
+    );
+    assert.ok(location.includes('if_modified_since off;'));
+  }
+  assert.doesNotMatch(nginx, /alias \/podcast-source/);
+});

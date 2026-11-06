@@ -30,7 +30,12 @@ Use a permanent filename such as `ep001.mp3`. Tagged titles, front covers,
 show notes/comments, genres and keywords appear automatically. A missing title
 falls back to the filename; notes and artwork are optional. Replacing an MP3
 under the same name updates that episode and preserves its RSS GUID. Removing
-the MP3 removes the episode on the next scan. The audio files stay on the VPS.
+the MP3 removes the episode on the next scan.
+
+The VPS stores the original and a playback copy. The player and RSS serve
+the copy with its release timestamp set to midnight in Japan. New uploads use the
+day they first publish, and existing episodes keep their published day. A
+curated episode matching the upload URL can set its release day with `date`.
 
 Sharing either podcast page uses the cover from the newest published episode
 with artwork, falling back to the site logo until a cover is available.
