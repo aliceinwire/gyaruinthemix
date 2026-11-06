@@ -124,6 +124,41 @@ test('episode players use the hosted enclosure and retain separate listening and
   }
 });
 
+test('media-only episodes never navigate visitors to the enclosure', () => {
+  for (const url of [
+    'https://example.com/audio/EP.MP3?rev=2#t=4',
+    'https://example.com/EP%2emp3',
+    'https://example.com/stream?id=3',
+  ]) {
+    const enclosure = url.split('#')[0];
+    const [entry] = getPodcast(
+      data([
+        episode({
+          url,
+          transcriptUrl: url,
+          audio: { url: enclosure, type: 'audio/mpeg', length: 1000 },
+        }),
+      ]),
+    ).episodes;
+    const card = episodeList(
+      [{ ...entry, tags: ['Podcast'], description: 'Podcast' }],
+      'en',
+    );
+    assert.doesNotMatch(
+      card,
+      /<a\b|podcast-episode-actions|podcast-tags|podcast-notes/,
+    );
+    assert.ok(latestLink(entry, 'en').includes(`href="#episode-${entry.id}"`));
+  }
+  const [legacy] = getPodcast(
+    data([episode({ url: 'https://example.com/old.MP3?version=1' })]),
+  ).episodes;
+  assert.doesNotMatch(
+    episodeList([legacy], 'ja') + latestLink(legacy, 'ja'),
+    /href="[^"]*\.mp3/i,
+  );
+});
+
 test('unsafe listening, platform and transcript URLs cannot be published', () => {
   for (const url of [
     'javascript:alert(1)',

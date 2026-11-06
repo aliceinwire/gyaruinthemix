@@ -13,9 +13,6 @@ antennaFeed.search = new URLSearchParams({ url, title }).toString();
     <h3>{t('使うアプリを選ぶ', 'Choose a podcast app')}</h3>
     <div class="feed-apps">
       <a href={url.replace(/^https:/, 'podcast:')}>Apple Podcasts</a>
-      <a href={url.replace(/^https:/, 'pcast:')}
-        >{t('端末の対応アプリで開く', 'Open in a compatible app')}</a
-      >
       <a href={`https://pocketcasts.com/follow/${encodeURIComponent(url)}`}
         >Pocket Casts</a
       >
@@ -41,8 +38,8 @@ antennaFeed.search = new URLSearchParams({ url, title }).toString();
     <p>
       {
         t(
-          'iPhoneから手動で追加するときは、Apple Podcastsの「ライブラリ」→「…」→「番組をURLで追加」にRSSリンクを貼り付けてね。',
-          'To add the feed manually in Apple Podcasts on iPhone, go to Library → … → Follow a Show by URL and paste the RSS link.',
+          'Apple Podcastsで番組が開かないときは、iPhoneの「ライブラリ」→「…」→「番組をURLで追加」にRSSリンクを貼り付けてね。',
+          'If the show doesn’t open in Apple Podcasts on iPhone, paste the RSS link under Library → … → Follow a Show by URL.',
         )
       }
     </p>

@@ -211,6 +211,7 @@ const { platforms, episodes } = getPodcast(data, locale);
   const players =
     document.querySelectorAll<HTMLAudioElement>('.podcast-player');
   for (const player of players) {
+    player.addEventListener('contextmenu', (event) => event.preventDefault());
     player.addEventListener('play', () => {
       for (const other of players) {
         if (other !== player && !other.paused) other.pause();
@@ -428,6 +429,7 @@ const { platforms, episodes } = getPodcast(data, locale);
     max-width: 75ch;
   }
   .podcast-player {
+    -webkit-touch-callout: none;
     display: block;
     clear: both;
     width: min(100%, 44rem);
