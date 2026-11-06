@@ -244,7 +244,7 @@ test('an explicit episode marks the channel explicit without changing other epis
   );
 });
 
-test('production serves the static feed as revalidated RSS with the security headers intact', async () => {
+test('production prefers the live feed and falls back to revalidated static RSS', async () => {
   const nginx = await readFile('deploy/nginx.conf', 'utf8');
   const location = nginx
     .split('location = /podcast/rss.xml {')[1]
@@ -252,5 +252,5 @@ test('production serves the static feed as revalidated RSS with the security hea
   assert.match(location, /include \/etc\/nginx\/security-headers.conf;/);
   assert.match(location, /types \{ application\/rss\+xml xml; \}/);
   assert.match(location, /Cache-Control 'no-cache'/);
-  assert.match(location, /try_files \$uri =404/);
+  assert.match(location, /try_files \/\.podcast-live\/rss\.xml \$uri =404/);
 });

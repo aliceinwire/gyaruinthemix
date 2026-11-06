@@ -18,6 +18,27 @@ export function httpsLink(value, field) {
   throw new Error(`Podcast ${field} must use HTTPS without credentials`);
 }
 
+export function escapeMarkup(value) {
+  const text = String(value);
+  if (
+    /[\u0000-\u0008\u000b\u000c\u000e-\u001f\ud800-\udfff\ufffe\uffff]/u.test(
+      text,
+    )
+  )
+    throw new Error('Podcast feed text contains an invalid XML character');
+  return text.replace(
+    /[&<>"']/g,
+    (character) =>
+      ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&apos;',
+      })[character],
+  );
+}
+
 function episodeAudio(audio) {
   if (audio === undefined) return undefined;
   const url = httpsLink(audio?.url, 'audio URL');
@@ -47,7 +68,7 @@ function localizedText(value, field, locale) {
 // Episodes use stable IDs, an explicit published flag, a YYYY-MM-DD date,
 // bilingual title/description, a listening URL, and optional durationMinutes
 // and transcriptUrl. Drafts may be incomplete and never reach the page.
-export function getPodcast(data, locale = 'ja') {
+export function getPodcast(data, locale = 'ja', library = []) {
   const platforms = Object.entries(platformLabels)
     .map(([id, label]) => ({
       id,
@@ -88,7 +109,19 @@ export function getPodcast(data, locale = 'ja') {
         transcriptUrl: httpsLink(episode.transcriptUrl, 'transcript URL'),
         ...(audio ? { audio } : {}),
       };
-    })
-    .sort((a, b) => b.date.localeCompare(a.date));
+    });
+  // An existing editorial entry (including a draft) owns its ID and audio URL.
+  const configuredIds = new Set(data.episodes.map((entry) => entry.id));
+  const configuredUrls = new Set(
+    data.episodes.map((entry) => entry.audio?.url),
+  );
+  for (const episode of library) {
+    if (
+      !configuredIds.has(episode.id) &&
+      !configuredUrls.has(episode.audio.url)
+    )
+      episodes.push(episode);
+  }
+  episodes.sort((a, b) => b.date.localeCompare(a.date));
   return { platforms, episodes };
 }

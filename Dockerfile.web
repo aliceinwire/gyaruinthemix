@@ -23,6 +23,12 @@ ENV CHECKOUT_MODE=$CHECKOUT_MODE
 ENV ASTRO_TELEMETRY_DISABLED=1
 RUN node scripts/build-site.mjs --skip-images && if [ "$CHECKOUT_MODE" = "api" ]; then cp nginx-api.conf checkout-location.conf; else cp nginx-payment-links.conf checkout-location.conf; fi
 
+FROM dependencies AS podcast-build
+COPY src/data ./src/data
+COPY config/podcast.json ./config/podcast.json
+COPY scripts/podcast-index.mjs scripts/build-podcast-index.mjs ./scripts/
+RUN node scripts/build-podcast-index.mjs /build/podcast-index.mjs
+
 FROM dependencies AS game-images
 COPY public/game/assets ./public/game/assets
 COPY public/game/src/club-art.js ./public/game/src/club-art.js
@@ -41,6 +47,10 @@ COPY --from=game-build /build/dist/game ./dist/game
 RUN node scripts/check-site-build.mjs
 
 FROM nginx:1.30.5-alpine3.24-slim AS production
+RUN apk add --no-cache 'nodejs>=24' && mkdir -p /var/lib/podcast && chown 101:101 /var/lib/podcast
+COPY --from=podcast-build /build/podcast-index.mjs /opt/podcast/index.mjs
+COPY --from=podcast-build /build/podcast-index.mjs.LICENSE.txt /opt/podcast/THIRD-PARTY-NOTICES.txt
+COPY deploy/podcast-web.sh /opt/podcast/start.sh
 COPY deploy/nginx.conf /etc/nginx/nginx.conf
 COPY deploy/bouncer/nginx-www-redirect.conf /etc/nginx/www-redirect.conf
 COPY deploy/security-headers.conf /etc/nginx/security-headers.conf
@@ -48,8 +58,9 @@ COPY deploy/game-security-headers.conf /etc/nginx/game-security-headers.conf
 COPY deploy/game-audio.conf deploy/game-audio-proxy.conf /etc/nginx/
 COPY --from=build /build/checkout-location.conf /etc/nginx/checkout-location.conf
 COPY --from=build /build/dist /usr/share/nginx/html
+RUN ln -s /tmp/podcast-pages/current /usr/share/nginx/html/.podcast-live
 USER 101:101
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 CMD wget -q -O /dev/null http://127.0.0.1:8080/web-health || exit 1
-ENTRYPOINT ["nginx"]
+ENTRYPOINT ["/bin/sh", "/opt/podcast/start.sh"]
 CMD ["-g", "daemon off;"]

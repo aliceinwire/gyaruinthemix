@@ -78,7 +78,15 @@ services:
     security_opt: ['no-new-privileges:true']
     tmpfs:
       - /tmp:size=16m,mode=1777,noexec,nosuid,nodev
-    mem_limit: ${GYARUINTHEMIX_WEB_MEMORY_LIMIT:-64m}
+    volumes:
+      - type: bind
+        source: ./gyaruinthemix/assets/podcast
+        target: /podcast-source
+        read_only: true
+        bind:
+          create_host_path: false
+      - gyaruinthemix_podcast_cache:/var/lib/podcast
+    mem_limit: ${GYARUINTHEMIX_WEB_MEMORY_LIMIT:-128m}
     cpus: '0.50'
     pids_limit: 50
     expose: ['8080']
@@ -225,6 +233,7 @@ volumes:
   vhost.d:
   html:
   gyaruinthemix_webhook_state:
+  gyaruinthemix_podcast_cache:
 
 networks:
   proxy-tier:

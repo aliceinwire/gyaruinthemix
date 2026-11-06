@@ -30,7 +30,17 @@ function fixture({ audioEnabled = true, apiMode = false } = {}) {
     networks: { 'proxy-tier': { name: 'nginx-proxy' } },
   };
   const config = structuredClone(original);
-  config.services['gyaruinthemix-web'] = {};
+  config.services['gyaruinthemix-web'] = {
+    volumes: [
+      {
+        type: 'bind',
+        source: checkoutRoot + '/assets/podcast',
+        target: '/podcast-source',
+        read_only: true,
+        bind: { create_host_path: false },
+      },
+    ],
+  };
   if (apiMode)
     config.services['gyaruinthemix-api'] = {
       volumes: [
@@ -123,6 +133,9 @@ const mutations = {
     f.config.services['gyaruinthemix-web'].volumes = [
       { type: 'bind', source: '/etc', target: '/etc' },
     ];
+  },
+  'makes the podcast source writable': (f) => {
+    f.config.services['gyaruinthemix-web'].volumes[0].read_only = false;
   },
   'gives web the audio secret': (f) => {
     f.config.services['gyaruinthemix-web'].secrets = [{ source: SECRET }];
@@ -364,6 +377,9 @@ for (const [name, serialization] of [
   test(`accepts only probed false bind representation: ${name}`, () => {
     const f = fixture();
     f.expectedMediaBindOptions = gameAudioFalseBindOptions(serialization);
+    f.config.services['gyaruinthemix-web'].volumes[0].bind = structuredClone(
+      serialization.disabled,
+    );
     f.config.services[AUDIO].volumes[0].bind = structuredClone(
       serialization.disabled,
     );

@@ -22,18 +22,24 @@ API checkout accepts only `ja` or `en` and returns to that language's success/ca
 
 ## Podcast distribution
 
-`https://gyaruinthemix.com/podcast/rss.xml` is generated during each website
-build from `config/podcast.json`. The Japanese and English podcast pages link
-to the same Japanese-language show feed.
+The VPS publishes MP3s from `~/bouncer/gyaruinthemix/assets/podcast/` to the
+Japanese and English podcast pages and the shared feed at
+`https://gyaruinthemix.com/podcast/rss.xml`. See the [VPS setup and monthly upload instructions](deploy/bouncer/README.md#podcast-episodes).
 
-Before publishing the first episode, set `feed.artworkUrl` to a public, square
+Use a permanent filename such as `ep001.mp3`. Tagged titles, front covers,
+show notes/comments, genres and keywords appear automatically. A missing title
+falls back to the filename; notes and artwork are optional. Replacing an MP3
+under the same name updates that episode and preserves its RSS GUID. Removing
+the MP3 removes the episode on the next scan. The audio files stay on the VPS.
+
+Before submitting the show to podcast directories, set `feed.artworkUrl` to a public, square
 JPEG or PNG (1400–3000 pixels per side, no transparency) and `feed.ownerEmail`
 to a monitored show email. This email is public in the RSS and is used for
 ownership verification. Review the show title, description, category and
 explicit-content setting in `feed`.
 
-Add an entry to `episodes`, using your actual title, description, date and
-media details. This is a schema example, not an episode to publish unchanged:
+For manually curated or externally hosted episodes, add an entry to
+`episodes` using the actual title, description, date and media details. This is a schema example, not an episode to publish unchanged:
 
 ```json
 {
@@ -55,12 +61,11 @@ media details. This is a schema example, not an episode to publish unchanged:
 `audio.length` is the actual file size in bytes, not the duration. Supported
 types are `audio/mpeg` for MP3 and `audio/mp4` for M4A. Media and artwork URLs
 must be stable public HTTPS URLs; the host must support HEAD and byte-range
-requests without login or expiring access tokens. Files under `public/podcast/`
-ship with the website; an external public media host can also be used. Do not
-use the signed game-music HLS URLs for podcast distribution.
+requests without login or expiring access tokens. Folder episodes have a direct
+`/podcast/audio/<filename>` URL. The signed game-music URLs are for the game.
 
 Set `published` to `true` when ready, then build and deploy the website. Drafts
-are excluded from both the page and RSS. Published episodes require audio,
+are excluded from both the page and RSS. Manually configured episodes require audio,
 an explicit-content rating and the show artwork/email. `durationSeconds` is
 optional; `durationMinutes` is an optional website display value. An optional
 `url` overrides the website's listening link, which otherwise opens the audio.
@@ -379,7 +384,7 @@ The optional argument is the **bouncer directory**, not a proxy name. Inspect Do
 
 Network/volume names are Compose keys; Docker resource names depend on the **existing bouncer project**. Discover them through Compose instead of assuming fixed container or volume names.
 
-The 64 MiB nginx / 192 MiB API / 96 MiB audio memory limits are **provisional caps**, not measured idle usage. API Node heap cap is 112 MiB, leaving headroom for buffers/native allocations. Inspect `free -m` and `docker stats` before accepting these caps; preserve host, proxy and IRC headroom. The VPS pulls CI-built images; do not build Astro on a loaded 1 GB server. Build-time memory is not constrained by service `mem_limit`. No swap/firewall/host configuration changes are performed by this project.
+The 128 MiB website / 192 MiB API / 96 MiB audio memory limits are **provisional caps**, not measured idle usage. API Node heap cap is 112 MiB, leaving headroom for buffers/native allocations. Inspect `free -m` and `docker stats` before accepting these caps; preserve host, proxy and IRC headroom. The VPS pulls CI-built images; do not build Astro on a loaded 1 GB server. Build-time memory is not constrained by service `mem_limit`. No swap/firewall/host configuration changes are performed by this project.
 
 ## 5. Domain, proxy and TLS
 

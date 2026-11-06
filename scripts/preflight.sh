@@ -22,7 +22,7 @@ Read-only preflight complete. No containers or host configuration changed.
 Only deploy/bouncer/docker-compose.yml is supported. Retain the existing project.
 Website services: gyaruinthemix-web; optional gyaruinthemix-api and gyaruinthemix-game-audio.
 No new host ports. Web joins nginx-proxy; API and audio stay on the private website network.
-Default caps: web 64 MiB, optional API 192 MiB, optional audio 96 MiB.
+Default caps: web 128 MiB, optional API 192 MiB, optional audio 96 MiB.
 Audio packaging also needs Node 24, FFmpeg/FFprobe and host headroom.
 Check real free memory and disk before enabling the optional profile.
 Inspect the domain, TLS routing, existing workloads and architecture before setup.
