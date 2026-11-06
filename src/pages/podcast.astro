@@ -1,6 +1,11 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import data from '../../config/podcast.json';
+import {
+  episodeList,
+  latestLink,
+  sharingImageTags,
+} from '../data/podcast-view.mjs';
 import { getPodcast } from '../data/podcast.mjs';
 import { getSite } from '../data/site.mjs';
 import { getLocale, localizePath, translator } from '../data/i18n.mjs';
@@ -9,16 +14,6 @@ const locale = getLocale(Astro.url.pathname);
 const t = translator(locale);
 const site = getSite(locale);
 const { platforms, episodes } = getPodcast(data, locale);
-const latest = episodes[0];
-const dateFormat = new Intl.DateTimeFormat(
-  locale === 'en' ? 'en-US' : 'ja-JP',
-  {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    timeZone: 'Asia/Tokyo',
-  },
-);
 ---
 
 <Layout
@@ -28,6 +23,11 @@ const dateFormat = new Intl.DateTimeFormat(
     'The podcast from DJ Arinee and DJ Chana. Meet GYARUINTHEMIX, explore episodes, and find where to listen.',
   )}
 >
+  <Fragment slot="share-image">
+    <Fragment set:html="<!--podcast-sharing-->" />
+    <Fragment set:html={sharingImageTags(data.feed, episodes, locale)} />
+    <Fragment set:html="<!--/podcast-sharing-->" />
+  </Fragment>
   <link
     slot="head"
     rel="alternate"
@@ -53,14 +53,9 @@ const dateFormat = new Intl.DateTimeFormat(
         }
       </p>
       <div class="hero-actions">
-        <a class="button button-pink" href={latest ? latest.url : '#episodes'}>
-          {
-            latest
-              ? t('最新エピソードを聴く', 'Listen to the latest episode')
-              : t('配信情報を見る', 'Explore the podcast')
-          }
-          <span aria-hidden="true">{latest ? '↗' : '↓'}</span>
-        </a>
+        <Fragment set:html="<!--podcast-latest-->" />
+        <Fragment set:html={latestLink(episodes[0], locale)} />
+        <Fragment set:html="<!--/podcast-latest-->" />
         <a class="podcast-host-link" href="#hosts"
           >{t('ふたりのこと', 'Meet the hosts')}</a
         >
@@ -130,70 +125,11 @@ const dateFormat = new Intl.DateTimeFormat(
           {t('ふたりの声、ここから。', 'Press play on us.')}
         </h2>
       </div>
-      {
-        episodes.length > 0 && (
-          <p class="podcast-order">
-            {t('新しいエピソードから', 'Newest episodes first')}
-          </p>
-        )
-      }
     </div>
+    <Fragment set:html="<!--podcast-list-->" />
     {
       episodes.length ? (
-        <ol class="podcast-episodes">
-          {episodes.map((episode, index) => (
-            <li>
-              <article
-                class:list={[
-                  'podcast-episode',
-                  { 'podcast-latest': index === 0 },
-                ]}
-                id={`episode-${episode.id}`}
-              >
-                <div class="podcast-episode-meta">
-                  {index === 0 && (
-                    <span class="podcast-status">
-                      {t('最新エピソード', 'Latest episode')}
-                    </span>
-                  )}
-                  <time datetime={episode.date}>
-                    {dateFormat.format(
-                      new Date(`${episode.date}T00:00:00+09:00`),
-                    )}
-                  </time>
-                  {episode.durationMinutes && (
-                    <span>
-                      {t(
-                        `${episode.durationMinutes}分`,
-                        `${episode.durationMinutes} min`,
-                      )}
-                    </span>
-                  )}
-                </div>
-                <h3>{episode.title}</h3>
-                <p>{episode.description}</p>
-                <div class="podcast-episode-actions">
-                  <a
-                    class="button"
-                    href={episode.url}
-                    aria-label={t(
-                      `${episode.title}を聴く`,
-                      `Listen to ${episode.title}`,
-                    )}
-                  >
-                    {t('エピソードを聴く', 'Listen to episode')}
-                    <span aria-hidden="true">↗</span>
-                  </a>
-                  {episode.transcriptUrl && (
-                    <a href={episode.transcriptUrl}>
-                      {t('文字起こしを読む', 'Read transcript')}
-                    </a>
-                  )}
-                </div>
-              </article>
-            </li>
-          ))}
-        </ol>
+        <Fragment set:html={episodeList(episodes, locale)} />
       ) : (
         <div class="podcast-empty" data-podcast-empty>
           <div>
@@ -218,6 +154,7 @@ const dateFormat = new Intl.DateTimeFormat(
         </div>
       )
     }
+    <Fragment set:html="<!--/podcast-list-->" />
   </section>
 
   <section class="podcast-hosts" id="hosts" aria-labelledby="hosts-title">
@@ -264,7 +201,7 @@ const dateFormat = new Intl.DateTimeFormat(
   </section>
 </Layout>
 
-<style>
+<style is:global>
   .podcast-hero {
     display: grid;
     grid-template-columns: 1.1fr 1fr;
@@ -389,7 +326,7 @@ const dateFormat = new Intl.DateTimeFormat(
   .podcast-order {
     color: #71606a;
     font-size: 0.875rem;
-    margin: 0;
+    margin: 0 0 1rem;
   }
   .podcast-empty {
     display: flex;
@@ -451,6 +388,27 @@ const dateFormat = new Intl.DateTimeFormat(
   }
   .podcast-episode p {
     max-width: 75ch;
+  }
+  .podcast-episode-cover {
+    float: inline-end;
+    width: min(30%, 160px);
+    height: auto;
+    margin: 0 0 1rem 1rem;
+    object-fit: contain;
+  }
+  .podcast-episode {
+    display: flow-root;
+  }
+  .podcast-notes {
+    white-space: pre-line;
+  }
+  .podcast-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.75rem;
+    list-style: none;
+    padding: 0;
+    color: #742248;
   }
   .podcast-episode-actions {
     display: flex;

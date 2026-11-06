@@ -101,39 +101,36 @@ try {
   console.log(
     `Compose version: ${docker('compose', 'version', '--short').trim()}`,
   );
-  let expectedMediaBindOptions;
-  if (audioEnabled) {
-    // A disposable serializer probe only, never a deployment file or startup
-    // input. Compare explicit false/true through this runner's exact CLI.
-    const probeFile = join(directory, 'compose-serialization-probe.json');
-    await writeFile(
-      probeFile,
-      JSON.stringify({
-        services: Object.fromEntries(
-          [false, true].map((create) => [
-            create ? 'enabled' : 'disabled',
-            {
-              image: 'gyaruinthemix-game-audio:serialization-probe',
-              volumes: [
-                {
-                  type: 'bind',
-                  source: join(temporary, 'serialization-probe'),
-                  target: '/private/media',
-                  read_only: true,
-                  bind: { create_host_path: create },
-                },
-              ],
-            },
-          ]),
-        ),
-      }),
-    );
-    const probe = render(probeFile);
-    expectedMediaBindOptions = gameAudioFalseBindOptions({
-      disabled: probe.services.disabled.volumes[0].bind,
-      enabled: probe.services.enabled.volumes[0].bind,
-    });
-  }
+  // A disposable serializer probe only, never a deployment file or startup
+  // input. Compare explicit false/true through this runner's exact CLI.
+  const probeFile = join(directory, 'compose-serialization-probe.json');
+  await writeFile(
+    probeFile,
+    JSON.stringify({
+      services: Object.fromEntries(
+        [false, true].map((create) => [
+          create ? 'enabled' : 'disabled',
+          {
+            image: 'gyaruinthemix-game-audio:serialization-probe',
+            volumes: [
+              {
+                type: 'bind',
+                source: join(temporary, 'serialization-probe'),
+                target: '/private/media',
+                read_only: true,
+                bind: { create_host_path: create },
+              },
+            ],
+          },
+        ]),
+      ),
+    }),
+  );
+  const probe = render(probeFile);
+  const expectedMediaBindOptions = gameAudioFalseBindOptions({
+    disabled: probe.services.disabled.volumes[0].bind,
+    enabled: probe.services.enabled.volumes[0].bind,
+  });
   const original = render(join(root, 'tests/fixtures/bouncer.original.yml'));
   const merged = render(env.COMPOSE_FILE);
   const oldServices = ['proxy', 'letsencrypt-companion', 'znc', 'limnoria'];
@@ -232,7 +229,17 @@ try {
     assert.equal(service.build.context, join(directory, 'gyaruinthemix'));
     assert.equal(service.read_only, true);
     assert.deepEqual(service.cap_drop, ['ALL']);
-    assert.ok(!service.volumes?.some((volume) => volume.type === 'bind'));
+    if (service === web) {
+      assert.ok(
+        service.volumes.some(
+          (volume) =>
+            volume.type === 'volume' &&
+            volume.source === 'gyaruinthemix_podcast_cache' &&
+            volume.target === '/var/lib/podcast',
+        ),
+      );
+    } else
+      assert.ok(!service.volumes?.some((volume) => volume.type === 'bind'));
   }
   if (apiMode) {
     assert.deepEqual(

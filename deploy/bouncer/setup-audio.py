@@ -184,6 +184,12 @@ def _merge_compose(installed, canonical):
         legacy = "\n".join(line for line in target.splitlines()
                            if "GAME_AUDIO_ENABLED:" not in line and "Resolved by the installed updater" not in line)
         recognized = {normalized(target), normalized(legacy)}
+        if name == WEB:
+            # Audio-only setup also accepts installations predating podcast mounts.
+            for variant in (target, legacy):
+                earlier = re.sub(r"^    volumes:\n(?:      [^\n]*\n)+", "", variant, flags=re.M)
+                recognized.add(normalized(earlier.replace("GYARUINTHEMIX_WEB_MEMORY_LIMIT:-128m",
+                                                         "GYARUINTHEMIX_WEB_MEMORY_LIMIT:-64m")))
         if name == API and target.count(API_MEMBERSHIP_BLOCK) == 1:
             recognized.add(normalized(target.replace(API_MEMBERSHIP_BLOCK, "", 1)))
         if normalized(actual) not in recognized:

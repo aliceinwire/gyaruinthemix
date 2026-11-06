@@ -1174,6 +1174,16 @@ class PureHelperTests(unittest.TestCase):
                 self.assertEqual(result.count("  " + setup.AUDIO + ":"), 1)
                 self.assertEqual(setup.merge_compose(result, CANONICAL), result)
 
+    def test_audio_setup_accepts_pre_podcast_web_without_adding_a_media_mount(self):
+        old = legacy_compose()
+        start, end = setup.entry(old, "services", setup.WEB)
+        web = old[start:end]
+        web = web[:web.index("    volumes:")] + web[web.index("    mem_limit:"):]
+        web = web.replace("GYARUINTHEMIX_WEB_MEMORY_LIMIT:-128m", "GYARUINTHEMIX_WEB_MEMORY_LIMIT:-64m")
+        result = setup.merge_compose(old[:start] + web + old[end:], CANONICAL)
+        self.assertNotIn("/podcast-source", result)
+        self.assertIn("GAME_AUDIO_ENABLED:", result)
+
     def test_unknown_managed_drift_fails_without_silently_overwriting(self):
         changed = legacy_compose().replace("    user: '101:101'", "    user: '0:0'")
         with self.assertRaisesRegex(setup.Error, "drift"):

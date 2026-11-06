@@ -77,6 +77,9 @@ export function classify(path) {
   if (
     path.startsWith('assets/originals/') ||
     path === 'scripts/images.mjs' ||
+    path === 'scripts/build-podcast-index.mjs' ||
+    path === 'scripts/podcast-index.mjs' ||
+    path === 'deploy/podcast-web.sh' ||
     path === 'scripts/build-site.mjs'
   )
     return affected(web, ['site']);

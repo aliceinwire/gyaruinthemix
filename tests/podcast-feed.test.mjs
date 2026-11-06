@@ -6,6 +6,7 @@ import {
   podcastFeedUrl,
 } from '../src/data/podcast-feed.mjs';
 import { getPodcast } from '../src/data/podcast.mjs';
+import { sharingImageTags } from '../src/data/podcast-view.mjs';
 import { GET } from '../src/pages/podcast/rss.xml.js';
 
 const configuration = JSON.parse(await readFile('config/podcast.json', 'utf8'));
@@ -46,7 +47,7 @@ test('RSS endpoint matches the configured subscription URL and returns UTF-8 RSS
   assert.equal(await response.text(), createPodcastFeed(configuration));
 });
 
-test('an empty feed is valid XML structure without fabricated episodes or contact details', () => {
+test('an empty feed includes the default contact and no invented artwork or episodes', () => {
   const input = data();
   input.feed.artworkUrl = '';
   input.feed.ownerEmail = '';
@@ -58,7 +59,8 @@ test('an empty feed is valid XML structure without fabricated episodes or contac
     xml,
     /<atom:link href="https:\/\/gyaruinthemix.com\/podcast\/rss.xml" rel="self" type="application\/rss\+xml"/,
   );
-  assert.doesNotMatch(xml, /<item>|itunes:owner|itunes:image|undefined/);
+  assert.match(xml, /<itunes:email>arisut@riseup\.net<\/itunes:email>/);
+  assert.doesNotMatch(xml, /<item>|itunes:image|undefined/);
 });
 
 test('published audio uses the same source on the website and in RSS', () => {
@@ -148,12 +150,20 @@ test('text and attribute values are escaped without treating descriptions as XML
   assert.throws(() => createPodcastFeed(input), /invalid XML character/);
 });
 
-test('publishing requires real show artwork and an owner email', () => {
-  for (const field of ['artworkUrl', 'ownerEmail']) {
+test('the owner email defaults for existing configurations and permits an override', () => {
+  for (const unset of [undefined, '', '  ']) {
     const input = data([episode()]);
-    input.feed[field] = '';
-    assert.throws(() => createPodcastFeed(input), /artworkUrl and ownerEmail/);
+    input.feed.ownerEmail = unset;
+    const xml = createPodcastFeed(input);
+    assert.match(xml, /<itunes:email>arisut@riseup\.net<\/itunes:email>/);
+    assert.equal((xml.match(/<itunes:owner>/g) || []).length, 1);
   }
+  const xml = createPodcastFeed(data([episode()]));
+  assert.match(xml, /<itunes:email>podcast@example\.com<\/itunes:email>/);
+  assert.doesNotMatch(xml, /arisut@riseup/);
+});
+
+test('invalid show metadata is rejected', () => {
   for (const [field, value] of [
     ['ownerEmail', 'not-an-email'],
     ['artworkUrl', 'https://example.com/cover.webp'],
@@ -166,6 +176,87 @@ test('publishing requires real show artwork and an owner email', () => {
     input.feed[field] = value;
     assert.throws(() => createPodcastFeed(input));
   }
+});
+
+test('show previews select published covers by date and respect a pinned cover', () => {
+  function uploaded(id, date, artworkUrl) {
+    const url = 'https://example.com/' + id + '.mp3';
+    return {
+      id,
+      date,
+      artworkUrl,
+      title: id,
+      description: '',
+      url,
+      audio: { url, length: 100, type: 'audio/mpeg' },
+      explicit: false,
+    };
+  }
+  const jpeg = 'https://example.com/square.JPEG?x=1&y=2';
+  const webp = 'https://example.com/new.webp';
+  const library = [
+    uploaded('older', '2026-10-01', 'https://example.com/old.png'),
+    uploaded('newest', '2026-11-06'),
+    uploaded('square', '2026-11-01', jpeg),
+    uploaded('web', '2026-11-04', webp),
+    uploaded('draft', '2026-11-07', 'https://example.com/private.png'),
+  ];
+  const input = data([{ id: 'draft', published: false }]);
+  input.feed.artworkUrl = '';
+  const episodes = getPodcast(input, 'ja', library).episodes;
+  const channel = () => createPodcastFeed(input, library).split('<item>')[0];
+  const escapedJpeg = jpeg.replace('&', '&amp;');
+  assert.ok(channel().includes(`<itunes:image href="${escapedJpeg}"`));
+  assert.ok(channel().includes(`<image><url>${escapedJpeg}</url>`));
+  const tags = sharingImageTags(input.feed, episodes, 'ja');
+  assert.ok(tags.includes(`property="og:image" content="${webp}"`));
+  assert.ok(tags.includes(`name="twitter:image" content="${webp}"`));
+  assert.doesNotMatch(
+    createPodcastFeed(input, library),
+    /private\.png|new\.webp/,
+  );
+
+  const fixed = 'https://example.com/show.png';
+  input.feed.artworkUrl = fixed;
+  assert.ok(channel().includes(`<itunes:image href="${fixed}"`));
+  assert.ok(
+    sharingImageTags(input.feed, episodes, 'en').includes(
+      `name="twitter:image" content="${fixed}"`,
+    ),
+  );
+  assert.ok(
+    createPodcastFeed(input, library)
+      .split('<item>')
+      .slice(1)
+      .some((item) => item.includes(`<itunes:image href="${escapedJpeg}"`)),
+  );
+});
+
+test('a curated entry for an uploaded MP3 inherits its cover and keeps its existing GUID', () => {
+  const manual = episode();
+  const input = data([manual]);
+  input.feed.artworkUrl = '';
+  const library = [
+    {
+      id: 'mp3-source',
+      audio: manual.audio,
+      artworkUrl: 'https://example.com/embedded.png',
+    },
+  ];
+  const xml = createPodcastFeed(input, library);
+  assert.equal((xml.match(/<item>/g) || []).length, 1);
+  assert.equal(
+    (
+      xml.match(
+        /<itunes:image href="https:\/\/example\.com\/embedded\.png"/g,
+      ) || []
+    ).length,
+    2,
+  );
+  assert.match(
+    xml,
+    /<guid isPermaLink="false">[^<]*#episode-first-conversation<\/guid>/,
+  );
 });
 
 test('link-only episodes cannot silently disappear from the feed', () => {
@@ -244,7 +335,7 @@ test('an explicit episode marks the channel explicit without changing other epis
   );
 });
 
-test('production serves the static feed as revalidated RSS with the security headers intact', async () => {
+test('production prefers the live feed and falls back to revalidated static RSS', async () => {
   const nginx = await readFile('deploy/nginx.conf', 'utf8');
   const location = nginx
     .split('location = /podcast/rss.xml {')[1]
@@ -252,5 +343,5 @@ test('production serves the static feed as revalidated RSS with the security hea
   assert.match(location, /include \/etc\/nginx\/security-headers.conf;/);
   assert.match(location, /types \{ application\/rss\+xml xml; \}/);
   assert.match(location, /Cache-Control 'no-cache'/);
-  assert.match(location, /try_files \$uri =404/);
+  assert.match(location, /try_files \/\.podcast-live\/rss\.xml \$uri =404/);
 });

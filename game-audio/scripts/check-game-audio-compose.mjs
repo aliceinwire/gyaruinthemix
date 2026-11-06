@@ -74,7 +74,7 @@ export function gameAudioFalseBindOptions({ disabled, enabled }) {
  * inputs, NOT copied out of the untrusted candidate configuration.
  *
  * This supplements ci-bouncer.mjs, never replaces its original-service checks
- * or its unconditional web/API no-bind/no-port/isolation checks.
+ * or its website mount, port and service isolation checks.
  */
 export function assertGameAudioCompose({
   original,
@@ -139,10 +139,23 @@ export function assertGameAudioCompose({
   // These guards deliberately stay separate from the audio exception.
   for (const name of appServices) {
     const service = config.services[name];
-    assert.ok(
-      !service.volumes?.some((volume) => volume.type === 'bind'),
-      `${name} bind mounts remain forbidden`,
+    const binds = (service.volumes ?? []).filter(
+      (volume) => volume.type === 'bind',
     );
+    if (name === 'gyaruinthemix-web') {
+      assert.equal(
+        binds.length,
+        1,
+        'Only the podcast source may bind into web',
+      );
+      assert.deepEqual(binds[0], {
+        type: 'bind',
+        source: resolve(checkoutRoot, 'assets/podcast'),
+        target: '/podcast-source',
+        read_only: true,
+        bind: expectedMediaBindOptions,
+      });
+    } else assert.deepEqual(binds, [], 'API bind mounts remain forbidden');
     assert.equal(
       service.ports?.length ?? 0,
       0,

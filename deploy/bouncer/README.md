@@ -1,6 +1,6 @@
 # Bouncer updater: automatic website and manual shared services
 
-This is the **only supported deployment**. Keep the existing `~/bouncer` Compose project and its proxy, certificate companion, ZNC and Limnoria. The added website has no published host ports and no Docker socket. Default Payment Links mode runs only `gyaruinthemix-web`, capped at 64 MiB. Optional API mode adds a 192 MiB cap and a private journal volume; optional game audio adds a 96 MiB sidecar on the same private network. These are provisional caps, not measured VPS usage.
+This is the **only supported deployment**. Keep the existing `~/bouncer` Compose project and its proxy, certificate companion, ZNC and Limnoria. The added website has no published host ports and no Docker socket. Default Payment Links mode runs only `gyaruinthemix-web`, capped at 128 MiB. Optional API mode adds a 192 MiB cap and a private journal volume; optional game audio adds a 96 MiB sidecar on the same private network. These are provisional caps, not measured VPS usage.
 
 After one-time activation, a merge into `main` runs CI, publishes tested website and audio images to GHCR, and the host checks for them every five minutes. **This repository does not install the updater, change package visibility, connect to the VPS or deploy automatically until you activate it.** No SSH credential, webhook listener, new proxy or always-running updater container is needed. Website builds happen on GitHub-hosted runners, not the 1 GB VPS. Explicit manual `--shared` mode uses the existing local proxy/ZNC Dockerfiles with build caching; it is never scheduled by the supplied timer.
 
@@ -48,6 +48,41 @@ docker inspect znc limnoria --format '{{.Name}} id={{.Id}} started={{.State.Star
 Record the existing project name, IDs/start times, network membership, memory and disk availability. Preserve the current project name in `~/bouncer/.env` if your deployment previously supplied `COMPOSE_PROJECT_NAME` only in the shell. The updater deliberately ignores inherited shell-level Compose overrides and reads this installed file and `.env`. Do not rename the directory/project or introduce another deployment.
 
 The `nginx-proxy` network and old services must already exist. Check the website hostname is distinct from `znc.alicef.me`, its DNS points to the VPS, and the existing certificate companion can issue its certificate. The existing proxy version/TLS behavior and actual available memory still require inspection on your host.
+
+## Podcast episodes
+
+The web container checks `~/bouncer/gyaruinthemix/assets/podcast/` on startup
+and every minute. On an existing VPS, update the checkout, create the folder
+with `mkdir -p ~/bouncer/gyaruinthemix/assets/podcast`, and apply the two
+podcast mounts from the canonical Compose file (including its top-level cache
+volume). The web process runs as UID 101 and needs read access to the folder and
+files. If your existing `.env` caps the web service at 64 MiB, set
+`GYARUINTHEMIX_WEB_MEMORY_LIMIT=128m`. Once the new web image is available,
+run the following from `~/bouncer`:
+
+```sh
+docker compose pull gyaruinthemix-web
+docker compose up -d --no-deps --no-build gyaruinthemix-web
+```
+
+For each release, upload the finished MP3 under a temporary name and rename it
+after the transfer completes, for example from `.ep001.part` to `ep001.mp3`.
+Use the same filename for later edits. The Japanese and English pages and
+`/podcast/rss.xml` refresh automatically. The first scan runs after a short
+file-settling delay; allow about 70 seconds after a completed upload.
+
+Supported metadata includes the ID3 title, embedded front cover (JPEG, PNG,
+GIF or WebP), description/show notes or comment, genre, keywords and custom
+`TXXX:TAGS`. RSS includes JPEG/PNG episode images and a category for each
+tag. A full release or recording date is preferred; otherwise the first
+indexed file modification date (Japan time) is kept across tag edits.
+The newest available cover supplies the podcast link preview on both language
+pages. RSS uses the newest JPEG or PNG for the show cover. To pin a show cover,
+set `feed.artworkUrl` in `config/podcast.json`. The public RSS owner email
+defaults to `arisut@riseup.net`. Set `feed.ownerEmail` to override it.
+Review the explicit rating before directory submission. Keep only public episodes
+in the upload folder. Original recordings and private game music belong
+elsewhere.
 
 ## 2. Install the merged configuration and first release
 

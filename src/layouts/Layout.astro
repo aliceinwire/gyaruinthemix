@@ -73,14 +73,16 @@ const navigation = [
           />
           <meta property="og:title" content={title} />
           <meta property="og:description" content={description} />
-          <meta
-            property="og:image"
-            content={canonicalUrl('/assets/logo.webp')}
-          />
-          <meta
-            property="og:image:alt"
-            content={t('ギャルインザミックス', 'GYARUINTHEMIX')}
-          />
+          <slot name="share-image">
+            <meta
+              property="og:image"
+              content={canonicalUrl('/assets/logo.webp')}
+            />
+            <meta
+              property="og:image:alt"
+              content={t('ギャルインザミックス', 'GYARUINTHEMIX')}
+            />
+          </slot>
         </>
       )
     }

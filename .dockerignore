@@ -13,6 +13,9 @@
 !scripts/check-site-build.mjs
 !scripts/release-version.mjs
 !scripts/build-cache.mjs
+!scripts/build-podcast-index.mjs
+!scripts/podcast-index.mjs
+!deploy/podcast-web.sh
 !scripts/build-site.mjs
 !scripts/build-game.mjs
 !deploy/nginx.conf
