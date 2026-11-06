@@ -445,6 +445,18 @@ const { platforms, episodes } = getPodcast(data, locale);
   .podcast-episode {
     display: flow-root;
   }
+  .podcast-photos {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+    gap: 12px;
+    max-width: 44rem;
+    margin-block: 1rem;
+  }
+  .podcast-photos img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
   .podcast-notes {
     white-space: pre-line;
   }
