@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFile } from 'node:fs/promises';
 import { getPodcast } from '../src/data/podcast.mjs';
+import { episodeList, latestLink } from '../src/data/podcast-view.mjs';
 
 const configuration = JSON.parse(
   await readFile(new URL('../config/podcast.json', import.meta.url), 'utf8'),
@@ -87,6 +88,40 @@ test('optional duration and transcript can be omitted', () => {
   const result = getPodcast(data([episode({ durationMinutes: undefined })]));
   assert.equal(result.episodes[0].durationMinutes, undefined);
   assert.equal(result.episodes[0].transcriptUrl, '');
+});
+
+test('episode players use the hosted enclosure and retain separate listening and transcript links', () => {
+  const audio = {
+    url: 'https://gyaruinthemix.com/podcast/audio/track.m4a',
+    type: 'audio/mp4',
+    length: 1200,
+  };
+  const input = episode({
+    audio,
+    transcriptUrl: 'https://example.com/transcript',
+  });
+  const [entry] = getPodcast(data([input])).episodes;
+  const card = episodeList([entry], 'en');
+  assert.match(
+    card,
+    /<source src="\/podcast\/audio\/track\.m4a" type="audio\/mp4"/,
+  );
+  assert.ok(
+    card.includes(`href="${input.url}"`) &&
+      card.includes(`href="${input.transcriptUrl}"`),
+  );
+  assert.ok(latestLink(entry, 'en').includes(`href="#episode-${entry.id}"`));
+
+  for (const attached of [
+    undefined,
+    { ...audio, url: 'https://example.com/remote.m4a' },
+  ]) {
+    const [external] = getPodcast(
+      data([episode({ audio: attached })]),
+    ).episodes;
+    assert.doesNotMatch(episodeList([external], 'en'), /<audio\b/);
+    assert.ok(latestLink(external, 'en').includes(`href="${external.url}"`));
+  }
 });
 
 test('unsafe listening, platform and transcript URLs cannot be published', () => {

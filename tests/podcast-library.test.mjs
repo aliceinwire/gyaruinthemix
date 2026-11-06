@@ -112,6 +112,18 @@ test('drop, retag and remove a real MP3 across both pages, artwork and the RSS',
   for (const locale of ['ja', 'en']) {
     const html = await f.read(`${locale}.html`);
     assertShareImage(html, imageUrl);
+    const player = html.match(/<audio\b[^>]*>[\s\S]*?<\/audio>/g) || [];
+    assert.equal(player.length, 1);
+    assert.match(player[0], /\bcontrols\b/);
+    assert.match(player[0], /preload="none"/);
+    assert.doesNotMatch(player[0], /\bautoplay\b/);
+    assert.ok(
+      player[0].includes(
+        `src="/podcast/audio/${encodeURIComponent(name)}" type="audio/mpeg"`,
+      ),
+    );
+    const anchor = html.match(/<article[^>]+id="(episode-[^"]+)"/)[1];
+    assert.ok(html.includes(`href="#${anchor}"`));
     for (const value of [
       cover,
       '日常',
@@ -148,6 +160,7 @@ test('drop, retag and remove a real MP3 across both pages, artwork and the RSS',
   await refreshPodcast(f);
   assert.doesNotMatch(await f.read('rss.xml'), /<item>/);
   assert.match(await f.read('en.html'), /empty/);
+  assert.doesNotMatch(await f.read('ja.html'), /<audio\b/);
 });
 
 test('untagged episodes publish with a stable date while hidden, partial, corrupt and linked files stay out', async (t) => {

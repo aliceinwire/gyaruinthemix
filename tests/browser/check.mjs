@@ -5,6 +5,11 @@ import { readFile, mkdir, writeFile, stat } from 'node:fs/promises';
 import { extname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+import {
+  episodeList,
+  fillPodcastSlot,
+  latestLink,
+} from '../../src/data/podcast-view.mjs';
 import { checkProductDetails } from './product-details.mjs';
 import { releaseVersion } from '../../src/data/release.mjs';
 
@@ -211,6 +216,59 @@ async function context(options = {}, fixture = {}) {
   );
   return ctx;
 }
+async function checkPodcastPlayback(page) {
+  const frame = Buffer.alloc(417);
+  frame.set([0xff, 0xfb, 0x90, 0x00]); // Silent 128 kbps MPEG-1 Layer III frame.
+  const mp3 = Buffer.concat(Array(400).fill(frame));
+  const episodes = ['first', 'second'].map((id) => {
+    const url = `https://gyaruinthemix.com/podcast/audio/${id}.mp3`;
+    return {
+      id,
+      title: id,
+      date: '2026-11-06',
+      url,
+      audio: { url, type: 'audio/mpeg', length: mp3.length },
+    };
+  });
+  const template = await readFile(resolve(dist, 'podcast/index.html'), 'utf8');
+  const latest = fillPodcastSlot(
+    template,
+    'latest',
+    latestLink(episodes[0], 'ja'),
+  );
+  const html = fillPodcastSlot(latest, 'list', episodeList(episodes, 'ja'));
+  let requests = 0;
+  await page.route(origin + '/podcast/', (route) =>
+    route.fulfill({ contentType: 'text/html; charset=utf-8', body: html }),
+  );
+  await page.route(origin + '/podcast/audio/*.mp3', (route) => {
+    requests++;
+    return route.fulfill({ contentType: 'audio/mpeg', body: mp3 });
+  });
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto(origin + '/podcast/', { waitUntil: 'networkidle' });
+  const players = page.locator('audio[controls]');
+  assert.equal(await players.count(), 2);
+  assert.equal(requests, 0);
+  await page.getByRole('link', { name: '最新エピソードを聴く' }).click();
+  await page.waitForFunction(
+    () => document.querySelector('audio').currentTime > 0,
+  );
+  assert.equal(page.url(), origin + '/podcast/#episode-first');
+  await players.first().evaluate((audio) => {
+    audio.currentTime = 2;
+  });
+  await page.waitForFunction(
+    () => document.querySelector('audio').currentTime >= 2,
+  );
+  await players.nth(1).evaluate((audio) => audio.play());
+  await page.waitForFunction(() => {
+    const [first, second] = document.querySelectorAll('audio');
+    return first.paused && !second.paused && second.currentTime > 0;
+  });
+  assert.ok(requests >= 2);
+}
+
 async function overflow(page, label) {
   const data = await page.evaluate(() => ({
     width: innerWidth,
@@ -339,12 +397,36 @@ async function inspect(page, pathname, width) {
         label + ' podcast RSS discovery',
         data.feeds,
       );
-      check(
-        (await page
-          .locator(`a[type="application/rss+xml"][href="${feed}"]`)
-          .count()) === 1,
-        label + ' podcast RSS subscription link',
+      const chooser = page.locator('.podcast-subscribe');
+      const summary = chooser.locator('summary');
+      const rawFeed = chooser.locator(
+        `a[type="application/rss+xml"][href="${feed}"]`,
       );
+      check(!(await rawFeed.isVisible()), label + ' RSS choices start closed');
+      await summary.press('Enter');
+      check(
+        page.url() === origin + pathname &&
+          (await rawFeed.isVisible()) &&
+          (await chooser.locator('input[readonly]').inputValue()) === feed,
+        label + ' RSS chooser opens in place with the canonical feed',
+      );
+      const pocket = await chooser
+        .getByRole('link', { name: 'Pocket Casts' })
+        .getAttribute('href');
+      const antenna = await chooser
+        .getByRole('link', { name: 'AntennaPod' })
+        .getAttribute('href');
+      check(
+        (await chooser
+          .locator(`a[href="${feed.replace(/^https:/, 'pcast:')}"]`)
+          .isVisible()) &&
+          pocket ===
+            'https://pocketcasts.com/follow/' + encodeURIComponent(feed) &&
+          new URL(antenna).searchParams.get('url') === feed,
+        label + ' podcast app choices carry this show’s feed',
+      );
+      await overflow(page, label + ' open RSS chooser');
+      await summary.press('Enter');
     }
     if (en)
       check(
@@ -1005,6 +1087,13 @@ try {
   });
   const ctx = await context();
   const page = await ctx.newPage();
+  const podcastPage = await ctx.newPage();
+  await scenario(
+    'live podcast playback and seeking',
+    () => checkPodcastPlayback(podcastPage),
+    podcastPage,
+  );
+  await podcastPage.close();
   for (const width of widths) {
     for (const path of [
       ...paths.map((p) => '/en' + p),

@@ -1,0 +1,153 @@
+---
+import { translator } from '../data/i18n.mjs';
+
+const { url, title, locale } = Astro.props;
+const t = translator(locale);
+const antennaFeed = new URL('https://antennapod.org/deeplink/subscribe');
+antennaFeed.search = new URLSearchParams({ url, title }).toString();
+---
+
+<details class="podcast-subscribe">
+  <summary>{t('RSSで購読', 'Subscribe via RSS')}</summary>
+  <div class="subscribe-panel">
+    <h3>{t('使うアプリを選ぶ', 'Choose a podcast app')}</h3>
+    <div class="feed-apps">
+      <a href={url.replace(/^https:/, 'pcast:')}
+        >{t('端末の対応アプリで開く', 'Open in a compatible app')}</a
+      >
+      <a href={`https://pocketcasts.com/follow/${encodeURIComponent(url)}`}
+        >Pocket Casts</a
+      >
+      <a href={antennaFeed.href}>AntennaPod</a>
+    </div>
+    <label for="podcast-feed-url"
+      >{t('ほかのアプリで使うRSSリンク', 'RSS link for other apps')}</label
+    >
+    <div class="feed-copy">
+      <input id="podcast-feed-url" type="text" value={url} readonly dir="ltr" />
+      <button
+        type="button"
+        data-copy-feed
+        hidden
+        data-copied={t('リンクをコピーしました。', 'Link copied.')}
+        data-manual={t(
+          '選択したリンクをコピーしてね。',
+          'Copy the selected link.',
+        )}>{t('コピー', 'Copy')}</button
+      >
+    </div>
+    <span class="copy-status" role="status"></span>
+    <p>
+      {
+        t(
+          'iPhoneのApple Podcastsでは、「ライブラリ」→「…」→「番組をURLで追加」にこのリンクを貼り付けてね。',
+          'In Apple Podcasts on iPhone, paste this link under Library → … → Follow a Show by URL.',
+        )
+      }
+    </p>
+    <a class="raw-feed" href={url} type="application/rss+xml"
+      >{t('RSSフィードを開く（XML）', 'Open RSS feed (XML)')}</a
+    >
+  </div>
+</details>
+
+<script>
+  const input = document.querySelector<HTMLInputElement>('#podcast-feed-url');
+  const copy = document.querySelector<HTMLButtonElement>('[data-copy-feed]');
+  const status = document.querySelector<HTMLElement>(
+    '.podcast-subscribe [role="status"]',
+  );
+  if (input && copy && status) {
+    copy.hidden = false;
+    copy.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(input.value);
+        status.textContent = copy.dataset.copied!;
+      } catch {
+        input.focus();
+        input.select();
+        status.textContent = copy.dataset.manual!;
+      }
+    });
+  }
+</script>
+
+<style>
+  details {
+    min-width: 0;
+    max-width: 100%;
+    text-align: start;
+  }
+  details[open] {
+    width: min(100%, 34rem);
+  }
+  summary {
+    width: fit-content;
+    margin-inline: auto;
+    cursor: pointer;
+    list-style-position: inside;
+  }
+  summary:focus-visible {
+    outline: 3px solid #9b0051;
+    outline-offset: 4px;
+  }
+  .subscribe-panel {
+    margin-top: 12px;
+    padding: clamp(16px, 3vw, 28px);
+    border: 1px solid #dabccc;
+    background: #fff;
+  }
+  h3 {
+    margin: 0 0 12px;
+    font-size: 1.15rem;
+  }
+  .feed-apps,
+  .feed-copy {
+    display: flex;
+    align-items: stretch;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .feed-apps {
+    margin-bottom: 20px;
+  }
+  .feed-apps a,
+  button {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 8px 14px;
+    font-weight: 700;
+    border: 1px solid #b58b9f;
+    background: #fff1f8;
+    text-decoration: none;
+  }
+  .feed-apps a:hover,
+  button:hover {
+    border-color: #a8095e;
+    background: #ffe5f2;
+  }
+  button[hidden] {
+    display: none;
+  }
+  label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 700;
+  }
+  input {
+    flex: 1 1 12rem;
+    min-width: 0;
+    min-height: 44px;
+    padding: 8px;
+    border: 1px solid #b58b9f;
+  }
+  .copy-status,
+  p,
+  .raw-feed {
+    font-size: 0.875rem;
+  }
+  p {
+    margin: 12px 0 8px;
+  }
+</style>
