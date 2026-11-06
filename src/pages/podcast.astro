@@ -1,5 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import PodcastSubscribe from '../components/PodcastSubscribe.astro';
 import data from '../../config/podcast.json';
 import {
   episodeList,
@@ -99,15 +100,20 @@ const { platforms, episodes } = getPodcast(data, locale);
           {t('いつものアプリで聴く', 'Listen your way')}
         </h2>
         <nav aria-label={t('ポッドキャストの配信先', 'Podcast platforms')}>
-          {platforms.map((platform) => (
-            <a
-              href={platform.url}
-              type={platform.id === 'rss' ? 'application/rss+xml' : undefined}
-            >
-              {platform.label}
-              <span aria-hidden="true">↗</span>
-            </a>
-          ))}
+          {platforms.map((platform) =>
+            platform.id === 'rss' ? (
+              <PodcastSubscribe
+                url={platform.url}
+                title={data.feed.title}
+                {locale}
+              />
+            ) : (
+              <a href={platform.url}>
+                {platform.label}
+                <span aria-hidden="true">↗</span>
+              </a>
+            ),
+          )}
         </nav>
       </section>
     )
@@ -200,6 +206,34 @@ const { platforms, episodes } = getPodcast(data, locale);
     </div>
   </section>
 </Layout>
+
+<script>
+  const players =
+    document.querySelectorAll<HTMLAudioElement>('.podcast-player');
+  for (const player of players) {
+    player.addEventListener('play', () => {
+      for (const other of players) {
+        if (other !== player && !other.paused) other.pause();
+      }
+    });
+  }
+  const latest =
+    document.querySelector<HTMLAnchorElement>('[data-play-latest]');
+  latest?.addEventListener('click', (event) => {
+    if (
+      event.button ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    )
+      return;
+    const player = document
+      .getElementById(latest.hash.slice(1))
+      ?.querySelector('audio');
+    player?.play().catch(() => player.focus());
+  });
+</script>
 
 <style is:global>
   .podcast-hero {
@@ -305,10 +339,8 @@ const { platforms, episodes } = getPodcast(data, locale);
     justify-content: center;
     gap: 12px;
   }
-  .podcast-listen a {
-    display: inline-flex;
-    gap: 24px;
-    align-items: center;
+  .podcast-listen > nav > a,
+  .podcast-subscribe > summary {
     min-height: 48px;
     padding: 12px 20px;
     border: 1px solid #b58b9f;
@@ -316,7 +348,13 @@ const { platforms, episodes } = getPodcast(data, locale);
     text-decoration: none;
     font-weight: 700;
   }
-  .podcast-listen a:hover {
+  .podcast-listen > nav > a {
+    display: inline-flex;
+    align-items: center;
+    gap: 24px;
+  }
+  .podcast-listen > nav > a:hover,
+  .podcast-subscribe > summary:hover {
     border-color: #a8095e;
     background: #ffe5f2;
   }
@@ -388,6 +426,12 @@ const { platforms, episodes } = getPodcast(data, locale);
   }
   .podcast-episode p {
     max-width: 75ch;
+  }
+  .podcast-player {
+    display: block;
+    clear: both;
+    width: min(100%, 44rem);
+    margin-block: 16px;
   }
   .podcast-episode-cover {
     float: inline-end;

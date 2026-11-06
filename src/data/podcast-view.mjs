@@ -1,6 +1,6 @@
 import { escapeMarkup as esc, showArtwork } from './podcast.mjs';
 import { translator } from './i18n.mjs';
-import { canonicalUrl } from './urls.mjs';
+import { canonicalUrl, siteOrigin } from './urls.mjs';
 
 export function sharingImageTags(feed, episodes, locale) {
   const t = translator(locale);
@@ -19,12 +19,22 @@ export function sharingImageTags(feed, episodes, locale) {
     <meta name="twitter:image:alt" content="${esc(alt)}">`;
 }
 
+function playerSource(episode) {
+  if (!episode?.audio) return '';
+  const url = new URL(episode.audio.url);
+  // The website serves its own enclosures. Off-site listening links still open normally.
+  if (url.origin !== siteOrigin) return '';
+  return url.pathname.replace(/^\/+/, '/') + url.search;
+}
+
 export function latestLink(episode, locale) {
   const t = translator(locale);
   const label = episode
     ? t('最新エピソードを聴く', 'Listen to the latest episode')
     : t('配信情報を見る', 'Explore the podcast');
-  return `<a class="button button-pink" href="${esc(episode?.url || '#episodes')}">${label} <span aria-hidden="true">${episode ? '↗' : '↓'}</span></a>`;
+  const inline = Boolean(playerSource(episode));
+  const href = inline ? `#episode-${episode.id}` : episode?.url || '#episodes';
+  return `<a class="button button-pink" href="${esc(href)}"${inline ? ' data-play-latest' : ''}>${label} <span aria-hidden="true">${episode && !inline ? '↗' : '↓'}</span></a>`;
 }
 
 export function episodeList(episodes, locale) {
@@ -42,6 +52,11 @@ export function episodeList(episodes, locale) {
       `${year}年${month}月${day}日`,
       englishDates.format(new Date(`${episode.date}T00:00:00+09:00`)),
     );
+    const source = playerSource(episode);
+    const directAudio = source && episode.url === episode.audio.url;
+    const listenLabel = directAudio
+      ? t('音声ファイルを開く', 'Open audio file')
+      : t('エピソードを聴く', 'Listen to episode');
     return `<li><article class="podcast-episode${index === 0 ? ' podcast-latest' : ''}" id="episode-${esc(episode.id)}">
       ${artworkUrl ? `<img class="podcast-episode-cover" src="${esc(artworkUrl)}" alt="" width="160" height="160" loading="lazy">` : ''}
       <div class="podcast-episode-meta">
@@ -50,9 +65,10 @@ export function episodeList(episodes, locale) {
         ${durationMinutes ? `<span>${t(`${durationMinutes}分`, `${durationMinutes} min`)}</span>` : ''}
       </div>
       <h3>${esc(title)}</h3>
+      ${source ? `<audio class="podcast-player" controls preload="none" aria-label="${esc(t(`${title}を再生`, `Play ${title}`))}"><source src="${esc(source)}" type="${esc(episode.audio.type)}"></audio>` : ''}
       ${description ? `<p class="podcast-notes">${esc(description)}</p>` : ''}
       ${tags?.length ? `<ul class="podcast-tags" aria-label="${t('タグ', 'Tags')}">${tags.map((tag) => `<li>${esc(tag)}</li>`).join('')}</ul>` : ''}
-      <div class="podcast-episode-actions"><a class="button" href="${esc(episode.url)}" aria-label="${esc(t(`${title}を聴く`, `Listen to ${title}`))}">${t('エピソードを聴く', 'Listen to episode')} <span aria-hidden="true">↗</span></a>
+      <div class="podcast-episode-actions"><a class="${source ? 'text-link' : 'button'}" href="${esc(episode.url)}" aria-label="${esc(`${listenLabel} · ${title}`)}">${listenLabel} <span aria-hidden="true">↗</span></a>
       ${episode.transcriptUrl ? `<a href="${esc(episode.transcriptUrl)}">${t('文字起こしを読む', 'Read transcript')}</a>` : ''}</div>
     </article></li>`;
   });
