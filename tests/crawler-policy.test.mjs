@@ -12,10 +12,21 @@ test('archive crawlers are excluded without blocking ordinary search crawlers', 
   );
   const text = await response.text();
   const groups = text.trim().split(/\n\s*\n/);
-  assert.equal(
-    groups[0],
-    'User-agent: archive.org_bot\nUser-agent: ia_archiver\nDisallow: /',
-  );
+  for (const agent of [
+    'archive.org_bot',
+    'ia_archiver',
+    'CCBot',
+    'Arquivo-web-crawler',
+    'Megalodon',
+  ]) {
+    const group = groups.find((entry) =>
+      entry.split('\n').includes(`User-agent: ${agent}`),
+    );
+    assert.ok(group, `${agent}: crawler policy exists`);
+    assert.match(group, /^Disallow: \/$/m, `${agent}: all paths excluded`);
+    assert.doesNotMatch(group, /^Allow:/m, `${agent}: no path exceptions`);
+    assert.doesNotMatch(group, /^User-agent: \*$/m);
+  }
   assert.equal(
     groups[1],
     'User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /game/\nDisallow: /game-test/',
