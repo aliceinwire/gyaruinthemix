@@ -6,6 +6,15 @@ const platformLabels = {
   rss: 'RSS',
 };
 
+export function podcastEmail(feed) {
+  const configured = feed.ownerEmail ?? '';
+  if (typeof configured === 'string') {
+    const email = configured.trim() || 'arisut@riseup.net';
+    if (/^[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+$/.test(email)) return email;
+  }
+  throw new Error('Podcast feed ownerEmail must be a valid email address');
+}
+
 export function httpsLink(value, field) {
   if (value === undefined || value === '') return '';
   try {

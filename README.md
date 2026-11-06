@@ -38,8 +38,8 @@ The RSS channel uses the newest JPEG or PNG cover. Each episode keeps its own ar
 `feed.artworkUrl` to a direct HTTPS JPEG or PNG URL. For Apple Podcasts,
 embed a square, opaque 1400–3000 px JPEG or PNG in the MP3.
 
-The public RSS owner email defaults to `arisut@riseup.net`. Set
-`feed.ownerEmail` to use a different address for directory verification. Review the show title,
+The listener feedback link and RSS owner email both use `arisut@riseup.net`
+by default. Set `feed.ownerEmail` to change both. Review the show title,
 description, category and explicit-content setting before submission.
 
 For manually curated or externally hosted episodes, add an entry to
