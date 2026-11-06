@@ -14,6 +14,7 @@ COPY src ./src
 COPY config ./config
 COPY assets/originals ./assets/originals
 COPY public/favicon.svg public/leopard.svg ./public/
+COPY public/podcast/photos ./public/podcast/photos
 COPY --from=site-images /build/public/assets ./public/assets
 COPY scripts/images.mjs scripts/check-site-build.mjs scripts/release-version.mjs ./scripts/
 COPY scripts/build-site.mjs scripts/build-cache.mjs ./scripts/

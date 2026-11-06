@@ -59,6 +59,22 @@ export function latestLink(episode, locale) {
   return `<a class="button button-pink" href="${esc(href)}"${inline ? ' data-play-latest' : ''}>${label} <span aria-hidden="true">${external ? '↗' : '↓'}</span></a>`;
 }
 
+function episodePhotos(source, t) {
+  if (!source.startsWith('/podcast/play/0001%20-%20')) return '';
+  const curry = t(
+    '吉本興業の看板の前で手に持った「よしもとカレー」の箱',
+    'A box of Yoshimoto Curry held in front of the Yoshimoto sign',
+  );
+  const duo = t(
+    '金髪の2人がピースをして撮ったツーショット',
+    'Two blonde gyaru posing together with peace signs',
+  );
+  return `<div class="podcast-photos">
+    <img src="/podcast/photos/episode-1-curry.webp" alt="${curry}" width="840" height="1120" loading="lazy">
+    <img src="/podcast/photos/episode-1-duo.webp" alt="${duo}" width="840" height="1120" loading="lazy">
+  </div>`;
+}
+
 export function episodeList(episodes, locale) {
   const t = translator(locale);
   const englishDates = new Intl.DateTimeFormat('en-US', {
@@ -90,6 +106,7 @@ export function episodeList(episodes, locale) {
       <h3>${esc(title)}</h3>
       ${source ? `<audio class="podcast-player" controls controlslist="nodownload" preload="none" aria-label="${esc(t(`${title}を再生`, `Play ${title}`))}"><source src="${esc(source)}" type="${esc(episode.audio.type)}"></audio>` : ''}
       ${description && !/^podcast$/i.test(description.trim()) ? `<p class="podcast-notes">${esc(description)}</p>` : ''}
+      ${episodePhotos(source, t)}
       ${visibleTags.length ? `<ul class="podcast-tags" aria-label="${t('タグ', 'Tags')}">${visibleTags.map((tag) => `<li>${esc(tag)}</li>`).join('')}</ul>` : ''}
       ${
         listeningUrl || transcriptUrl

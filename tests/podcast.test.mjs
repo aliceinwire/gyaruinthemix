@@ -208,3 +208,28 @@ test('published episodes require both translations instead of mixing languages',
       );
   }
 });
+
+test('only upload 0001 displays both episode photos in either language', () => {
+  const card = (number, locale) =>
+    episodeList(
+      [
+        {
+          id: number,
+          date: '2026-11-06',
+          title: 'Episode',
+          audio: {
+            url: `https://gyaruinthemix.com/podcast/audio/${number}%20-%20show.mp3`,
+            type: 'audio/mpeg',
+          },
+        },
+      ],
+      locale,
+    );
+  for (const locale of ['ja', 'en']) {
+    assert.match(
+      card('0001', locale),
+      /episode-1-curry\.webp[\s\S]*episode-1-duo\.webp/,
+    );
+    assert.doesNotMatch(card('0002', locale), /podcast-photos/);
+  }
+});
