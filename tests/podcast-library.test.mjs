@@ -13,7 +13,9 @@ import {
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
-import { refreshPodcast } from '../scripts/podcast-index.mjs';
+const { refreshPodcast } = await import(
+  process.env.PODCAST_INDEX_MODULE || '../scripts/podcast-index.mjs'
+);
 
 // ID3v2.4 frames followed by silent 128 kbps MPEG-1 Layer III frames.
 const size = (n) =>
@@ -153,8 +155,8 @@ test('untagged episodes publish with a stable date while hidden, partial, corrup
   await writeFile(join(f.source, 'ひとやすみ.mp3'), mp3());
   await utimes(
     join(f.source, 'ひとやすみ.mp3'),
-    new Date('2025-03-01T00:00:00Z'),
-    new Date('2025-03-01T00:00:00Z'),
+    new Date('2025-02-28T15:00:00Z'),
+    new Date('2025-02-28T15:00:00Z'),
   );
   await writeFile(join(f.source, '.draft.mp3'), mp3());
   await writeFile(join(f.source, 'upload.mp3.part'), mp3());
@@ -169,6 +171,16 @@ test('untagged episodes publish with a stable date while hidden, partial, corrup
   assert.doesNotMatch(first, /linked|draft|upload|broken/);
   const date = first.match(/<pubDate>.*?<\/pubDate>/)[0];
   assert.match(date, /28 Feb 2025/);
+  assert.ok(
+    (await f.read('ja.html')).includes(
+      '<time datetime="2025-03-01">2025年3月1日</time>',
+    ),
+  );
+  assert.ok(
+    (await f.read('en.html')).includes(
+      '<time datetime="2025-03-01">Mar 1, 2025</time>',
+    ),
+  );
   await writeFile(
     join(f.source, 'ひとやすみ.mp3'),
     mp3([field('TIT2', '新タイトル')]),
@@ -176,4 +188,37 @@ test('untagged episodes publish with a stable date while hidden, partial, corrup
   await rm(f.pages, { recursive: true });
   await refreshPodcast(f);
   assert.ok((await f.read('rss.xml')).includes(date));
+});
+
+test('migrates localized dates in the persistent podcast index without moving a published episode', async (t) => {
+  const f = await fixture(t);
+  const path = join(f.source, 'episode.mp3');
+  await writeFile(path, mp3([field('TDRL', '2026-04-07')]));
+  await refreshPodcast(f);
+  const cacheFile = join(f.cache, 'index-v1.json');
+  const cache = JSON.parse(await readFile(cacheFile, 'utf8'));
+  const record = cache[0][1];
+  record.firstDate = '11/06/2025';
+  await writeFile(cacheFile, JSON.stringify(cache));
+  await refreshPodcast(f);
+  assert.match(
+    await f.read('rss.xml'),
+    /<pubDate>Mon, 06 Apr 2026 15:00:00 GMT<\/pubDate>/,
+  );
+
+  record.episode.date = '11/06/2025';
+  await writeFile(cacheFile, JSON.stringify(cache));
+  await rm(f.pages, { recursive: true });
+  await refreshPodcast(f);
+  const repaired = JSON.parse(await readFile(cacheFile, 'utf8'))[0][1];
+  assert.equal(repaired.firstDate, '2025-11-06');
+  assert.equal(repaired.episode.date, '2025-11-06');
+  const rss = await f.read('rss.xml');
+  const pubDate = '<pubDate>Wed, 05 Nov 2025 15:00:00 GMT</pubDate>';
+  assert.ok(rss.includes(pubDate));
+  const guid = rss.match(/<guid[^>]*>.*?<\/guid>/)[0];
+  await writeFile(path, mp3([field('TIT2', 'New title')]));
+  await refreshPodcast(f);
+  const retagged = await f.read('rss.xml');
+  assert.ok(retagged.includes(guid) && retagged.includes(pubDate));
 });

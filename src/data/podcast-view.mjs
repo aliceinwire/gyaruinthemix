@@ -29,7 +29,7 @@ export function latestLink(episode, locale) {
 
 export function episodeList(episodes, locale) {
   const t = translator(locale);
-  const dates = new Intl.DateTimeFormat(locale === 'en' ? 'en-US' : 'ja-JP', {
+  const englishDates = new Intl.DateTimeFormat('en-US', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -37,7 +37,11 @@ export function episodeList(episodes, locale) {
   });
   const cards = episodes.map((episode, index) => {
     const { title, description, durationMinutes, artworkUrl, tags } = episode;
-    const date = dates.format(new Date(`${episode.date}T00:00:00+09:00`));
+    const [year, month, day] = episode.date.split('-').map(Number);
+    const date = t(
+      `${year}年${month}月${day}日`,
+      englishDates.format(new Date(`${episode.date}T00:00:00+09:00`)),
+    );
     return `<li><article class="podcast-episode${index === 0 ? ' podcast-latest' : ''}" id="episode-${esc(episode.id)}">
       ${artworkUrl ? `<img class="podcast-episode-cover" src="${esc(artworkUrl)}" alt="" width="160" height="160" loading="lazy">` : ''}
       <div class="podcast-episode-meta">

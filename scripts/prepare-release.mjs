@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
 import { buildImage } from './build-image.mjs';
 import {
   assertImage,
@@ -41,6 +42,27 @@ for (const name of components) {
     revisions[name] = previous.revision;
   }
   assertImage(inspectImage(image), name, revisions[name]);
+  if (plan.build[name] && (name === 'web' || name === 'web-api')) {
+    process.stdout.write(
+      docker(
+        'run',
+        '--rm',
+        '--network=none',
+        '--read-only',
+        '--tmpfs',
+        '/tmp:rw,noexec,nosuid,nodev,size=16m,mode=1777',
+        '--mount',
+        `type=bind,source=${resolve('tests/podcast-library.test.mjs')},target=/opt/podcast/library.test.mjs,readonly`,
+        '--env',
+        'PODCAST_INDEX_MODULE=./index.mjs',
+        '--entrypoint',
+        'node',
+        image,
+        '--test',
+        '/opt/podcast/library.test.mjs',
+      ),
+    );
+  }
 }
 // Exercise the metadata-image format before publishing is permitted. Local
 // image IDs are placeholders here; publication replaces them with registry digests.
