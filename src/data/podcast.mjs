@@ -6,6 +6,9 @@ const platformLabels = {
   rss: 'RSS',
 };
 
+// Episode dates are calendar days in Japan, including in published media tags.
+export const podcastReleaseTime = (date) => new Date(`${date}T00:00:00+09:00`);
+
 export function podcastEmail(feed) {
   const configured = feed.ownerEmail ?? '';
   if (typeof configured === 'string') {
@@ -113,8 +116,8 @@ export function getPodcast(data, locale = 'ja', library = []) {
     }))
     .filter((platform) => platform.url);
   const ids = new Set();
-  const embeddedCovers = new Map(
-    library.map((episode) => [episode.audio.url, episode.artworkUrl]),
+  const uploads = new Map(
+    library.map((episode) => [episode.audio.url, episode]),
   );
   const episodes = data.episodes
     .filter((episode) => episode.published === true)
@@ -135,8 +138,9 @@ export function getPodcast(data, locale = 'ja', library = []) {
       )
         throw new Error('Podcast durationMinutes must be a positive integer');
       const audio = episodeAudio(episode.audio);
-      const artworkUrl =
-        artworkLink(episode.artworkUrl) || embeddedCovers.get(audio?.url);
+      const upload = uploads.get(audio?.url);
+      if (upload) audio.length = upload.audio.length;
+      const artworkUrl = artworkLink(episode.artworkUrl) || upload?.artworkUrl;
       const url = httpsLink(episode.url, 'episode URL') || audio?.url;
       if (!url)
         throw new Error('Published podcast episodes need a listening URL');

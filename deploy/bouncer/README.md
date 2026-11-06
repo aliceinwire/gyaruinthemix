@@ -74,8 +74,12 @@ file-settling delay; allow about 70 seconds after a completed upload.
 Supported metadata includes the ID3 title, embedded front cover (JPEG, PNG,
 GIF or WebP), description/show notes or comment, genre, keywords and custom
 `TXXX:TAGS`. RSS includes JPEG/PNG episode images and a category for each
-tag. A full release or recording date is preferred; otherwise the first
-indexed file modification date (Japan time) is kept across tag edits.
+tag. The web image prepares a playback copy in the podcast cache volume.
+Allow space for one additional MP3 per episode. Both playback URLs serve this
+copy with a single release timestamp at midnight in Japan. New uploads use
+their first publication day. Existing episodes keep their published day across
+image upgrades and tag edits. A curated episode with the same audio URL can
+override the day with its `date` field.
 The newest available cover supplies the podcast link preview on both language
 pages. RSS uses the newest JPEG or PNG for the show cover. To pin a show cover,
 set `feed.artworkUrl` in `config/podcast.json`. The listener feedback link and

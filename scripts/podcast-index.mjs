@@ -13,7 +13,8 @@ import {
   symlink,
   writeFile,
 } from 'node:fs/promises';
-import { basename, join } from 'node:path';
+import { basename, join, resolve } from 'node:path';
+import { preparePodcastMedia } from './podcast-media.mjs';
 import { parseFile } from 'music-metadata';
 import configuration from '../config/podcast.json' with { type: 'json' };
 import { isCalendarDate, japanDate } from '../src/data/events.mjs';
@@ -28,6 +29,7 @@ import {
 import { canonicalUrl } from '../src/data/urls.mjs';
 
 const hash = (data) => createHash('sha256').update(data).digest('hex');
+const uploadId = (name) => 'mp3-' + hash(name).slice(0, 24);
 const fingerprint = (stat) =>
   [stat.dev, stat.ino, stat.size, stat.mtimeNs, stat.ctimeNs].join(':');
 
@@ -87,11 +89,11 @@ function artwork(pictures = []) {
       bytes.toString('ascii', 8, 12) === 'WEBP'
     )
       extension = 'webp';
-    if (extension) return { name: `${hash(bytes)}.${extension}`, bytes };
+    if (extension) return { extension, bytes };
   }
 }
 
-function episodeFromTags(name, size, firstDate, metadata) {
+function episodeFromTags(name, url, date, metadata) {
   const { common, format, native } = metadata;
   if (!/^MPEG .+ Layer 3$/.test(format.codec || '') || !format.sampleRate)
     throw new Error('No MP3 audio frames');
@@ -118,17 +120,12 @@ function episodeFromTags(name, size, firstDate, metadata) {
     ...(common.category || []),
     ...custom(/^T(?:XXX|XX):(?:tags?|keywords?|genre|category)$/i),
   ];
-  const date =
-    [common.releasedate, common.date]
-      .map((s) => s?.slice(0, 10))
-      .find(isCalendarDate) || firstDate;
-  const url = canonicalUrl('/podcast/audio/' + encodeURIComponent(name));
   const cover = artwork(common.picture);
   const duration = Math.round(format.duration || 0);
   return {
     cover,
     episode: {
-      id: 'mp3-' + hash(name).slice(0, 24),
+      id: uploadId(name),
       date,
       title: text(common.title) || text(name.slice(0, -4)) || 'MP3',
       description: notes || '',
@@ -142,21 +139,18 @@ function episodeFromTags(name, size, firstDate, metadata) {
             .filter(Boolean),
         ),
       ],
-      ...(cover && {
-        artworkUrl: canonicalUrl('/podcast/artwork/' + cover.name),
-      }),
       ...(Number.isSafeInteger(duration) &&
         duration > 0 && {
           durationSeconds: duration,
           durationMinutes: Math.max(1, Math.round(duration / 60)),
         }),
-      audio: { url, length: size, type: 'audio/mpeg' },
+      audio: { url, type: 'audio/mpeg' },
       url,
     },
   };
 }
 
-async function readEpisode(path, name, stat, firstDate) {
+async function readEpisode(path, name, stat, url, date, mediaDir, mediaKey) {
   // Parse the already-open regular file, even if an uploader replaces its name.
   const file = await open(
     path,
@@ -170,15 +164,32 @@ async function readEpisode(path, name, stat, firstDate) {
       maxMemoryAllocation: 16 * 1024 * 1024,
       maxMetadataEntries: 4096,
     });
+    const result = episodeFromTags(name, url, date, metadata);
+    try {
+      const media = await preparePodcastMedia(
+        mediaDir,
+        mediaKey,
+        file.fd,
+        result,
+        metadata.common,
+      );
+      result.episode.audio.length = media.size;
+      result.cover = media.cover;
+    } catch (error) {
+      console.warn(
+        `Retrying podcast file ${JSON.stringify(name)} on the next scan: ${error.message}`,
+      );
+      return;
+    }
     if (fingerprint(await lstat(path, { bigint: true })) !== fingerprint(stat))
       return;
-    return episodeFromTags(name, Number(stat.size), firstDate, metadata);
+    return result;
   } finally {
     await file.close();
   }
 }
 
-async function publishPages(site, pages, library, key) {
+async function publishPages(site, pages, config, mediaDir, published, key) {
   await mkdir(pages, { recursive: true });
   const current = join(pages, 'current');
   if ((await optional(readFile(join(current, 'key'), 'utf8'))) === key) return;
@@ -186,16 +197,35 @@ async function publishPages(site, pages, library, key) {
   const stage = await mkdtemp(join(pages, 'edition-'));
   const next = stage + '.link';
   try {
+    const library = published.map(([, entry]) => ({
+      ...entry.episode,
+      explicit: config.feed.explicit,
+    }));
+    const audio = join(stage, 'audio');
+    await mkdir(audio);
+    const publicDates = new Map(
+      getPodcast(config, 'ja', library).episodes.map((episode) => [
+        episode.audio?.url,
+        episode.date,
+      ]),
+    );
+    for (const [name, entry] of published) {
+      const day = publicDates.get(entry.episode.audio.url);
+      if (!day) continue;
+      if (day !== entry.episode.date)
+        throw new Error('Updated podcast media is not ready');
+      await symlink(resolve(mediaDir, entry.media), join(audio, name));
+    }
     for (const locale of ['ja', 'en']) {
       let page = await readFile(
         join(site, locale === 'ja' ? '' : 'en', 'podcast/index.html'),
         'utf8',
       );
-      const { episodes } = getPodcast(configuration, locale, library);
+      const { episodes } = getPodcast(config, locale, library);
       page = fillPodcastSlot(
         page,
         'sharing',
-        sharingImageTags(configuration.feed, episodes, locale),
+        sharingImageTags(config.feed, episodes, locale),
       );
       if (episodes.length) {
         page = fillPodcastSlot(page, 'latest', latestLink(episodes[0], locale));
@@ -203,10 +233,7 @@ async function publishPages(site, pages, library, key) {
       }
       await writeFile(join(stage, locale + '.html'), page);
     }
-    await writeFile(
-      join(stage, 'rss.xml'),
-      createPodcastFeed(configuration, library),
-    );
+    await writeFile(join(stage, 'rss.xml'), createPodcastFeed(config, library));
     await writeFile(join(stage, 'key'), key);
     await symlink(basename(stage), next);
     await rename(next, current);
@@ -224,9 +251,30 @@ export async function refreshPodcast({
   cache,
   pages,
   site,
+  config = configuration,
   now = Date.now(),
   settleMs = 10_000,
 }) {
+  const mediaDir = join(cache, 'audio');
+  await mkdir(mediaDir, { recursive: true });
+  const existingMedia = new Set();
+  for (const file of await readdir(mediaDir, { withFileTypes: true })) {
+    if (file.isFile() && /^[a-f0-9]{64}\.mp3$/.test(file.name))
+      existingMedia.add(file.name);
+    // The production scanner holds the volume lock. A temp file here survived an interruption.
+    else if (/^\.[a-f0-9-]{36}\.tmp$/.test(file.name))
+      await rm(join(mediaDir, file.name), { force: true });
+  }
+  const configuredDates = new Map(
+    config.episodes
+      .filter((e) => e.published && e.audio)
+      .map((e) => [e.audio.url, e.date]),
+  );
+  const drafts = new Set(
+    config.episodes
+      .filter((e) => !e.published)
+      .flatMap((e) => [e.id, e.audio?.url]),
+  );
   const covers = join(cache, 'artwork');
   await mkdir(covers, { recursive: true });
   const existingCovers = new Set(await readdir(covers));
@@ -250,19 +298,29 @@ export async function refreshPodcast({
     if (!before?.isFile()) continue;
     const signature = fingerprint(before);
     const prior = old.get(name);
-    const firstDate =
-      cachedCalendarDate(prior?.firstDate) ||
-      japanDate(new Date(Number(before.mtimeMs)));
-    if (prior) {
-      prior.firstDate = firstDate;
-      if (prior.episode)
-        prior.episode.date =
-          cachedCalendarDate(prior.episode.date) || firstDate;
+    const url = canonicalUrl('/podcast/audio/' + encodeURIComponent(name));
+    if (drafts.has(url) || drafts.has(uploadId(name))) {
+      if (prior?.episode) entries.set(name, prior);
+      continue;
     }
+    // Older indexes recorded the publicly announced day in episode.date.
+    const firstDate =
+      (prior?.media && cachedCalendarDate(prior.firstDate)) ||
+      cachedCalendarDate(prior?.episode?.date) ||
+      (prior?.episode && cachedCalendarDate(prior.firstDate)) ||
+      japanDate(new Date(now));
+    const date = configuredDates.get(url) ?? firstDate;
+    if (!isCalendarDate(date)) throw new Error('Invalid podcast release date');
+    const media =
+      hash(JSON.stringify(['release-v1', name, signature, date])) + '.mp3';
+    const reusable =
+      prior?.media === media &&
+      existingMedia.has(media) &&
+      (!prior.episode.artworkUrl ||
+        existingCovers.has(basename(prior.episode.artworkUrl)));
     if (
-      (prior?.signature === signature &&
-        (!prior.episode?.artworkUrl ||
-          existingCovers.has(basename(prior.episode.artworkUrl)))) ||
+      reusable ||
+      (prior?.signature === signature && prior.skipped) ||
       (settleMs > 0 && now - Number(before.ctimeMs) < settleMs)
     ) {
       if (prior) entries.set(name, prior);
@@ -270,45 +328,72 @@ export async function refreshPodcast({
     }
     let result;
     try {
-      result = await readEpisode(path, name, before, firstDate);
+      result = await readEpisode(
+        path,
+        name,
+        before,
+        url,
+        date,
+        mediaDir,
+        media,
+      );
     } catch (error) {
       if (error.code === 'ENOENT' || error.code === 'ELOOP') continue;
       if (error.code && ['EIO', 'EMFILE'].includes(error.code)) throw error;
       console.warn(
         `Skipping podcast file ${JSON.stringify(name)}: ${error.message}`,
       );
-      if (error.code !== 'EACCES' && error.code !== 'EPERM')
-        entries.set(name, { signature, firstDate });
+      if (prior?.episode) entries.set(name, prior);
+      else if (error.code !== 'EACCES' && error.code !== 'EPERM')
+        entries.set(name, { signature, skipped: true });
       continue;
     }
     if (!result) {
       if (prior) entries.set(name, prior);
       continue;
     }
-    if (result.cover && !existingCovers.has(result.cover.name)) {
-      await atomicWrite(join(covers, result.cover.name), result.cover.bytes);
-      existingCovers.add(result.cover.name);
+    if (result.cover) {
+      const { bytes, extension } = result.cover;
+      const coverName = `${hash(bytes)}.${extension}`;
+      if (!existingCovers.has(coverName)) {
+        await atomicWrite(join(covers, coverName), bytes);
+        existingCovers.add(coverName);
+      }
+      result.episode.artworkUrl = canonicalUrl('/podcast/artwork/' + coverName);
     }
-    entries.set(name, { signature, firstDate, episode: result.episode });
+    existingMedia.add(media);
+    entries.set(name, { signature, firstDate, media, episode: result.episode });
   }
-  const library = [...entries.values()].flatMap(({ episode }) =>
-    episode ? [{ ...episode, explicit: configuration.feed.explicit }] : [],
+  const published = [...entries].filter(
+    ([, entry]) => entry.episode && existingMedia.has(entry.media),
   );
   const serialized = JSON.stringify([...entries]);
   await publishPages(
     site,
     pages,
-    library,
-    hash(JSON.stringify(configuration) + '\n' + serialized),
+    config,
+    mediaDir,
+    published,
+    hash(
+      JSON.stringify(config) +
+        '\n' +
+        serialized +
+        '\n' +
+        JSON.stringify(published.map(([, entry]) => entry.media)),
+    ),
   );
   if (serialized !== saved) await atomicWrite(stateFile, serialized);
+  const activeMedia = new Set(published.map(([, entry]) => entry.media));
+  for (const name of existingMedia) {
+    if (!activeMedia.has(name)) await rm(join(mediaDir, name), { force: true });
+  }
   // An unreferenced episode cover should disappear when its source is removed.
   const artworkPrefix = canonicalUrl('/podcast/artwork/');
   const activeArt = new Set(
     [
-      configuration.feed.artworkUrl,
-      ...library.map((episode) => episode.artworkUrl),
-      ...configuration.episodes
+      config.feed.artworkUrl,
+      ...published.map(([, entry]) => entry.episode.artworkUrl),
+      ...config.episodes
         .filter((episode) => episode.published === true)
         .map((episode) => episode.artworkUrl),
     ]

@@ -7,12 +7,14 @@ import {
   readlink,
   rm,
   symlink,
+  stat,
   utimes,
   writeFile,
 } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
+import { crc32 } from 'node:zlib';
 const { refreshPodcast } = await import(
   process.env.PODCAST_INDEX_MODULE || '../scripts/podcast-index.mjs'
 );
@@ -27,6 +29,19 @@ const png = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aDeUAAAAASUVORK5CYII=',
   'base64',
 );
+const payload = Buffer.from('tEXtCreation Time\x001991:02:03 04:05:06');
+const length = Buffer.alloc(4);
+length.writeUInt32BE(payload.length - 4);
+const checksum = Buffer.alloc(4);
+checksum.writeUInt32BE(crc32(payload));
+const datedPng = Buffer.concat([
+  png.subarray(0, -12),
+  length,
+  payload,
+  checksum,
+  png.subarray(-12),
+]);
+
 function mp3(frames = []) {
   const tags = Buffer.concat(frames);
   const silent = Buffer.alloc(417);
@@ -48,6 +63,7 @@ async function fixture(t) {
     pages: join(dir, 'pages'),
     site: join(dir, 'www'),
     settleMs: 0,
+    now: Date.parse('2026-11-06T14:59:59Z'),
   };
   await mkdir(opts.source);
   for (const prefix of ['', 'en/']) {
@@ -76,16 +92,44 @@ test('drop, retag and remove a real MP3 across both pages, artwork and the RSS',
   const f = await fixture(t);
   const name = '初回 #1 & ふたり.MP3';
   const path = join(f.source, name);
-  const audio = mp3([
-    field('TIT2', 'ギャル <ふたり>'),
-    field('TDRL', '2026-11-06'),
-    frame('COMM', Buffer.from('\x03jpn\x00台本なし & ごはん')),
-    field('TCON', 'Talk'),
-    field('TXXX', 'TAGS\x00日常;東京;Talk;Podcast'),
-    frame(
-      'APIC',
-      Buffer.concat([Buffer.from('\x03image/png\x00\x03\x00'), png]),
-    ),
+  const originalTag = Buffer.alloc(128);
+  originalTag.write('TAG');
+  originalTag.write('1988', 93);
+  const apeValue = Buffer.from('2007-08-09T10:11:12');
+  const apeKey = Buffer.from('Creation Date\0');
+  const apeItem = Buffer.alloc(8);
+  apeItem.writeUInt32LE(apeValue.length);
+  const footer = Buffer.alloc(32);
+  footer.write('APETAGEX');
+  footer.writeUInt32LE(2000, 8);
+  footer.writeUInt32LE(
+    apeItem.length + apeKey.length + apeValue.length + footer.length,
+    12,
+  );
+  footer.writeUInt32LE(1, 16);
+  const audio = Buffer.concat([
+    mp3([
+      field('TIT2', 'ギャル <ふたり>'),
+      field('TDRL', '1995-01-02T03:04:05'),
+      field('TDRC', '2001-02-03T04:05:06'),
+      field('TDTG', '2002-03-04T05:06:07'),
+      field('TDEN', '2003-04-05T06:07:08'),
+      field('TDOR', '2004-05-06T07:08:09'),
+      field('TXXX', 'creation_time\x002005-06-07T08:09:10'),
+      field('TPE1', 'DJありねぇ × DJちゃな'),
+      frame('COMM', Buffer.from('\x03jpn\x00台本なし & ごはん')),
+      field('TCON', 'Talk'),
+      field('TXXX', 'TAGS\x00日常;東京;Talk;Podcast'),
+      frame(
+        'APIC',
+        Buffer.concat([Buffer.from('\x03image/png\x00\x03\x00'), datedPng]),
+      ),
+    ]),
+    apeItem,
+    apeKey,
+    apeValue,
+    footer,
+    originalTag,
   ]);
   await writeFile(path, audio);
   await refreshPodcast(f);
@@ -99,7 +143,29 @@ test('drop, retag and remove a real MP3 across both pages, artwork and the RSS',
   assert.match(xml, /<itunes:duration>1<\/itunes:duration>/);
   assert.match(xml, /05 Nov 2026 15:00:00 GMT/);
   assert.ok(xml.includes(encodeURIComponent(name)));
-  assert.ok(xml.includes(`length="${audio.length}" type="audio/mpeg"`));
+  const publicFile = join(f.pages, 'current/audio', name);
+  const sanitized = await readFile(publicFile);
+  assert.deepEqual(await readFile(path), audio);
+  assert.equal(
+    (await stat(publicFile)).mtime.toISOString(),
+    '2026-11-05T15:00:00.000Z',
+  );
+  assert.ok(xml.includes(`length="${sanitized.length}" type="audio/mpeg"`));
+  assert.ok(sanitized.includes(Buffer.from('TDRL')));
+  assert.ok(sanitized.includes(Buffer.from('2026-11-05T15:00:00')));
+  assert.doesNotMatch(
+    sanitized.toString('latin1'),
+    /TDRC|TDTG|TDEN|TDOR|creation_time|1995-01|200[1-7]-|APETAGEX|1988|1991:02/,
+  );
+  for (const value of [
+    'ギャル <ふたり>',
+    'DJありねぇ × DJちゃな',
+    '台本なし & ごはん',
+    '東京',
+    'image/png',
+  ])
+    assert.ok(sanitized.includes(Buffer.from(value)));
+  assert.ok(sanitized.includes(mp3().subarray(10)), 'original MPEG frames');
   const cover = xml.match(
     /<itunes:image href="[^\"]*\/([0-9a-f]{64}\.png)"/,
   )?.[1];
@@ -109,7 +175,10 @@ test('drop, retag and remove a real MP3 across both pages, artwork and the RSS',
   assert.ok(channel.includes(`<itunes:image href="${imageUrl}"`));
   assert.ok(channel.includes(`<image><url>${imageUrl}</url>`));
   assert.ok(item.includes(`<itunes:image href="${imageUrl}"`));
-  assert.deepEqual(await readFile(join(f.cache, 'artwork', cover)), png);
+  const publishedCover = await readFile(join(f.cache, 'artwork', cover));
+  assert.ok(sanitized.includes(publishedCover));
+  assert.deepEqual(publishedCover.subarray(0, 8), png.subarray(0, 8));
+  assert.ok(!publishedCover.includes(Buffer.from('1991:02')));
   for (const locale of ['ja', 'en']) {
     const html = await f.read(`${locale}.html`);
     assertShareImage(html, imageUrl);
@@ -164,6 +233,8 @@ test('drop, retag and remove a real MP3 across both pages, artwork and the RSS',
   assert.deepEqual(await readdir(join(f.cache, 'artwork')), []);
   await rm(path);
   await refreshPodcast(f);
+  await assert.rejects(readFile(publicFile), { code: 'ENOENT' });
+  assert.deepEqual(await readdir(join(f.cache, 'audio')), []);
   assert.doesNotMatch(await f.read('rss.xml'), /<item>/);
   assert.match(await f.read('en.html'), /empty/);
   assert.doesNotMatch(await f.read('ja.html'), /<audio\b/);
@@ -174,16 +245,16 @@ test('untagged episodes publish with a stable date while hidden, partial, corrup
   await writeFile(join(f.source, 'ひとやすみ.mp3'), mp3());
   await utimes(
     join(f.source, 'ひとやすみ.mp3'),
-    new Date('2025-02-28T15:00:00Z'),
-    new Date('2025-02-28T15:00:00Z'),
+    new Date('1999-08-31T14:00:00Z'),
+    new Date('1999-08-31T14:00:00Z'),
   );
   await writeFile(join(f.source, '.draft.mp3'), mp3());
   await writeFile(join(f.source, 'upload.mp3.part'), mp3());
   await writeFile(join(f.source, 'broken.mp3'), Buffer.from('broken'));
   await symlink(join(f.source, 'ひとやすみ.mp3'), join(f.source, 'linked.mp3'));
-  await refreshPodcast({ ...f, settleMs: 60000 });
+  await refreshPodcast({ ...f, now: Date.now(), settleMs: 60000 });
   assert.doesNotMatch(await f.read('rss.xml'), /<item>/);
-  await refreshPodcast(f);
+  await refreshPodcast({ ...f, now: Date.parse('2025-02-28T15:00:00Z') });
   const first = await f.read('rss.xml');
   assert.equal((first.match(/<item>/g) || []).length, 1);
   assert.match(first, /<title>ひとやすみ<\/title>/);
@@ -217,6 +288,8 @@ test('migrates localized dates in the persistent podcast index without moving a 
   const cacheFile = join(f.cache, 'index-v1.json');
   const cache = JSON.parse(await readFile(cacheFile, 'utf8'));
   const record = cache[0][1];
+  delete record.media;
+  record.episode.date = '2026-04-07';
   record.firstDate = '11/06/2025';
   await writeFile(cacheFile, JSON.stringify(cache));
   await refreshPodcast(f);
@@ -240,4 +313,78 @@ test('migrates localized dates in the persistent podcast index without moving a 
   await refreshPodcast(f);
   const retagged = await f.read('rss.xml');
   assert.ok(retagged.includes(guid) && retagged.includes(pubDate));
+});
+
+test('curated publication day controls the MP3, RSS size and later date corrections', async (t) => {
+  const f = await fixture(t);
+  const name = 'curated.mp3';
+  const url = 'https://gyaruinthemix.com/podcast/audio/' + name;
+  const episode = {
+    id: 'curated',
+    published: true,
+    explicit: false,
+    date: '2024-03-01',
+    title: { ja: '収録', en: 'Talk' },
+    description: { ja: '感想', en: 'Notes' },
+    audio: { url, type: 'audio/mpeg', length: 999 },
+  };
+  const config = {
+    feed: {
+      title: 'Show',
+      description: 'Talk',
+      author: 'Hosts',
+      language: 'ja',
+      category: 'Music',
+      explicit: false,
+    },
+    platforms: {},
+    episodes: [episode],
+  };
+  await writeFile(join(f.source, name), mp3([field('TDRC', '1999-11-12')]));
+  const publicFile = join(f.pages, 'current/audio', name);
+  for (const [date, midnight] of [
+    ['2024-03-01', '2024-02-29T15:00:00'],
+    ['2026-01-01', '2025-12-31T15:00:00'],
+  ]) {
+    episode.date = date;
+    await refreshPodcast({ ...f, config });
+    const bytes = await readFile(publicFile);
+    assert.ok(bytes.includes(Buffer.from(midnight)));
+    const timestamp = new Date(midnight + 'Z');
+    assert.equal((await stat(publicFile)).mtimeMs, +timestamp);
+    const rss = await f.read('rss.xml');
+    assert.ok(rss.includes(`<pubDate>${timestamp.toUTCString()}</pubDate>`));
+    assert.ok(rss.includes(`url="${url}" length="${bytes.length}"`));
+    assert.equal((rss.match(/<item>/g) || []).length, 1);
+  }
+  await rm(await readlink(publicFile));
+  await refreshPodcast({ ...f, config });
+  assert.ok(
+    (await readFile(publicFile)).includes(Buffer.from('2025-12-31T15:00:00')),
+  );
+  episode.published = false;
+  await refreshPodcast({ ...f, config });
+  await assert.rejects(readFile(publicFile), { code: 'ENOENT' });
+  assert.doesNotMatch(await f.read('rss.xml'), /<item>/);
+  const hidden = 'still-a-draft.mp3';
+  config.episodes.push({
+    published: false,
+    audio: { url: url.replace(name, hidden) },
+  });
+  await writeFile(join(f.source, hidden), mp3());
+  await refreshPodcast({ ...f, config });
+  await assert.rejects(readFile(join(f.pages, 'current/audio', hidden)), {
+    code: 'ENOENT',
+  });
+  config.episodes.pop();
+  await refreshPodcast({
+    ...f,
+    config,
+    now: Date.parse('2027-04-01T15:00:00Z'),
+  });
+  assert.ok(
+    (await readFile(join(f.pages, 'current/audio', hidden))).includes(
+      Buffer.from('2027-04-01T15:00:00'),
+    ),
+  );
 });

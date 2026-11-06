@@ -3,6 +3,7 @@ import {
   getPodcast,
   isFeedArtwork,
   podcastEmail,
+  podcastReleaseTime,
   showArtwork,
 } from './podcast.mjs';
 import { canonicalUrl } from './urls.mjs';
@@ -15,10 +16,6 @@ function requiredText(value, field) {
     throw new Error(`Podcast feed ${field} is required`);
   return value;
 }
-
-// Dates are calendar days in Japan, matching the website's episode list.
-const publicationDate = (date) =>
-  new Date(`${date}T00:00:00+09:00`).toUTCString();
 
 export function createPodcastFeed(data, library = []) {
   const feed = data.feed;
@@ -71,7 +68,7 @@ export function createPodcastFeed(data, library = []) {
       ${(episode.tags ?? []).map((tag) => `<category>${xml(tag)}</category>`).join('')}
       <link>${xml(permalink)}</link>
       <guid isPermaLink="false">${xml(permalink)}</guid>
-      <pubDate>${publicationDate(episode.date)}</pubDate>
+      <pubDate>${podcastReleaseTime(episode.date).toUTCString()}</pubDate>
       <enclosure url="${xml(episode.audio.url)}" length="${episode.audio.length}" type="${episode.audio.type}" />
       <itunes:explicit>${source.explicit}</itunes:explicit>
       <itunes:episodeType>full</itunes:episodeType>${source.durationSeconds === undefined ? '' : `\n      <itunes:duration>${source.durationSeconds}</itunes:duration>`}

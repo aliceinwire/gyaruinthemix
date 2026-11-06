@@ -75,6 +75,13 @@ jobs:
       - name: Check shell syntax
         run: |
           for script in scripts/*.sh; do bash -n "$script"; done
+      - name: Provide podcast media dependencies
+        if: contains(fromJSON(needs.changes.outputs.scopes), 'site')
+        run: |
+          if ! command -v mpg123-strip >/dev/null || ! command -v ffmpeg >/dev/null; then
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends ffmpeg mpg123
+          fi
       - name: Run affected test suites
         env:
           CI_SCOPES: ${{ needs.changes.outputs.scopes }}

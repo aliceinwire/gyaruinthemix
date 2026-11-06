@@ -16,6 +16,7 @@
 !scripts/build-cache.mjs
 !scripts/build-podcast-index.mjs
 !scripts/podcast-index.mjs
+!scripts/podcast-media.mjs
 !deploy/podcast-web.sh
 !scripts/build-site.mjs
 !scripts/build-game.mjs
