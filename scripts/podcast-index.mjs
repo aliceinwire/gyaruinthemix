@@ -30,6 +30,14 @@ import { canonicalUrl } from '../src/data/urls.mjs';
 const hash = (data) => createHash('sha256').update(data).digest('hex');
 const fingerprint = (stat) =>
   [stat.dev, stat.ino, stat.size, stat.mtimeNs, stat.ctimeNs].join(':');
+
+function cachedCalendarDate(value) {
+  if (typeof value !== 'string') return;
+  // Older web images could write the English month/day/year fallback to the cache.
+  const iso = value.replace(/^(\d{2})\/(\d{2})\/(\d{4})$/, '$3-$1-$2');
+  return isCalendarDate(iso) ? iso : undefined;
+}
+
 const text = (value) =>
   typeof value === 'string'
     ? value
@@ -242,6 +250,15 @@ export async function refreshPodcast({
     if (!before?.isFile()) continue;
     const signature = fingerprint(before);
     const prior = old.get(name);
+    const firstDate =
+      cachedCalendarDate(prior?.firstDate) ||
+      japanDate(new Date(Number(before.mtimeMs)));
+    if (prior) {
+      prior.firstDate = firstDate;
+      if (prior.episode)
+        prior.episode.date =
+          cachedCalendarDate(prior.episode.date) || firstDate;
+    }
     if (
       (prior?.signature === signature &&
         (!prior.episode?.artworkUrl ||
@@ -251,8 +268,6 @@ export async function refreshPodcast({
       if (prior) entries.set(name, prior);
       continue;
     }
-    const firstDate =
-      prior?.firstDate || japanDate(new Date(Number(before.mtimeMs)));
     let result;
     try {
       result = await readEpisode(path, name, before, firstDate);

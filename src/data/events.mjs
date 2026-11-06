@@ -1,10 +1,17 @@
+const tokyoCalendar = new Intl.DateTimeFormat('en-US', {
+  timeZone: 'Asia/Tokyo',
+  calendar: 'gregory',
+  numberingSystem: 'latn',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
+
 export function japanDate(now = new Date()) {
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Tokyo',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(now);
+  const { year, month, day } = Object.fromEntries(
+    tokyoCalendar.formatToParts(now).map(({ type, value }) => [type, value]),
+  );
+  return `${year.padStart(4, '0')}-${month}-${day}`;
 }
 
 export function isCalendarDate(value) {
