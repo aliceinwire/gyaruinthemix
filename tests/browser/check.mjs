@@ -410,6 +410,16 @@ async function inspect(page, pathname, width) {
           (await chooser.locator('input[readonly]').inputValue()) === feed,
         label + ' RSS chooser opens in place with the canonical feed',
       );
+      const apple = chooser.getByRole('link', {
+        name: 'Apple Podcasts',
+        exact: true,
+      });
+      check(
+        (await apple.isVisible()) &&
+          (await apple.getAttribute('href')) ===
+            feed.replace(/^https:/, 'podcast:'),
+        label + ' Apple Podcasts link targets the show’s RSS feed',
+      );
       const pocket = await chooser
         .getByRole('link', { name: 'Pocket Casts' })
         .getAttribute('href');
