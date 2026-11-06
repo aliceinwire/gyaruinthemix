@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, realpathSync } from 'node:fs';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 assert.equal(process.env.GITHUB_ACTIONS, 'true');
@@ -51,8 +52,24 @@ assert.equal(container.Config.User, '101:101');
 assert.equal(container.HostConfig.ReadonlyRootfs, true);
 assert.deepEqual(container.HostConfig.CapDrop, ['ALL']);
 assert.ok(container.HostConfig.SecurityOpt.includes('no-new-privileges:true'));
-assert.equal(container.HostConfig.Memory, 64 * 1024 * 1024);
-assert.equal(container.Mounts.length, 0);
+const memoryLimit = Number(config.services[service].mem_limit);
+assert.ok(memoryLimit > 0 && memoryLimit <= 128 * 1024 * 1024);
+assert.equal(container.HostConfig.Memory, memoryLimit);
+
+assert.equal(container.Mounts.length, 2);
+const media = container.Mounts.find((m) => m.Destination === '/podcast-source');
+assert.equal(media?.Type, 'bind');
+assert.equal(media.RW, false);
+assert.equal(
+  realpathSync(media.Source),
+  realpathSync(join(root, 'assets/podcast')),
+);
+const cache = container.Mounts.find(
+  (m) => m.Destination === '/var/lib/podcast',
+);
+assert.equal(cache?.Type, 'volume');
+assert.equal(cache.Name, config.volumes.gyaruinthemix_podcast_cache.name);
+assert.equal(cache.RW, true);
 assert.ok(
   !container.Config.Env.some((value) => /STRIPE_.*(?:KEY|SECRET)/.test(value)),
 );
@@ -65,6 +82,7 @@ for (const path of [
   '/contact/',
   '/live/',
   '/music/',
+  '/podcast/',
   '/news/',
   '/legal/',
   '/fanclub/',
@@ -75,6 +93,7 @@ for (const path of [
   '/en/about/',
   '/en/contact/',
   '/en/music/',
+  '/en/podcast/',
   '/en/live/',
   '/en/news/',
   '/en/fanclub/',
@@ -122,5 +141,5 @@ assert.equal(english404.status, 404);
 assert.match(await english404.text(), /<html lang="en"/);
 assert.equal((await fetch(base + '/web-health')).status, 200);
 console.log(
-  'PASS secretless startup: only static web, no credentials/mounts/API/cart requests; hosted links, JPY, test notice, assets, headers and health',
+  'PASS payment-link website: podcast mounts, memory limit, credential isolation, hosted checkout, assets, headers and health',
 );
