@@ -32,11 +32,15 @@ falls back to the filename; notes and artwork are optional. Replacing an MP3
 under the same name updates that episode and preserves its RSS GUID. Removing
 the MP3 removes the episode on the next scan. The audio files stay on the VPS.
 
-Before submitting the show to podcast directories, set `feed.artworkUrl` to a public, square
-JPEG or PNG (1400–3000 pixels per side, no transparency) and `feed.ownerEmail`
-to a monitored show email. This email is public in the RSS and is used for
-ownership verification. Review the show title, description, category and
-explicit-content setting in `feed`.
+Sharing either podcast page uses the cover from the newest published episode
+with artwork, falling back to the site logo until a cover is available.
+The RSS channel uses the newest JPEG or PNG cover. Each episode keeps its own artwork. To pin one image for the show and its link previews, set
+`feed.artworkUrl` to a direct HTTPS JPEG or PNG URL. For Apple Podcasts,
+embed a square, opaque 1400–3000 px JPEG or PNG in the MP3.
+
+The public RSS owner email defaults to `arisut@riseup.net`. Set
+`feed.ownerEmail` to use a different address for directory verification. Review the show title,
+description, category and explicit-content setting before submission.
 
 For manually curated or externally hosted episodes, add an entry to
 `episodes` using the actual title, description, date and media details. This is a schema example, not an episode to publish unchanged:
@@ -65,8 +69,8 @@ requests without login or expiring access tokens. Folder episodes have a direct
 `/podcast/audio/<filename>` URL. The signed game-music URLs are for the game.
 
 Set `published` to `true` when ready, then build and deploy the website. Drafts
-are excluded from both the page and RSS. Manually configured episodes require audio,
-an explicit-content rating and the show artwork/email. `durationSeconds` is
+are excluded from both the page and RSS. Manually configured episodes require audio
+and an explicit-content rating. They can also set an `artworkUrl`. `durationSeconds` is
 optional; `durationMinutes` is an optional website display value. An optional
 `url` overrides the website's listening link, which otherwise opens the audio.
 Keep the `id` unchanged after publication; it determines the stable RSS GUID.

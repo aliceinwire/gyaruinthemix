@@ -53,13 +53,21 @@ async function fixture(t) {
     await mkdir(target, { recursive: true });
     await writeFile(
       join(target, 'index.html'),
-      '<!--podcast-latest-->landing<!--/podcast-latest--><!--podcast-list-->empty<!--/podcast-list-->',
+      '<html><head><!--podcast-sharing--><!--/podcast-sharing--></head><body><!--podcast-latest-->landing<!--/podcast-latest--><!--podcast-list-->empty<!--/podcast-list--></body></html>',
     );
   }
   return {
     ...opts,
     read: (file) => readFile(join(opts.pages, 'current', file), 'utf8'),
   };
+}
+
+function assertShareImage(html, url) {
+  const head = html.split('</head>')[0];
+  for (const tag of ['property="og:image"', 'name="twitter:image"']) {
+    assert.equal(head.split(tag).length, 2, 'one image per sharing protocol');
+    assert.ok(head.includes(`${tag} content="${url}"`));
+  }
 }
 
 test('drop, retag and remove a real MP3 across both pages, artwork and the RSS', async (t) => {
@@ -93,9 +101,15 @@ test('drop, retag and remove a real MP3 across both pages, artwork and the RSS',
     /<itunes:image href="[^\"]*\/([0-9a-f]{64}\.png)"/,
   )?.[1];
   assert.ok(cover);
+  const imageUrl = 'https://gyaruinthemix.com/podcast/artwork/' + cover;
+  const [channel, item] = xml.split('<item>');
+  assert.ok(channel.includes(`<itunes:image href="${imageUrl}"`));
+  assert.ok(channel.includes(`<image><url>${imageUrl}</url>`));
+  assert.ok(item.includes(`<itunes:image href="${imageUrl}"`));
   assert.deepEqual(await readFile(join(f.cache, 'artwork', cover)), png);
   for (const locale of ['ja', 'en']) {
     const html = await f.read(`${locale}.html`);
+    assertShareImage(html, imageUrl);
     for (const value of [
       cover,
       '日常',
@@ -122,6 +136,11 @@ test('drop, retag and remove a real MP3 across both pages, artwork and the RSS',
   assert.match(edited, /<title>改題<\/title>/);
   assert.doesNotMatch(edited, /<itunes:image|ごはん/);
   assert.match(await f.read('ja.html'), /第2稿/);
+  for (const locale of ['ja', 'en'])
+    assertShareImage(
+      await f.read(`${locale}.html`),
+      'https://gyaruinthemix.com/assets/logo.webp',
+    );
   assert.deepEqual(await readdir(join(f.cache, 'artwork')), []);
   await rm(path);
   await refreshPodcast(f);

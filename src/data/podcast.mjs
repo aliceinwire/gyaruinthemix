@@ -18,6 +18,33 @@ export function httpsLink(value, field) {
   throw new Error(`Podcast ${field} must use HTTPS without credentials`);
 }
 
+function artworkLink(value) {
+  const url = httpsLink(value ?? '', 'artwork URL');
+  if (!url) return '';
+  const { pathname, hash } = new URL(url);
+  if (hash || !/\.(?:jpe?g|png|gif|webp)$/i.test(pathname))
+    throw new Error('Podcast artwork must be a direct image URL');
+  return url;
+}
+
+export function isFeedArtwork(url) {
+  return Boolean(url && /\.(?:jpe?g|png)$/i.test(new URL(url).pathname));
+}
+
+// Episodes are already filtered and sorted newest first by getPodcast().
+export function showArtwork(feed, episodes) {
+  const fixed = artworkLink(feed.artworkUrl);
+  if (fixed) {
+    if (!isFeedArtwork(fixed))
+      throw new Error('Podcast show artwork must be a direct PNG or JPEG URL');
+    return { feed: fixed, social: fixed };
+  }
+  const covers = episodes
+    .map((episode) => artworkLink(episode.artworkUrl))
+    .filter(Boolean);
+  return { feed: covers.find(isFeedArtwork) || '', social: covers[0] || '' };
+}
+
 export function escapeMarkup(value) {
   const text = String(value);
   if (
@@ -77,6 +104,9 @@ export function getPodcast(data, locale = 'ja', library = []) {
     }))
     .filter((platform) => platform.url);
   const ids = new Set();
+  const embeddedCovers = new Map(
+    library.map((episode) => [episode.audio.url, episode.artworkUrl]),
+  );
   const episodes = data.episodes
     .filter((episode) => episode.published === true)
     .map((episode) => {
@@ -96,6 +126,8 @@ export function getPodcast(data, locale = 'ja', library = []) {
       )
         throw new Error('Podcast durationMinutes must be a positive integer');
       const audio = episodeAudio(episode.audio);
+      const artworkUrl =
+        artworkLink(episode.artworkUrl) || embeddedCovers.get(audio?.url);
       const url = httpsLink(episode.url, 'episode URL') || audio?.url;
       if (!url)
         throw new Error('Published podcast episodes need a listening URL');
@@ -107,6 +139,7 @@ export function getPodcast(data, locale = 'ja', library = []) {
         durationMinutes: episode.durationMinutes,
         url,
         transcriptUrl: httpsLink(episode.transcriptUrl, 'transcript URL'),
+        ...(artworkUrl && { artworkUrl }),
         ...(audio ? { audio } : {}),
       };
     });

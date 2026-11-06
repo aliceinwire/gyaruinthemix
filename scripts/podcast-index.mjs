@@ -23,6 +23,7 @@ import {
   episodeList,
   fillPodcastSlot,
   latestLink,
+  sharingImageTags,
 } from '../src/data/podcast-view.mjs';
 import { canonicalUrl } from '../src/data/urls.mjs';
 
@@ -183,6 +184,11 @@ async function publishPages(site, pages, library, key) {
         'utf8',
       );
       const { episodes } = getPodcast(configuration, locale, library);
+      page = fillPodcastSlot(
+        page,
+        'sharing',
+        sharingImageTags(configuration.feed, episodes, locale),
+      );
       if (episodes.length) {
         page = fillPodcastSlot(page, 'latest', latestLink(episodes[0], locale));
         page = fillPodcastSlot(page, 'list', episodeList(episodes, locale));
@@ -274,11 +280,25 @@ export async function refreshPodcast({
     episode ? [{ ...episode, explicit: configuration.feed.explicit }] : [],
   );
   const serialized = JSON.stringify([...entries]);
-  await publishPages(site, pages, library, hash(serialized));
+  await publishPages(
+    site,
+    pages,
+    library,
+    hash(JSON.stringify(configuration) + '\n' + serialized),
+  );
   if (serialized !== saved) await atomicWrite(stateFile, serialized);
   // An unreferenced episode cover should disappear when its source is removed.
+  const artworkPrefix = canonicalUrl('/podcast/artwork/');
   const activeArt = new Set(
-    library.filter((e) => e.artworkUrl).map((e) => basename(e.artworkUrl)),
+    [
+      configuration.feed.artworkUrl,
+      ...library.map((episode) => episode.artworkUrl),
+      ...configuration.episodes
+        .filter((episode) => episode.published === true)
+        .map((episode) => episode.artworkUrl),
+    ]
+      .filter((url) => url?.startsWith(artworkPrefix))
+      .map((url) => basename(new URL(url).pathname)),
   );
   for (const name of existingCovers) {
     if (/^[a-f0-9]{64}\.(jpg|png|gif|webp)$/.test(name) && !activeArt.has(name))

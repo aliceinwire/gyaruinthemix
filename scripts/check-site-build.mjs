@@ -8,6 +8,7 @@ import {
   podcastFeedUrl,
 } from '../src/data/podcast-feed.mjs';
 import podcast from '../config/podcast.json' with { type: 'json' };
+import { escapeMarkup, getPodcast, showArtwork } from '../src/data/podcast.mjs';
 
 const read = (path) =>
   readFile(new URL(`../dist/${path}`, import.meta.url), 'utf8');
@@ -20,6 +21,10 @@ function assertReleaseFooter(html, path) {
     `${path}: visible version`,
   );
 }
+const siteImage = canonicalUrl('/assets/logo.webp');
+const podcastImage = escapeMarkup(
+  showArtwork(podcast.feed, getPodcast(podcast).episodes).social || siteImage,
+);
 for (const path of publicPaths) {
   const html = await read(`${path.slice(1)}index.html`);
   assert.doesNotMatch(html, /shop-test|test-store/);
@@ -32,12 +37,25 @@ for (const path of publicPaths) {
     html.includes(`property="og:url" content="${canonicalUrl(path)}"`),
     path,
   );
-  assert.ok(
-    html.includes(
-      `property="og:image" content="${canonicalUrl('/assets/logo.webp')}"`,
+  const head = html.split('</head>')[0];
+  const isPodcast = path.endsWith('/podcast/');
+  const expectedImage = isPodcast ? podcastImage : siteImage;
+  assert.deepEqual(
+    [...head.matchAll(/property="og:image" content="([^"]+)"/g)].map(
+      (match) => match[1],
     ),
+    [expectedImage],
     path,
   );
+  if (isPodcast) {
+    assert.deepEqual(
+      [...head.matchAll(/name="twitter:image" content="([^"]+)"/g)].map(
+        (match) => match[1],
+      ),
+      [expectedImage],
+      path,
+    );
+  }
   assert.doesNotMatch(html, /name="robots" content="noindex/);
   assert.match(html, /name="robots" content="noarchive"/);
   assert.ok(

@@ -1,7 +1,11 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import data from '../../config/podcast.json';
-import { episodeList, latestLink } from '../data/podcast-view.mjs';
+import {
+  episodeList,
+  latestLink,
+  sharingImageTags,
+} from '../data/podcast-view.mjs';
 import { getPodcast } from '../data/podcast.mjs';
 import { getSite } from '../data/site.mjs';
 import { getLocale, localizePath, translator } from '../data/i18n.mjs';
@@ -19,6 +23,11 @@ const { platforms, episodes } = getPodcast(data, locale);
     'The podcast from DJ Arinee and DJ Chana. Meet GYARUINTHEMIX, explore episodes, and find where to listen.',
   )}
 >
+  <Fragment slot="share-image">
+    <Fragment set:html="<!--podcast-sharing-->" />
+    <Fragment set:html={sharingImageTags(data.feed, episodes, locale)} />
+    <Fragment set:html="<!--/podcast-sharing-->" />
+  </Fragment>
   <link
     slot="head"
     rel="alternate"

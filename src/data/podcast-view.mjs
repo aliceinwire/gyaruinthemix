@@ -1,5 +1,23 @@
-import { escapeMarkup as esc } from './podcast.mjs';
+import { escapeMarkup as esc, showArtwork } from './podcast.mjs';
 import { translator } from './i18n.mjs';
+import { canonicalUrl } from './urls.mjs';
+
+export function sharingImageTags(feed, episodes, locale) {
+  const t = translator(locale);
+  const { social } = showArtwork(feed, episodes);
+  const image = esc(social || canonicalUrl('/assets/logo.webp'));
+  const alt = social
+    ? t(
+        'ギャルインザミックスのポッドキャストのジャケット',
+        'GYARUINTHEMIX podcast cover',
+      )
+    : t('ギャルインザミックスのロゴ', 'GYARUINTHEMIX logo');
+  return `<meta property="og:image" content="${image}">
+    <meta property="og:image:alt" content="${esc(alt)}">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:image" content="${image}">
+    <meta name="twitter:image:alt" content="${esc(alt)}">`;
+}
 
 export function latestLink(episode, locale) {
   const t = translator(locale);
@@ -37,7 +55,7 @@ export function episodeList(episodes, locale) {
   return `<p class="podcast-order">${t('新しいエピソードから', 'Newest episodes first')}</p><ol class="podcast-episodes">${cards.join('')}</ol>`;
 }
 
-// The deployed scanner replaces only these two slots in each built Astro page.
+// Replace a marked region in the built page before serving it to browsers and crawlers.
 export function fillPodcastSlot(page, name, content) {
   const start = `<!--podcast-${name}-->`;
   const end = `<!--/podcast-${name}-->`;

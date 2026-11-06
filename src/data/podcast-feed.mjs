@@ -1,4 +1,9 @@
-import { escapeMarkup as xml, getPodcast, httpsLink } from './podcast.mjs';
+import {
+  escapeMarkup as xml,
+  getPodcast,
+  isFeedArtwork,
+  showArtwork,
+} from './podcast.mjs';
 import { canonicalUrl } from './urls.mjs';
 
 export const podcastFeedUrl = canonicalUrl('/podcast/rss.xml');
@@ -28,31 +33,24 @@ export function createPodcastFeed(data, library = []) {
     throw new Error('Podcast feed language must be a language code');
   if (typeof feed.explicit !== 'boolean')
     throw new Error('Podcast feed explicit must be true or false');
-  const artwork = httpsLink(feed.artworkUrl, 'artwork URL');
+  const configuredEmail = feed.ownerEmail ?? '';
+  const email =
+    typeof configuredEmail === 'string'
+      ? configuredEmail.trim() || 'arisut@riseup.net'
+      : configuredEmail;
   if (
-    artwork &&
-    (!/\.(?:png|jpe?g)$/i.test(new URL(artwork).pathname) ||
-      new URL(artwork).hash)
-  )
-    throw new Error('Podcast artwork must be a direct PNG or JPEG URL');
-  const email = feed.ownerEmail || '';
-  if (
-    email &&
-    (typeof email !== 'string' ||
-      !/^[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+$/.test(email))
+    typeof email !== 'string' ||
+    !/^[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+$/.test(email)
   )
     throw new Error('Podcast feed ownerEmail must be a valid email address');
 
   const { episodes } = getPodcast(data, 'ja', library);
+  const artwork = showArtwork(feed, episodes).feed;
   const published = new Map(
     data.episodes
       .filter((episode) => episode.published === true)
       .map((episode) => [episode.id, episode]),
   );
-  if (published.size && (!artwork || !email))
-    throw new Error(
-      'Set podcast feed artworkUrl and ownerEmail before publishing episodes',
-    );
   const audioUrls = new Set();
   const items = episodes.map((episode) => {
     const source = published.get(episode.id) ?? episode;
@@ -77,7 +75,7 @@ export function createPodcastFeed(data, library = []) {
     return `    <item>
       <title>${xml(episode.title)}</title>
       ${episode.description ? `<description>${xml(episode.description)}</description>` : ''}
-      ${episode.artworkUrl && /\.(jpg|png)$/.test(episode.artworkUrl) ? `<itunes:image href="${xml(episode.artworkUrl)}" />` : ''}
+      ${isFeedArtwork(episode.artworkUrl) ? `<itunes:image href="${xml(episode.artworkUrl)}" />` : ''}
       ${(episode.tags ?? []).map((tag) => `<category>${xml(tag)}</category>`).join('')}
       <link>${xml(permalink)}</link>
       <guid isPermaLink="false">${xml(permalink)}</guid>
@@ -104,12 +102,8 @@ export function createPodcastFeed(data, library = []) {
     <itunes:author>${xml(feed.author)}</itunes:author>
     <itunes:category text="${xml(feed.category)}" />
     <itunes:explicit>${explicit}</itunes:explicit>
-    <itunes:type>episodic</itunes:type>${
-      email
-        ? `
-    <itunes:owner><itunes:name>${xml(feed.author)}</itunes:name><itunes:email>${xml(email)}</itunes:email></itunes:owner>`
-        : ''
-    }${
+    <itunes:type>episodic</itunes:type>
+    <itunes:owner><itunes:name>${xml(feed.author)}</itunes:name><itunes:email>${xml(email)}</itunes:email></itunes:owner>${
       artwork
         ? `
     <itunes:image href="${xml(artwork)}" />
