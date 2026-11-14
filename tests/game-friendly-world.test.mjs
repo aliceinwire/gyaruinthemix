@@ -45,6 +45,11 @@ test('runtime story and every public catalog omit corporate satire including sta
 });
 
 test('new music-box artwork labels preserve the existing Japanese stereo format', async () => {
-  const ja = JSON.parse(await readFile(new URL('../public/game/locales/ja.json', import.meta.url), 'utf8'));
+  const ja = JSON.parse(
+    await readFile(
+      new URL('../public/game/locales/ja.json', import.meta.url),
+      'utf8',
+    ),
+  );
   assert.equal(ja.MUSIC, 'MUSIC');
 });
