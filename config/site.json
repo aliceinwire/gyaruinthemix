@@ -153,6 +153,20 @@
       "startAt": "2026-12-20T17:00:00+09:00",
       "endAt": "2026-12-20T22:00:00+09:00",
       "linkLabel": "主催者の告知"
+    },
+    {
+      "published": true,
+      "category": "live",
+      "date": "2026-12-26",
+      "endDate": "2026-12-27",
+      "title": "Slay Queen — DJありねぇ出演",
+      "venue": "荻窪 BAR SIXX",
+      "timeLabel": "OPEN 21:00／START 22:00／CLOSE 翌5:00",
+      "note": "DJありねぇ単独での出演です。入場無料。イベント名：SLAY TOGETHER ENTERTAINMENT SHOW。DJ出演時刻は未発表です。",
+      "url": "",
+      "cancelled": false,
+      "startAt": "2026-12-26T21:00:00+09:00",
+      "endAt": "2026-12-27T05:00:00+09:00"
     }
   ],
   "news": [
