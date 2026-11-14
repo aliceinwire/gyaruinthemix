@@ -85,7 +85,7 @@ test('the tour welcomes personal taste without corporate dress rules or compulso
   );
   assert.match(text, /初めて来た人/);
   assert.match(text, /そのままの格好/);
-  assert.match(text, /平成ギャルもスーツも、一緒に踊ってた/);
+  assert.match(text, /平成ギャルも街のみんなも、一緒に踊ってた/);
   const finale = scenes.find((scene) => scene.id === 'tour:finale');
   assert.match(
     finale.lines.map((line) => line.text).join(' '),

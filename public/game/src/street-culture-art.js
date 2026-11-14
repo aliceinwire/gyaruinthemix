@@ -95,13 +95,14 @@ export function drawCultureProp(ctx, actor, x, y, time = 0) {
       label(ctx,'MY STYLE',x,y-88,pink);
     }
   } else if (role.id === 'brand-rep') {
-    rect(ctx,x+13,y-60,3,56,ink); rect(ctx,x+1,y-76,35,23,'#716581'); label(ctx,'BUY',x+18,y-61);
+    rect(ctx,x+13,y-60,3,56,ink); rect(ctx,x+1,y-76,35,23,'#716581'); label(ctx,'HELLO',x+18,y-61);
   } else if (role.id === 'copy-clerk') {
     for(let i=0;i<3;i++) { rect(ctx,x+10+i*3,y-52+i*5,19,24,ink); rect(ctx,x+12+i*3,y-50+i*5,15,18,paper); }
   } else if (role.id === 'deadline-runner') {
     rect(ctx,x+12,y-60,24,25,ink); rect(ctx,x+15,y-57,18,19,'#ffe0a1'); label(ctx,'00',x+24,y-44,ink);
   } else if (role.id === 'approval-chief') {
-    rect(ctx,x+16,y-55,10,16,'#bc7e86'); rect(ctx,x+11,y-40,22,7,ink); label(ctx,'WAIT',x,y-87);
+    rect(ctx,x+19,y-53,3,29,mint);
+    polygon(ctx,x+20,y-60,[[0,-10],[3,-3],[10,0],[3,3],[0,10],[-3,3],[-10,0],[-3,-3]],pink);
   } else if (role.id === 'notification-clerk') {
     rect(ctx,x+10,y-63,22,35,ink); rect(ctx,x+13,y-59,16,25,'#a7a4b6');
     for (let i=0;i<3;i++) { rect(ctx,x+15,y-56+i*7,12,4,paper); rect(ctx,x+24,y-57+i*7,4,4,'#cf697b'); }
@@ -124,7 +125,7 @@ export function drawCultureProp(ctx, actor, x, y, time = 0) {
     rect(ctx,x-20,y-51,4,15,ink); rect(ctx,x-24,y-57,12,8,'#a5a0b0');
   } else if (role.id === 'hierarchy-keeper') {
     for (let i=0;i<3;i++) { rect(ctx,x+13+i*3,y-62+i*10,26-i*6,8,ink); rect(ctx,x+16+i*3,y-60+i*10,20-i*6,4,'#b2a3bd'); }
-    rect(ctx,x+23,y-32,3,8,ink); label(ctx,'WAIT',x,y-87);
+    rect(ctx,x+23,y-32,3,8,ink); label(ctx,'STYLING',x,y-87);
   } else {
     rect(ctx,x+9,y-52,27,29,ink); rect(ctx,x+12,y-49,21,23,paper); label(ctx,'...',x+23,y-34,ink);
   }
@@ -154,20 +155,21 @@ export function drawRoutineHazard(ctx, actor, x, y, time = 0) {
     for(let i=0;i<5;i++) { rect(ctx,x-22+(i%2)*4,y-5-i*6,42,6,ink); rect(ctx,x-20+(i%2)*4,y-5-i*6,38,4,paper); }
   } else if (hazard.id === 'deadline-clock') {
     rect(ctx,x-21,y-47,42,44,ink); rect(ctx,x-17,y-43,34,32,'#ffe1a6');
-    label(ctx,'DUE',x,y-28,ink); label(ctx,String(3-Math.floor(time)%3).padStart(2,'0'),x,y-15,ink);
+    label(ctx,'BEAT',x,y-28,ink); label(ctx,String(3-Math.floor(time)%3).padStart(2,'0'),x,y-15,ink);
     rect(ctx,x-26,y-50,13,5,pink); rect(ctx,x+13,y-50,13,5,pink);
   } else if (hazard.id === 'ad-totem') {
     rect(ctx,x-8,y-26,16,26,ink); rect(ctx,x-33,y-86,66,64,ink);
-    rect(ctx,x-29,y-82,58,55,'#72677c'); label(ctx,'MEGA',x,y-65); label(ctx,'CORP',x,y-50); label(ctx,'BUY MORE',x,y-35,'#ffe1a6');
+    rect(ctx,x-29,y-82,58,55,'#72677c'); label(ctx,'NIGHT',x,y-65); label(ctx,'MIX',x,y-50); label(ctx,'PLAY',x,y-35,'#ffe1a6');
   } else if (hazard.id === 'meeting-wall') {
     rect(ctx,x-28,y-67,4,67,ink); rect(ctx,x+24,y-67,4,67,ink);
     rect(ctx,x-35,y-68,70,49,ink); rect(ctx,x-31,y-64,62,41,paper);
-    label(ctx,'MEETING',x,y-49,ink); label(ctx,'AGAIN?',x,y-33,'#a35e89');
+    label(ctx,'STAGE',x,y-49,ink); label(ctx,'READY?',x,y-33,'#a35e89');
   } else if (hazard.id === 'copy-printer') {
     rect(ctx,x-29,y-44,58,40,ink); rect(ctx,x-25,y-40,50,23,'#aaabb7');
-    rect(ctx,x-19,y-57,38,16,paper); rect(ctx,x-18,y-25,36,9,ink);
-    rect(ctx,x-14,y-22,28,20,paper); rect(ctx,x+17,y-36,5,5,pink);
-    label(ctx,'COPY',x,y-29,ink);
+    rect(ctx,x-23,y-37,13,24,ink); rect(ctx,x+10,y-37,13,24,ink);
+    rect(ctx,x-20,y-31,7,7,pink); rect(ctx,x+13,y-31,7,7,mint);
+    rect(ctx,x-7,y-36,14,8,paper);
+    label(ctx,'MUSIC',x,y-29,ink);
   } else if (hazard.id === 'inbox-pile') {
     for (let i=0;i<3;i++) {
       const left=x-23+i*4, top=y-17-i*10;
