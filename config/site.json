@@ -139,6 +139,20 @@
       "url": "https://www.mbs.jp/timetable/sp/",
       "cancelled": false,
       "linkLabel": "MBS番組表"
+    },
+    {
+      "published": true,
+      "category": "live",
+      "date": "2026-12-20",
+      "title": "ヤマンバBANBANBAN 特大号",
+      "venue": "Neo masquerade（新宿二丁目）",
+      "timeLabel": "イベント 17:00〜22:00",
+      "note": "GUEST DJ：ギャルインザミックス。料金：3,000円（1ドリンク付き）。会場：東京都新宿区新宿2-16-8。DJ出演時刻は未発表です。",
+      "url": "https://x.com/hibinohiroyuki/status/2116493022389268545",
+      "cancelled": false,
+      "startAt": "2026-12-20T17:00:00+09:00",
+      "endAt": "2026-12-20T22:00:00+09:00",
+      "linkLabel": "主催者の告知"
     }
   ],
   "news": [
