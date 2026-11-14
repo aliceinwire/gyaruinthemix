@@ -160,7 +160,7 @@ export const ROUTE_OPTIONS = Object.freeze({
   express: Object.freeze({
     id: "express",
     name: "ハートリレー特急ルート",
-    description: "近道・サラリーマン多め・EV少なめ",
+    description: "近道・街の人多め・EV少なめ",
     lengthMultiplier: 0.8,
     speed: MAX_SPEED,
     stationSpacing: 510 * DRIVING_PACE.speedMultiplier,

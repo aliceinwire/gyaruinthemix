@@ -1,18 +1,18 @@
 /** Fictional obstacles to self-expression. People become fans; animals are
  * scenery, never collision targets. Decoration preserves reserved road space. */
 export const STREET_ROLES = Object.freeze([
-  { id: 'salaryman', name: 'スーツの通勤人', behavior: 'steady', stage: 0, fan: 'dj', welcome: '定時のあとは、好きな音で踊ろ！' },
-  { id: 'brand-rep', name: '流行おしの広告係', behavior: 'steady', stage: 0, fan: 'model', welcome: '流行もええけど、うちの好きも見つけよ！' },
-  { id: 'copy-clerk', name: 'コピペ係', behavior: 'sway', stage: 2, fan: 'photographer', welcome: '同じ写真ばっかやめて、うちらの一枚撮ろ！' },
-  { id: 'meeting-host', name: '終わらん会議の司会', behavior: 'shield', stage: 3, fan: 'tv', welcome: '会議は閉じて、テレビの出番いこ！' },
-  { id: 'deadline-runner', name: '締切ダッシュ係', behavior: 'charger', stage: 4, fan: 'event', welcome: '追うなら締切より、楽しそうな現場や！' },
-  { id: 'approval-chief', name: '承認待ちの番人', behavior: 'shield', stage: 5, fan: 'stylist', welcome: 'その服、好きなら着てみよ！' },
-  { id: 'notification-clerk', name: '通知おかわり係', behavior: 'steady', stage: 0, fan: 'photographer', welcome: '通知はミュート。今この瞬間を撮ろ！' },
-  { id: 'metrics-inspector', name: '数字ばっかり監査官', behavior: 'sway', stage: 2, fan: 'dj', welcome: '数字よりノリや。好きな音、回してこ！' },
-  { id: 'dress-code-guard', name: '無難コーデの番人', behavior: 'shield', stage: 3, fan: 'model', welcome: '着たい服でええねん。ここから、うちだけのランウェイや！' },
-  { id: 'overtime-runner', name: '残業ぐるぐる係', behavior: 'charger', stage: 4, fan: 'event', welcome: '残業はおしまい。今夜のイベント間に合うで！' },
-  { id: 'script-reader', name: 'マニュアル読み上げ係', behavior: 'steady', stage: 1, fan: 'tv', welcome: '台本の外にも、うちの言葉あるで！' },
-  { id: 'hierarchy-keeper', name: '肩書きタワーの番人', behavior: 'shield', stage: 5, fan: 'stylist', welcome: '肩書きより、そのアクセめっちゃ似合う！' },
+  { id: 'salaryman', name: '街角の音楽好き', behavior: 'steady', stage: 0, fan: 'dj', welcome: '今夜は一緒に、好きな音で踊ろ！' },
+  { id: 'brand-rep', name: 'フライヤー配りの音楽好き', behavior: 'steady', stage: 0, fan: 'model', welcome: 'いろんな音から、うちの好きも見つけよ！' },
+  { id: 'copy-clerk', name: 'アルバムめくりの写真好き', behavior: 'sway', stage: 2, fan: 'photographer', welcome: '今日の思い出に、うちらの一枚撮ろ！' },
+  { id: 'meeting-host', name: 'おしゃべり広場の案内人', behavior: 'shield', stage: 3, fan: 'tv', welcome: 'おしゃべりの続きは、次のステージで！' },
+  { id: 'deadline-runner', name: '開演わくわくランナー', behavior: 'charger', stage: 4, fan: 'event', welcome: '楽しそうな音がするで。一緒に見にいこ！' },
+  { id: 'approval-chief', name: '衣装箱の案内人', behavior: 'shield', stage: 5, fan: 'stylist', welcome: 'その服、好きなら着てみよ！' },
+  { id: 'notification-clerk', name: 'デコケータイの写真好き', behavior: 'steady', stage: 0, fan: 'photographer', welcome: 'ケータイ構えて、今この瞬間を撮ろ！' },
+  { id: 'metrics-inspector', name: 'リズム数えの音楽好き', behavior: 'sway', stage: 2, fan: 'dj', welcome: 'リズムに乗って、好きな音、回してこ！' },
+  { id: 'dress-code-guard', name: '衣装選びの案内人', behavior: 'shield', stage: 3, fan: 'model', welcome: '着たい服でええねん。ここから、うちだけのランウェイや！' },
+  { id: 'overtime-runner', name: 'ぐるぐるダンスランナー', behavior: 'charger', stage: 4, fan: 'event', welcome: '準備はばっちり。今夜のイベント楽しも！' },
+  { id: 'script-reader', name: '歌詞ノートの読み手', behavior: 'steady', stage: 1, fan: 'tv', welcome: '歌詞ノートに、うちの言葉も足してこ！' },
+  { id: 'hierarchy-keeper', name: 'アクセタワーの案内人', behavior: 'shield', stage: 5, fan: 'stylist', welcome: 'きらきらしてる！ そのアクセめっちゃ似合う！' },
 ].map(Object.freeze));
 
 /** Suit silhouettes make stamina readable before the first invitation lands.
@@ -65,16 +65,16 @@ export const ROUTINE_HAZARDS = Object.freeze([
   { id: 'roadworks', name: '工事バリケード', type: 'barrier', hp: 4, clearance: .32, advice: '攻撃で崩すか、上を越えよ', stage: 1 },
   { id: 'broken-asphalt', name: '崩れた路面', type: 'pothole', hp: 1, clearance: .25, advice: '攻撃は通らへん。飛んで抜けよ', stage: 1 },
   { id: 'speaker-crates', name: '積み上がった機材ケース', type: 'barrier', hp: 5, clearance: .36, advice: '攻撃で崩すか、上を越えよ', stage: 3 },
-  { id: 'paper-stack', name: 'おかわり書類', type: 'cone', hp: 1, clearance: .17, advice: '攻撃で片づく。短く浮いてもOK', stage: 0 },
-  { id: 'deadline-clock', name: '締切タイマー', type: 'cone', hp: 1, clearance: .2, advice: '攻撃でオフ。浮いてもOK', stage: 1 },
-  { id: 'ad-totem', name: '流行だらけの広告タワー', type: 'barrier', hp: 2, clearance: .4, advice: '攻撃で崩すか、上を越えよ', stage: 1 },
-  { id: 'meeting-wall', name: '終わらん会議ボード', type: 'barrier', hp: 2, clearance: .32, advice: '攻撃でおひらき。上も通れるで', stage: 2 },
-  { id: 'copy-printer', name: '無限コピー機', type: 'barrier', hp: 3, clearance: .32, advice: 'かたいコピー機。火力を育てるか浮こ', stage: 3 },
-  { id: 'task-loop', name: '作業ループの溝', type: 'pothole', hp: 1, clearance: .25, advice: '攻撃は通らへん。飛んで抜けよ', stage: 2 },
-  { id: 'inbox-pile', name: '未読メールの山', type: 'cone', hp: 1, clearance: .2, advice: '攻撃で受信箱を空に。浮いてもOK', stage: 0 },
-  { id: 'notification-tower', name: '鳴りっぱなし通知塔', type: 'barrier', hp: 2, clearance: .4, advice: '攻撃でミュート。上から抜けてもOK', stage: 0 },
-  { id: 'metrics-gate', name: 'ノルマの数字ゲート', type: 'barrier', hp: 3, clearance: .36, advice: 'かたいゲート。火力を育てるか浮こ', stage: 3 },
-  { id: 'approval-queue', name: '承認待ちの行列', type: 'pothole', hp: 1, clearance: .25, advice: '待たんでええ。飛んで抜けよ', stage: 2 },
+  { id: 'paper-stack', name: 'ひらひら紙吹雪', type: 'cone', hp: 1, clearance: .17, advice: '攻撃で片づく。短く浮いてもOK', stage: 0 },
+  { id: 'deadline-clock', name: 'くるくるステージ時計', type: 'cone', hp: 1, clearance: .2, advice: '攻撃でオフ。浮いてもOK', stage: 1 },
+  { id: 'ad-totem', name: 'カラフルポスタータワー', type: 'barrier', hp: 2, clearance: .4, advice: '攻撃で崩すか、上を越えよ', stage: 1 },
+  { id: 'meeting-wall', name: '広場のメッセージボード', type: 'barrier', hp: 2, clearance: .32, advice: '攻撃でおひらき。上も通れるで', stage: 2 },
+  { id: 'copy-printer', name: 'きらきらミュージックボックス', type: 'barrier', hp: 3, clearance: .32, advice: 'かたいミュージックボックス。火力を育てるか浮こ', stage: 3 },
+  { id: 'task-loop', name: 'くるくる小道の溝', type: 'pothole', hp: 1, clearance: .25, advice: '攻撃は通らへん。飛んで抜けよ', stage: 2 },
+  { id: 'inbox-pile', name: 'カラフル招待状の山', type: 'cone', hp: 1, clearance: .2, advice: '攻撃で招待状を広げよ。浮いてもOK', stage: 0 },
+  { id: 'notification-tower', name: 'きらきらベルタワー', type: 'barrier', hp: 2, clearance: .4, advice: '攻撃でミュート。上から抜けてもOK', stage: 0 },
+  { id: 'metrics-gate', name: 'リズムの光ゲート', type: 'barrier', hp: 3, clearance: .36, advice: 'かたいゲート。火力を育てるか浮こ', stage: 3 },
+  { id: 'approval-queue', name: 'くるくる飾りの小道', type: 'pothole', hp: 1, clearance: .25, advice: '待たんでええ。飛んで抜けよ', stage: 2 },
 ].map(Object.freeze));
 
 export const LITTLE_FINDS = Object.freeze([
