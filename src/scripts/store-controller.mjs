@@ -29,6 +29,7 @@ export function initializeStore({ definitions }, environment = globalThis) {
   const checkout = document.querySelector('#checkout');
   const itemsNode = document.querySelector('#cart-items');
   let catalog;
+  let catalogRequest = 0;
   let cart = [];
   let busy = false;
   let activity = 0;
@@ -221,6 +222,7 @@ export function initializeStore({ definitions }, environment = globalThis) {
   );
 
   async function refreshCatalog() {
+    const requestId = ++catalogRequest;
     try {
       const response = await fetch(catalogUrl, {
         headers: { 'X-Shop-Locale': locale },
@@ -229,11 +231,27 @@ export function initializeStore({ definitions }, environment = globalThis) {
       });
       if (!response.ok) throw new Error('Unavailable');
       const nextCatalog = await response.json();
+      if (requestId !== catalogRequest) return;
 
       catalog = nextCatalog;
       for (const card of document.querySelectorAll('[data-product]')) {
         const p = catalog.products.find((p) => p.slug === card.dataset.product);
-        if (!p) continue;
+        const stockRow = card.querySelector('[data-stock-row]');
+        const stockQuantity = card.querySelector('[data-stock-quantity]');
+        if (stockRow && stockQuantity) {
+          const known =
+            Number.isSafeInteger(p?.availableStock) && p.availableStock >= 0;
+          stockRow.hidden = !known;
+          stockQuantity.textContent = known
+            ? locale === 'en'
+              ? `${p.availableStock} ${p.availableStock === 1 ? 'unit' : 'units'}`
+              : `${p.availableStock}個`
+            : '';
+        }
+        if (!p) {
+          card.querySelector('[data-add]').disabled = true;
+          continue;
+        }
         card.querySelector('[data-price]').textContent =
           p.amount === null
             ? t('価格未定')
@@ -263,7 +281,14 @@ export function initializeStore({ definitions }, environment = globalThis) {
         );
       }
     } catch {
+      if (requestId !== catalogRequest) return;
       catalog = undefined;
+      for (const card of document.querySelectorAll('[data-product]')) {
+        const stockRow = card.querySelector('[data-stock-row]');
+        const stockQuantity = card.querySelector('[data-stock-quantity]');
+        if (stockRow) stockRow.hidden = true;
+        if (stockQuantity) stockQuantity.textContent = '';
+      }
       document.querySelectorAll('[data-add]').forEach((button) => {
         button.disabled = true;
       });
@@ -356,7 +381,7 @@ export function initializeStore({ definitions }, environment = globalThis) {
       render();
     }
   });
-  window.addEventListener('pageshow', () => {
+  window.addEventListener('pageshow', (event) => {
     busy = false;
     try {
       cart = sanitizeCart(
@@ -367,6 +392,7 @@ export function initializeStore({ definitions }, environment = globalThis) {
       /* Keep the current in-memory bag. */
     }
     render();
+    if (event?.persisted) return refreshCatalog();
   });
   render();
   const ready = (async () => {
