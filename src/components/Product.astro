@@ -70,7 +70,7 @@ const availability =
     <h3>{product.name}</h3>
     <p>{product.description}</p>
     {
-      (product.size || stockQuantity !== null) && (
+      (cartEnabled || product.size || stockQuantity !== null) && (
         <dl class="product-details">
           {product.size && (
             <div>
@@ -82,6 +82,12 @@ const availability =
             <div>
               <dt>{t('在庫', 'Stock')}</dt>
               <dd>{t(`${stockQuantity}個`, `${stockQuantity} units`)}</dd>
+            </div>
+          )}
+          {cartEnabled && (
+            <div data-stock-row hidden>
+              <dt>{t('残り', 'Remaining')}</dt>
+              <dd data-stock-quantity aria-live="polite" />
             </div>
           )}
         </dl>

@@ -145,6 +145,28 @@ assert.equal(JSON.parse((await request('/api/health')).text).status, 'ok');
 const catalog = JSON.parse((await request('/api/catalog')).text);
 assert.equal(catalog.mode, 'test');
 assert.equal(catalog.salesEnabled, false);
+const stock = JSON.parse(
+  docker(
+    'compose',
+    'exec',
+    '-T',
+    apiService,
+    'node',
+    'scripts/inventory-status.mjs',
+    '--db',
+    '/app/state/commerce.sqlite',
+    '--scope',
+    'test:public',
+    '--json',
+  ),
+);
+assert.equal(stock.scope, 'test:public');
+for (const product of catalog.products) {
+  const balance = stock.products.find((row) => row.sku === product.slug);
+  assert.ok(balance, `${product.slug}: inventory status missing`);
+  assert.equal(balance.available, product.availableStock);
+}
+console.log('PASS inventory status command agrees with the running catalog');
 // www routing/redirects never grant an additional browser checkout origin.
 await request('/api/checkout', 403, {
   method: 'POST',

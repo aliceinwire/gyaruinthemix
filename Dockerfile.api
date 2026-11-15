@@ -12,6 +12,7 @@ COPY --from=dependencies /app/node_modules ./node_modules
 COPY package.json ./
 COPY api ./api
 COPY config ./config
+COPY scripts/inventory-status.mjs scripts/inventory-stock.mjs ./scripts/
 COPY deploy/api-healthcheck.mjs ./healthcheck.mjs
 USER 10001:10001
 EXPOSE 3000

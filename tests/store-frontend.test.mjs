@@ -115,6 +115,9 @@ function fixture({
         card.dataset.product = p.slug;
         const price = new Element();
         const availability = new Element();
+        const stockRow = new Element();
+        stockRow.hidden = true;
+        const stockQuantity = new Element();
         const add = new Element('button');
         add.dataset.add = p.slug;
         add.disabled = true;
@@ -122,6 +125,8 @@ function fixture({
           ({
             '[data-price]': price,
             '[data-availability]': availability,
+            '[data-stock-row]': stockRow,
+            '[data-stock-quantity]': stockQuantity,
             '[data-add]': add,
           })[selector];
         card.add = add;
@@ -256,6 +261,88 @@ test('unavailable public catalog leaves purchase controls disabled', async () =>
     assert.equal(ui.ids.checkout.disabled, true);
     assert.ok(ui.cards.every((card) => card.add.disabled));
   }
+});
+
+test('remaining stock follows the ledger in both languages, including sold-out zero', async () => {
+  for (const pathname of ['/shop/', '/en/shop/']) {
+    const catalog = availableCatalog();
+    catalog.products[0].availableStock = 4;
+    catalog.products[0].stockQuantity = 50;
+    const ui = fixture({ pathname, catalog });
+    await ui.controller.ready;
+    const card = ui.cards[0];
+    const row = card.querySelector('[data-stock-row]');
+    const quantity = card.querySelector('[data-stock-quantity]');
+    const en = pathname.startsWith('/en/');
+    assert.equal(row.hidden, false);
+    assert.equal(quantity.textContent, en ? '4 units' : '4個');
+    catalog.products[0].availableStock = 1;
+    await ui.controller.refreshCatalog();
+    assert.equal(quantity.textContent, en ? '1 unit' : '1個');
+    catalog.products[0].availableStock = 0;
+    catalog.products[0].availability = 'sold_out';
+    catalog.products[0].maxQuantity = 0;
+    await ui.controller.refreshCatalog();
+    assert.equal(row.hidden, false);
+    assert.equal(quantity.textContent, en ? '0 units' : '0個');
+    assert.equal(card.add.disabled, true);
+  }
+});
+
+test('unknown stock, removed products and catalog errors clear a previously displayed balance', async () => {
+  const catalog = availableCatalog();
+  catalog.products[0].availableStock = 9;
+  const ui = fixture({ catalog });
+  await ui.controller.ready;
+  const row = ui.cards[0].querySelector('[data-stock-row]');
+  const quantity = ui.cards[0].querySelector('[data-stock-quantity]');
+  for (const availableStock of [null, undefined, -1, 1.5, '9']) {
+    catalog.products[0].availableStock = availableStock;
+    await ui.controller.refreshCatalog();
+    assert.equal(row.hidden, true);
+    assert.equal(quantity.textContent, '');
+  }
+  catalog.products[0].availableStock = 9;
+  await ui.controller.refreshCatalog();
+  ui.replies.push(response({ ...catalog, products: [] }));
+  await ui.controller.refreshCatalog();
+  assert.equal(row.hidden, true);
+  assert.equal(quantity.textContent, '');
+  assert.equal(ui.cards[0].add.disabled, true);
+  await ui.controller.refreshCatalog();
+  assert.equal(row.hidden, false);
+  ui.replies.push(response({ error: 'Unavailable' }, 503));
+  await ui.controller.refreshCatalog();
+  assert.equal(row.hidden, true);
+  assert.equal(quantity.textContent, '');
+  assert.equal(ui.cards[0].add.disabled, true);
+});
+
+test('returning from the browser cache refreshes remaining stock and ignores older responses', async () => {
+  const catalog = availableCatalog();
+  catalog.products[0].availableStock = 9;
+  const ui = fixture({ catalog });
+  await ui.controller.ready;
+  let finishOld;
+  ui.replies.push(
+    new Promise((resolve) => {
+      finishOld = resolve;
+    }),
+  );
+  const oldRequest = ui.controller.refreshCatalog();
+  const next = structuredClone(catalog);
+  next.products[0].availableStock = 0;
+  next.products[0].availability = 'sold_out';
+  next.products[0].maxQuantity = 0;
+  ui.replies.push(response(next));
+  await ui.windowListeners.pageshow({ persisted: true });
+  finishOld(response(catalog));
+  await oldRequest;
+  assert.equal(
+    ui.cards[0].querySelector('[data-stock-quantity]').textContent,
+    '0個',
+  );
+  assert.equal(ui.cards[0].add.disabled, true);
 });
 
 test('retry reuses an idempotency key and changing the bag creates a new attempt', async () => {
