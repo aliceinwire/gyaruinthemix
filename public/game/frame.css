@@ -581,6 +581,8 @@ body[data-screen="finale"] #performance-track[hidden] + #finale-home { grid-colu
 .new-car-picker .starting-parts { margin: 0; }
 .new-car-picker :is(.starting-parts, .build-workshop) > h2 { font-size: 18px; margin: 6px 0; }
 .new-car-picker .build-card[data-installed="true"] { border-color: var(--pink); }
+.new-car-picker .build-card label { min-width: 0; }
+.new-car-picker .build-card select { display: block; width: 100%; min-width: 0; max-width: 100%; }
 .new-car-picker .card-pager { gap: 4px; }
 .new-car-picker .card-pager button { min-width: 0; padding-inline: 8px; }
 .new-car-picker .card-pager span { min-width: 36px; }
