@@ -571,11 +571,12 @@ function renderBuildWorkshop() {
     }
     let replacement;
     if (offer.requiresReplacement) {
-      const label = document.createElement("label"); localizeText(label, "外すパーツを選んでな");
+      const label = document.createElement("label"), caption = document.createElement("span");
+      localizeText(caption, "外すパーツを選んでな");
       replacement = document.createElement("select"); localizeAttribute(replacement, "aria-label", message("{0}と入れ替えるパーツ", [offer.name]));
       const none = document.createElement("option"); none.value = ""; localizeText(none, "4枠いっぱい。入れ替えを選ぶ"); replacement.append(none);
       for (const item of build.mods) { const option = document.createElement("option"); option.value = item.id; localizeText(option, item.name); replacement.append(option); }
-      label.append(replacement); card.append(label);
+      label.append(caption, replacement); card.append(label);
     }
     const button = document.createElement("button"); button.dataset.modId = offer.id;
     localizeText(button, offer.owned ? "解禁済み / 装備は無料" : message("{0} ギャルポイントで解禁", [offer.price]));

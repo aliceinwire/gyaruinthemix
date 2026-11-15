@@ -218,6 +218,8 @@ export async function checkStartingGarage(browser, { root, csp }) {
     await load(exportNightfallSave(full), fullMeta);
     await tab(4);
     const modulePager = page.locator('.build-workshop > .card-pager');
+    const replacementCount = await page.locator('#build-offers select').count();
+    assert.ok(replacementCount > 0);
     for (const [width, height] of [
       [320, 740],
       [390, 667],
@@ -227,6 +229,11 @@ export async function checkStartingGarage(browser, { root, csp }) {
       await page.setViewportSize({ width, height });
       for (const language of ['ja', 'en', 'it']) {
         await page.locator('.settings select').selectOption(language);
+        assert.equal(
+          await page.locator('#build-offers select').count(),
+          replacementCount,
+          'Language changes preserve every module replacement selector',
+        );
         while (await modulePager.locator('button').first().isEnabled())
           await modulePager.locator('button').first().click();
         const count = await page.locator('#build-offers > article').count();
