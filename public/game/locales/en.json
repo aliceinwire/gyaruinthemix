@@ -1550,5 +1550,6 @@
   "最初の武器はハートもギャルポイントで解禁。武器なしでも、道中のXPで武器を手に入れられるで。": "Every starter weapon, including hearts, costs gyaru points. Start unarmed and earn weapons through XP on the road.",
   "武器なし": "Unarmed",
   "回避とラッシュでXPを集めて、道中で武器を手に入れよ。": "Earn XP with precise dodges and rush attacks to find weapons on the road.",
-  "最初の装備なし": "No starting equipment"
+  "最初の装備なし": "No starting equipment",
+  "装備 {0} / 4 パーツ": "Equipped: {0} / 4 modules"
 }

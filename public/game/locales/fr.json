@@ -1550,5 +1550,6 @@
   "最初の武器はハートもギャルポイントで解禁。武器なしでも、道中のXPで武器を手に入れられるで。": "Toutes les armes de départ, même les cœurs, coûtent des points gyaru. Pars sans arme et obtiens-en avec les XP en route.",
   "武器なし": "Sans arme",
   "回避とラッシュでXPを集めて、道中で武器を手に入れよ。": "Gagne des XP avec des esquives précises et des attaques rush pour obtenir des armes en route.",
-  "最初の装備なし": "Aucun équipement de départ"
+  "最初の装備なし": "Aucun équipement de départ",
+  "装備 {0} / 4 パーツ": "Équipés : {0} / 4 modules"
 }

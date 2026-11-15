@@ -451,6 +451,5 @@ body[data-music-open="true"] .music-panel { position: fixed; inset: 0; z-index: 
 body[data-reduced-motion="true"] *, body[data-reduced-motion="true"] *::before, body[data-reduced-motion="true"] *::after { transition: none !important; animation: none !important; }
 
 .starting-parts { margin-block: 28px; }
-.build-installed, .pit-service { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-block: 16px; }
-.build-installed button { font-size: 12px; }
+.pit-service { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-block: 16px; }
 .pit-service { justify-content: space-between; padding: 12px; border: 1px solid var(--line); border-radius: 8px; }

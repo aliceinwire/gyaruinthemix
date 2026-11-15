@@ -4,9 +4,11 @@ import { extname, resolve } from 'node:path';
 import {
   createState,
   beginCampaign,
+  chooseStartingWeapon,
   exportNightfallSave,
 } from '../../public/game/src/simulation.js';
 import { createMetaProgress } from '../../public/game/src/garage.js';
+import { buyRunMod } from '../../public/game/src/run-build.js';
 import {
   META_KEY,
   NIGHTFALL_SAVE_KEY,
@@ -166,6 +168,13 @@ export async function checkStartingGarage(browser, { root, csp }) {
             const radio = document
               .querySelector('.radio-dock')
               .getBoundingClientRect();
+            const wallet = document
+              .querySelector('#car-select-wallet')
+              .getBoundingClientRect();
+            const footerTop = Math.min(
+              wallet.top,
+              document.querySelector('#cars-ready').getBoundingClientRect().top,
+            );
             return [
               ...document.querySelectorAll(
                 '#car-select button, #car-select select',
@@ -179,7 +188,8 @@ export async function checkStartingGarage(browser, { root, csp }) {
                   r.left < -1 ||
                   r.right > innerWidth + 1 ||
                   r.top < -1 ||
-                  r.bottom > Math.min(innerHeight, radio.top) + 1
+                  r.bottom > Math.min(innerHeight, radio.top) + 1 ||
+                  (el.closest('.frame-page') && r.bottom > footerTop + 1)
                 );
               })
               .map((el) => el.id || el.textContent);
@@ -195,7 +205,90 @@ export async function checkStartingGarage(browser, { root, csp }) {
         }
       }
     }
+    const full = createState({ mode: 'survival', survivalDay: '2026-11-15' });
+    const fullMeta = createMetaProgress({ completionPoints: 20 });
+    assert.equal(chooseStartingWeapon(full, 'heart', fullMeta), true);
+    for (const id of [
+      'charge-shield',
+      'charged-heart',
+      'air-control',
+      'rush-pulse',
+    ])
+      assert.equal(buyRunMod(full, id, null, fullMeta), true);
+    await load(exportNightfallSave(full), fullMeta);
+    await tab(4);
+    const modulePager = page.locator('.build-workshop > .card-pager');
+    for (const [width, height] of [
+      [320, 740],
+      [390, 667],
+      [667, 375],
+      [844, 390],
+    ]) {
+      await page.setViewportSize({ width, height });
+      for (const language of ['ja', 'en', 'it']) {
+        await page.locator('.settings select').selectOption(language);
+        while (await modulePager.locator('button').first().isEnabled())
+          await modulePager.locator('button').first().click();
+        const count = await page.locator('#build-offers > article').count();
+        for (let card = 0; card < count; card++) {
+          const faults = await page.evaluate(() => {
+            const limit = Math.min(
+              ...['#car-select-wallet', '#cars-ready'].map(
+                (selector) =>
+                  document.querySelector(selector).getBoundingClientRect().top,
+              ),
+            );
+            return [
+              ...document.querySelectorAll(
+                '#car-select .frame-page button, #car-select .frame-page select',
+              ),
+            ]
+              .filter((el) => {
+                if (!el.getClientRects().length || el.closest('[hidden]'))
+                  return false;
+                const r = el.getBoundingClientRect();
+                return (
+                  r.left < -1 ||
+                  r.right > innerWidth + 1 ||
+                  r.bottom > limit + 1
+                );
+              })
+              .map((el) => el.id || el.textContent);
+          });
+          await capture(`${width}-${language}-full-${card}`);
+          if (faults.length)
+            layoutFaults.push({
+              viewport: `${width}x${height}`,
+              language,
+              tab: `full-${card}`,
+              faults,
+            });
+          if (card < count - 1)
+            await modulePager.locator('button').last().click();
+        }
+      }
+    }
     assert.deepEqual(layoutFaults, []);
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    while (await modulePager.locator('button').first().isEnabled())
+      await modulePager.locator('button').first().click();
+    const replacement = page
+      .locator('.build-card')
+      .filter({ has: page.locator('[data-mod-id="heart-pierce"]') });
+    assert.equal(await replacement.locator('button').isDisabled(), true);
+    await replacement.locator('select').selectOption('charge-shield');
+    const beforeReplacement = await points();
+    await replacement.locator('button').evaluate((button) => {
+      button.click();
+      button.click();
+    });
+    assert.equal(await points(), beforeReplacement - 1);
+    assert.deepEqual((await snapshot()).runBuild.mods, [
+      'charged-heart',
+      'air-control',
+      'rush-pulse',
+      'heart-pierce',
+    ]);
     beginCampaign(state);
     await load(exportNightfallSave(state), meta);
     assert.equal(await page.locator('#car-select').isVisible(), false);

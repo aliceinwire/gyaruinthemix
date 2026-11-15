@@ -11,6 +11,7 @@ import { RUN_STYLES, chooseRunStyle, getRpgView, choosePerk } from './src/tour-r
 import { createSettingsStore } from './src/tour-settings.js';
 import { createStoryDirector } from './src/tour-director.js';
 import { getBuildOffers, buyRunMod, removeStartingRunMod, describeBuild, getRouteMission } from './src/run-build.js';
+import { FAMILIES, RUN_MOD_CATALOG } from './src/run-mod-catalog.js';
 import { getEncounterPhase } from './src/encounter-director.js';
 import { createPerformance, createRadioPerformance, updatePerformance, performanceView, suspendPerformance, startPerformance, tapPerformance } from './src/performance.js';
 import { createRoadFeedback, captureRoadFeedback, updateRoadFeedback, drawRoadFeedback } from './src/road-feedback.js';
@@ -545,26 +546,29 @@ function renderStartingUpgrades() {
 }
 function renderBuildWorkshop() {
   const build = describeBuild(state), offers = getBuildOffers(state, meta), host = $("#build-offers");
-  localizeText($("#build-summary"), message("{0} · {1} / 4 パーツ。{2}", [build.name, build.mods.length, build.summary]));
+  localizeText($("#build-summary"), message("装備 {0} / 4 パーツ", [build.mods.length]));
   host.replaceChildren();
-  const installed = $('#build-installed'); installed.replaceChildren();
-  for (const item of build.mods) {
-    const button = document.createElement('button'); button.dataset.removeMod = item.id;
-    localizeText(button, message('{0}を外す', [item.name]));
-    button.addEventListener('click', () => {
-      if (!removeStartingRunMod(state, item.id)) return;
-      saveTour(); renderGarage();
-    });
-    installed.append(button);
-  }
-  for (const offer of offers) {
+  const choices = RUN_MOD_CATALOG.map(item => build.mods.some(mod => mod.id === item.id)
+    ? { ...item, installed: true, familyName: FAMILIES.find(family => family.id === item.family).name }
+    : offers.find(offer => offer.id === item.id)).filter(Boolean);
+  for (const offer of choices) {
     const card = document.createElement("article"); card.className = "build-card"; card.dataset.family = offer.family;
+    card.dataset.installed = String(offer.installed === true);
     const tag = document.createElement("span"); tag.className = "eyebrow"; localizeText(tag, message("{0} / {1}", [offer.familyName, offer.rarityLabel]));
     const title = document.createElement("h4"); localizeText(title, offer.name);
     const copy = document.createElement("p"); localizeText(copy, offer.description);
     const preview = document.createElement("small"); localizeText(preview, offer.preview);
     const heading = document.createElement('div'); heading.className = 'item-heading'; heading.append(createItemIcon(offer.id),title);
     card.append(tag,heading,copy,preview);
+    if (offer.installed) {
+      const remove = document.createElement('button'); remove.dataset.removeMod = offer.id;
+      localizeText(remove, message('{0}を外す', [offer.name]));
+      remove.addEventListener('click', () => {
+        if (!removeStartingRunMod(state, offer.id)) return;
+        saveTour(); renderGarage();
+      });
+      card.append(remove); host.append(card); continue;
+    }
     let replacement;
     if (offer.requiresReplacement) {
       const label = document.createElement("label"); localizeText(label, "外すパーツを選んでな");
@@ -584,7 +588,6 @@ function renderBuildWorkshop() {
     });
     card.append(button); host.append(card);
   }
-  localizeText($("#build-note"), "最大4パーツ。解禁したパーツは次の旅でも無料で装備できるで。出発後は変更できへん。");
 }
 function renderGarage() {
   const grid = $("#car-garage");
