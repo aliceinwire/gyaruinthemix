@@ -106,7 +106,7 @@ export async function checkRadioSpectrum(browser, { root, csp, nativeHls = false
           },
         }),
       });
-      const scene = createState({ mode: 'survival', seed: 'music-world' });
+      const scene = createState({ startingWeapon: 'heart', mode: 'survival', seed: 'music-world' });
       scene.weather = 'sunny';
       scene.routeLength = 220;
       scene.entities = [

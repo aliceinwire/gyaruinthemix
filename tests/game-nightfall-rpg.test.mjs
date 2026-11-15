@@ -151,8 +151,7 @@ test('overlapping shop parts and perks grant bounded gains in either acquisition
         { ...state.runBuild, acquiredIds: previous },
         state,
       );
-      state.routeIndex = 6;
-      state.campaignStarted = true;
+      const meta = { completionPoints: 20, ownedRunMods: previous };
       state.money = 10000;
       const improved = (before, after) =>
         assert.ok(
@@ -160,13 +159,13 @@ test('overlapping shop parts and perks grant bounded gains in either acquisition
           `${spec.mod} / ${spec.perk}: ${before} → ${after}`,
         );
       const buy = () => {
-        state.status = 'won';
-        const offer = getBuildOffers(state).find(
+        state.status = 'playing';
+        const offer = getBuildOffers(state, meta).find(
           (item) => item.id === spec.mod,
         );
         assert.equal(offer.available, true);
         assert.match(offer.preview, /→|1回ガード/);
-        assert.equal(buyRunMod(state, spec.mod), true);
+        assert.equal(buyRunMod(state, spec.mod, null, meta), true);
       };
       let before = getBuildModifiers(state)[spec.field];
       if (perkFirst) draftPerk(state, spec.perk);

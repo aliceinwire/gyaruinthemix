@@ -1,3 +1,7 @@
+import {
+  createMetaProgress,
+  buyStartingUpgrade,
+} from '../public/game/src/garage.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
@@ -38,6 +42,7 @@ import { getJourneyChoices } from '../public/game/src/journey.js';
 
 function fresh(seed = 175) {
   return createState({
+    startingWeapon: 'heart',
     mode: 'survival',
     seed,
     survivalDay: '2026-10-21',
@@ -163,7 +168,13 @@ test('every starting weapon attacks automatically, and hearts require acquisitio
 test('starting weapon choices close at departure and cannot reset an earned build', () => {
   const s = fresh();
   assert.equal(chooseStartingWeapon(s, 'unknown'), false);
-  assert.equal(chooseStartingWeapon(s, 'bass'), true);
+  assert.equal(
+    chooseStartingWeapon(s, 'bass', {
+      completionPoints: 0,
+      ownedStartingWeapons: ['bass'],
+    }),
+    true,
+  );
   assert.deepEqual(s.survival.upgrades, { bass: 1 });
   changeRouteBeforeStart(s, 'express');
   assert.deepEqual(s.survival.upgrades, { bass: 1 });
@@ -178,7 +189,10 @@ test('starting weapon choices close at departure and cannot reset an earned buil
 
 test('bass reaches behind the car and its evolution pierces guards', () => {
   const s = quiet();
-  chooseStartingWeapon(s, 'bass');
+  chooseStartingWeapon(s, 'bass', {
+    completionPoints: 0,
+    ownedStartingWeapons: ['bass'],
+  });
   const behind = enemy(s, 730, -25, { hp: 2 });
   const guard = enemy(s, 731, 45, { hp: 4, shielded: true });
   update(s, {}, 0.01);
@@ -201,7 +215,7 @@ test('bass reaches behind the car and its evolution pierces guards', () => {
 
 test('upgrade offers reveal evolution ingredients and exhaust at the actual build cap', () => {
   const s = fresh();
-  while (s.survival.level < SURVIVAL_MAX_LEVEL) {
+  while (s.survival.level < SURVIVAL_MAX_LEVEL - 1) {
     s.survival.xp = survivalXpCost(s.survival.level);
     const offers = survivalOffers(s);
     assert.ok(offers.length > 0 && offers.length <= 3);
@@ -223,7 +237,7 @@ test('upgrade offers reveal evolution ingredients and exhaust at the actual buil
     assert.equal(openSurvivalDraft(s), true);
     assert.equal(chooseSurvivalUpgrade(s, offers[0].id), true);
   }
-  assert.equal(s.survival.level, SURVIVAL_MAX_LEVEL);
+  assert.equal(s.survival.level, SURVIVAL_MAX_LEVEL - 1);
   assert.ok(
     SURVIVAL_UPGRADES.every(
       (item) => s.survival.upgrades[item.id] === item.maxLevel,
@@ -470,13 +484,15 @@ test('club quizzes happen only on arrival and cannot repeat rewards after a relo
   assert.equal(beginClubQuiz(restored), false);
 });
 
-test('club purchases spend run currency and survive the next map checkpoint', () => {
+test('starting GP hardware survives arrival and the next map checkpoint', () => {
   const s = fresh();
   s.money = 10000;
-  assert.equal(buyUpgrade(s, 'battery'), false);
-  clearRoad(s);
+  const meta = createMetaProgress({ completionPoints: 1 });
   const capacity = s.energyCapacity;
-  assert.equal(buyUpgrade(s, 'battery'), true);
+  assert.equal(buyStartingUpgrade(s, meta, 'battery'), true);
+  assert.equal(meta.completionPoints, 0);
+  clearRoad(s);
+  assert.equal(buyUpgrade(s, 'battery'), false);
   assert.ok(s.energyCapacity > capacity);
   const restored = restoreNightfallSave(exportNightfallSave(s));
   assert.equal(restored.upgrades.battery, 1);
@@ -488,7 +504,10 @@ test('club purchases spend run currency and survive the next map checkpoint', ()
 
 test('between-road saves preserve the chosen weapon, build, resources and branch', () => {
   const s = fresh();
-  chooseStartingWeapon(s, 'flash');
+  chooseStartingWeapon(s, 'flash', {
+    completionPoints: 0,
+    ownedStartingWeapons: ['flash'],
+  });
   const departure = exportNightfallSave(s);
   const ready = restoreNightfallSave(JSON.stringify(departure));
   assert.equal(ready.mode, 'survival');
@@ -691,8 +710,8 @@ test('no-input survival is not a winning strategy even with automatic attacks', 
   assert.ok(s.survival.kills > 0);
 });
 
-test('all seven starters can finish the twelve-road run with driving and build choices', () => {
-  for (const starter of SURVIVAL_STARTERS) {
+test('an unarmed start and all seven paid starters can finish the tour with driving and build choices', () => {
+  for (const starter of [{ id: null }, ...SURVIVAL_STARTERS]) {
     const s = createState({
       mode: 'survival',
       startingWeapon: starter.id,
@@ -713,7 +732,7 @@ test('all seven starters can finish the twelve-road run with driving and build c
           offers.find((offer) => offer.evolutionReady) ||
           offers.find((offer) => offer.id === 'armor' && s.integrity < 55) ||
           offers.find((offer) => offer.id === starter.id) ||
-          offers.find((offer) => offer.id === recipe.support) ||
+          offers.find((offer) => offer.id === recipe?.support) ||
           offers.find((offer) => offer.kind === 'weapon') ||
           offers[0];
         chooseSurvivalUpgrade(s, pick.id);

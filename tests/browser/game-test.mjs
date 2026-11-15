@@ -8,6 +8,7 @@ import {
   exportNightfallSave,
 } from '../../public/game/src/simulation.js';
 import {
+  META_KEY,
   SAVE_KEY,
   NIGHTFALL_SAVE_KEY,
 } from '../../public/game/src/save-store.js';
@@ -32,6 +33,7 @@ import { chromium } from 'playwright';
 import { checkRadioSpectrum } from './radio-spectrum.mjs';
 import { checkClubChart } from './club-chart.mjs';
 import { checkClubResume } from './club-resume.mjs';
+import { checkStartingGarage } from './starting-garage.mjs';
 import { checkConditionHud } from './condition-hud.mjs';
 import { releaseVersion } from '../../src/data/release.mjs';
 
@@ -309,6 +311,7 @@ const browser = await chromium.launch({
     : {}),
 });
 try {
+  await checkStartingGarage(browser, { root, csp });
   await checkConditionHud(browser, { root, csp });
   await checkRadioSpectrum(browser, { root, csp });
   await checkRadioSpectrum(browser, { root, csp, nativeHls: true });
@@ -379,6 +382,9 @@ try {
         await route.fulfill({ status: 404, body: 'Not found' });
       }
     });
+    await context.addInitScript(({ key }) => {
+      if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify({ completionPoints: 40 }));
+    }, { key: META_KEY });
     const page = await context.newPage();
     page.on('pageerror', (e) => {
       errors.push(e.message);
@@ -465,7 +471,7 @@ try {
     assert.ok(openingMemory.seen.includes('tour:opening'));
     assert.equal(await page.locator('#car-select').isVisible(), true);
     const weapons = page.locator('#style-options button');
-    assert.equal(await weapons.count(), 7);
+    assert.equal(await weapons.count(), 8);
     for (const id of ['heart', 'flash', 'vinyl', 'bass', 'phone', 'cd', 'cassette', 'flash']) {
       const choice = page.locator(`#style-options [data-weapon="${id}"]`);
       assert.equal(await choice.locator('.item-icon').count(), 1);
@@ -570,17 +576,8 @@ try {
       '.map-goal',
       '#depart',
     ]);
-    await page.locator('#garage-tab').click();
-    await assertFrameFits(page, ['#garage-done']);
-    assert.equal(await page.locator('#garage-content').isVisible(), true);
-    assert.equal(await page.locator('#shop button').count(), 6);
-    assert.equal(await page.locator('#shop [data-item-icon="hearts"], #shop [data-item-icon="heartReach"]').count(), 0,
-      'A flash-only build is not offered inactive heart hardware');
-    await page.screenshot({
-      path: resolve(root, `artifacts/browser/game-test/${width}-garage.png`),
-      fullPage: true,
-    });
-    await page.locator('#garage-done').click();
+    assert.equal(await page.locator('#garage-tab').count(), 0);
+    assert.equal(await page.locator('#pit-service').isVisible(), false);
     const selectedWeather = await page.evaluate(
       () => __HYPERDRIVE__.snapshot().state.weather,
     );
@@ -890,7 +887,7 @@ try {
       assert.ok(gadgetState.elapsed > 0);
       assert.ok(gadgetState.survival.echoClock > 0, 'Automatic phone attacks record a bounded MD repeat');
 
-      const clubFixture = createState({ mode: 'survival', survivalDay: '2026-10-21', routeIndex: 1, seed: 175, campaignStarted: true });
+      const clubFixture = createState({ startingWeapon: 'heart', mode: 'survival', survivalDay: '2026-10-21', routeIndex: 1, seed: 175, campaignStarted: true });
       clubFixture.entities = []; clubFixture._stations = []; clubFixture._encounterPlan = [];
       clubFixture.totalFans = 1;
       clubFixture.distance = clubFixture.routeLength - .01;
@@ -1340,34 +1337,11 @@ try {
         '.map-goal',
         '#depart',
       ]);
-      await page.locator('#garage-tab').click();
-      await assertFrameFits(page, ['#garage-done']);
-      assert.match(await page.locator('#build-summary').innerText(), /4 \/ 4/);
-      const card = page.locator('.build-card').first();
-      assert.equal(await card.locator('button').isDisabled(), true);
-      await card.locator('select').selectOption('heart-pierce');
-      const before = (await page.evaluate(() => __HYPERDRIVE__.snapshot()))
-        .state.money;
-      await card.locator('button').evaluate((button) => {
-        button.click();
-        button.click();
-      });
-      const bought = (await page.evaluate(() => __HYPERDRIVE__.snapshot()))
-        .state;
-      assert.equal(bought.runBuild.mods.length, 4);
-      assert.ok(!bought.runBuild.mods.includes('heart-pierce'));
-      assert.ok(bought.money < before);
-      assert.equal(
-        bought.runBuild.purchasedLegs.filter((leg) => leg === 5).length,
-        1,
-      );
-      await page.screenshot({
-        path: resolve(
-          root,
-          'artifacts/browser/game-test/workshop-replacement.png',
-        ),
-        fullPage: true,
-      });
+      assert.equal(await page.locator('#garage-tab').count(), 0);
+      assert.equal(await page.locator('#change-starting-car').isVisible(), false);
+      assert.equal(await page.locator('#car-select').isVisible(), false);
+      const bought = (await page.evaluate(() => __HYPERDRIVE__.snapshot())).state;
+      assert.deepEqual(bought.runBuild.mods, fixture.runBuild.mods);
       await page.reload();
       await page.waitForFunction(
         () => globalThis.__HYPERDRIVE__?.snapshot().ready,

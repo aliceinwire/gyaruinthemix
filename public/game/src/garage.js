@@ -1,4 +1,6 @@
 import { JOURNEY_STAGE_COUNT } from "./journey.js";
+import { SURVIVAL_STARTERS } from "./survival.js";
+import { RUN_MOD_CATALOG } from "./run-mod-catalog.js";
 /** Completion-point new-game car unlocks and start-only cosmetic customization. No network, payments, driving inputs, or DOM dependencies. */
 export const GARAGE_VERSION = 1;
 export const DEFAULT_CAR_ID = "mix-175";
@@ -147,8 +149,8 @@ function emit(state, type, detail) {
   state.events ??= [];
   state.events.push({ ...detail, type });
 }
-/** Club garage offers current-car coin upgrades; car selection stays new-game-only. */
-export function canUseGarage(state) { return state?.status === "won"; }
+/** The entire garage closes at the first departure, including after a reload. */
+export function canUseGarage(state) { return canChooseStartingCar(state); }
 /** Retired coin-purchase APIs intentionally reject all requests. */
 export function buyCar() { return false; }
 export function equipCar() { return false; }
@@ -157,7 +159,8 @@ export const COMPLETION_POINT_REWARD = 3;
 const validRunId = (id) => typeof id === "string" && /^[A-Za-z0-9_.:-]{1,128}$/.test(id);
 function emptyMeta() {
   return { version: META_PROGRESS_VERSION, completionPoints: 0, ownedCars: [DEFAULT_CAR_ID], creditedRunIds: [],
-    upgrades: { battery: 0, hearts: 0, charger: 0, armor: 0 },
+    ownedStartingWeapons: [], ownedRunMods: [],
+    upgrades: Object.fromEntries(STARTING_UPGRADE_CATALOG.map(item => [item.id, 0])),
     cosmeticUnlocks: { paint: ["pink"], wheels: ["classic"], decal: ["none"] }, customizations: { [DEFAULT_CAR_ID]: { paint: "pink", wheels: "classic", decal: "none" } } };
 }
 /** Corrupt/future saves are rejected; unknown car IDs and duplicate credits are discarded. */
@@ -171,6 +174,11 @@ export function restoreMetaProgress(value) {
     meta.completionPoints = clamp(Math.floor(value.completionPoints), 0, 1_000_000_000);
   for (const id of Array.isArray(value.ownedCars) ? value.ownedCars : [])
     if (carById(id) && !meta.ownedCars.includes(id)) meta.ownedCars.push(id);
+  for (const item of SURVIVAL_STARTERS)
+    if (Array.isArray(value.ownedStartingWeapons) && value.ownedStartingWeapons.includes(item.id)) meta.ownedStartingWeapons.push(item.id);
+  for (const item of RUN_MOD_CATALOG)
+    if (Array.isArray(value.ownedRunMods) && value.ownedRunMods.includes(item.id) &&
+        (!item.requires || meta.ownedRunMods.includes(item.requires))) meta.ownedRunMods.push(item.id);
   for (const id of Object.keys(meta.upgrades)) {
     const level = value.upgrades?.[id];
     meta.upgrades[id] = Number.isFinite(level) ? clamp(Math.floor(level), 0, 6) : 0;
@@ -201,7 +209,7 @@ export function exportMetaProgress(meta) { return createMetaProgress(meta); }
 export function canChooseStartingCar(state) {
   return state?.status === "playing" && state.routeIndex === 0 &&
     state.distance === 0 && state.elapsed === 0 && state.stagesCompleted === 0 &&
-    state.campaignStarted === false;
+    state.campaignStarted === false && !state.campaignComplete;
 }
 /** Car unlocks spend only completion points, only while preparing a new campaign. */
 export function unlockCar(meta, carId, state) {
@@ -221,10 +229,10 @@ export function equipStartingCar(state, meta, carId) {
   const progress = restoreMetaProgress(meta);
   if (!progress || !progress.ownedCars.includes(carId)) return false;
   const garage = normalizeGarage({ owned: progress.ownedCars, equipped: carId, customizations: progress.customizations });
-  // Legacy campaigns keep earned power. A scored survival tour starts at stock levels.
-  state.upgrades = state.mode === "survival" ? { battery: 0, hearts: 0, charger: 0, armor: 0 } : { ...progress.upgrades };
+  state.upgrades = { ...progress.upgrades };
   const changed = state.garage?.equipped !== carId;
   state.garage = garage;
+  if (state.runBuild) state.runBuild.carId = carId;
   applyCarStats(state);
   // These are fresh-run starting resources, never a midcampaign repair.
   state.energy = state.energyCapacity;
@@ -234,6 +242,7 @@ export function equipStartingCar(state, meta, carId) {
     state._stageStart.garage = serializeGarage(state);
     state._stageStart.energy = state.energy;
     state._stageStart.integrity = state.integrity;
+    if (state.runBuild) state._stageStart.runBuild = structuredClone(state.runBuild);
   }
   if (changed) emit(state, "car-equip", { carId });
   return true;
@@ -260,6 +269,9 @@ export const STARTING_UPGRADE_CATALOG = freezeOptions([
   { id: "hearts", name: "ハート連射", description: "ハートの発射間隔を短縮", basePrice: 1, maxLevel: 6 },
   { id: "charger", name: "急速チャージ", description: "EV充電 +18毎秒", basePrice: 1, maxLevel: 6 },
   { id: "armor", name: "タフかわボディ", description: "耐久上限 +25", basePrice: 1, maxLevel: 6 },
+  { id: "rushCooler", name: "ラッシュクーラー", description: "ラッシュ再使用 -0.75秒", basePrice: 1, maxLevel: 6 },
+  { id: "heartReach", name: "ワイドハート", description: "ハートの届く幅と高さUP", basePrice: 1, maxLevel: 6 },
+  { id: "evRange", name: "EVキャッチ", description: "充電できる範囲 +10m", basePrice: 1, maxLevel: 6 },
 ]);
 /** Use this view in the picker; locked vehicles expose no name, art or stats. */
 export function getCarReveal(meta, carId) {
@@ -269,9 +281,40 @@ export function getCarReveal(meta, carId) {
     ? { ...car, locked: false }
     : { id: carId, locked: true, name: "シークレットカー", price: car.unlockPrice, unlockPrice: car.unlockPrice, currency: "completionPoints" };
 }
-/** Retired GP modification APIs: preserve old saves, never spend new completion points. */
-export function startingUpgradePrice() { return null; }
-export function buyStartingUpgrade() { return false; }
+/** Permanent hardware levels cost 1, 2, ... 6 GP and apply to every owned car. */
+export function startingUpgradePrice(meta, id) {
+  const progress = restoreMetaProgress(meta), item = STARTING_UPGRADE_CATALOG.find(item => item.id === id);
+  if (!progress || !item || progress.upgrades[id] >= item.maxLevel) return null;
+  return item.basePrice * (progress.upgrades[id] + 1);
+}
+export function buyStartingUpgrade(state, meta, id) {
+  if (!canUseGarage(state)) return false;
+  const progress = restoreMetaProgress(meta), price = startingUpgradePrice(meta, id);
+  if (price === null || !Number.isSafeInteger(meta.completionPoints) || meta.completionPoints < 0 || progress.completionPoints < price) return false;
+  progress.completionPoints -= price;
+  progress.upgrades[id]++;
+  if (!equipStartingCar(state, progress, getCarProfile(state).id)) return false;
+  Object.assign(meta, progress);
+  emit(state, "starting-upgrade", { upgrade: id, level: progress.upgrades[id], price, completionPoints: meta.completionPoints });
+  return true;
+}
+export const STARTING_WEAPON_PRICE = 1;
+export function startingWeaponPrice(meta, id) {
+  const progress = restoreMetaProgress(meta);
+  if (!progress || !SURVIVAL_STARTERS.some(item => item.id === id)) return null;
+  return progress.ownedStartingWeapons.includes(id) ? 0 : STARTING_WEAPON_PRICE;
+}
+export function unlockStartingWeapon(state, meta, id) {
+  if (!canUseGarage(state)) return false;
+  const progress = restoreMetaProgress(meta), price = startingWeaponPrice(meta, id);
+  if (price === null || !Number.isSafeInteger(meta.completionPoints) || meta.completionPoints < 0 || progress.completionPoints < price) return false;
+  if (price === 0) return true;
+  progress.completionPoints -= price;
+  progress.ownedStartingWeapons.push(id);
+  Object.assign(meta, progress);
+  emit(state, "starting-weapon-unlock", { weapon: id, price, completionPoints: meta.completionPoints });
+  return true;
+}
 /** Each nonfactory cosmetic unlock costs one GP, globally reusable across owned cars. */
 export const STARTING_COSMETIC_PRICE = 1;
 function customizationRequest(state, meta, patch) {

@@ -51,13 +51,9 @@ export function createSceneUI(root = document) {
     if (panel) focusPanel(panel[0]);
   }
 
-  function mapPanel(panel) {
-    const garage = panel === "garage";
-    if (root.body) root.body.dataset.mapPanel = garage ? "garage" : "route";
-    setHidden("#route-content", garage);
-    setHidden("#garage-content", !garage);
-    get("#route-tab")?.setAttribute?.("aria-pressed", String(!garage));
-    get("#garage-tab")?.setAttribute?.("aria-pressed", String(garage));
+  function mapPanel() {
+    if (root.body) root.body.dataset.mapPanel = "route";
+    setHidden("#route-content", false);
   }
 
   root.addEventListener?.("keydown", (event) => {

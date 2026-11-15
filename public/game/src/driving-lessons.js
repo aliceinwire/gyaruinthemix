@@ -1,4 +1,4 @@
-import { isSurvival } from './survival.js';
+import { isSurvival, SURVIVAL_WEAPONS } from './survival.js';
 import { getRoadCue } from './road-feedback.js';
 
 export function createDrivingLessons() {
@@ -25,7 +25,7 @@ export function getDrivingCue(state, lessons) {
     return { ...cue, label: '飛ぶを長押しで回避。越えたら離して着地。' };
   if (cue.urgency !== 'calm') return cue;
   if (state.elapsed < 4)
-    return { label: '運転と攻撃は自動。まずは道を見よ。', action: null, urgency: 'learn' };
+    return { label: SURVIVAL_WEAPONS.some(item => state.survival.upgrades[item.id]) ? '運転と攻撃は自動。まずは道を見よ。' : '回避とラッシュでXPを集めて、道中で武器を手に入れよ。', action: null, urgency: 'learn' };
   const nearStation = state._stations.some(distance => distance > state.distance && distance - state.distance < 180);
   if (lessons.boost && !lessons.rush && !state.atStation && !nearStation && state.energy >= 60 && state.altitude < 12 && state.rushCooldown <= 0)
     return { label: 'テキーララッシュは長押しで無敵。電池を使うで。', action: 'rush', urgency: 'learn' };

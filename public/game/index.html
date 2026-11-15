@@ -26,15 +26,15 @@
       </header>
 
       <section id="car-select" class="new-car-picker" hidden aria-labelledby="car-select-heading">
-        <div class="section-heading"><p class="eyebrow">01 / BUILD YOUR NIGHT</p><h1 id="car-select-heading">うちらの走り、<br />決めてこ。</h1><p>くるまもスタイルも、今日は自分で選ぶ。6つのクラブへ音を集めに行こ。</p></div>
+        <div class="section-heading"><p class="eyebrow">01 / BUILD YOUR NIGHT</p><h1 id="car-select-heading">うちらのガレージ</h1><p>くるま・最初の武器・パーツをここで準備。道中では武器を育ててこ。</p></div>
         <p id="car-select-wallet" aria-live="polite"></p>
         <p id="car-save-warning" role="status" hidden></p>
         <section class="style-picker" aria-labelledby="style-heading">
-          <div><p class="eyebrow">YOUR STYLE</p><h2 id="style-heading">最初の武器、どれで行こ？</h2><p>ハート・カメラ・レコード・低音。ひとつ選んで、道中で組み合わせよ。</p></div>
+          <div><p class="eyebrow">YOUR STYLE</p><h2 id="style-heading">最初の武器、どれで行こ？</h2><p>最初の武器はハートもギャルポイントで解禁。武器なしでも、道中のXPで武器を手に入れられるで。</p></div>
           <div id="style-options" class="style-options" aria-label="最初の自動武器を選ぶ"></div>
         </section>
         <h2 class="garage-label">相棒のくるま</h2>
-        <p class="section-note">完走でもらうギャルポイントで解禁。出発したら、このくるまで最後まで行こ。</p>
+        <p class="section-note">ツアー完走で3ギャルポイント。くるま・武器・改造の解禁は、次の旅でも使えるで。</p>
         <div id="car-garage" class="car-grid" aria-label="新しい旅のくるま選び"></div>
         <fieldset id="starting-customization" class="car-customization">
           <legend>見た目も、うちら仕様。</legend>
@@ -46,6 +46,12 @@
           <p id="customization-status" role="status"></p>
           <button id="customization-apply">この盛りで決めよ</button>
         </fieldset>
+        <section class="starting-parts" aria-labelledby="parts-heading">
+          <h2 id="parts-heading">基本のパーツも盛ってこ</h2>
+          <p class="section-note">改造はギャルポイントでレベルアップ。どのくるまにも引き継げるで。</p>
+          <div id="shop" class="shop-grid"></div>
+        </section>
+        <section class="build-workshop" aria-labelledby="build-heading"><span class="eyebrow">BUILD YOUR OWN RHYTHM</span><h2 id="build-heading">組み合わせで、もっと強く。</h2><p id="build-summary"></p><div id="build-offers" class="build-offers"></div></section>
         <button id="cars-ready" class="primary departure">準備できた。夜へ行こ</button>
       </section>
 
@@ -122,8 +128,7 @@
         </section>
         <div class="notification-rail" aria-label="旅のお知らせ"><div id="toast" class="toast" role="status" aria-live="polite"></div></div>
 
-        <section id="route-panel" class="tour-guide" hidden aria-label="次の道とガレージ">
-          <nav class="map-tabs" aria-label="出発の準備"><button id="route-tab" aria-pressed="true">01 / 次の道</button><button id="garage-tab" aria-pressed="false">02 / ガレージ</button></nav>
+        <section id="route-panel" class="tour-guide" hidden aria-label="次の道">
           <div id="route-content">
             <div id="arrival-summary" class="arrival-summary" hidden role="status"></div>
             <div class="tour-ribbon" id="tour-ribbon" aria-label="6つのクラブの旅の進み具合"></div>
@@ -139,17 +144,11 @@
             <p id="map-route-detail" class="map-route-detail"></p>
             <div id="route-mission-preview" class="route-mission-preview"></div>
             <p class="route-note">どの分岐も同じクラブへ。道の長さ・充電所・出会いが変わるで。</p>
+            <section id="pit-service" class="pit-service" hidden aria-label="ボディリペア"><span id="pit-wallet"></span><button id="repair-car">ボディリペア</button></section>
             <div class="route-actions">
-              <button id="change-starting-car" hidden>くるまを選び直す</button>
+              <button id="change-starting-car" hidden>ガレージに戻る</button>
               <button id="depart" class="primary departure">この道で出発 →</button>
             </div>
-          </div>
-          <div id="garage-content" hidden>
-            <div class="shop-heading"><h2>うちらのガレージ</h2><span>稼いだコインで、この旅だけの走りをつくろ。</span></div>
-            <p id="garage-wallet" aria-live="polite"></p>
-            <section class="build-workshop" aria-labelledby="build-heading"><span class="eyebrow">BUILD YOUR OWN RHYTHM</span><h3 id="build-heading">組み合わせで、もっと強く。</h3><p id="build-summary"></p><div id="build-offers" class="build-offers"></div><p id="build-note"></p></section>
-            <h3>基本のパーツも盛ってこ</h3><div id="shop" class="shop-grid"></div><p id="shop-status" aria-live="polite"></p>
-            <button id="garage-done" class="primary departure">くるま準備できた。道選ぼ</button>
           </div>
         </section>
       </div>

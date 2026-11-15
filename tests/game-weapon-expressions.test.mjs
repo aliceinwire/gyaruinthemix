@@ -125,9 +125,16 @@ test('gestures freeze outside play and never leak into checkpoints or new equipm
   assert.ok(save);
   assert.doesNotMatch(JSON.stringify(save), /crewWeapon|_crewWeapon/);
   assert.equal(restoreNightfallSave(save).crewWeaponGesture, null);
-  assert.equal(chooseStartingWeapon(fresh, 'phone'), true);
+  assert.equal(
+    chooseStartingWeapon(fresh, 'phone', {
+      completionPoints: 0,
+      ownedStartingWeapons: ['phone'],
+    }),
+    true,
+  );
   assert.equal(fresh.crewWeaponGesture, null);
   const club = createState({
+    startingWeapon: 'heart',
     mode: 'survival',
     survivalDay: '2026-10-23',
     routeIndex: 3,

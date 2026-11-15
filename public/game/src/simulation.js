@@ -7,7 +7,7 @@ import { littleFindAt } from './street-culture.js';
 import { createRunBuild, normalizeRunBuild, getBuildModifiers, routeMissionProgress, settleRouteReward } from './run-build.js';
 import { normalizeRpg, recordRpgEvent, openRpgDraft } from './tour-rpg.js';
 import { JOURNEY_STAGE_COUNT, getJourneyChoices, getJourneyNode, createJourneyProgress, chooseJourneyNode, completeJourneyNode, restoreJourneyProgress } from './journey.js';
-import { normalizeGarage, serializeGarage, applyCarStats } from "./garage.js";
+import { normalizeGarage, serializeGarage, applyCarStats, canUseGarage, unlockStartingWeapon, STARTING_UPGRADE_CATALOG } from "./garage.js";
 import {
   normalizeEnvironment,
   environmentRules,
@@ -168,48 +168,10 @@ export const ROUTE_OPTIONS = Object.freeze({
     encounterSpacing: 77 * DRIVING_PACE.speedMultiplier,
   }),
 });
-export const UPGRADE_CATALOG = Object.freeze(
-  [
-    { id: "rushCooler", name: "ラッシュクーラー", description: "ラッシュ再使用 -0.75秒", basePrice: 130, maxLevel: 6 },
-    { id: "heartReach", name: "ワイドハート", description: "ハートの届く幅と高さUP", basePrice: 150, maxLevel: 6 },
-    { id: "evRange", name: "EVキャッチ", description: "充電できる範囲 +10m", basePrice: 110, maxLevel: 6 },
-    {
-      id: "battery",
-      name: "バッテリーPLUS",
-      description: "容量 +30 / スラスター消費 -2毎秒",
-      basePrice: 120,
-      maxLevel: 6,
-    },
-    {
-      id: "hearts",
-      name: "ハート連射",
-      description: "ハートの発射間隔を短縮",
-      basePrice: 140,
-      maxLevel: 6,
-    },
-    {
-      id: "charger",
-      name: "急速チャージ",
-      description: "EV充電 +18毎秒",
-      basePrice: 100,
-      maxLevel: 6,
-    },
-    {
-      id: "armor",
-      name: "タフかわボディ",
-      description: "耐久上限 +25 / その場で耐久 +25",
-      basePrice: 160,
-      maxLevel: 6,
-    },
-    {
-      id: "repair",
-      name: "ボディリペア",
-      description: "耐久を45回復",
-      basePrice: 70,
-      maxLevel: null,
-    },
-  ].map((item) => Object.freeze(item)),
-);
+export const UPGRADE_CATALOG = Object.freeze([
+  ...STARTING_UPGRADE_CATALOG,
+  Object.freeze({ id: "repair", name: "ボディリペア", description: "耐久を45回復", basePrice: 70, maxLevel: null }),
+]);
 export const CONSTANTS = Object.freeze({
   PLAYER_X,
   METERS_TO_PIXELS,
@@ -391,7 +353,7 @@ function restoreSnapshot(state, saved) {
 export function createState({
   mode = "story",
   survivalDay = "",
-  startingWeapon = "heart",
+  startingWeapon = null,
   routeIndex = 0,
   routeOption = "scenic",
   seed = 175,
@@ -539,8 +501,9 @@ export function createState({
   return state;
 }
 /** Starting equipment is chosen once in the garage, before the run begins. */
-export function chooseStartingWeapon(state, id) {
-  if (!isSurvival(state) || !SURVIVAL_STARTERS.some(item => item.id === id) || state.status !== "playing" || state.campaignStarted || state.routeIndex !== 0 || state.distance !== 0 || state.elapsed !== 0 || state.survival.level !== 0 || state.survival.xp !== 0) return false;
+export function chooseStartingWeapon(state, id, meta = null) {
+  if (!isSurvival(state) || !(id === null || SURVIVAL_STARTERS.some(item => item.id === id)) || !canUseGarage(state) || state.survival.level !== 0 || state.survival.xp !== 0) return false;
+  if (id !== null && !unlockStartingWeapon(state, meta, id)) return false;
   state.survival = { ...createSurvival(state.survival.day, id), recordEligible: state.survival.recordEligible !== false, assisted: state.survival.assisted === true, musicDriven: state.survival.musicDriven === true, musicVersion: state.survival.musicVersion };
   state.projectiles = [];
   state.shotCooldown = 0;
@@ -936,25 +899,21 @@ export function availableCarUpgrades(state) {
   return UPGRADE_CATALOG.filter(item => !isSurvival(state) || state.survival.upgrades.heart > 0 || !['hearts', 'heartReach'].includes(item.id));
 }
 export function upgradePrice(state, id) {
+  if (id !== "repair") return null;
   const item = availableCarUpgrades(state).find((upgrade) => upgrade.id === id);
   if (!item) return null;
   const level = state.upgrades[id] ?? 0;
   if (item.maxLevel !== null && level >= item.maxLevel) return null;
   return item.basePrice * (level + 1);
 }
-/** Current-car upgrades and repairs spend campaign coins at club stops only. */
+/** Roadside coins pay for repairs only. Hardware belongs to the starting garage. */
 export function buyUpgrade(state, id) {
-  if (state.status !== "won") return false;
+  if (id !== "repair" || state.status !== "won" || !state.campaignStarted) return false;
   const price = upgradePrice(state, id);
-  if (price === null || !Number.isFinite(state.money) || state.money < price) return false;
-  if (id === "repair" && state.integrity >= state.integrityCapacity) return false;
+  if (price === null || !Number.isSafeInteger(state.money) || state.money < price) return false;
+  if (state.integrity >= state.integrityCapacity) return false;
   state.money -= price;
-  if (id === "repair") state.integrity = Math.min(state.integrityCapacity, state.integrity + 45);
-  else {
-    state.upgrades[id] = (state.upgrades[id] ?? 0) + 1;
-    stats(state);
-    if (id === "armor") state.integrity = Math.min(state.integrityCapacity, state.integrity + 25);
-  }
+  state.integrity = Math.min(state.integrityCapacity, state.integrity + 45);
   emit(state, "purchase", {
     upgrade: id,
     price,

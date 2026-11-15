@@ -31,6 +31,7 @@ import { getRoadCue } from '../public/game/src/road-feedback.js';
 
 const fresh = (options = {}) =>
   createState({
+    startingWeapon: 'heart',
     mode: 'survival',
     seed: 175,
     runId: 'playability-175',
@@ -87,7 +88,13 @@ test('assisted classification survives turning help off, changing starters, chec
   setSurvivalAssistance(state, true);
   setSurvivalAssistance(state, false);
   assert.equal(state.assistMode, false);
-  assert.equal(chooseStartingWeapon(state, 'cassette'), true);
+  assert.equal(
+    chooseStartingWeapon(state, 'cassette', {
+      completionPoints: 0,
+      ownedStartingWeapons: ['cassette'],
+    }),
+    true,
+  );
   changeRouteBeforeStart(state, 'express');
   const restored = restoreNightfallSave(
     JSON.stringify(exportNightfallSave(state)),

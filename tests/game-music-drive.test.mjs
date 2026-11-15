@@ -33,6 +33,7 @@ import { getRoadCue } from '../public/game/src/road-feedback.js';
 
 const fresh = (options = {}) =>
   createState({
+    startingWeapon: 'heart',
     mode: 'survival',
     survivalDay: '2026-10-24',
     seed: 175,
@@ -333,7 +334,13 @@ test('maximum music-assisted rush speed retains the authored reaction window', (
 test('default music records stay classified through silence, starter changes, checkpoint reload and the next road', () => {
   const state = fresh();
   suspendMusicDrive(state);
-  assert.equal(chooseStartingWeapon(state, 'cassette'), true);
+  assert.equal(
+    chooseStartingWeapon(state, 'cassette', {
+      completionPoints: 0,
+      ownedStartingWeapons: ['cassette'],
+    }),
+    true,
+  );
   changeRouteBeforeStart(state, 'express');
   const restored = restoreNightfallSave(
     JSON.stringify(exportNightfallSave(state)),

@@ -44,7 +44,7 @@ function actor(state, id, distance, hp = 10, extra = {}) {
 
 test('all seven weapons gain something at each of six levels without lowering another stat', () => {
   assert.equal(SURVIVAL_WEAPONS.length, 7);
-  assert.equal(SURVIVAL_MAX_LEVEL, 77);
+  assert.equal(SURVIVAL_MAX_LEVEL, 78);
   for (const item of SURVIVAL_WEAPONS) {
     assert.equal(item.maxLevel, 6);
     const state = quiet(item.id);

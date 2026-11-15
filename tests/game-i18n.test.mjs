@@ -117,7 +117,11 @@ test('every survival item and generated effect is translated, including six-leve
     if (item.description) messages.add(item.description);
     if (item.role) messages.add(item.role);
   }
-  const state = createState({ mode: 'survival', seed: 175 });
+  const state = createState({
+    startingWeapon: 'heart',
+    mode: 'survival',
+    seed: 175,
+  });
   for (let level = 0; level < 6; level++) {
     state.survival.upgrades = Object.fromEntries(
       SURVIVAL_UPGRADES.map((item) => [

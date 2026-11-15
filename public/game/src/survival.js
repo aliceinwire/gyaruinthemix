@@ -36,7 +36,8 @@ export const SURVIVAL_UPGRADES = Object.freeze([
 export const SURVIVAL_WEAPONS = Object.freeze(SURVIVAL_UPGRADES.filter(item => item.kind === 'weapon'));
 export const SURVIVAL_STARTERS = SURVIVAL_WEAPONS;
 const AREA_WEAPONS = SURVIVAL_WEAPONS.filter(item => item.id !== 'heart');
-export const SURVIVAL_MAX_LEVEL = SURVIVAL_UPGRADES.reduce((sum, item) => sum + item.maxLevel, 0) - 1;
+export const SURVIVAL_MAX_LEVEL = SURVIVAL_UPGRADES.reduce((sum, item) => sum + item.maxLevel, 0);
+const levelLimit = survival => SURVIVAL_MAX_LEVEL - (survival.startingWeapon === null ? 0 : 1);
 export const SURVIVAL_EVOLUTIONS = Object.freeze([
   { id: 'heartstorm', name: 'ハートストーム', weapon: 'heart', support: 'relay' },
   { id: 'flashmob', name: 'フラッシュモブ', weapon: 'flash', support: 'battery' },
@@ -55,9 +56,9 @@ export function dailySurvival(date = new Date()) {
   const day = new Date(date.getTime() + 9 * 3600000).toISOString().slice(0, 10);
   return { day, seed: hash(`night-survival:${SURVIVAL_VERSION}:${day}`) };
 }
-export function createSurvival(day = '', startingWeapon = 'heart') {
-  const weapon = SURVIVAL_STARTERS.some(item => item.id === startingWeapon) ? startingWeapon : 'heart';
-  return { version: SURVIVAL_VERSION, recordEligible: true, assisted: false, musicDriven: true, musicVersion: MUSIC_RULES_VERSION, day, startingWeapon: weapon, xp: 0, level: 0, upgrades: { [weapon]: 1 }, evolutions: [],
+export function createSurvival(day = '', startingWeapon = null) {
+  const weapon = SURVIVAL_STARTERS.some(item => item.id === startingWeapon) ? startingWeapon : null;
+  return { version: SURVIVAL_VERSION, recordEligible: true, assisted: false, musicDriven: true, musicVersion: MUSIC_RULES_VERSION, day, startingWeapon: weapon, xp: 0, level: 0, upgrades: weapon === null ? {} : { [weapon]: 1 }, evolutions: [],
     quizRoads: [], heat: 0, fever: 0, sinceHit: 0, seconds: 0, wave: 0, waveStats: Array.from({ length: 6 }, () => ({ kills: 0, hits: 0 })), settledWaves: [],
     cleanWaves: 0, kills: 0, elites: 0, bestMultiplier: 1, gems: [], receipts: [],
     flashClock: 0, vinylClock: 0, bassClock: 0, phoneClock: 0, cdClock: 0, cassetteClock: 0, cassetteLoops: [], echoClock: 0, echoPending: null, bestNotified: false };
@@ -65,7 +66,7 @@ export function createSurvival(day = '', startingWeapon = 'heart') {
 /** Only durable run progress crosses the between-road save boundary. */
 export function normalizeSurvivalSave(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value) || ![2, 3, 4, SURVIVAL_VERSION].includes(value.version) ||
-      !/^\d{4}-\d{2}-\d{2}$/.test(value.day) || !SURVIVAL_STARTERS.some(item => item.id === value.startingWeapon) ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(value.day) || !(value.startingWeapon === null && value.version === SURVIVAL_VERSION || SURVIVAL_STARTERS.some(item => item.id === value.startingWeapon)) ||
       !value.upgrades || typeof value.upgrades !== 'object' || Array.isArray(value.upgrades)) return null;
   const date = new Date(`${value.day}T00:00:00Z`);
   if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== value.day) return null;
@@ -79,7 +80,7 @@ export function normalizeSurvivalSave(value) {
   if (!validMusicVersion(value)) return null;
   result.musicVersion = musicVersion(result.musicDriven ? value : result);
   result.upgrades = {};
-  let savedLevel = -1;
+  let savedLevel = value.startingWeapon === null ? 0 : -1;
   for (const item of SURVIVAL_UPGRADES) {
     const level = value.upgrades[item.id] ?? 0;
     const legacy = value.version < 4;
@@ -88,8 +89,8 @@ export function normalizeSurvivalSave(value) {
     // Old levels 1 / 2 / 3 retain comparable power at levels 1 / 3 / 6.
     if (level) result.upgrades[item.id] = legacy && item.kind === 'weapon' ? [0, 1, 3, 6][level] : level;
   }
-  if (!result.upgrades[value.startingWeapon]) return null;
-  result.level = Object.values(result.upgrades).reduce((sum, level) => sum + level, 0) - 1;
+  if (value.startingWeapon !== null && !result.upgrades[value.startingWeapon]) return null;
+  result.level = Object.values(result.upgrades).reduce((sum, level) => sum + level, 0) - (value.startingWeapon === null ? 0 : 1);
   if (value.level !== savedLevel || !Number.isFinite(value.xp) || value.xp < 0) return null;
   result.xp = Math.min(1e8, value.xp);
   if (value.quizRoads !== undefined && (!Array.isArray(value.quizRoads) || value.quizRoads.some(road => !Number.isInteger(road) || road < 1 || road > 11 || road % 2 !== 1))) return null;
@@ -222,7 +223,7 @@ export function queueSurvivalEcho(state, target, damage, bypassGuard = false) {
 export function survivalOffers(state) {
   if (!isSurvival(state)) return [];
   const s = state.survival;
-  if (s.level >= SURVIVAL_MAX_LEVEL || s.xp < survivalXpCost(s.level)) return [];
+  if (s.level >= levelLimit(s) || s.xp < survivalXpCost(s.level)) return [];
   const pool = SURVIVAL_UPGRADES.filter(item => (s.upgrades[item.id] || 0) < item.maxLevel && (item.id !== 'relay' || s.upgrades.heart > 0));
   // A separate seeded shuffle keeps an open draft stable without reserving slots
   // for equipped weapons or recipe ingredients, or consuming the road RNG.
@@ -257,7 +258,7 @@ export function survivalView(state) {
   if (!isSurvival(state)) return null;
   const s = state.survival, cost = survivalXpCost(s.level);
   return { enabled: true, styleName: 'NIGHTFALL TOUR', rank: s.level + 1, xp: s.xp,
-    nextXp: s.level >= SURVIVAL_MAX_LEVEL ? null : cost, progress: s.level >= SURVIVAL_MAX_LEVEL ? 1 : Math.min(1, s.xp / cost),
+    nextXp: s.level >= levelLimit(s) ? null : cost, progress: s.level >= levelLimit(s) ? 1 : Math.min(1, s.xp / cost),
     perks: Object.entries(s.upgrades), offers: survivalOffers(state), synergy: [] };
 }
 export function openSurvivalDraft(state) {

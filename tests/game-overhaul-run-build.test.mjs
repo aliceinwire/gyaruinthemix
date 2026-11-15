@@ -14,7 +14,7 @@ import {
   routeMissionProgress,
   settleRouteReward,
 } from '../public/game/src/run-build.js';
-import { CAR_CATALOG } from '../public/game/src/garage.js';
+import { CAR_CATALOG, createMetaProgress } from '../public/game/src/garage.js';
 import { getJourneyChoices } from '../public/game/src/journey.js';
 
 const route = (leg = 0, kind = 'ev', seed = 175) =>
@@ -72,7 +72,7 @@ function next(target, leg, kind = 'ev') {
   return result;
 }
 
-// The model is deliberately independent from rendering and from permanent progression.
+// The model is independent from rendering; purchases use persisted garage progression.
 test('catalog has three synergistic families with immutable readable effects and previews', () => {
   assert.equal(RUN_MOD_CATALOG.length, 9);
   assert.equal(RUN_BUILD_CAPACITY, 4);
@@ -83,8 +83,8 @@ test('catalog has three synergistic families with immutable readable effects and
       [1, 2, 3],
     );
     assert.deepEqual(
-      items.map((item) => item.minLeg),
-      [0, 2, 5],
+      items.map((item) => item.basePrice),
+      [1, 2, 3],
     );
     assert.equal(items[0].requires, null);
     assert.equal(items[1].requires, items[0].id);
@@ -194,26 +194,25 @@ test('JSON round trips preserve purchases, rewards and mission progress without 
   assert.deepEqual(contextRestored, saved);
 });
 
-test('initial three offers are deterministic, current-car bound, and never consume simulation RNG', () => {
+test('starting offers are deterministic, current-car bound and do not consume simulation RNG', () => {
+  const meta = createMetaProgress({ completionPoints: 20 });
   for (const car of CAR_CATALOG) {
-    const target = state({ carId: car.id });
+    const target = createState({
+      garage: { owned: [car.id], equipped: car.id },
+    });
     target._rng = 777;
-    const before = JSON.stringify(target);
-    const offers = getBuildOffers(target);
+    const before = JSON.stringify(target),
+      offers = getBuildOffers(target, meta);
     assert.equal(offers.length, 3);
     assert.equal(new Set(offers.map((item) => item.family)).size, 3);
-    assert.deepEqual(
-      getBuildOffers(JSON.parse(JSON.stringify(target))),
-      offers,
-    );
+    assert.deepEqual(getBuildOffers(JSON.parse(before), meta), offers);
     assert.equal(JSON.stringify(target), before);
     for (const item of offers) {
       assert.equal(item.carId, car.id);
-      assert.match(item.preview, new RegExp(car.name));
       assert.equal(item.available, true);
     }
     offers[0].effects.heartPierce = 999;
-    assert.notEqual(getBuildOffers(target)[0].effects.heartPierce, 999);
+    assert.notEqual(getBuildOffers(target, meta)[0].effects.heartPierce, 999);
   }
   for (const bad of [
     null,
@@ -222,102 +221,88 @@ test('initial three offers are deterministic, current-car bound, and never consu
     { routeIndex: Infinity },
     { routeIndex: -1 },
   ])
-    assert.deepEqual(getBuildOffers(bad), []);
+    assert.deepEqual(getBuildOffers(bad, meta), []);
 });
 
-test('rare offers escalate gradually and mastered/locked families do not occupy choices', () => {
-  const target = install(state(), ['heart-pierce']);
+test('module tiers require the previous unlock and can all be prepared before departure', () => {
+  const target = createState(),
+    meta = createMetaProgress({ completionPoints: 10 });
+  assert.equal(buyRunMod(target, 'heart-chain', null, meta), false);
+  for (const id of ['heart-pierce', 'heart-chain', 'heart-recycle']) {
+    assert.equal(buyRunMod(target, id, null, meta), true);
+    assert.ok(meta.ownedRunMods.includes(id));
+  }
+  assert.equal(meta.completionPoints, 4);
   assert.equal(
-    getBuildOffers(target).some((item) => item.family === 'relay'),
-    false,
-  );
-  target.routeIndex = 2;
-  assert.equal(
-    getBuildOffers(target).find((item) => item.family === 'relay').id,
-    'heart-chain',
-  );
-  install(target, ['heart-pierce', 'heart-chain']);
-  assert.equal(
-    getBuildOffers(target).some((item) => item.family === 'relay'),
-    false,
-  );
-  target.routeIndex = 5;
-  assert.equal(
-    getBuildOffers(target).find((item) => item.family === 'relay').id,
-    'heart-recycle',
-  );
-  install(target, ['heart-pierce', 'heart-chain', 'heart-recycle']);
-  assert.equal(
-    getBuildOffers(target).some((item) => item.family === 'relay'),
+    getBuildOffers(target, meta).some((item) => item.family === 'relay'),
     false,
   );
 });
 
-test('purchases spend coins once at a stop, not points, and never change the car', () => {
-  const target = state(),
-    offer = getBuildOffers(target).find((item) => item.id === 'heart-pierce');
-  target.money = offer.price;
-  assert.equal(buyRunMod(target, offer.id), true);
-  assert.equal(target.money, 0);
-  assert.equal(target.completionPoints, 7);
-  assert.equal(target.garage.equipped, 'mix-175');
-  assert.deepEqual(target.runBuild.mods, ['heart-pierce']);
-  assert.deepEqual(target.runBuild.purchasedLegs, [0]);
+test('module purchases spend GP once, preserve coins and are reusable in a new tour', () => {
+  const target = createState(),
+    meta = createMetaProgress({ completionPoints: 1 });
   target.money = 9999;
-  for (const id of ['heart-pierce', 'charge-shield', '__proto__', null, {}])
-    assert.equal(buyRunMod(target, id), false);
+  assert.equal(buyRunMod(target, 'heart-pierce', null, meta), true);
+  assert.equal(meta.completionPoints, 0);
   assert.equal(target.money, 9999);
+  assert.deepEqual(target.runBuild.mods, ['heart-pierce']);
+  const before = structuredClone(target);
+  assert.equal(buyRunMod(target, 'heart-pierce', null, meta), false);
+  assert.deepEqual(target, before);
+  const second = createState();
   assert.equal(
-    target.events.filter((event) => event.type === 'run-mod-purchase').length,
-    1,
+    buyRunMod(
+      second,
+      'heart-pierce',
+      null,
+      createMetaProgress(JSON.stringify(meta)),
+    ),
+    true,
   );
-  const second = next(target, 2);
-  assert.equal(buyRunMod(second, 'heart-chain'), true);
-  assert.equal(getBuildModifiers(second).heartChain, 1);
+  assert.equal(getBuildModifiers(second).heartPierce, 1);
 });
 
-test('purchase phase, startup, finale and wallet validation fail without mutation', () => {
-  const variants = [
-    { status: 'playing' },
+test('mid-tour module purchases and malformed point wallets fail without mutation', () => {
+  for (const variant of [
+    { status: 'won' },
     { status: 'lost' },
-    { status: 'quiz' },
-    { status: 'shop' },
-    { campaignStarted: false },
+    { campaignStarted: true },
     { campaignComplete: true },
-    { money: Infinity },
-    { money: NaN },
-    { money: '9999' },
-    { money: -1 },
-    { money: 0 },
-    { money: 999.5 },
-    { money: 1e100 },
+    { distance: 1 },
+    { elapsed: 1 },
     { routeIndex: 11 },
-  ];
-  for (const variant of variants) {
-    const target = Object.assign(state(), variant),
-      before = structuredClone(target);
-    assert.equal(
-      buyRunMod(target, 'heart-pierce'),
-      false,
-      JSON.stringify(variant),
-    );
-    assert.deepEqual(target, before);
+  ]) {
+    const target = Object.assign(createState(), variant),
+      meta = createMetaProgress({ completionPoints: 20 });
+    const before = structuredClone({ target, meta });
+    assert.equal(buyRunMod(target, 'heart-pierce', null, meta), false);
+    assert.deepEqual({ target, meta }, before);
+  }
+  for (const points of [Infinity, NaN, '9999', -1, 0, 1.5]) {
+    const target = createState(),
+      meta = { completionPoints: points };
+    const before = structuredClone({ target, meta });
+    assert.equal(buyRunMod(target, 'heart-pierce', null, meta), false);
+    assert.deepEqual({ target, meta }, before);
   }
 });
 
-test('four slots force an explicit paid replacement and cannot refund or repurchase acquired mods', () => {
-  const target = install(state({ leg: 5 }), [
+test('four slots require explicit replacement and an owned module can be equipped again for free', () => {
+  const target = createState(),
+    meta = createMetaProgress({ completionPoints: 20 });
+  for (const id of [
     'heart-pierce',
     'heart-chain',
     'charge-shield',
     'air-control',
-  ]);
-  const offer = getBuildOffers(target).find(
-      (item) => item.id === 'heart-recycle',
-    ),
-    money = target.money;
+  ])
+    assert.equal(buyRunMod(target, id, null, meta), true);
+  const offer = getBuildOffers(target, meta).find(
+    (item) => item.id === 'heart-recycle',
+  );
   assert.equal(offer.requiresReplacement, true);
-  assert.equal(offer.installedMods.length, 4);
+  const points = meta.completionPoints;
   for (const replaceId of [
     null,
     'invented',
@@ -325,25 +310,17 @@ test('four slots force an explicit paid replacement and cannot refund or repurch
     {},
     'constructor',
   ]) {
-    assert.equal(buyRunMod(target, offer.id, replaceId), false);
-    assert.equal(target.money, money);
+    assert.equal(buyRunMod(target, offer.id, replaceId, meta), false);
+    assert.equal(meta.completionPoints, points);
   }
-  assert.equal(buyRunMod(target, offer.id, 'heart-pierce'), true);
-  assert.equal(target.money, money - offer.price);
-  assert.equal(target.runBuild.mods.length, 4);
-  assert.equal(target.runBuild.mods.includes('heart-pierce'), false);
-  assert.equal(target.runBuild.acquiredIds.includes('heart-pierce'), true);
+  assert.equal(buyRunMod(target, offer.id, 'heart-pierce', meta), true);
+  assert.equal(meta.completionPoints, points - offer.price);
   assert.equal(getBuildModifiers(target).heartPierce, 0);
   assert.equal(getBuildModifiers(target).conversionEnergy, 3);
-  const resumed = next(target, 6);
-  assert.equal(buyRunMod(resumed, 'heart-pierce', 'heart-recycle'), false);
-  assert.equal(
-    getBuildOffers(resumed).some((item) => item.family === 'relay'),
-    false,
-  );
-  assert.equal(buyRunMod(resumed, 'charged-heart', 'heart-chain'), true);
-  assert.equal(getBuildModifiers(resumed).heartChain, 0);
-  assert.equal(getBuildModifiers(resumed).chargedHeartBonus, 1);
+  assert.equal(buyRunMod(target, 'heart-pierce', 'heart-recycle', meta), true);
+  assert.equal(meta.completionPoints, points - offer.price);
+  assert.equal(getBuildModifiers(target).heartPierce, 1);
+  assert.equal(target.runBuild.mods.length, 4);
 });
 
 test('each installed family exposes real complementary mechanics, not unconditional base stat bloat', () => {
@@ -544,7 +521,7 @@ test('missed missions are settled with zero, wrong nodes and corrupt clears neve
 
 test('retry checkpoint drops in-road mission progress while preserving previous rewards and choices', () => {
   const prior = state();
-  buyRunMod(prior, 'heart-pierce');
+  install(prior, ['heart-pierce']);
   prior.runBuild.settledLegs = [0];
   const current = next(prior, 1, 'event');
   current.status = 'playing';
@@ -570,7 +547,7 @@ test('retry checkpoint drops in-road mission progress while preserving previous 
   assert.equal(current.money, prior.money);
   assert.deepEqual(current.runBuild.mods, ['heart-pierce']);
   assert.deepEqual(current.runBuild.settledLegs, [0]);
-  assert.deepEqual(current.runBuild.purchasedLegs, [0]);
+  assert.deepEqual(current.runBuild.purchasedLegs, []);
 });
 
 import {
@@ -704,9 +681,11 @@ test('real simulation air family changes descent/drain, pulses at rush start, an
 });
 
 test('actual save/retry/next-road checkpoints retain builds but cannot farm mission or arrival rewards', () => {
-  const target = actualWin(createState());
+  const target = createState(),
+    meta = createMetaProgress({ completionPoints: 1 });
+  assert.equal(buyRunMod(target, 'heart-pierce', null, meta), true);
+  actualWin(target);
   target.money = 1000;
-  assert.equal(buyRunMod(target, 'heart-pierce'), true);
   const atStop = restoreCampaignSave(exportCampaignSave(target));
   assert.ok(atStop);
   assert.deepEqual(atStop.runBuild, target.runBuild);
@@ -727,7 +706,7 @@ test('actual save/retry/next-road checkpoints retain builds but cannot farm miss
   assert.equal(atStop.money, stopMoney);
   assert.equal(getRouteMission(atStop).progress.chargeSeconds, 0);
   assert.deepEqual(atStop.runBuild.mods, ['heart-pierce']);
-  assert.deepEqual(atStop.runBuild.purchasedLegs, [0]);
+  assert.deepEqual(atStop.runBuild.purchasedLegs, []);
   const replayed = restoreCampaignSave(exportCampaignSave(atStop));
   assert.deepEqual(replayed.runBuild, atStop.runBuild);
   emptyRoad(replayed);

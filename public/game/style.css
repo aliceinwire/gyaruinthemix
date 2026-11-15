@@ -158,7 +158,7 @@ body:not([data-screen="playing"]) .road-status { display: none; }
 .style-options button small, .style-options button span, .style-options button p { margin: 0; font-size: 12px; font-weight: 450; }
 .style-options button[aria-pressed="true"], .style-options button.selected { border-color: var(--pink); background: #352b42; }
 .garage-label { font-size: 24px; margin-bottom: 8px; }
-#car-select-wallet, #garage-wallet { color: var(--gold); font-size: 14px; }
+#car-select-wallet { color: var(--gold); font-size: 14px; }
 .car-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-block: 20px; }
 .car-card, .shop-item, .build-card { display: flex; flex-direction: column; gap: 11px; min-width: 0; padding: 18px; border: 1px solid #4e5a70; border-radius: 9px; background: #182234; }
 .car-card.equipped { border-color: var(--pink); box-shadow: inset 0 3px var(--pink); }
@@ -449,3 +449,7 @@ body[data-music-open="true"] .music-panel { position: fixed; inset: 0; z-index: 
   *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
 }
 body[data-reduced-motion="true"] *, body[data-reduced-motion="true"] *::before, body[data-reduced-motion="true"] *::after { transition: none !important; animation: none !important; }
+
+.starting-parts { margin-block: 28px; }
+.pit-service { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-block: 16px; }
+.pit-service { justify-content: space-between; padding: 12px; border: 1px solid var(--line); border-radius: 8px; }

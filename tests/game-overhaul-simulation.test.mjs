@@ -7,15 +7,20 @@ import {
   retryRoute,
   answerQuiz,
   buyUpgrade,
-  upgradePrice,
   ROUTES,
   ROUTE_OPTIONS,
 } from '../public/game/src/simulation.js';
 
+import {
+  createMetaProgress,
+  buyStartingUpgrade,
+} from '../public/game/src/garage.js';
 function purchase(s, id) {
-  s.status = 'won';
-  s.money = 9999;
-  return buyUpgrade(s, id);
+  const meta = createMetaProgress({
+    completionPoints: 10,
+    upgrades: s.upgrades,
+  });
+  return buyStartingUpgrade(s, meta, id);
 }
 function emptyRoad(options = {}) {
   const s = createState(options);
@@ -180,22 +185,15 @@ test('zero integrity loses and terminal simulation freezes', () => {
   update(s, { boost: true }, 1);
   assert.equal(s.distance, distance);
 });
-test('club coins buy current-car upgrades and repairs only at stops', () => {
+test('roadside coins buy repairs and can never buy hardware', () => {
   const s = emptyRoad();
   s.money = 9999;
   for (const id of ['repair', 'battery', 'hearts', 'charger', 'armor'])
     assert.equal(buyUpgrade(s, id), false);
   s.status = 'won';
-  assert.equal(upgradePrice(s, 'battery'), 120);
-  assert.equal(buyUpgrade(s, 'battery'), true);
-  assert.equal(s.energyCapacity, 130);
-  assert.equal(s.energy, 100);
-  assert.equal(upgradePrice(s, 'battery'), 240);
-  for (let level = 2; level <= 6; level++)
-    assert.equal(buyUpgrade(s, 'battery'), true);
-  assert.equal(upgradePrice(s, 'battery'), null);
-  assert.equal(buyUpgrade(s, 'battery'), false);
-  assert.equal(buyUpgrade(s, 'unknown'), false);
+  s.campaignStarted = true;
+  for (const id of ['battery', 'hearts', 'charger', 'armor', 'unknown'])
+    assert.equal(buyUpgrade(s, id), false);
   assert.equal(buyUpgrade(s, 'repair'), false);
   s.integrity = 40;
   const money = s.money;
