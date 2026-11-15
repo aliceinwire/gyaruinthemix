@@ -149,6 +149,7 @@ export async function checkStartingGarage(browser, { root, csp }) {
     assert.equal((await snapshot()).energyCapacity, 130);
     assert.deepEqual((await snapshot()).runBuild.mods, ['charge-shield']);
 
+    const layoutFaults = [];
     for (const [width, height] of [
       [320, 740],
       [390, 667],
@@ -184,14 +185,17 @@ export async function checkStartingGarage(browser, { root, csp }) {
               .map((el) => el.id || el.textContent);
           });
           await capture(`${width}-${language}-${index}`);
-          assert.deepEqual(
-            faults,
-            [],
-            `${width}x${height}/${language}/tab${index}`,
-          );
+          if (faults.length)
+            layoutFaults.push({
+              viewport: `${width}x${height}`,
+              language,
+              tab: index,
+              faults,
+            });
         }
       }
     }
+    assert.deepEqual(layoutFaults, []);
     beginCampaign(state);
     await load(exportNightfallSave(state), meta);
     assert.equal(await page.locator('#car-select').isVisible(), false);
