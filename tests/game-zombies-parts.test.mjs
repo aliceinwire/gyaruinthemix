@@ -3,8 +3,6 @@ import assert from 'node:assert/strict';
 import {
   createState,
   update,
-  buyUpgrade,
-  upgradePrice,
   UPGRADE_CATALOG,
   exportCampaignSave,
   restoreCampaignSave,
@@ -12,6 +10,10 @@ import {
   restoreNightfallSave,
 } from '../public/game/src/simulation.js';
 import {
+  createMetaProgress,
+  STARTING_UPGRADE_CATALOG,
+  buyStartingUpgrade,
+  startingUpgradePrice,
   CAR_CATALOG,
   getCarStats,
   restoreMetaProgress,
@@ -43,6 +45,7 @@ import {
 
 function fresh(options = {}) {
   return createState({
+    startingWeapon: 'heart',
     mode: 'survival',
     seed: 175,
     survivalDay: '2026-10-26',
@@ -210,20 +213,20 @@ test('both zombie sprites visibly change into distinct gyaru with bounded drawin
 
 test('all car parts can be purchased through six, stop at six, and survive checkpoints', () => {
   const state = quiet({ mode: 'story' });
-  state.status = 'won';
-  state.distance = state.routeLength;
+  const meta = createMetaProgress({ completionPoints: 1000 });
   state.money = 100000;
-  for (const part of UPGRADE_CATALOG.filter((item) => item.maxLevel !== null)) {
+  for (const part of STARTING_UPGRADE_CATALOG) {
     assert.equal(part.maxLevel, 6);
     for (let level = 1; level <= 6; level++) {
-      const money = state.money;
-      assert.equal(upgradePrice(state, part.id), part.basePrice * level);
-      assert.equal(buyUpgrade(state, part.id), true);
+      const points = meta.completionPoints;
+      assert.equal(startingUpgradePrice(meta, part.id), part.basePrice * level);
+      assert.equal(buyStartingUpgrade(state, meta, part.id), true);
       assert.equal(state.upgrades[part.id], level);
-      assert.equal(state.money, money - part.basePrice * level);
+      assert.equal(meta.completionPoints, points - part.basePrice * level);
+      assert.equal(state.money, 100000);
     }
-    assert.equal(upgradePrice(state, part.id), null);
-    assert.equal(buyUpgrade(state, part.id), false);
+    assert.equal(startingUpgradePrice(meta, part.id), null);
+    assert.equal(buyStartingUpgrade(state, meta, part.id), false);
   }
   const restored = restoreCampaignSave(exportCampaignSave(state));
   assert.deepEqual(restored.upgrades, state.upgrades);
@@ -234,7 +237,10 @@ test('all car parts can be purchased through six, stop at six, and survive check
       charger: level,
       armor: level,
     };
-    assert.deepEqual(restoreMetaProgress({ upgrades }).upgrades, upgrades);
+    assert.deepEqual(restoreMetaProgress({ upgrades }).upgrades, {
+      ...createMetaProgress().upgrades,
+      ...upgrades,
+    });
   }
   for (const car of CAR_CATALOG)
     for (const part of UPGRADE_CATALOG.filter((item) => item.maxLevel)) {

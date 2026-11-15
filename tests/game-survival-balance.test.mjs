@@ -205,7 +205,16 @@ test('parts and support choices cannot sell inactive heart-only effects', () => 
   }
   state.survival.upgrades.heart = 1;
   assert.ok(availableCarUpgrades(state).some((item) => item.id === 'hearts'));
-  assert.ok(getBuildOffers(state).some((item) => item.family === 'relay'));
+  assert.deepEqual(
+    getBuildOffers(state, createMetaProgress({ completionPoints: 10 })),
+    [],
+  );
+  const starting = quiet('heart');
+  assert.ok(
+    getBuildOffers(starting, createMetaProgress({ completionPoints: 10 })).some(
+      (item) => item.family === 'relay',
+    ),
+  );
 });
 
 test('survival support stacking respects advertised recovery caps', () => {
@@ -220,7 +229,7 @@ test('survival support stacking respects advertised recovery caps', () => {
   assert.equal(state.buildModifiers.conversionEnergy, 6);
 });
 
-test('legacy completion upgrades stay in story saves while new scored tours start stock', () => {
+test('permanent completion upgrades carry into story and survival tours', () => {
   const meta = createMetaProgress();
   meta.upgrades = { battery: 3, hearts: 3, charger: 3, armor: 3 };
   const story = createState(),
@@ -229,9 +238,9 @@ test('legacy completion upgrades stay in story saves while new scored tours star
   equipStartingCar(survival, meta, 'mix-175');
   assert.equal(story.integrityCapacity, 175);
   assert.equal(story.energyCapacity, 190);
-  assert.equal(survival.integrityCapacity, 100);
-  assert.equal(survival.energyCapacity, 100);
-  assert.equal(survival.shotInterval, 0.36);
+  assert.equal(survival.integrityCapacity, 175);
+  assert.equal(survival.energyCapacity, 190);
+  assert.equal(survival.shotInterval, story.shotInterval);
   assert.deepEqual(meta.upgrades, {
     battery: 3,
     hearts: 3,
@@ -414,7 +423,13 @@ test('changing a migrated garage starter cannot restore competitive eligibility'
   saved.survival.version = 2;
   const migrated = restoreNightfallSave(saved);
   assert.equal(migrated.survival.recordEligible, false);
-  assert.equal(chooseStartingWeapon(migrated, 'phone'), true);
+  assert.equal(
+    chooseStartingWeapon(migrated, 'phone', {
+      completionPoints: 0,
+      ownedStartingWeapons: ['phone'],
+    }),
+    true,
+  );
   assert.deepEqual(migrated.survival.upgrades, { phone: 1 });
   assert.equal(migrated.survival.recordEligible, false);
   assert.equal(

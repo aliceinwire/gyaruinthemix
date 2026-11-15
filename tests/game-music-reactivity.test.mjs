@@ -198,8 +198,16 @@ test('crew keep the same actions and event frames while only idle motion follows
 });
 
 test('music rendering cannot change an identical seeded run and reduced motion ignores the signal', () => {
-  const normal = createState({ mode: 'survival', seed: 'music-visuals' });
-  const reactive = createState({ mode: 'survival', seed: 'music-visuals' });
+  const normal = createState({
+    startingWeapon: 'heart',
+    mode: 'survival',
+    seed: 'music-visuals',
+  });
+  const reactive = createState({
+    startingWeapon: 'heart',
+    mode: 'survival',
+    seed: 'music-visuals',
+  });
   for (let frame = 0; frame < 90; frame++) {
     const input = { boost: frame < 30, rush: frame >= 45 && frame < 60 };
     update(normal, input, 1 / 60);
@@ -279,7 +287,11 @@ test('all weapon families react through presentation only, with neutral mute and
     energy: 0.8,
     bands: [1, 0.8, 0.8, 0.6, 0.6],
   };
-  const state = createState({ mode: 'survival', seed: 175 });
+  const state = createState({
+    startingWeapon: 'heart',
+    mode: 'survival',
+    seed: 175,
+  });
   for (const kind of [
     'flash',
     'vinyl',

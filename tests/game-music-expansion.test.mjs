@@ -34,6 +34,7 @@ import { selectCrewEvent } from '../public/game/src/crew-dialogue.js';
 
 const fresh = (options) =>
   createState({
+    startingWeapon: 'heart',
     mode: 'survival',
     survivalDay: '2026-10-25',
     seed: 175,
@@ -310,7 +311,10 @@ test('continuing a pilot checkpoint adopts default music rules without losing it
   assert.equal(resumed.survival.musicVersion, MUSIC_RULES_VERSION);
   assert.equal(resumed.survival.bestNotified, false);
   suspendMusicDrive(resumed);
-  chooseStartingWeapon(resumed, 'cassette');
+  chooseStartingWeapon(resumed, 'cassette', {
+    completionPoints: 0,
+    ownedStartingWeapons: ['cassette'],
+  });
   assert.equal(
     restoreNightfallSave(exportNightfallSave(resumed)).survival.musicVersion,
     MUSIC_RULES_VERSION,

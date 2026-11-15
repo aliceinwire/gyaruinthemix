@@ -32,11 +32,10 @@ export function installFrame() {
     [cars.querySelector('.section-heading'), cars.querySelector('.style-picker')],
     [cars.querySelector('.garage-label'), cars.querySelector('.section-note'), $('#car-garage')],
     [$('#starting-customization')],
-  ], ['1 / スタイル', '2 / くるま', '3 / カスタム']);
+    [cars.querySelector('.starting-parts')],
+    [cars.querySelector('.build-workshop')],
+  ], ['武器', 'くるま', 'カスタム', '基本パーツ', 'リミックス']);
   cars.append($('#car-select-wallet'), $('#car-save-warning'), $('#cars-ready'));
-  const garage = $('#garage-content');
-  pages(garage, [[garage.querySelector('.build-workshop')], [garage.querySelector(':scope > h3'), $('#shop')], [$('#arrival-summary'), $('#build-summary'), $('#build-note')]], ['リミックス', '基本パーツ', '旅の状態']);
-  garage.append($('#garage-wallet'), $('#shop-status'), $('#garage-done'));
   // Collections show one complete card at a time, with explicit navigation.
   for (const selector of ['#car-garage', '#shop', '#build-offers', '#draft-options']) {
     const list = $(selector);

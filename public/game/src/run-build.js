@@ -1,34 +1,14 @@
 import { applySurvivalModifiers, isSurvival } from './survival.js';
-/** Current-car tour builds and destination goals. No DOM, randomness, unlocks or new currency. */
-import { CAR_CATALOG, DEFAULT_CAR_ID } from './garage.js';
+/** Starting garage loadouts and destination goals. */
+import { CAR_CATALOG, DEFAULT_CAR_ID, canUseGarage, restoreMetaProgress } from './garage.js';
 import { getJourneyNode, JOURNEY_STAGE_COUNT } from './journey.js';
 import { getRpgModifiers } from './tour-rpg.js';
+import { FAMILIES, RUN_MOD_CATALOG } from './run-mod-catalog.js';
+export { RUN_MOD_CATALOG } from './run-mod-catalog.js';
 
 export const RUN_BUILD_VERSION = 1;
 export const RUN_BUILD_CAPACITY = 4;
 const MONEY_LIMIT = 1_000_000_000;
-const FAMILIES = Object.freeze([
-  Object.freeze({ id: 'relay', name: 'ハート連鎖', color: '#ff72bd', description: '貫通から連鎖へ。街の人波を味方にするで。' }),
-  Object.freeze({ id: 'guardian', name: '充電ガード', color: '#77f4e8', description: 'EVで守りを仕込んで、次の一発につなぐで。' }),
-  Object.freeze({ id: 'air', name: '空中ラッシュ', color: '#ffe091', description: '浮いてよけて、ラッシュで道を開こ。' }),
-]);
-const data = [
-  { id: 'heart-pierce', family: 'relay', tier: 1, name: 'つらぬきハート', description: 'ハートがさらに1か所まで貫通するで。スタイルや得意技の貫通にも足せるで。', preview: 'ハートの貫通数+1', effects: { heartPierce: 1 } },
-  { id: 'heart-chain', family: 'relay', tier: 2, name: 'となりもリレー', description: 'ハートが届いた場所から32m以内の1か所へ連鎖や。コーラスハートと組むと38m以内の2か所へ。', preview: '連鎖+1 / コーラス併用で2連鎖・38m', effects: { heartChain: 1, heartChainRange: 32 } },
-  { id: 'heart-recycle', family: 'relay', tier: 3, name: 'ときめき還元', description: '招待やシグナル復旧で電池+3や。ときめきリチャージと合わせたら+6や。', preview: 'ハートが届くたび電池+3 / 得意技と合算', effects: { conversionEnergy: 3 } },
-  { id: 'charge-shield', family: 'guardian', tier: 1, name: 'EVおまもり', description: 'EVで2秒充電したら、次の衝突1回をガードや。すでにガードがあれば充電時間を0.25秒短縮。', preview: 'EV充電2秒でガード / 併用はさらに−0.25秒', effects: { chargeShield: true, chargeShieldSeconds: 2 } },
-  { id: 'charged-heart', family: 'guardian', tier: 2, name: '満タンの一撃', description: '満充電で次に届く一撃の威力+1。自動武器のどれでも使えて、満タンアンプと合わせたら+2や。', preview: '満充電後、次に届く一撃は威力+1 / アンプ併用で+2', effects: { chargedHeartBonus: 1 } },
-  { id: 'shield-piercing', family: 'guardian', tier: 3, name: 'おまもり貫通', description: 'EVガードを持ってる間は敵のガードを無視して、ハートがさらに1体貫通や。EVおまもりと一緒に積んで、守りを残そ。', preview: 'EVガード保持中、敵のガードを無視・貫通+1', effects: { shieldPiercing: true } },
-  { id: 'air-control', family: 'air', tier: 1, name: 'ふわっと着地', description: '落ちる速さを35%抑えて、スラスター消費も15%節約や。高く飛ぶほど着地を見よ。', preview: '下降速度×0.65 / スラスター消費×0.85', effects: { descentMultiplier: .65, thrustDrainMultiplier: .85 } },
-  { id: 'rush-pulse', family: 'air', tier: 2, name: 'ラッシュ開花', description: 'ラッシュ開始で前45mに威力2のハート波。ベースドロップと組むと前75mに広がるで。', preview: '前45mへハート波 / ドロップ併用で75m', effects: { rushPulse: 45 } },
-  { id: 'combo-flight', family: 'air', tier: 3, name: '飛びこえチャージ', description: '障害物を空中でよけたら電池+4や。スタイルや得意技と合算、1回につき最大+8。', preview: '空中回避で電池+4 / 合算で最大+8', effects: { comboFlight: 4 } },
-];
-export const RUN_MOD_CATALOG = Object.freeze(data.map(item => Object.freeze({
-  ...item, minLeg: [0, 2, 5][item.tier - 1], rarity: ['basic', 'uncommon', 'rare'][item.tier - 1],
-  rarityLabel: ['ベーシック', '連携', 'レア'][item.tier - 1], basePrice: [210, 330, 450][item.tier - 1],
-  requires: item.tier === 1 ? null : data.find(other => other.family === item.family && other.tier === item.tier - 1).id,
-  effects: Object.freeze({ ...item.effects }),
-})));
 const BY_ID = new Map(RUN_MOD_CATALOG.map(item => [item.id, item]));
 const plain = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
@@ -108,11 +88,6 @@ export function getBuildModifiers(state) {
   }
   return effects;
 }
-function hash(value) {
-  let result = 2166136261;
-  for (const char of value) result = Math.imul(result ^ char.charCodeAt(0), 16777619) >>> 0;
-  return result;
-}
 function liveBuildModifiers(state) {
   const effects = getBuildModifiers(state);
   applySurvivalModifiers({ ...state, buildModifiers: effects });
@@ -137,45 +112,52 @@ function offerPreview(state, item, build) {
     'combo-flight': `空中回避の電池回復 +${before.comboFlight}→+${after.comboFlight}`,
   }[item.id];
 }
-/** Up to three stable, unlocked next-step choices. Mastered families never crowd out a choice. */
-export function getBuildOffers(state) {
-  if (!plain(state) || !legNumber(state.routeIndex)) return [];
+/** Owned modules can be equipped freely; each family's next tier costs gyaru points. */
+export function getBuildOffers(state, meta) {
+  const progress = restoreMetaProgress(meta);
+  if (!canUseGarage(state) || !progress) return [];
   const build = stateBuild(state), carId = carIdFrom(state), car = CAR_CATALOG.find(item => item.id === carId);
-  const rotation = hash(`${Number.isSafeInteger(state.seed) ? state.seed : 0}:${state.routeIndex}:${carId}`) % FAMILIES.length;
-  return FAMILIES.map((_, index) => FAMILIES[(index + rotation) % FAMILIES.length]).map(family => {
-    if (isSurvival(state) && !state.survival.upgrades.heart && family.id === 'relay') return null;
-    const familyMods = RUN_MOD_CATALOG.filter(item => item.family === family.id);
-    const item = familyMods.find(item => !build.acquiredIds.includes(item.id));
-    if (!item || state.routeIndex < item.minLeg) return null;
-    const price = item.basePrice + Math.floor(state.routeIndex / 3) * 10;
-    let reason = '';
-    if (state.routeIndex === JOURNEY_STAGE_COUNT - 1 || state.campaignComplete) reason = 'ツアー完走！ 次の旅で組み直そ';
-    else if (state.status !== 'won' || state.campaignStarted !== true) reason = '到着後のお店で選ぼ';
-    else if (build.purchasedLegs.includes(state.routeIndex)) reason = 'この到着地点では選択済みや';
-    else if (!validMoney(state.money) || state.money < price) reason = 'コインが足りへんで';
+  return RUN_MOD_CATALOG.filter(item => !build.mods.includes(item.id) &&
+    (!item.requires || progress.ownedRunMods.includes(item.requires)) &&
+    (!isSurvival(state) || state.survival.upgrades.heart || item.family !== 'relay')).map(item => {
+    const owned = progress.ownedRunMods.includes(item.id), price = owned ? 0 : item.basePrice;
+    const family = FAMILIES.find(family => family.id === item.family);
+    const available = Number.isSafeInteger(meta.completionPoints) && meta.completionPoints >= 0 && progress.completionPoints >= price;
     return { ...item, effects: { ...item.effects }, price, carId, carName: car.name,
-      familyName: family.name, color: family.color, mastered: false, owned: false,
+      familyName: family.name, color: family.color, owned,
       requiresReplacement: build.mods.length >= RUN_BUILD_CAPACITY,
       installedMods: build.mods.map(id => ({ id, name: BY_ID.get(id).name, preview: BY_ID.get(id).preview })),
-      available: reason === '', reason, preview: `${offerPreview(state, item, build)} / ${car.name}専用・今回の旅だけ${build.mods.length >= RUN_BUILD_CAPACITY ? '（交換するパーツの効果は外れる）' : ''}` };
-  }).filter(Boolean);
+      available, reason: available ? '' : 'ギャルポイントが足りへんで',
+      preview: offerPreview(state, item, { ...build, acquiredIds: progress.ownedRunMods }) };
+  });
 }
-/** Spend tour coins once at a cleared stop, never permanent completion points. */
-export function buyRunMod(state, id, replaceId = null) {
+/** Unlock once with GP, then equip or replace freely before the first departure. */
+export function buyRunMod(state, id, replaceId = null, meta = null) {
   if (typeof id !== 'string' || !BY_ID.has(id)) return false;
-  const offer = getBuildOffers(state).find(item => item.id === id);
+  const offer = getBuildOffers(state, meta).find(item => item.id === id);
   if (!offer?.available) return false;
-  const build = stateBuild(state);
+  const build = stateBuild(state), progress = restoreMetaProgress(meta);
   const replacing = replaceId !== null && replaceId !== undefined;
   if (replacing && (typeof replaceId !== 'string' || !build.mods.includes(replaceId))) return false;
   if (build.mods.length >= RUN_BUILD_CAPACITY && !replacing) return false;
   if (replacing) build.mods = build.mods.filter(installed => installed !== replaceId);
+  progress.completionPoints -= offer.price;
+  if (!offer.owned) progress.ownedRunMods.push(id);
   build.mods.push(id);
-  build.acquiredIds.push(id);
-  build.purchasedLegs.push(state.routeIndex);
-  state.money -= offer.price;
+  build.acquiredIds = [...new Set([...build.acquiredIds, ...progress.ownedRunMods])];
   state.runBuild = normalizeRunBuild(build, state);
-  emit(state, { type: 'run-mod-purchase', id, upgrade: id, family: offer.family, replacedId: replacing ? replaceId : null, price: offer.price, money: state.money });
+  Object.assign(meta, progress);
+  if (state._stageStart) state._stageStart.runBuild = normalizeRunBuild(state.runBuild, state);
+  emit(state, { type: 'run-mod-purchase', id, upgrade: id, family: offer.family, replacedId: replacing ? replaceId : null, price: offer.price, completionPoints: meta.completionPoints });
+  return true;
+}
+export function removeStartingRunMod(state, id) {
+  if (!canUseGarage(state)) return false;
+  const build = stateBuild(state);
+  if (!build.mods.includes(id)) return false;
+  build.mods = build.mods.filter(item => item !== id);
+  state.runBuild = build;
+  if (state._stageStart) state._stageStart.runBuild = normalizeRunBuild(build, state);
   return true;
 }
 export function describeBuild(state) {
@@ -188,7 +170,7 @@ export function describeBuild(state) {
   const leaders = active.filter(family => family.level === max);
   const name = !active.length ? 'まだ自由なノーマル仕様' : leaders.length > 1 ? 'ええとこ混ぜるミックス仕様' : `${leaders[0].name}仕様`;
   return { name, carId: build.carId, capacity: RUN_BUILD_CAPACITY, installedCount: build.mods.length, acquiredIds: [...build.acquiredIds], families, mods: RUN_MOD_CATALOG.filter(item => build.mods.includes(item.id)).map(item => ({ id: item.id, name: item.name, description: item.description, preview: item.preview })),
-    effects: liveBuildModifiers(state), summary: active.length ? active.map(family => `${family.name} ${family.level}/3`).join('・') : '到着後、3つの系統からこの車の伸ばし方を選ぼ。' };
+    effects: liveBuildModifiers(state), summary: active.length ? active.map(family => `${family.name} ${family.level}/3`).join('・') : '出発前に、3つの系統からパーツを組み合わせよ。' };
 }
 function routeNode(state, candidate) {
   const requested = typeof candidate === 'string' ? candidate : candidate?.nodeId ?? state?.journeyNodeId;

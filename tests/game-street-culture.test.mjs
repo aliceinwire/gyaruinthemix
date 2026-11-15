@@ -152,7 +152,11 @@ test('new hazards use their advertised counters in the real simulation', () => {
 
 test('the opening survival road mixes corporate pressures while keeping the original suits', () => {
   for (const seed of [1, 42, 175, 2026]) {
-    const state = createState({ mode: 'survival', seed });
+    const state = createState({
+      startingWeapon: 'heart',
+      mode: 'survival',
+      seed,
+    });
     const roles = new Set(
       state._encounterPlan.map((actor) => actor.streetRole?.id).filter(Boolean),
     );

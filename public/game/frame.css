@@ -570,3 +570,20 @@ body[data-screen="finale"] #performance-track[hidden] + #finale-home { grid-colu
  body[data-screen="finale"] .control-name { font-size: 10px; }
  body[data-screen="finale"] .controls small { font-size: 8px; white-space: nowrap; margin-top: 2px; }
 }
+
+/* The starting garage shares one fixed frame across all five preparation pages. */
+.new-car-picker .starting-parts { margin: 0; }
+.new-car-picker :is(.starting-parts, .build-workshop) > h2 { font-size: 18px; margin: 6px 0; }
+.new-car-picker .build-installed { gap: 4px; margin: 4px 0; }
+.new-car-picker .build-installed button { padding: 4px 6px; min-height: 32px; font-size: 11px; }
+.pit-service { padding: 4px 8px; margin: 4px 0; font-size: 12px; }
+.pit-service button { min-height: 32px; padding: 4px 8px; font-size: 12px; }
+@media (max-height: 500px) and (min-width: 760px) {
+  .new-car-picker .build-workshop { display: grid; grid-template-columns: minmax(0, 1fr) 200px; gap: 4px 12px; }
+  .new-car-picker .build-workshop > :is(h2, #build-note) { display: none; }
+  .new-car-picker .build-workshop > .build-offers { grid-column: 1; grid-row: 1 / 4; width: 100%; }
+  .new-car-picker .build-workshop > :is(#build-summary, #build-installed, .card-pager) { grid-column: 2; }
+  .new-car-picker .starting-parts > :is(h2, p) { display: none; }
+}
+
+.weapon-options .starter-cost { margin-left: auto; flex-shrink: 0; font-size: 9px; color: var(--gold); white-space: nowrap; }

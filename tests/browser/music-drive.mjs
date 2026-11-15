@@ -7,7 +7,7 @@ import { SETTINGS_KEY } from '../../public/game/src/tour-settings.js';
 
 /** Uses the same native-HLS radio fixture as the club set, including real media events. */
 export async function checkMusicDrive(page, root) {
-  const state = createState({ mode: 'survival', survivalDay: '2026-10-24', routeIndex: 5, campaignStarted: true });
+  const state = createState({ startingWeapon: 'heart', mode: 'survival', survivalDay: '2026-10-24', routeIndex: 5, campaignStarted: true });
   // A completed build avoids unrelated level-up dialogs during radio checks.
   state.survival.upgrades = Object.fromEntries(SURVIVAL_UPGRADES.map(item => [item.id, item.maxLevel]));
   state.survival.level = Object.values(state.survival.upgrades).reduce((sum, value) => sum + value, -1);

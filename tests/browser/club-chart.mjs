@@ -21,7 +21,7 @@ function audioFixture(duration) {
 
 export async function checkClubChart(browser, { root, csp }) {
   const origin = 'http://club-chart.local';
-  const state = createState({ mode: 'survival', survivalDay: '2026-10-23', routeIndex: 3, campaignStarted: true });
+  const state = createState({ startingWeapon: 'heart', mode: 'survival', survivalDay: '2026-10-23', routeIndex: 3, campaignStarted: true });
   state.status = 'won'; state.distance = state.routeLength; state.stagesCompleted = 4;
   state.survival.quizRoads = [3];
   const saved = exportNightfallSave(state);

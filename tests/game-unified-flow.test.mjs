@@ -76,7 +76,11 @@ test('storage denial and corrupt Nightfall checkpoints fail safely', () => {
   assert.equal(store.clearNightfall(), false);
   assert.equal(
     store.saveNightfall(
-      createState({ mode: 'survival', survivalDay: '2026-10-21' }),
+      createState({
+        startingWeapon: 'heart',
+        mode: 'survival',
+        survivalDay: '2026-10-21',
+      }),
     ).persisted,
     false,
   );

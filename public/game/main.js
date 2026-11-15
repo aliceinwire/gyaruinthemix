@@ -10,7 +10,7 @@ import { installFrame } from './src/frame.js';
 import { RUN_STYLES, chooseRunStyle, getRpgView, choosePerk } from './src/tour-rpg.js';
 import { createSettingsStore } from './src/tour-settings.js';
 import { createStoryDirector } from './src/tour-director.js';
-import { RUN_MOD_CATALOG, getBuildOffers, buyRunMod, describeBuild, getRouteMission } from './src/run-build.js';
+import { getBuildOffers, buyRunMod, removeStartingRunMod, describeBuild, getRouteMission } from './src/run-build.js';
 import { getEncounterPhase } from './src/encounter-director.js';
 import { createPerformance, createRadioPerformance, updatePerformance, performanceView, suspendPerformance, startPerformance, tapPerformance } from './src/performance.js';
 import { createRoadFeedback, captureRoadFeedback, updateRoadFeedback, drawRoadFeedback } from './src/road-feedback.js';
@@ -35,7 +35,8 @@ import {
   startingUpgradePrice,
   customizeStartingCar,
   startingCustomizationPrice,
-  getCarReveal,
+  canUseGarage,
+  startingWeaponPrice,
   awardCompletion,
   unlockCar,
   equipStartingCar,
@@ -49,7 +50,6 @@ import {
   ROUTES,
   buyUpgrade,
   upgradePrice,
-  availableCarUpgrades,
   retryRoute,
   answerQuiz,
   beginClubQuiz,
@@ -81,7 +81,7 @@ const $ = (s) => document.querySelector(s),
 function newTour(progress, challenge = dailySurvival()) {
   const seed = challenge.seed;
   const fresh = createState({
-    mode: 'survival', survivalDay: challenge.day, startingWeapon: 'heart',
+    mode: 'survival', survivalDay: challenge.day, startingWeapon: null,
     routeIndex: 0,
     routeOption: "scenic",
     seed,
@@ -274,13 +274,6 @@ function setScreen(value) {
   setClubControls(document, value === "finale");
   if (value === "finale") { renderClubSet(); (performanceSet.started && !performanceSet.done ? canvas : $("#performance-track")).focus({ preventScroll: true }); }
 }
-function showMapPanel(panel) {
-  sceneUI.mapPanel(panel);
-  $(panel === "garage" ? "#garage-tab" : "#route-tab").focus();
-}
-$("#route-tab").addEventListener("click", () => showMapPanel("route"));
-$("#garage-tab").addEventListener("click", () => showMapPanel("garage"));
-$("#garage-done").addEventListener("click", () => showMapPanel("route"));
 function home() {
   paused = false;
   pendingNext = false;
@@ -297,7 +290,6 @@ function home() {
 function openMap(next = false) {
   pendingNext = next;
   $("#change-starting-car").hidden = !atNewRunGarage();
-  $("#garage-tab").hidden = false;
   releaseInput();
   setScreen("map");
   sceneUI.mapPanel("route");
@@ -324,7 +316,7 @@ function openMap(next = false) {
   roadChoice = getJourneyNode(selectedNodeId).routeOption;
   renderDestinationChoices();
   warmMapArt();
-  renderShop();
+  renderPitService();
   const ribbon = $("#tour-ribbon"); ribbon.replaceChildren();
   ["中野", "新宿", "渋谷", "浅草", "大阪", "京都"].forEach((name,index) => {
     const stamp = document.createElement("span"); localizeText(stamp, message("{0}{1}", [index < Math.floor(stageIndex/2) ? "✓ " : "", name]));
@@ -334,14 +326,14 @@ function openMap(next = false) {
   const arrived = $("#arrival-summary"); arrived.hidden = !next;
   if (next) {
     const mission = getRouteMission(state);
-    localizeText(arrived, message("{0}、到着や！ {1}人をフロアの仲間に。{2} ガレージでこの旅のパーツを選べるで。", [state.route.goal, state.stageGyaru, mission?.complete ? message("道の目標も達成、+{0}コイン！", [mission.reward]) : "次の道でもうひと盛りしよ。"]));
+    localizeText(arrived, message("{0}、到着や！ {1}人をフロアの仲間に。{2}", [state.route.goal, state.stageGyaru, mission?.complete ? message("道の目標も達成、+{0}コイン！", [mission.reward]) : "次の道でもうひと盛りしよ。"]));
   }
   if (isSurvival(state)) {
     localizeText($("#map-subtitle"), "次のクラブへ、うちらの音を届けよ。道と進化を選んで、72ウェーブの夜を走り抜こ。");
     if (next) localizeText(arrived, message("道を突破！ スコア {0} · 耐久 {1} · 次の6ウェーブへ", [number(Math.floor(state.score), { useGrouping: true }), Math.ceil(state.integrity)]));
   }
   hud();
-  $("#route-tab").focus();
+  $("#depart").focus();
 }
 function enterPlay(announce = true) {
   paused = false;
@@ -435,28 +427,33 @@ const weatherNames = {
 };
 let mapClimate = { season: state.season, weather: state.weather };
 function atNewRunGarage() {
-  return state.routeIndex === 0 && !state.campaignStarted && state.distance === 0;
+  return canUseGarage(state);
 }
 
 function renderStyles() {
   const host = $('#style-options'), current = getRpgView(state);
   host.replaceChildren();
   const weaponMode = isSurvival(state);
-  const options = weaponMode ? SURVIVAL_STARTERS : RUN_STYLES;
+  const options = weaponMode ? [{ id: null, name: '武器なし', role: '回避とラッシュでXPを集めて、道中で武器を手に入れよ。' }, ...SURVIVAL_STARTERS] : RUN_STYLES;
   host.classList.toggle('weapon-options', weaponMode);
   for (const style of options) {
     const button = document.createElement('button');
     button.className = 'style-card';
-    button.dataset[weaponMode ? 'weapon' : 'style'] = style.id;
+    button.dataset[weaponMode ? 'weapon' : 'style'] = style.id ?? 'none';
     button.setAttribute('aria-pressed', String((weaponMode ? state.survival.startingWeapon : current.style) === style.id));
     const name = document.createElement('strong'); localizeText(name, style.name);
     const detail = document.createElement('span'); localizeText(detail, style.role || style.description);
-    const hint = document.createElement('small'); localizeText(hint, weaponMode ? "自動アタック / Lv.1" : message("{0} / {1}", [style.effect, style.signature]));
-    const heading = document.createElement('span'); heading.className = 'item-heading'; heading.append(createItemIcon(style.id), name);
+    const hint = document.createElement('small'); localizeText(hint, weaponMode ? (style.id === null ? "最初の装備なし" : "自動アタック / Lv.1") : message("{0} / {1}", [style.effect, style.signature]));
+    const heading = document.createElement('span'); heading.className = 'item-heading'; if (style.id) heading.append(createItemIcon(style.id)); heading.append(name);
+    const price = weaponMode && style.id !== null ? startingWeaponPrice(meta, style.id) : 0;
+    const cost = document.createElement('small'); cost.className = 'starter-cost'; cost.hidden = style.id === null;
+    localizeText(cost, price ? message("{0} GP", [price]) : "解禁済み");
+    heading.append(cost);
     button.append(heading, detail, hint);
+    button.disabled = !atNewRunGarage() || price === null || price > meta.completionPoints;
     button.addEventListener('click', () => {
-      if (!(weaponMode ? chooseStartingWeapon(state, style.id) : chooseRunStyle(state, style.id))) return;
-      saveTour(); renderStyles(); renderRpgHud();
+      if (!(weaponMode ? chooseStartingWeapon(state, style.id, meta) : chooseRunStyle(state, style.id))) return;
+      saveMeta(); saveTour(); renderGarage(); renderRpgHud();
       host.querySelector('[aria-pressed=true]')?.focus({ preventScroll: true });
     });
     host.append(button);
@@ -513,34 +510,53 @@ $('#draft-panel').addEventListener('keydown', event => {
   if (event.repeat && ['Enter','Space'].includes(event.code)) event.preventDefault();
 });
 
-function renderShop() {
-  renderGarage();
-  renderBuildWorkshop();
-  $("#shop").replaceChildren();
-  for (const item of availableCarUpgrades(state)) {
-    const node = document.createElement("article"); node.className = "shop-item";
-    const level = state.upgrades[item.id] || 0, price = upgradePrice(state, item.id);
-    if (price === null) continue;
-    const repairFull = item.id === "repair" && state.integrity >= state.integrityCapacity;
-    const max = repairFull || (item.id !== "repair" && level >= item.maxLevel);
-    localizeHTML(node, `<h3>${item.name}</h3><p>${item.description}</p><small>${item.id === "repair" ? "お手入れ" : `盛り ${level} / ${item.maxLevel}`}</small>`);
-    const button = document.createElement("button");
-    localizeText(button, repairFull ? "修理いらんで" : max ? "めっちゃ盛れた" : message("{0} コインで{1}", [price, item.id === "repair" ? "直そ" : "盛ろ"]));
-    button.disabled = max || state.money < price || state.status !== "won" || !state.campaignStarted;
-    button.addEventListener("click", () => {
-      if (!buyUpgrade(state, item.id)) return;
-      saveTour(); beep(750); renderShop(); hud(); toast(`${item.name}、準備できたで！`);
+function renderPitService() {
+  const host = $('#pit-service');
+  host.hidden = state.status !== 'won' || !state.campaignStarted || state.campaignComplete;
+  if (host.hidden) return;
+  localizeText($('#pit-wallet'), message("{0} コイン", [state.money]));
+  const button = $('#repair-car'), full = state.integrity >= state.integrityCapacity;
+  const price = upgradePrice(state, 'repair');
+  localizeText(button, full ? "修理いらんで" : message("{0} コインで{1}", [price, "直そ"]));
+  button.disabled = full || price === null || state.money < price;
+}
+$('#repair-car').addEventListener('click', () => {
+  if (!buyUpgrade(state, 'repair')) return;
+  saveTour(); renderPitService(); hud(); beep(750);
+});
+function renderStartingUpgrades() {
+  const host = $('#shop'); host.replaceChildren();
+  for (const item of STARTING_UPGRADE_CATALOG) {
+    const level = meta.upgrades[item.id], price = startingUpgradePrice(meta, item.id);
+    const card = document.createElement('article'); card.className = 'shop-item';
+    const title = document.createElement('h3'); localizeText(title, item.name);
+    const heading = document.createElement('div'); heading.className = 'item-heading'; heading.append(createItemIcon(item.id), title);
+    const detail = document.createElement('p'); localizeText(detail, item.description);
+    const progress = document.createElement('small'); localizeText(progress, message('盛り {0} / {1}', [level, item.maxLevel]));
+    const button = document.createElement('button'); button.dataset.upgrade = item.id;
+    localizeText(button, price === null ? 'めっちゃ盛れた' : message('{0} GPでレベルアップ', [price]));
+    button.disabled = !atNewRunGarage() || price === null || meta.completionPoints < price;
+    button.addEventListener('click', () => {
+      if (!buyStartingUpgrade(state, meta, item.id)) return;
+      saveMeta(); saveTour(); renderGarage(); hud(); beep(750);
     });
-    const heading = document.createElement("div"), title = node.querySelector("h3");
-    heading.className = "item-heading"; title.before(heading); heading.append(createItemIcon(item.id), title);
-    node.append(button); $("#shop").append(node);
+    card.append(heading, detail, progress, button); host.append(card);
   }
-  localizeText($("#shop-status"), "招待と寄り道で集めたコインで、いまのくるまを盛れるで。");
 }
 function renderBuildWorkshop() {
-  const build = describeBuild(state), offers = getBuildOffers(state), host = $("#build-offers");
+  const build = describeBuild(state), offers = getBuildOffers(state, meta), host = $("#build-offers");
   localizeText($("#build-summary"), message("{0} · {1} / 4 パーツ。{2}", [build.name, build.mods.length, build.summary]));
   host.replaceChildren();
+  const installed = $('#build-installed'); installed.replaceChildren();
+  for (const item of build.mods) {
+    const button = document.createElement('button'); button.dataset.removeMod = item.id;
+    localizeText(button, message('{0}を外す', [item.name]));
+    button.addEventListener('click', () => {
+      if (!removeStartingRunMod(state, item.id)) return;
+      saveTour(); renderGarage();
+    });
+    installed.append(button);
+  }
   for (const offer of offers) {
     const card = document.createElement("article"); card.className = "build-card"; card.dataset.family = offer.family;
     const tag = document.createElement("span"); tag.className = "eyebrow"; localizeText(tag, message("{0} / {1}", [offer.familyName, offer.rarityLabel]));
@@ -558,29 +574,30 @@ function renderBuildWorkshop() {
       label.append(replacement); card.append(label);
     }
     const button = document.createElement("button"); button.dataset.modId = offer.id;
-    localizeText(button, offer.available ? message("{0} コインで{1}", [offer.price, offer.requiresReplacement ? "入れ替えよ" : "付けよ"]) : offer.reason);
+    localizeText(button, offer.owned ? "解禁済み / 装備は無料" : message("{0} ギャルポイントで解禁", [offer.price]));
+    if (offer.reason) localizeAttribute(button, "title", offer.reason);
     button.disabled = !offer.available || Boolean(replacement && !replacement.value);
     replacement?.addEventListener("change",()=>{ button.disabled = !offer.available || !replacement.value; });
     button.addEventListener("click",()=>{
-      if (!buyRunMod(state,offer.id,replacement?.value || null)) return;
-      saveTour(); beep(760,.12); renderShop(); hud(); toast(`${offer.name}、この旅の相棒や！`);
+      if (!buyRunMod(state,offer.id,replacement?.value || null,meta)) return;
+      saveMeta(); saveTour(); beep(760,.12); renderGarage(); hud(); toast(`${offer.name}、この旅の相棒や！`);
     });
     card.append(button); host.append(card);
   }
-  localizeText($("#build-note"), state.status !== "won" ? "到着してから選べるで。まずは最初の街角へ！" : offers.length ? "各到着地点で1つ。最大4パーツ。外すと効果は消えて、この旅では買い直し・返金なし。くるまは今のままや。" : "今あるパーツで、この旅だけの走りを楽しも。基本パーツと修理も使えるで。");
+  localizeText($("#build-note"), "最大4パーツ。解禁したパーツは次の旅でも無料で装備できるで。出発後は変更できへん。");
 }
 function renderGarage() {
   const grid = $("#car-garage");
   grid.replaceChildren();
   const current = getCarProfile(state);
-  const atStart =
-    state.routeIndex === 0 && !state.campaignStarted && state.distance === 0;
-  localizeText($("#garage-wallet"), message("{0} コイン / ギャルポイント {1} · {2}", [state.money, meta.completionPoints, atStart ? "最初に乗るくるま、選ぼか" : "この旅はこのくるまで行くで"]));
+  const atStart = atNewRunGarage();
   localizeText($("#car-select-wallet"), message("{0} ギャルポイント · 今回は {1}", [meta.completionPoints, current.name]));
   $("#starting-customization").hidden = !atStart;
   if (!atStart) return;
   renderStyles();
   renderStartingCustomization();
+  renderStartingUpgrades();
+  renderBuildWorkshop();
   for (const car of CAR_CATALOG) {
     const owned = meta.ownedCars.includes(car.id),
       equipped = current.id === car.id;
@@ -620,7 +637,7 @@ function renderGarage() {
         if (!isSurvival(state)) chooseRunStyle(state, getRpgView(state).style || "relay");
         saveMeta();
         saveTour();
-        renderShop();
+        renderGarage();
         hud();
         toast(`${car.name}、準備できたで`);
         if (screen === "cars") $("#cars-ready").focus();
@@ -786,7 +803,7 @@ function showResult() {
   const earned = awardCompletion(meta, state);
   if (earned) {
     saveMeta();
-    toast(`ギャルポイント、${earned}もらえたで！ 次の旅でくるま解禁しよ。`);
+    toast(message("ギャルポイント、{0}もらえたで！ 次の旅の準備に使お。", [earned]));
   }
   saveTour();
   if (state.status === "won") {
