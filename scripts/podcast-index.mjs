@@ -295,6 +295,34 @@ export async function refreshPodcast({
     )
     .map((f) => f.name)
     .sort();
+  // Pages live in tmpfs, while the last published media survives a restart.
+  // Restore it before any new upload or artwork migration can interrupt a scan.
+  if (!(await optional(readlink(join(pages, 'current'))))) {
+    const present = new Set(files);
+    const cached = [...old].filter(
+      ([name, entry]) =>
+        present.has(name) &&
+        entry.episode &&
+        isCalendarDate(entry.episode.date) &&
+        existingMedia.has(entry.media),
+    );
+    if (
+      cached.length &&
+      cached.every(
+        ([, entry]) =>
+          !configuredDates.has(entry.episode.audio.url) ||
+          configuredDates.get(entry.episode.audio.url) === entry.episode.date,
+      )
+    )
+      await publishPages(
+        site,
+        pages,
+        config,
+        mediaDir,
+        cached,
+        'recovery-' + hash(JSON.stringify(config) + JSON.stringify(cached)),
+      );
+  }
   for (const name of files) {
     const path = join(source, name);
     const before = await optional(lstat(path, { bigint: true }));

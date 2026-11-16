@@ -2,11 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { open, rename, rm } from 'node:fs/promises';
 import { join } from 'node:path';
-import sharp from 'sharp';
 import { podcastReleaseTime } from '../src/data/podcast.mjs';
-
-sharp.cache(false);
-sharp.concurrency(1);
 
 // ID3v2.4 sizes are stored in four seven-bit bytes.
 function tagSize(length) {
@@ -28,6 +24,10 @@ function frame(id, ...body) {
 async function cleanCover(cover) {
   if (!cover) return;
   try {
+    // Audio discovery and cached playback do not depend on native image bindings.
+    const { default: sharp } = await import('sharp');
+    sharp.cache(false);
+    sharp.concurrency(1);
     // Keep the complete embedded picture, with a solid background for RSS.
     const bytes = await sharp(cover.bytes, { limitInputPixels: 32_000_000 })
       .rotate()
