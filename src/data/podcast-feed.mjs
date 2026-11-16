@@ -63,7 +63,7 @@ export function createPodcastFeed(data, library = []) {
     const permalink = `${showUrl}#episode-${episode.id}`;
     return `    <item>
       <title>${xml(episode.title)}</title>
-      ${episode.description ? `<description>${xml(episode.description)}</description>` : ''}
+      ${episode.description ? `<description>${xml(episode.description)}</description>\n      <itunes:summary>${xml(episode.description)}</itunes:summary>\n      <content:encoded>${xml(`<p>${xml(episode.description)}</p>`)}</content:encoded>` : ''}
       ${isFeedArtwork(episode.artworkUrl) ? `<itunes:image href="${xml(episode.artworkUrl)}" />` : ''}
       ${(episode.tags ?? []).map((tag) => `<category>${xml(tag)}</category>`).join('')}
       <link>${xml(permalink)}</link>
@@ -81,11 +81,12 @@ export function createPodcastFeed(data, library = []) {
     );
 
   return `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd" xmlns:atom="http://www.w3.org/2005/Atom">
+<rss version="2.0" xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
     <title>${xml(feed.title)}</title>
     <link>${showUrl}</link>
     <description>${xml(feed.description)}</description>
+    <itunes:summary>${xml(feed.description)}</itunes:summary>
     <language>${xml(feed.language)}</language>
     <atom:link href="${podcastFeedUrl}" rel="self" type="application/rss+xml" />
     <itunes:author>${xml(feed.author)}</itunes:author>

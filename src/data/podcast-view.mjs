@@ -2,6 +2,11 @@ import { escapeMarkup as esc, showArtwork } from './podcast.mjs';
 import { translator } from './i18n.mjs';
 import { canonicalUrl, siteOrigin } from './urls.mjs';
 
+export function podcastImageSource(value) {
+  const url = new URL(value);
+  return url.origin === siteOrigin ? url.pathname + url.search : url.href;
+}
+
 export function sharingImageTags(feed, episodes, locale) {
   const t = translator(locale);
   const { social } = showArtwork(feed, episodes);
@@ -97,7 +102,7 @@ export function episodeList(episodes, locale) {
       (tag) => !/^podcast$/i.test(tag.trim()),
     );
     return `<li><article class="podcast-episode${index === 0 ? ' podcast-latest' : ''}" id="episode-${esc(episode.id)}">
-      ${artworkUrl ? `<img class="podcast-episode-cover" src="${esc(artworkUrl)}" alt="" width="160" height="160" loading="lazy">` : ''}
+      ${artworkUrl ? `<img class="podcast-episode-cover" src="${esc(podcastImageSource(artworkUrl))}" alt="" width="160" height="160" loading="lazy">` : ''}
       <div class="podcast-episode-meta">
         ${index === 0 ? `<span class="podcast-status">${t('最新エピソード', 'Latest episode')}</span>` : ''}
         <time datetime="${esc(episode.date)}">${date}</time>

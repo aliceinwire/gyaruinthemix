@@ -4,6 +4,7 @@ COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund
 
 FROM dependencies AS site-images
+RUN apk add --no-cache font-dejavu
 COPY assets/originals ./assets/originals
 COPY scripts/images.mjs scripts/build-cache.mjs ./scripts/
 RUN node scripts/images.mjs
@@ -28,7 +29,7 @@ FROM dependencies AS podcast-build
 COPY src/data ./src/data
 COPY config/podcast.json ./config/podcast.json
 COPY scripts/podcast-index.mjs scripts/podcast-media.mjs scripts/build-podcast-index.mjs ./scripts/
-RUN node scripts/build-podcast-index.mjs /build/podcast-index.mjs
+RUN node scripts/build-podcast-index.mjs /build/podcast/index.mjs
 
 FROM dependencies AS game-images
 COPY public/game/assets ./public/game/assets
@@ -49,8 +50,7 @@ RUN node scripts/check-site-build.mjs
 
 FROM nginx:1.30.5-alpine3.24-slim AS production
 RUN apk add --no-cache 'nodejs>=24' exiftool mpg123 flock && mkdir -p /var/lib/podcast && chown 101:101 /var/lib/podcast
-COPY --from=podcast-build /build/podcast-index.mjs /opt/podcast/index.mjs
-COPY --from=podcast-build /build/podcast-index.mjs.LICENSE.txt /opt/podcast/THIRD-PARTY-NOTICES.txt
+COPY --from=podcast-build /build/podcast/ /opt/podcast/
 COPY deploy/podcast-web.sh /opt/podcast/start.sh
 COPY deploy/nginx.conf /etc/nginx/nginx.conf
 COPY deploy/bouncer/nginx-www-redirect.conf /etc/nginx/www-redirect.conf

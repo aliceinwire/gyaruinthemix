@@ -9,6 +9,10 @@ const platformLabels = {
 // Episode dates are calendar days in Japan, including in published media tags.
 export const podcastReleaseTime = (date) => new Date(`${date}T00:00:00+09:00`);
 
+export function podcastDescription(feed, locale = 'ja') {
+  return (locale === 'en' && feed?.descriptionEn) || feed?.description || '';
+}
+
 export function podcastEmail(feed) {
   const configured = feed.ownerEmail ?? '';
   if (typeof configured === 'string') {
@@ -166,7 +170,20 @@ export function getPodcast(data, locale = 'ja', library = []) {
       !configuredIds.has(episode.id) &&
       !configuredUrls.has(episode.audio.url)
     )
-      episodes.push(episode);
+      episodes.push({
+        ...episode,
+        description:
+          episode.description?.trim() &&
+          !/^podcast$/i.test(episode.description.trim())
+            ? episode.description
+            : data.episodeDescriptions?.[episode.id]
+              ? localizedText(
+                  data.episodeDescriptions[episode.id],
+                  'episode description',
+                  locale,
+                )
+              : podcastDescription(data.feed, locale),
+      });
   }
   episodes.sort((a, b) => b.date.localeCompare(a.date));
   return { platforms, episodes };

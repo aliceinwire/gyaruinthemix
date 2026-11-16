@@ -1,15 +1,12 @@
 import { execFileSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import {
-  mkdtemp,
-  open,
-  readFile,
-  rename,
-  rm,
-  writeFile,
-} from 'node:fs/promises';
+import { open, rename, rm } from 'node:fs/promises';
 import { join } from 'node:path';
+import sharp from 'sharp';
 import { podcastReleaseTime } from '../src/data/podcast.mjs';
+
+sharp.cache(false);
+sharp.concurrency(1);
 
 // ID3v2.4 sizes are stored in four seven-bit bytes.
 function tagSize(length) {
@@ -28,40 +25,20 @@ function frame(id, ...body) {
   return [Buffer.from(id), tagSize(byteLength(body)), Buffer.alloc(2), ...body];
 }
 
-async function cleanCover(directory, cover) {
+async function cleanCover(cover) {
   if (!cover) return;
-  // Strip the image container on disk, without decoding full-size album art
-  // into pixels alongside the indexer in the web container.
-  const stage = await mkdtemp(join(directory, '.cover-'));
-  const input = join(stage, 'input.' + cover.extension);
-  const output = join(stage, 'public.' + cover.extension);
   try {
-    await writeFile(input, cover.bytes);
-    try {
-      execFileSync(
-        'exiftool',
-        [
-          '-config',
-          '',
-          '-all=',
-          '-trailer:all=',
-          '-tagsfromfile',
-          '@',
-          '-Orientation',
-          '-o',
-          output,
-          input,
-        ],
-        { stdio: ['ignore', 'ignore', 'pipe'] },
-      );
-    } catch (error) {
-      if (error.code || error.signal) throw error;
-      console.warn('Omitting unreadable embedded podcast artwork');
-      return;
-    }
-    return { extension: cover.extension, bytes: await readFile(output) };
-  } finally {
-    await rm(stage, { recursive: true, force: true });
+    // Keep the complete embedded picture, with a solid background for RSS.
+    const bytes = await sharp(cover.bytes, { limitInputPixels: 32_000_000 })
+      .rotate()
+      .resize(2000, 2000, { fit: 'contain', background: '#ffffff' })
+      .flatten({ background: '#ffffff' })
+      .toColourspace('srgb')
+      .jpeg({ quality: 90 })
+      .toBuffer();
+    return { extension: 'jpg', bytes };
+  } catch {
+    console.warn('Omitting unreadable embedded podcast artwork');
   }
 }
 
@@ -109,7 +86,7 @@ export async function preparePodcastMedia(
   common,
 ) {
   const midnight = podcastReleaseTime(result.episode.date);
-  const cover = await cleanCover(directory, result.cover);
+  const cover = await cleanCover(result.cover);
   const tag = publicTag(result.episode, cover, common, midnight);
   const temp = join(directory, `.${randomUUID()}.tmp`);
   const file = await open(temp, 'wx');
