@@ -63,6 +63,31 @@ test('an empty feed includes the default contact and no invented artwork or epis
   assert.doesNotMatch(xml, /<item>|itunes:image|undefined/);
 });
 
+test('show copyright is preserved, escaped and optional in RSS', () => {
+  const notice = '© ギャルインザミックス - All Rights Reserved';
+  assert.equal(configuration.feed.copyright, notice);
+  assert.ok(
+    createPodcastFeed(configuration).includes(
+      `<copyright>${notice}</copyright>`,
+    ),
+  );
+  const input = data([episode()]);
+  input.feed.copyright = '© Hosts & <Guests> "Worldwide"';
+  const [channel, item] = createPodcastFeed(input).split('<item>');
+  assert.ok(
+    channel.includes(
+      '<copyright>© Hosts &amp; &lt;Guests&gt; &quot;Worldwide&quot;</copyright>',
+    ),
+  );
+  assert.doesNotMatch(item, /<copyright>/);
+  delete input.feed.copyright;
+  assert.doesNotMatch(createPodcastFeed(input), /<copyright>/);
+  for (const invalid of ['', ' ', 2026, null]) {
+    input.feed.copyright = invalid;
+    assert.throws(() => createPodcastFeed(input), /copyright is required/);
+  }
+});
+
 test('published audio uses the same source on the website and in RSS', () => {
   const input = data([episode()]);
   assert.equal(getPodcast(input).episodes[0].url, input.episodes[0].audio.url);
