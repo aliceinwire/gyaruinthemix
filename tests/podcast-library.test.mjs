@@ -15,6 +15,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 import { crc32 } from 'node:zlib';
+import sharp from 'sharp';
+import configuration from '../config/podcast.json' with { type: 'json' };
 const { refreshPodcast } = await import(
   process.env.PODCAST_INDEX_MODULE || '../scripts/podcast-index.mjs'
 );
@@ -64,6 +66,11 @@ async function fixture(t) {
     site: join(dir, 'www'),
     settleMs: 0,
     now: Date.parse('2026-11-06T14:59:59Z'),
+    config: {
+      ...structuredClone(configuration),
+      feed: { ...configuration.feed, artworkUrl: '' },
+      episodeDescriptions: {},
+    },
   };
   await mkdir(opts.source);
   for (const prefix of ['', 'en/']) {
@@ -162,12 +169,12 @@ test('drop, retag and remove a real MP3 across both pages, artwork and the RSS',
     'DJありねぇ × DJちゃな',
     '台本なし & ごはん',
     '東京',
-    'image/png',
+    'image/jpeg',
   ])
     assert.ok(sanitized.includes(Buffer.from(value)));
   assert.ok(sanitized.includes(mp3().subarray(10)), 'original MPEG frames');
   const cover = xml.match(
-    /<itunes:image href="[^\"]*\/([0-9a-f]{64}\.png)"/,
+    /<itunes:image href="[^\"]*\/([0-9a-f]{64}\.jpg)"/,
   )?.[1];
   assert.ok(cover);
   const imageUrl = 'https://gyaruinthemix.com/podcast/artwork/' + cover;
@@ -177,15 +184,17 @@ test('drop, retag and remove a real MP3 across both pages, artwork and the RSS',
   assert.ok(item.includes(`<itunes:image href="${imageUrl}"`));
   const publishedCover = await readFile(join(f.cache, 'artwork', cover));
   assert.ok(sanitized.includes(publishedCover));
-  assert.deepEqual(
-    publishedCover,
-    png,
-    'remove only the added picture metadata',
-  );
+  const image = await sharp(publishedCover).metadata();
+  assert.equal(image.format, 'jpeg');
+  assert.equal(image.width, image.height);
+  assert.ok(image.width >= 1400 && image.width <= 3000);
+  assert.equal(image.hasAlpha, false);
+  assert.equal(image.exif, undefined);
   assert.ok(!publishedCover.includes(Buffer.from('1991:02')));
   for (const locale of ['ja', 'en']) {
     const html = await f.read(`${locale}.html`);
     assertShareImage(html, imageUrl);
+    assert.ok(html.includes(`src="/podcast/artwork/${cover}"`));
     const player = html.match(/<audio\b[^>]*>[\s\S]*?<\/audio>/g) || [];
     assert.equal(player.length, 1);
     assert.match(player[0], /\bcontrols\b/);
@@ -242,6 +251,82 @@ test('drop, retag and remove a real MP3 across both pages, artwork and the RSS',
   assert.doesNotMatch(await f.read('rss.xml'), /<item>/);
   assert.match(await f.read('en.html'), /empty/);
   assert.doesNotMatch(await f.read('ja.html'), /<audio\b/);
+});
+
+test('embedded WebP and GIF artwork becomes square RGB JPEG without cropping', async (t) => {
+  for (const format of ['webp', 'gif']) {
+    const f = await fixture(t);
+    const picture = await sharp({
+      create: {
+        width: 40,
+        height: 80,
+        channels: 4,
+        background: '#ff0080',
+      },
+    })
+      [format]()
+      .toBuffer();
+    await writeFile(
+      join(f.source, 'cover.mp3'),
+      mp3([
+        frame(
+          'APIC',
+          Buffer.concat([
+            Buffer.from(`\x03image/${format}\x00\x03\x00`),
+            picture,
+          ]),
+        ),
+      ]),
+    );
+    await refreshPodcast(f);
+    const xml = await f.read('rss.xml');
+    const cover = xml.match(/\/artwork\/([a-f0-9]{64}\.jpg)/)?.[1];
+    assert.ok(cover, format);
+    const bytes = await readFile(join(f.cache, 'artwork', cover));
+    const image = await sharp(bytes).metadata();
+    assert.equal(image.format, 'jpeg');
+    assert.equal(image.space, 'srgb');
+    assert.equal(image.hasAlpha, false);
+    assert.equal(image.width, image.height);
+    assert.ok(image.width >= 1400 && image.width <= 3000);
+    const border = await sharp(bytes)
+      .extract({ left: 0, top: 0, width: 1, height: 1 })
+      .raw()
+      .toBuffer();
+    assert.ok(
+      [...border].every((v) => v >= 250),
+      'solid white padding',
+    );
+    await rm(join(f.cache, 'artwork', cover));
+    await refreshPodcast(f);
+    assert.deepEqual(await readFile(join(f.cache, 'artwork', cover)), bytes);
+    assert.equal(await f.read('rss.xml'), xml);
+  }
+});
+
+test('rebuilds older cached media without changing the episode GUID or release day', async (t) => {
+  const f = await fixture(t);
+  await writeFile(join(f.source, 'existing.mp3'), mp3());
+  await refreshPodcast(f);
+  const before = await f.read('rss.xml');
+  const cacheFile = join(f.cache, 'index-v1.json');
+  const entries = JSON.parse(await readFile(cacheFile, 'utf8'));
+  const entry = entries[0][1];
+  const currentMedia = entry.media;
+  entry.media = '0'.repeat(64) + '.mp3';
+  entry.episode.description = '';
+  await writeFile(
+    join(f.cache, 'audio', entry.media),
+    Buffer.from('old cache'),
+  );
+  await rm(join(f.cache, 'audio', currentMedia));
+  await writeFile(cacheFile, JSON.stringify(entries));
+  await refreshPodcast(f);
+  const after = await f.read('rss.xml');
+  for (const pattern of [/<guid[^>]*>.*?<\/guid>/, /<pubDate>.*?<\/pubDate>/])
+    assert.equal(after.match(pattern)[0], before.match(pattern)[0]);
+  assert.match(after.split('<item>')[1], /<description>.+<\/description>/);
+  assert.deepEqual(await readdir(join(f.cache, 'audio')), [currentMedia]);
 });
 
 test('untagged episodes publish with a stable date while hidden, partial, corrupt and linked files stay out', async (t) => {

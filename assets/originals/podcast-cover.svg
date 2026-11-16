@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2400" height="2400" viewBox="0 0 2400 2400">
+  <defs>
+    <pattern id="spots" width="320" height="240" patternUnits="userSpaceOnUse">
+      <rect width="320" height="240" fill="#ee2d92"/>
+      <g fill="none" stroke="#23101d" stroke-width="16" stroke-linecap="round">
+        <path d="M32 28c-24 14-18 50 4 54m24-2c32-6 32-36 10-48M160 28c-36 2-38 44-18 58m28 2c30-10 32-28 18-46M248 126c-30-16-50 2-44 30m16 20c30 18 56-2 50-26M76 168c-18-26-50-12-52 12m12 26c30 24 60 2 54-22M288 18l16 14M120 132l12 16M156 200l14 8M282 222l16-12"/>
+      </g>
+    </pattern>
+  </defs>
+  <rect width="2400" height="2400" fill="url(#spots)"/>
+  <rect x="146" y="146" width="2108" height="2108" rx="100" fill="#100a10" stroke="#fff2fb" stroke-width="12"/>
+  <rect x="184" y="184" width="2032" height="2032" rx="72" fill="none" stroke="#ee2d92" stroke-width="5"/>
+  <g fill="#ffffff">
+    <path d="M422 350l20 75 75 20-75 20-20 75-20-75-75-20 75-20z"/>
+    <path d="M1978 350l20 75 75 20-75 20-20 75-20-75-75-20 75-20z"/>
+  </g>
+  <text x="1200" y="1450" fill="#ee2d92" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="255" font-weight="900" letter-spacing="14">PODCAST</text>
+  <text x="1200" y="1432" fill="#fff5fc" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="255" font-weight="900" letter-spacing="14">PODCAST</text>
+  <text x="1200" y="1640" fill="#fff5fc" text-anchor="middle" font-family="DejaVu Sans, sans-serif" font-size="74" font-weight="700" letter-spacing="7">DJ ARINEE × DJ CHANA</text>
+  <g stroke="#ee2d92" stroke-width="30" stroke-linecap="round">
+    <path d="M750 1860v40m75-85v130m75-190v250m75-185v120m75-220v320m75-220v120m75-160v200m75-285v370m75-245v120m75-190v260m75-190v120m75-80v40m75-60v80"/>
+  </g>
+</svg>

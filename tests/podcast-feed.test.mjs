@@ -85,6 +85,80 @@ test('published audio uses the same source on the website and in RSS', () => {
   );
 });
 
+test('show and episode descriptions are available to RSS, iTunes and rich-text readers', () => {
+  const input = data([episode()]);
+  const [channel, item] = createPodcastFeed(input).split('<item>');
+  assert.match(
+    channel,
+    /xmlns:content="http:\/\/purl.org\/rss\/1.0\/modules\/content\/"/,
+  );
+  assert.ok(
+    channel.includes(`<description>${input.feed.description}</description>`),
+  );
+  assert.ok(
+    channel.includes(
+      `<itunes:summary>${input.feed.description}</itunes:summary>`,
+    ),
+  );
+  assert.match(item, /<description>ふたりで話す。<\/description>/);
+  assert.match(item, /<itunes:summary>ふたりで話す。<\/itunes:summary>/);
+  assert.match(
+    item,
+    /<content:encoded>&lt;p&gt;ふたりで話す。&lt;\/p&gt;<\/content:encoded>/,
+  );
+});
+
+test('uploaded episodes keep embedded notes and otherwise get a real description without new episodes', () => {
+  const input = structuredClone(configuration);
+  const id = 'mp3-d3e83899fd3eca99ceea7cd3';
+  const uploaded = {
+    id,
+    title: 'Episode one',
+    date: '2026-11-12',
+    description: '',
+    audio: {
+      url: 'https://example.com/one.mp3',
+      length: 100,
+      type: 'audio/mpeg',
+    },
+    artworkUrl: 'https://example.com/embedded.jpg',
+    explicit: false,
+  };
+  assert.equal(getPodcast(input).episodes.length, 0);
+  for (const locale of ['ja', 'en']) {
+    const result = getPodcast(input, locale, [uploaded]);
+    assert.equal(result.episodes.length, 1);
+    assert.equal(result.episodes[0].id, id);
+    assert.equal(
+      result.episodes[0].description,
+      input.episodeDescriptions[id][locale],
+    );
+    assert.equal(result.episodes[0].artworkUrl, uploaded.artworkUrl);
+  }
+  const [channel, item] = createPodcastFeed(input, [uploaded]).split('<item>');
+  assert.ok(channel.includes(input.feed.artworkUrl));
+  assert.ok(!channel.includes(uploaded.artworkUrl));
+  assert.ok(item.includes(uploaded.artworkUrl));
+  assert.ok(item.includes(input.episodeDescriptions[id].ja));
+  uploaded.description = 'New notes from the MP3';
+  assert.equal(
+    getPodcast(input, 'ja', [uploaded]).episodes[0].description,
+    uploaded.description,
+  );
+  for (const empty of ['', '  ', 'Podcast']) {
+    const other = { ...uploaded, id: 'new-upload', description: empty };
+    assert.equal(
+      getPodcast(input, 'ja', [other]).episodes[0].description,
+      input.feed.description,
+    );
+    assert.equal(
+      getPodcast(input, 'en', [other]).episodes[0].description,
+      input.feed.descriptionEn,
+    );
+  }
+  assert.equal(input.episodes.length, 0);
+});
+
 test('RSS is newest first, excludes incomplete drafts and does not mutate its input', () => {
   const input = data([
     episode({ id: 'older', date: '2026-10-01' }),

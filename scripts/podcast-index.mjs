@@ -315,7 +315,8 @@ export async function refreshPodcast({
     const date = configuredDates.get(url) ?? firstDate;
     if (!isCalendarDate(date)) throw new Error('Invalid podcast release date');
     const media =
-      hash(JSON.stringify(['release-v1', name, signature, date])) + '.mp3';
+      hash(JSON.stringify(['release-v2-artwork', name, signature, date])) +
+      '.mp3';
     const reusable =
       prior?.media === media &&
       existingMedia.has(media) &&

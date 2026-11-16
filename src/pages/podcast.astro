@@ -5,9 +5,14 @@ import data from '../../config/podcast.json';
 import {
   episodeList,
   latestLink,
+  podcastImageSource,
   sharingImageTags,
 } from '../data/podcast-view.mjs';
-import { getPodcast, podcastEmail } from '../data/podcast.mjs';
+import {
+  getPodcast,
+  podcastDescription,
+  podcastEmail,
+} from '../data/podcast.mjs';
 import { getSite } from '../data/site.mjs';
 import { getLocale, localizePath, translator } from '../data/i18n.mjs';
 
@@ -47,13 +52,7 @@ const mailto = `mailto:${encodeURIComponent(email).replace('%40', '@')}`;
         >
       </h1>
       <p class="podcast-intro">
-        {t('DJありねぇ × DJちゃな。', 'DJ Arinee × DJ Chana.')}<br />
-        {
-          t(
-            'フロアの外でも、声でつながろ。',
-            'Beyond the dance floor. Into your headphones.',
-          )
-        }
+        {podcastDescription(data.feed, locale)}
       </p>
       <div class="hero-actions">
         <Fragment set:html="<!--podcast-latest-->" />
@@ -69,20 +68,13 @@ const mailto = `mailto:${encodeURIComponent(email).replace('%40', '@')}`;
         <span>GYARUINTHEMIX</span><span>PODCAST</span>
       </div>
       <picture>
-        <source
-          type="image/avif"
-          srcset="/assets/duo-camera-small.avif 540w, /assets/duo-camera.avif 1536w"
-          sizes="(max-width: 760px) 90vw, 42vw"
-        />
         <img
-          src="/assets/duo-camera.webp"
-          srcset="/assets/duo-camera-small.webp 540w, /assets/duo-camera.webp 1536w"
-          sizes="(max-width: 760px) 90vw, 42vw"
-          width="1536"
-          height="1024"
+          src={podcastImageSource(data.feed.artworkUrl)}
+          width="2400"
+          height="2400"
           alt={t(
-            'ピンクのデコカメラを持つDJありねぇとDJちゃな',
-            'DJ Arinee and DJ Chana with a pink decorated camera',
+            'ギャルインザミックスのポッドキャストのジャケット',
+            'GYARUINTHEMIX podcast cover',
           )}
         />
       </picture>
@@ -305,8 +297,9 @@ const mailto = `mailto:${encodeURIComponent(email).replace('%40', '@')}`;
   }
   .podcast-cover img {
     width: 100%;
-    aspect-ratio: 3 / 2;
-    object-fit: cover;
+    height: auto;
+    aspect-ratio: 1;
+    object-fit: contain;
   }
   .podcast-cover figcaption {
     display: flex;

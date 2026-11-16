@@ -1,12 +1,13 @@
 {
   "feed": {
     "title": "ギャルインザミックス",
-    "description": "DJありねぇとDJちゃなのポッドキャスト。フロアの外でも、声でつながろ。",
+    "description": "DJありねぇとDJちゃなのギャルインザミックス。ふたりの掛け合いと、日常の話や食レポをお届けするポッドキャストやで。フロアの外でも、声でつながろ。",
+    "descriptionEn": "DJ Arinee and DJ Chana bring GYARUINTHEMIX beyond the dance floor, with conversations about everyday life, food and whatever gets the two of us talking.",
     "author": "DJありねぇ × DJちゃな",
     "language": "ja",
     "category": "Society & Culture",
     "explicit": false,
-    "artworkUrl": "",
+    "artworkUrl": "https://gyaruinthemix.com/assets/podcast-cover-v1.jpg",
     "ownerEmail": "arisut@riseup.net"
   },
   "platforms": {
@@ -14,5 +15,11 @@
     "applePodcasts": "",
     "rss": "https://gyaruinthemix.com/podcast/rss.xml"
   },
-  "episodes": []
+  "episodes": [],
+  "episodeDescriptions": {
+    "mp3-d3e83899fd3eca99ceea7cd3": {
+      "ja": "ギャルインザミックス、初めてのポッドキャスト。番組とふたりの自己紹介から、よしもとカレーの食レポまで。ありねぇとちゃなの掛け合いをお届けするで。",
+      "en": "The first GYARUINTHEMIX podcast: meet Arinee and Chana, hear what the show is about, and join the two of us for a taste of Yoshimoto Curry."
+    }
+  }
 }
