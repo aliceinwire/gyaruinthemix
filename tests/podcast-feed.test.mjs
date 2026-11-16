@@ -63,6 +63,29 @@ test('an empty feed includes the default contact and no invented artwork or epis
   assert.doesNotMatch(xml, /<item>|itunes:image|undefined/);
 });
 
+test('the show category stays separate from episode tags and escapes RSS attributes', () => {
+  assert.equal(configuration.feed.category, 'Comedy');
+  const input = data();
+  const library = [
+    {
+      ...episode(),
+      title: 'Food talk',
+      description: 'About food.',
+      tags: ['Food'],
+    },
+  ];
+  const [channel, item] = createPodcastFeed(input, library).split('<item>');
+  assert.match(channel, /<itunes:category text="Comedy" \/>/);
+  assert.doesNotMatch(channel, /<category>Food<\/category>/);
+  assert.match(item, /<category>Food<\/category>/);
+  assert.doesNotMatch(item, /<itunes:category/);
+  input.feed.category = 'Society & Culture';
+  assert.match(
+    createPodcastFeed(input, library),
+    /<itunes:category text="Society &amp; Culture" \/>/,
+  );
+});
+
 test('show copyright is preserved, escaped and optional in RSS', () => {
   const notice = '© ギャルインザミックス - All Rights Reserved';
   assert.equal(configuration.feed.copyright, notice);
