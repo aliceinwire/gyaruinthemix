@@ -37,3 +37,14 @@ test('public shop uses the shared product component and grid', async () => {
     assert.match(page, /products\.map\(/);
   }
 });
+
+test('shop opening notice shows the approximate launch time in both languages', async () => {
+  const page = await readFile(
+    new URL('../src/pages/shop/index.astro', import.meta.url),
+    'utf8',
+  );
+  assert.match(page, /2026年11月17日18時ごろオープン予定（日本時間）/);
+  assert.match(page, /Opening around 18:00 JST on November 17, 2026\./);
+  assert.ok(page.indexOf('data-shop-opening') < page.indexOf('<ShopHero'));
+  assert.doesNotMatch(page, /prices and release dates will be announced/);
+});
