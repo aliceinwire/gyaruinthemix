@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import {
   mkdtemp,
   mkdir,
@@ -19,6 +20,35 @@ import sharp from 'sharp';
 const { refreshPodcast } = await import(
   process.env.PODCAST_INDEX_MODULE || '../scripts/podcast-index.mjs'
 );
+const indexModule = new URL(
+  process.env.PODCAST_INDEX_MODULE || '../scripts/podcast-index.mjs',
+  import.meta.url,
+).href;
+
+function scanWithImageFailure(options, terminate = false) {
+  const replacement = `const sharp = () => process.kill(process.pid, 'SIGKILL');
+    sharp.cache = sharp.concurrency = () => {}; export default sharp;`;
+  return spawnSync(
+    process.execPath,
+    [
+      '--max-old-space-size=48',
+      '--input-type=module',
+      '-e',
+      `import { registerHooks } from 'node:module';
+       registerHooks({ resolve(specifier, context, next) {
+         if (specifier === 'sharp') {
+           if (${terminate}) return { shortCircuit: true,
+             url: ${JSON.stringify('data:text/javascript,' + encodeURIComponent(replacement))} };
+           throw new Error('Image processor unavailable');
+         }
+         return next(specifier, context);
+       }});
+       const { refreshPodcast } = await import(${JSON.stringify(indexModule)});
+       await refreshPodcast(${JSON.stringify(options)});`,
+    ],
+    { encoding: 'utf8', timeout: 15000 },
+  );
+}
 
 // ID3v2.4 frames followed by silent 128 kbps MPEG-1 Layer III frames.
 const size = (n) =>
@@ -337,6 +367,68 @@ test('rebuilds older cached media without changing the episode GUID or release d
     assert.equal(after.match(pattern)[0], before.match(pattern)[0]);
   assert.match(after.split('<item>')[1], /<description>.+<\/description>/);
   assert.deepEqual(await readdir(join(f.cache, 'audio')), [currentMedia]);
+});
+
+test('audio publishes when the optional image processor cannot load', async (t) => {
+  const f = await fixture(t);
+  await writeFile(
+    join(f.source, 'episode.mp3'),
+    mp3([
+      frame(
+        'APIC',
+        Buffer.concat([Buffer.from('\x03image/png\x00\x03\x00'), png]),
+      ),
+    ]),
+  );
+  const result = scanWithImageFailure(f);
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(await f.read('rss.xml'), /<item>/);
+  for (const locale of ['ja', 'en'])
+    assert.match(await f.read(`${locale}.html`), /<audio\b/);
+  assert.ok(
+    (await readFile(join(f.pages, 'current/audio/episode.mp3'))).length,
+  );
+});
+
+test('a restart restores published audio before an interrupted image rebuild', async (t) => {
+  const f = await fixture(t);
+  for (const name of ['episode.mp3', 'removed.mp3', 'draft.mp3'])
+    await writeFile(join(f.source, name), mp3());
+  await refreshPodcast(f);
+  const before = await f.read('rss.xml');
+  await rm(join(f.source, 'removed.mp3'));
+  f.config.episodes.push({
+    id: 'draft',
+    published: false,
+    audio: { url: 'https://gyaruinthemix.com/podcast/audio/draft.mp3' },
+  });
+  await writeFile(
+    join(f.source, 'episode.mp3'),
+    mp3([
+      frame(
+        'APIC',
+        Buffer.concat([Buffer.from('\x03image/png\x00\x03\x00'), png]),
+      ),
+    ]),
+  );
+  await rm(f.pages, { recursive: true });
+  const result = scanWithImageFailure(f, true);
+  assert.equal(result.signal, 'SIGKILL', result.stderr);
+  const restored = await f.read('rss.xml');
+  assert.equal((restored.match(/<item>/g) || []).length, 1);
+  assert.match(restored, /<title>episode<\/title>/);
+  assert.doesNotMatch(restored, /removed\.mp3|draft\.mp3/);
+  assert.ok(before.includes(restored.match(/<guid[^>]*>.*?<\/guid>/)[0]));
+  assert.ok(before.includes(restored.match(/<pubDate>.*?<\/pubDate>/)[0]));
+  for (const locale of ['ja', 'en'])
+    assert.match(await f.read(`${locale}.html`), /<audio\b/);
+  assert.ok(
+    (await readFile(join(f.pages, 'current/audio/episode.mp3'))).length,
+  );
+  for (const name of ['removed.mp3', 'draft.mp3'])
+    await assert.rejects(readFile(join(f.pages, 'current/audio', name)), {
+      code: 'ENOENT',
+    });
 });
 
 test('untagged episodes publish with a stable date while hidden, partial, corrupt and linked files stay out', async (t) => {
