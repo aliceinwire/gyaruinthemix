@@ -19,6 +19,16 @@ const linksOpen = !usesCart && products.some((product) => product.checkoutUrl);
     data-shop-discovery
     data-saved-key="gyaru-shop-favorites-v1"
   >
+    <p class="shop-opening" data-shop-opening>
+      <strong>
+        {
+          t(
+            '2026年11月17日18時ごろオープン予定（日本時間）',
+            'Opening around 18:00 JST on November 17, 2026.',
+          )
+        }
+      </strong>
+    </p>
     <ShopHero products={products} locale={locale} />
     <p id="catalog-status" class="notice" role="status">
       {
@@ -33,8 +43,8 @@ const linksOpen = !usesCart && products.some((product) => product.checkoutUrl);
                 'Each item or set can be purchased through Stripe checkout. Displayed prices include tax.',
               )
           : t(
-              'ただいま販売準備中。商品仕様・価格・発売日は、決まり次第ご案内します。',
-              'Our shop is getting ready. Product details, prices and release dates will be announced once confirmed.',
+              'ただいま販売準備中。商品仕様・価格は、決まり次第ご案内します。',
+              'Our shop is getting ready. Product details and prices will be announced once confirmed.',
             )
       }
     </p>{
@@ -100,3 +110,18 @@ const linksOpen = !usesCart && products.some((product) => product.checkoutUrl);
     <ShopHelp locale={locale} />
   </section>
 </Layout>
+
+<style>
+  .shop-opening {
+    margin: 0 0 24px;
+    padding: 20px clamp(16px, 4vw, 32px);
+    background: #b9005a;
+    color: #fff;
+    border: 2px solid currentColor;
+    outline: 2px solid #b9005a;
+    font-size: clamp(1.125rem, 3vw, 1.75rem);
+    line-height: 1.6;
+    text-align: center;
+    overflow-wrap: anywhere;
+  }
+</style>
