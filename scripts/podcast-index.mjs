@@ -30,6 +30,8 @@ import { canonicalUrl } from '../src/data/urls.mjs';
 
 const hash = (data) => createHash('sha256').update(data).digest('hex');
 const uploadId = (name) => 'mp3-' + hash(name).slice(0, 24);
+const mediaKey = (name, signature, date) =>
+  hash(JSON.stringify(['release-v2-artwork', name, signature, date])) + '.mp3';
 const fingerprint = (stat) =>
   [stat.dev, stat.ino, stat.size, stat.mtimeNs, stat.ctimeNs].join(':');
 
@@ -190,6 +192,7 @@ async function readEpisode(path, name, stat, url, date, mediaDir, mediaKey) {
 }
 
 async function publishPages(site, pages, config, mediaDir, published, key) {
+  key = 'normalized-rss-artwork-' + key;
   await mkdir(pages, { recursive: true });
   const current = join(pages, 'current');
   if ((await optional(readFile(join(current, 'key'), 'utf8'))) === key) return;
@@ -201,6 +204,16 @@ async function publishPages(site, pages, config, mediaDir, published, key) {
       ...entry.episode,
       explicit: config.feed.explicit,
     }));
+    // Older cached covers may exceed podcast artwork limits. Keep their audio
+    // and website images while RSS uses the show cover until conversion succeeds.
+    const feedLibrary = library.map((episode, index) => {
+      const [name, entry] = published[index];
+      if (entry.media === mediaKey(name, entry.signature, episode.date))
+        return episode;
+      const restored = { ...episode };
+      delete restored.artworkUrl;
+      return restored;
+    });
     const audio = join(stage, 'audio');
     await mkdir(audio);
     const publicDates = new Map(
@@ -233,7 +246,10 @@ async function publishPages(site, pages, config, mediaDir, published, key) {
       }
       await writeFile(join(stage, locale + '.html'), page);
     }
-    await writeFile(join(stage, 'rss.xml'), createPodcastFeed(config, library));
+    await writeFile(
+      join(stage, 'rss.xml'),
+      createPodcastFeed(config, feedLibrary),
+    );
     await writeFile(join(stage, 'key'), key);
     await symlink(basename(stage), next);
     await rename(next, current);
@@ -342,9 +358,7 @@ export async function refreshPodcast({
       japanDate(new Date(now));
     const date = configuredDates.get(url) ?? firstDate;
     if (!isCalendarDate(date)) throw new Error('Invalid podcast release date');
-    const media =
-      hash(JSON.stringify(['release-v2-artwork', name, signature, date])) +
-      '.mp3';
+    const media = mediaKey(name, signature, date);
     const reusable =
       prior?.media === media &&
       existingMedia.has(media) &&

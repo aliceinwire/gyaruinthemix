@@ -431,6 +431,81 @@ test('a restart restores published audio before an interrupted image rebuild', a
     });
 });
 
+test('recovered legacy artwork stays out of RSS until a compatible cover is ready', async (t) => {
+  const f = await fixture(t);
+  f.config.feed.artworkUrl =
+    'https://gyaruinthemix.com/assets/podcast-cover-v1.jpg';
+  const picture = await sharp({
+    create: {
+      width: 4000,
+      height: 4000,
+      channels: 3,
+      background: '#ff0080',
+    },
+  })
+    .jpeg()
+    .toBuffer();
+  await writeFile(
+    join(f.source, 'episode.mp3'),
+    mp3([
+      frame(
+        'APIC',
+        Buffer.concat([Buffer.from('\x03image/jpeg\x00\x03\x00'), picture]),
+      ),
+    ]),
+  );
+  await refreshPodcast(f);
+  const before = await f.read('rss.xml');
+  const cacheFile = join(f.cache, 'index-v1.json');
+  const entries = JSON.parse(await readFile(cacheFile, 'utf8'));
+  const entry = entries[0][1];
+  const media = await readFile(join(f.cache, 'audio', entry.media));
+  await rm(join(f.cache, 'audio', entry.media));
+  entry.media = '0'.repeat(64) + '.mp3';
+  const legacyCover = '1'.repeat(64) + '.jpg';
+  entry.episode.artworkUrl =
+    'https://gyaruinthemix.com/podcast/artwork/' + legacyCover;
+  await writeFile(join(f.cache, 'audio', entry.media), media);
+  await writeFile(join(f.cache, 'artwork', legacyCover), picture);
+  await writeFile(cacheFile, JSON.stringify(entries));
+  await rm(f.pages, { recursive: true });
+
+  const result = scanWithImageFailure(f, true);
+  assert.equal(result.signal, 'SIGKILL', result.stderr);
+  const recovered = await f.read('rss.xml');
+  const [channel, item] = recovered.split('<item>');
+  assert.ok(channel.includes(f.config.feed.artworkUrl));
+  assert.doesNotMatch(item, /<itunes:image/);
+  assert.doesNotMatch(recovered, new RegExp(legacyCover));
+  for (const pattern of [
+    /<guid[^>]*>.*?<\/guid>/,
+    /<pubDate>.*?<\/pubDate>/,
+    /<enclosure[^>]+\/>/,
+  ])
+    assert.equal(recovered.match(pattern)[0], before.match(pattern)[0]);
+  for (const locale of ['ja', 'en']) {
+    const html = await f.read(`${locale}.html`);
+    assert.ok(html.includes(legacyCover));
+    assert.match(html, /<audio\b/);
+  }
+  assert.deepEqual(
+    await readFile(join(f.pages, 'current/audio/episode.mp3')),
+    media,
+  );
+
+  await refreshPodcast(f);
+  const converted = await f.read('rss.xml');
+  assert.equal(converted, before);
+  const cover = converted
+    .split('<item>')[1]
+    .match(/\/artwork\/([a-f0-9]{64}\.jpg)/)[1];
+  const image = await sharp(
+    await readFile(join(f.cache, 'artwork', cover)),
+  ).metadata();
+  assert.equal(image.width, 2000);
+  assert.equal(image.height, 2000);
+});
+
 test('untagged episodes publish with a stable date while hidden, partial, corrupt and linked files stay out', async (t) => {
   const f = await fixture(t);
   await writeFile(join(f.source, 'ひとやすみ.mp3'), mp3());
