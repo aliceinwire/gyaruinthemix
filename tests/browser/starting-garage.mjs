@@ -91,6 +91,28 @@ export async function checkStartingGarage(browser, { root, csp }) {
     await page.waitForFunction(
       () => globalThis.__HYPERDRIVE__?.snapshot().ready,
     );
+    await page.evaluate(() => { Math.random = () => 0.999999; });
+    await page.locator('#story').click();
+    for (let line = 0; line < 60; line++) {
+      if (await page.evaluate(() => __HYPERDRIVE__.snapshot().screen !== 'story')) break;
+      const choices = page.locator('#story-choices button');
+      if (await choices.count()) await choices.first().click();
+      else await page.locator('#story-next').click();
+    }
+    assert.equal(await page.locator('#car-select').isVisible(), true);
+    assert.equal((await snapshot()).survival.startingWeapon, 'cassette');
+    assert.deepEqual((await snapshot()).survival.upgrades, { cassette: 1 });
+    const randomMeta = await page.evaluate(
+      key => JSON.parse(localStorage.getItem(key)), META_KEY,
+    );
+    assert.equal(randomMeta?.completionPoints ?? 0, 0);
+    assert.deepEqual(randomMeta?.ownedStartingWeapons ?? [], []);
+    await page.reload();
+    await page.waitForFunction(() => globalThis.__HYPERDRIVE__?.snapshot().ready);
+    await page.locator('#resume-tour').click();
+    await page.waitForFunction(() => __HYPERDRIVE__.snapshot().screen !== 'menu');
+    assert.equal((await snapshot()).survival.startingWeapon, 'cassette');
+    assert.deepEqual((await snapshot()).survival.upgrades, { cassette: 1 });
     await load(seed, createMetaProgress());
     assert.equal(
       await page.locator('[data-weapon="flash"]').isDisabled(),

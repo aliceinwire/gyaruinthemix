@@ -48,7 +48,7 @@ const purchases = [
   (state, meta) => buyRunMod(state, 'air-control', null, meta),
 ];
 
-test('a new player departs unarmed and coins cannot unlock any starting weapon', () => {
+test('an unarmed loadout can depart and coins cannot unlock any starting weapon', () => {
   const state = fresh(),
     meta = createMetaProgress();
   state.money = 100000;
