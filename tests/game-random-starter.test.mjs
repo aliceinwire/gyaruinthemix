@@ -10,7 +10,7 @@ import {
   restoreNightfallSave,
   chooseStartingWeapon,
   beginCampaign,
-  retryRoute,
+  changeRouteBeforeStart,
 } from '../public/game/src/simulation.js';
 import { createMetaProgress } from '../public/game/src/garage.js';
 
@@ -26,7 +26,7 @@ test('random starters cover every weapon with equal intervals, including hearts'
   }
 });
 
-test('random equipment survives saves and retries without granting a permanent unlock', () => {
+test('random equipment survives saves and route changes without granting a permanent unlock', () => {
   for (const weapon of SURVIVAL_STARTERS) {
     const meta = createMetaProgress();
     const state = createState({
@@ -37,9 +37,8 @@ test('random equipment survives saves and retries without granting a permanent u
     assert.deepEqual(state.survival.upgrades, { [weapon.id]: 1 });
     const restored = restoreNightfallSave(exportNightfallSave(state));
     assert.equal(restored.survival.startingWeapon, weapon.id);
+    changeRouteBeforeStart(restored, 'scenic');
     assert.equal(beginCampaign(restored), true);
-    restored.status = 'lost';
-    retryRoute(restored);
     assert.equal(restored.survival.startingWeapon, weapon.id);
     assert.deepEqual(restored.survival.upgrades, { [weapon.id]: 1 });
     const other = SURVIVAL_STARTERS.find((item) => item.id !== weapon.id).id;

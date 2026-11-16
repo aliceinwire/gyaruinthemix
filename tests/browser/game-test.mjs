@@ -465,6 +465,11 @@ try {
     assert.equal(await page.locator('#story-choices button').count(), 2);
     assert.equal(await page.locator('#story-next').isVisible(), false);
     await finishStory(page);
+    assert.equal(
+      (await page.evaluate(() => __HYPERDRIVE__.snapshot().state)).survival.startingWeapon,
+      'heart',
+      'A fresh tour equips the weapon selected by its random roll',
+    );
     const openingMemory = (await page.evaluate(() => __HYPERDRIVE__.snapshot()))
       .story;
     assert.equal(openingMemory.choices['tour:opening'], 'crew');
