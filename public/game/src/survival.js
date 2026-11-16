@@ -35,6 +35,10 @@ export const SURVIVAL_UPGRADES = Object.freeze([
 ].map(item => Object.freeze({ kind: 'support', icon: item.id, maxLevel: 6, role: SURVIVAL_WEAPON_ROLES[item.id] || null, ...item })));
 export const SURVIVAL_WEAPONS = Object.freeze(SURVIVAL_UPGRADES.filter(item => item.kind === 'weapon'));
 export const SURVIVAL_STARTERS = SURVIVAL_WEAPONS;
+/** Roll once for a new tour; the resulting weapon belongs to its saved loadout. */
+export function randomStartingWeapon(random = Math.random) {
+  return SURVIVAL_STARTERS[Math.floor(random() * SURVIVAL_STARTERS.length)].id;
+}
 const AREA_WEAPONS = SURVIVAL_WEAPONS.filter(item => item.id !== 'heart');
 export const SURVIVAL_MAX_LEVEL = SURVIVAL_UPGRADES.reduce((sum, item) => sum + item.maxLevel, 0);
 const levelLimit = survival => SURVIVAL_MAX_LEVEL - (survival.startingWeapon === null ? 0 : 1);

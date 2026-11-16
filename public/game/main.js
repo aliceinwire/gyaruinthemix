@@ -1,5 +1,5 @@
 import { createClubRhythmUI, setClubControls } from './src/club-rhythm-ui.js';
-import { setSurvivalAssistance, isSurvival, dailySurvival, survivalView, chooseSurvivalUpgrade, survivalMultiplier, survivalRecordCategory, createSurvivalRecords, SURVIVAL_STARTERS, SURVIVAL_UPGRADES, MUSIC_RULES_VERSION } from './src/survival.js';
+import { setSurvivalAssistance, isSurvival, dailySurvival, survivalView, chooseSurvivalUpgrade, survivalMultiplier, survivalRecordCategory, createSurvivalRecords, randomStartingWeapon, SURVIVAL_STARTERS, SURVIVAL_UPGRADES, MUSIC_RULES_VERSION } from './src/survival.js';
 import { useCurrentMusicRules, suspendMusicDrive } from './src/music-drive.js';
 import { createDrivingLessons, updateDrivingLessons, getDrivingCue } from './src/driving-lessons.js';
 import { createItemIcon } from './src/item-icons.js';
@@ -82,7 +82,7 @@ const $ = (s) => document.querySelector(s),
 function newTour(progress, challenge = dailySurvival()) {
   const seed = challenge.seed;
   const fresh = createState({
-    mode: 'survival', survivalDay: challenge.day, startingWeapon: null,
+    mode: 'survival', survivalDay: challenge.day, startingWeapon: randomStartingWeapon(),
     routeIndex: 0,
     routeOption: "scenic",
     seed,
