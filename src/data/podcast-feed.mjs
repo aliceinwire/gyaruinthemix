@@ -32,6 +32,7 @@ export function createPodcastFeed(data, library = []) {
   if (typeof feed.explicit !== 'boolean')
     throw new Error('Podcast feed explicit must be true or false');
   const email = podcastEmail(feed);
+  if (feed.copyright !== undefined) requiredText(feed.copyright, 'copyright');
 
   const { episodes } = getPodcast(data, 'ja', library);
   const artwork = showArtwork(feed, episodes).feed;
@@ -87,7 +88,7 @@ export function createPodcastFeed(data, library = []) {
     <link>${showUrl}</link>
     <description>${xml(feed.description)}</description>
     <itunes:summary>${xml(feed.description)}</itunes:summary>
-    <language>${xml(feed.language)}</language>
+    <language>${xml(feed.language)}</language>${feed.copyright === undefined ? '' : `\n    <copyright>${xml(feed.copyright)}</copyright>`}
     <atom:link href="${podcastFeedUrl}" rel="self" type="application/rss+xml" />
     <itunes:author>${xml(feed.author)}</itunes:author>
     <itunes:category text="${xml(feed.category)}" />
