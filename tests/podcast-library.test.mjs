@@ -16,7 +16,6 @@ import { join } from 'node:path';
 import test from 'node:test';
 import { crc32 } from 'node:zlib';
 import sharp from 'sharp';
-import configuration from '../config/podcast.json' with { type: 'json' };
 const { refreshPodcast } = await import(
   process.env.PODCAST_INDEX_MODULE || '../scripts/podcast-index.mjs'
 );
@@ -67,8 +66,19 @@ async function fixture(t) {
     settleMs: 0,
     now: Date.parse('2026-11-06T14:59:59Z'),
     config: {
-      ...structuredClone(configuration),
-      feed: { ...configuration.feed, artworkUrl: '' },
+      // This suite also runs beside the production bundle, without source files.
+      feed: {
+        title: 'Podcast',
+        description: 'Podcast conversations',
+        descriptionEn: 'Podcast conversations in English',
+        author: 'Hosts',
+        language: 'ja',
+        category: 'Society & Culture',
+        explicit: false,
+        artworkUrl: '',
+      },
+      platforms: {},
+      episodes: [],
       episodeDescriptions: {},
     },
   };
