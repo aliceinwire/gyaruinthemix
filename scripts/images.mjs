@@ -46,19 +46,6 @@ for (const [source, name, width] of [
   }
 }
 
-const coverBackground = await readFile('assets/originals/podcast-cover.svg');
-const coverLogo = await readFile('assets/originals/gyaruinthemix_logo.PNG');
-const cover = await cachedImage(
-  Buffer.concat([coverBackground, coverLogo]),
-  { name: 'podcast-cover-v1', width: 2400, quality: 92 },
-  async () => {
-    const logo = await sharp(coverLogo).rotate().resize(2080).toBuffer();
-    return sharp(coverBackground)
-      .composite([{ input: logo, left: 160, top: 540 }])
-      .flatten({ background: '#100a10' })
-      .toColourspace('srgb')
-      .jpeg({ quality: 92 })
-      .toBuffer();
-  },
-);
-await writeFile('public/assets/podcast-cover-v1.jpg', cover);
+// Preserve the approved original cover byte-for-byte.
+const cover = await readFile('assets/originals/podcast-cover-v2.jpg');
+await writeFile('public/assets/podcast-cover-v2.jpg', cover);

@@ -10,6 +10,15 @@ import { sharingImageTags } from '../src/data/podcast-view.mjs';
 import { GET } from '../src/pages/podcast/rss.xml.js';
 
 const configuration = JSON.parse(await readFile('config/podcast.json', 'utf8'));
+test('show artwork uses the portrait cover for RSS and both sharing locales', () => {
+  const cover = 'https://gyaruinthemix.com/assets/podcast-cover-v2.jpg';
+  assert.equal(configuration.feed.artworkUrl, cover);
+  assert.ok(createPodcastFeed(configuration).includes(cover));
+  for (const locale of ['ja', 'en']) {
+    assert.ok(sharingImageTags(configuration.feed, [], locale).includes(cover));
+  }
+});
+
 const episode = (overrides = {}) => ({
   id: 'first-conversation',
   published: true,
@@ -483,4 +492,20 @@ test('both uploaded media routes resolve through the published podcast edition',
     assert.ok(location.includes('if_modified_since off;'));
   }
   assert.doesNotMatch(nginx, /alias \/podcast-source/);
+});
+
+test('show artwork build preserves the original file without image processing', async () => {
+  const build = await readFile('scripts/images.mjs', 'utf8');
+  const coverBuild = build.slice(
+    build.indexOf('// Preserve the approved original cover'),
+  );
+  assert.match(
+    coverBuild,
+    /readFile\('assets\/originals\/podcast-cover-v2\.jpg'\)/,
+  );
+  assert.match(
+    coverBuild,
+    /writeFile\('public\/assets\/podcast-cover-v2\.jpg', cover\)/,
+  );
+  assert.doesNotMatch(coverBuild, /sharp\(|resize\(|jpeg\(|cachedImage\(/);
 });
