@@ -46,17 +46,6 @@ for (const [source, name, width] of [
   }
 }
 
-const coverSource = await readFile('assets/originals/podcast-cover-v2.jpg');
-const cover = await cachedImage(
-  coverSource,
-  { name: 'podcast-cover-v2', width: 3000, quality: 92 },
-  () =>
-    sharp(coverSource)
-      .rotate()
-      .resize(3000, 3000, { fit: 'contain' })
-      .flatten({ background: '#100a10' })
-      .toColourspace('srgb')
-      .jpeg({ quality: 92 })
-      .toBuffer(),
-);
+// Preserve the approved original cover byte-for-byte.
+const cover = await readFile('assets/originals/podcast-cover-v2.jpg');
 await writeFile('public/assets/podcast-cover-v2.jpg', cover);

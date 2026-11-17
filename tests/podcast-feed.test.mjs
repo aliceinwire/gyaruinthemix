@@ -493,3 +493,19 @@ test('both uploaded media routes resolve through the published podcast edition',
   }
   assert.doesNotMatch(nginx, /alias \/podcast-source/);
 });
+
+test('show artwork build preserves the original file without image processing', async () => {
+  const build = await readFile('scripts/images.mjs', 'utf8');
+  const coverBuild = build.slice(
+    build.indexOf('// Preserve the approved original cover'),
+  );
+  assert.match(
+    coverBuild,
+    /readFile\('assets\/originals\/podcast-cover-v2\.jpg'\)/,
+  );
+  assert.match(
+    coverBuild,
+    /writeFile\('public\/assets\/podcast-cover-v2\.jpg', cover\)/,
+  );
+  assert.doesNotMatch(coverBuild, /sharp\(|resize\(|jpeg\(|cachedImage\(/);
+});
