@@ -12,8 +12,8 @@
     "ownerEmail": "arisut@riseup.net"
   },
   "platforms": {
-    "spotify": "",
-    "applePodcasts": "",
+    "spotify": "https://open.spotify.com/show/5ovUHNkTOyOfxVPp0aO1hU",
+    "applePodcasts": "https://podcasts.apple.com/jp/podcast/%E3%82%AE%E3%83%A3%E3%83%AB%E3%82%A4%E3%83%B3%E3%82%B6%E3%83%9F%E3%83%83%E3%82%AF%E3%82%B9/id6835408102",
     "rss": "https://gyaruinthemix.com/podcast/rss.xml"
   },
   "episodes": [],
