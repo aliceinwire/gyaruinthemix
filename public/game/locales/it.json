@@ -1557,5 +1557,6 @@
   "GP追加条件（次の1 GPまであと{0}件） · {1}": "Obiettivo GP (ne mancano {0} al prossimo punto) · {1}",
   "この旅のGPは {0}/{1}": "GP del tour {0}/{1}",
   "{0} · GPチャレンジ達成！ この旅 {1}/{2} GP": "{0} · Sfida GP completata! Guadagno nel tour {1}/{2} GP",
-  "この旅で獲得したGPは {0}/{1}。次のガレージで使えるで。": "Hai guadagnato {0}/{1} GP nel tour. Puoi spenderli nel garage del prossimo tour."
+  "この旅で獲得したGPは {0}/{1}。次のガレージで使えるで。": "Hai guadagnato {0}/{1} GP nel tour. Puoi spenderli nel garage del prossimo tour.",
+  "引き直し {0}コイン（所持 {1}）": "Cambia scelte: {0} monete (saldo: {1})"
 }

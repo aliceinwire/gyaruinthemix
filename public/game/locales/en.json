@@ -1557,5 +1557,6 @@
   "GP追加条件（次の1 GPまであと{0}件） · {1}": "GP bonus goal ({0} to the next point) · {1}",
   "この旅のGPは {0}/{1}": "Tour GP {0}/{1}",
   "{0} · GPチャレンジ達成！ この旅 {1}/{2} GP": "{0} · GP challenge complete! Tour earnings {1}/{2} GP",
-  "この旅で獲得したGPは {0}/{1}。次のガレージで使えるで。": "You earned {0}/{1} GP this tour. Spend banked GP in your next starting garage."
+  "この旅で獲得したGPは {0}/{1}。次のガレージで使えるで。": "You earned {0}/{1} GP this tour. Spend banked GP in your next starting garage.",
+  "引き直し {0}コイン（所持 {1}）": "Redraw upgrades: {0} coins (balance: {1})"
 }

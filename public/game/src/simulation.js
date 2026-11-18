@@ -522,7 +522,7 @@ function convert(state, target) {
   state.comboTimer = COMBO_WINDOW;
   state.bestCombo = Math.max(state.bestCombo, state.combo);
   const reward = Math.round((50 + Math.min(state.combo - 1, 5) * 10) * (getJourneyNode(state.journeyNodeId)?.conversionRewardMultiplier ?? 1));
-  state.money += reward;
+  state.money += isSurvival(state) ? Math.round(reward / 10) : reward;
   if (target.headliner) {
     state.signalClears++;
     state.stageSignals++;

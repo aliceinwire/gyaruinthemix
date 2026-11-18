@@ -1,5 +1,5 @@
 import { createClubRhythmUI, setClubControls } from './src/club-rhythm-ui.js';
-import { setSurvivalAssistance, isSurvival, dailySurvival, survivalView, chooseSurvivalUpgrade, survivalMultiplier, survivalRecordCategory, createSurvivalRecords, randomStartingWeapon, SURVIVAL_STARTERS, SURVIVAL_UPGRADES, MUSIC_RULES_VERSION } from './src/survival.js';
+import { buyDraftReroll, draftRerollPrice, setSurvivalAssistance, isSurvival, dailySurvival, survivalView, chooseSurvivalUpgrade, survivalMultiplier, survivalRecordCategory, createSurvivalRecords, randomStartingWeapon, SURVIVAL_STARTERS, SURVIVAL_UPGRADES, MUSIC_RULES_VERSION } from './src/survival.js';
 import { useCurrentMusicRules, suspendMusicDrive } from './src/music-drive.js';
 import { createDrivingLessons, updateDrivingLessons, getDrivingCue } from './src/driving-lessons.js';
 import { createItemIcon } from './src/item-icons.js';
@@ -331,9 +331,11 @@ function openMap(next = false) {
     localizeText($("#map-subtitle"), "次のクラブへ、うちらの音を届けよ。道と進化を選んで、72ウェーブの夜を走り抜こ。");
   if (next) {
     const mission = getRouteMission(state);
-    const summary = isSurvival(state)
+    let summary = isSurvival(state)
       ? message("道を突破！ スコア {0} · 耐久 {1} · 次の6ウェーブへ", [number(Math.floor(state.score), { useGrouping: true }), Math.ceil(state.integrity)])
       : message("{0}、到着や！ {1}人をフロアの仲間に。{2}", [state.route.goal, state.stageGyaru, mission?.complete ? message("道の目標も達成、+{0}コイン！", [mission.reward]) : "次の道でもうひと盛りしよ。"]);
+    if (isSurvival(state) && mission?.complete)
+      summary = message("{0} / {1}", [summary, message("道の目標も達成、+{0}コイン！", [mission.reward])]);
     localizeText(arrived, state.runBuild.masteredLegs.includes(state.routeIndex)
       ? message("{0} · GPチャレンジ達成！ この旅 {1}/{2} GP", [summary, roadPointProgress(state).points, ROAD_GP_MILESTONES.length]) : summary);
   }
@@ -479,6 +481,12 @@ function showDraft() {
   const view = rpgView(state), host = $('#draft-options');
   localizeText($('#draft-title'), message("MIX LEVEL {0} / ひとつ、盛ってこ。", [view.rank + 1]));
   localizeText($('#draft-copy'), '時間は止まってるで。ひとつ選んで、うちらの組み合わせに。進化も装備も、このランだけ。');
+  const reroll = $('#draft-reroll'), price = draftRerollPrice(state);
+  reroll.hidden = price === null;
+  if (price !== null) {
+    localizeText(reroll, message("引き直し {0}コイン（所持 {1}）", [price, state.money]));
+    reroll.disabled = state.money < price;
+  }
   host.replaceChildren();
   for (const perk of view.offers || []) {
     const card = document.createElement('button'); card.className = 'draft-card'; card.dataset.perkId = perk.id;
@@ -511,6 +519,9 @@ function showDraft() {
   host.querySelector('button')?.focus();
   renderRpgHud();
 }
+$('#draft-reroll').addEventListener('click', () => {
+  if (buyDraftReroll(state)) showDraft();
+});
 $('#draft-panel').addEventListener('keydown', event => {
   if (event.repeat && ['Enter','Space'].includes(event.code)) event.preventDefault();
 });

@@ -21,6 +21,8 @@ import {
 } from '../public/game/src/simulation.js';
 import { createSaveStore, SAVE_KEY } from '../public/game/src/save-store.js';
 import {
+  buyDraftReroll,
+  draftRerollPrice,
   dailySurvival,
   survivalOffers,
   chooseSurvivalUpgrade,
@@ -880,4 +882,40 @@ test('every starter reaches its first build choice promptly without taking unavo
       assert.ok(s.survival.seconds < 15);
       assert.ok(s.integrity >= 80);
     }
+});
+
+test('road earnings fund a single optional redraw per level without changing score rewards', () => {
+  const s = quiet();
+  enemy(s, 700, 30);
+  update(s, {}, 0.15);
+  const invite = s.events.find((event) => event.type === 'convert');
+  assert.ok(invite.reward > 0);
+  assert.equal(s.money, Math.round(invite.reward / 10));
+  assert.ok(s.score >= invite.reward * 2);
+  assert.equal(buyDraftReroll(s), false);
+  s.survival.xp = survivalXpCost(s.survival.level);
+  assert.ok(openSurvivalDraft(s));
+  const ids = () => survivalOffers(s).map((item) => item.id);
+  const first = ids();
+  assert.equal(draftRerollPrice(s), 80);
+  s.money = 79;
+  assert.equal(buyDraftReroll(s), false);
+  assert.deepEqual(ids(), first);
+  s.money = 150;
+  assert.ok(buyDraftReroll(s));
+  const second = ids();
+  assert.equal(second.length, 3);
+  assert.ok(second.every((id) => !first.includes(id)));
+  assert.equal(s.money, 70);
+  assert.equal(buyDraftReroll(s), false);
+  assert.equal(chooseSurvivalUpgrade(s, first[0]), false);
+  assert.ok(chooseSurvivalUpgrade(s, second[0]));
+  s.survival.xp = survivalXpCost(s.survival.level);
+  assert.ok(openSurvivalDraft(s));
+  assert.equal(draftRerollPrice(s), 115);
+  assert.equal(fresh().survival.redrawsBought, 0);
+  s.routeIndex = 4;
+  assert.equal(draftRerollPrice(s), 135);
+  s.routeIndex = 8;
+  assert.equal(draftRerollPrice(s), 155);
 });
