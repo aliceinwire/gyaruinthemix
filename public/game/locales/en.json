@@ -59,6 +59,7 @@
   "盛り {0} / {1}": "Upgrade {0} / {1}",
   "修理いらんで": "No repairs needed",
   "めっちゃ盛れた": "Fully upgraded",
+  "{0} コイン": "{0} coins",
   "{0} コインで{1}": "{0} coins to {1}",
   "直そ": "repair",
   "盛ろ": "upgrade",
@@ -1177,7 +1178,7 @@
   "ハートは自動。飛ぶ・充電・加速で生き抜こ。": "Hearts fire automatically. Fly, charge and rush to survive.",
   "自動ハートで誘ってこ！ Z長押しで連射アップ、電池は毎秒8使うで。": "Automatic hearts invite everyone! Hold Z for faster fire, using 8 battery per second.",
   "1ライフ。ハートは自動。進化を選び、72ウェーブを生き抜こ。修理は小さな発見と整備ルートで。": "One life. Automatic hearts. Build evolutions and survive 72 waves. Little finds and service routes repair your car.",
-  "道を突破！ スコア {0} · 耐久 {1} · 次の6ウェーブへ": "Road cleared! Score {0} · hull {1} · next six waves",
+  "到着！ スコア {0} · 耐久 {1} · +{2}コイン": "Arrived! Score {0} · Hull {1} · +{2} coins",
   "72ウェーブ、生き抜いた！": "All 72 waves survived!",
   "このビルドで、ここまで来た。": "This build brought you this far.",
   "同じコースでも、選ぶ進化で違う走りに。もう一回なら、新しいビルドで最初から。": "Same course, different evolutions. Replay from the start with a fresh build.",
@@ -1556,7 +1557,7 @@
   "障害物を2回飛び越えて、ノーダメージで到着。": "Jump over two obstacles and finish the road without taking damage.",
   "GP追加条件（次の1 GPまであと{0}件） · {1}": "GP bonus goal ({0} to the next point) · {1}",
   "この旅のGPは {0}/{1}": "Tour GP {0}/{1}",
-  "{0} · GPチャレンジ達成！ この旅 {1}/{2} GP": "{0} · GP challenge complete! Tour earnings {1}/{2} GP",
+  "{0} · 目標達成 ✓ · {1}/{2} GP": "{0} · Challenge cleared ✓ · {1}/{2} GP",
   "この旅で獲得したGPは {0}/{1}。次のガレージで使えるで。": "You earned {0}/{1} GP this tour. Spend banked GP in your next starting garage.",
   "引き直し {0}コイン（所持 {1}）": "Redraw upgrades: {0} coins (balance: {1})"
 }

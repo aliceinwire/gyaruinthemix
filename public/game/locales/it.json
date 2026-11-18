@@ -59,6 +59,7 @@
   "盛り {0} / {1}": "Upgrade {0} / {1}",
   "修理いらんで": "Nessuna riparazione necessaria",
   "めっちゃ盛れた": "Stile al massimo",
+  "{0} コイン": "{0} monete",
   "{0} コインで{1}": "{0} monete per {1}",
   "直そ": "Ripara",
   "盛ろ": "Potenzia",
@@ -1177,7 +1178,7 @@
   "ハートは自動。飛ぶ・充電・加速で生き抜こ。": "I cuori partono da soli. Vola, ricarica e accelera per sopravvivere.",
   "自動ハートで誘ってこ！ Z長押しで連射アップ、電池は毎秒8使うで。": "I cuori automatici invitano tutti! Tieni Z per sparare più veloce, consumando 8 di batteria al secondo.",
   "1ライフ。ハートは自動。進化を選び、72ウェーブを生き抜こ。修理は小さな発見と整備ルートで。": "Una vita. Cuori automatici. Scegli le evoluzioni e sopravvivi a 72 ondate. Piccole scoperte e percorsi di servizio riparano l’auto.",
-  "道を突破！ スコア {0} · 耐久 {1} · 次の6ウェーブへ": "Strada superata! Punti {0} · carrozzeria {1} · prossime sei ondate",
+  "到着！ スコア {0} · 耐久 {1} · +{2}コイン": "Arrivo! Punti {0} · Scocca {1} · +{2} monete",
   "72ウェーブ、生き抜いた！": "Hai superato tutte le 72 ondate!",
   "このビルドで、ここまで来た。": "Questa build ti ha portato fin qui.",
   "同じコースでも、選ぶ進化で違う走りに。もう一回なら、新しいビルドで最初から。": "Stesso percorso, evoluzioni diverse. Riparti dall’inizio con una nuova build.",
@@ -1556,7 +1557,7 @@
   "障害物を2回飛び越えて、ノーダメージで到着。": "Salta due ostacoli e arriva senza subire danni.",
   "GP追加条件（次の1 GPまであと{0}件） · {1}": "Obiettivo GP (ne mancano {0} al prossimo punto) · {1}",
   "この旅のGPは {0}/{1}": "GP del tour {0}/{1}",
-  "{0} · GPチャレンジ達成！ この旅 {1}/{2} GP": "{0} · Sfida GP completata! Guadagno nel tour {1}/{2} GP",
+  "{0} · 目標達成 ✓ · {1}/{2} GP": "{0} · Sfida superata ✓ · {1}/{2} GP",
   "この旅で獲得したGPは {0}/{1}。次のガレージで使えるで。": "Hai guadagnato {0}/{1} GP nel tour. Puoi spenderli nel garage del prossimo tour.",
   "引き直し {0}コイン（所持 {1}）": "Cambia scelte: {0} monete (saldo: {1})"
 }

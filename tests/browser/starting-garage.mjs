@@ -15,7 +15,7 @@ import {
   NIGHTFALL_SAVE_KEY,
 } from '../../public/game/src/save-store.js';
 
-export async function checkStartingGarage(browser, { root, csp }) {
+export async function checkStartingGarage(browser, { root, csp, checkLanguages }) {
   const context = await browser.newContext({
     viewport: { width: 390, height: 667 },
     locale: 'ja-JP',
@@ -333,6 +333,7 @@ export async function checkStartingGarage(browser, { root, csp }) {
     early.energy = early.energyCapacity * 0.4;
     update(early, {}, 1 / 60);
     update(early, { charge: true }, 2.1);
+    early.integrity = 50;
     early.distance = early.routeLength - 0.01;
     update(early, {}, 0.01);
     const arrival = exportNightfallSave(early);
@@ -341,6 +342,22 @@ export async function checkStartingGarage(browser, { root, csp }) {
     const banked = await page.evaluate(key => JSON.parse(localStorage.getItem(key)), META_KEY);
     await load(arrival, banked);
     assert.equal(await points(), 1);
+    if (await page.locator('#story-skip').isVisible())
+      await page.locator('#story-skip').click();
+    await page.locator('#depart').waitFor({ state: 'visible' });
+    assert.equal(await page.locator('#repair-car').isEnabled(), true);
+    await page.locator('.settings select').selectOption('en');
+    await page.waitForFunction(() => document.documentElement.lang === 'en');
+    assert.equal(await page.locator('#pit-wallet').textContent(), `${early.money} coins`);
+    for (const [width, height] of [[320, 740], [390, 667], [667, 375], [844, 390]]) {
+      await page.setViewportSize({ width, height });
+      for (const road of await page.locator('#destination-choices button').all()) {
+        await road.click();
+        await checkLanguages(page, '.settings select', [
+          '#arrival-summary', '#route-mission-preview', '#pit-wallet', '#repair-car', '#depart',
+        ]);
+      }
+    }
     assert.deepEqual(errors, []);
   } finally {
     await context.close();

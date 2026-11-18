@@ -331,13 +331,11 @@ function openMap(next = false) {
     localizeText($("#map-subtitle"), "次のクラブへ、うちらの音を届けよ。道と進化を選んで、72ウェーブの夜を走り抜こ。");
   if (next) {
     const mission = getRouteMission(state);
-    let summary = isSurvival(state)
-      ? message("道を突破！ スコア {0} · 耐久 {1} · 次の6ウェーブへ", [number(Math.floor(state.score), { useGrouping: true }), Math.ceil(state.integrity)])
+    const summary = isSurvival(state)
+      ? message("到着！ スコア {0} · 耐久 {1} · +{2}コイン", [number(Math.floor(state.score), { useGrouping: true }), Math.ceil(state.integrity), mission?.complete ? mission.reward : 0])
       : message("{0}、到着や！ {1}人をフロアの仲間に。{2}", [state.route.goal, state.stageGyaru, mission?.complete ? message("道の目標も達成、+{0}コイン！", [mission.reward]) : "次の道でもうひと盛りしよ。"]);
-    if (isSurvival(state) && mission?.complete)
-      summary = message("{0} / {1}", [summary, message("道の目標も達成、+{0}コイン！", [mission.reward])]);
     localizeText(arrived, state.runBuild.masteredLegs.includes(state.routeIndex)
-      ? message("{0} · GPチャレンジ達成！ この旅 {1}/{2} GP", [summary, roadPointProgress(state).points, ROAD_GP_MILESTONES.length]) : summary);
+      ? message("{0} · 目標達成 ✓ · {1}/{2} GP", [summary, roadPointProgress(state).points, ROAD_GP_MILESTONES.length]) : summary);
   }
   hud();
   $("#depart").focus();

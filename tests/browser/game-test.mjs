@@ -311,7 +311,7 @@ const browser = await chromium.launch({
     : {}),
 });
 try {
-  await checkStartingGarage(browser, { root, csp });
+  await checkStartingGarage(browser, { root, csp, checkLanguages });
   await checkConditionHud(browser, { root, csp });
   await checkRadioSpectrum(browser, { root, csp });
   await checkRadioSpectrum(browser, { root, csp, nativeHls: true });
