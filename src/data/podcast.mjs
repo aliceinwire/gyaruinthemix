@@ -119,6 +119,9 @@ export function getPodcast(data, locale = 'ja', library = []) {
       url: httpsLink(data.platforms[id], `${id} URL`),
     }))
     .filter((platform) => platform.url);
+  const showCover = artworkLink(data.feed?.artworkUrl);
+  const episodeCover = (source) =>
+    artworkLink(source.artworkUrl) || (source.artworkPending ? '' : showCover);
   const ids = new Set();
   const uploads = new Map(
     library.map((episode) => [episode.audio.url, episode]),
@@ -144,7 +147,7 @@ export function getPodcast(data, locale = 'ja', library = []) {
       const audio = episodeAudio(episode.audio);
       const upload = uploads.get(audio?.url);
       if (upload) audio.length = upload.audio.length;
-      const artworkUrl = artworkLink(episode.artworkUrl) || upload?.artworkUrl;
+      const artworkUrl = episodeCover(upload ?? episode);
       const url = httpsLink(episode.url, 'episode URL') || audio?.url;
       if (!url)
         throw new Error('Published podcast episodes need a listening URL');
@@ -172,6 +175,7 @@ export function getPodcast(data, locale = 'ja', library = []) {
     )
       episodes.push({
         ...episode,
+        artworkUrl: episodeCover(episode),
         description:
           episode.description?.trim() &&
           !/^podcast$/i.test(episode.description.trim())

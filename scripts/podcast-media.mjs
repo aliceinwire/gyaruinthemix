@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { open, rename, rm } from 'node:fs/promises';
+import { mkdtemp, open, rename, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { podcastReleaseTime } from '../src/data/podcast.mjs';
 
@@ -21,24 +21,85 @@ function frame(id, ...body) {
   return [Buffer.from(id), tagSize(byteLength(body)), Buffer.alloc(2), ...body];
 }
 
-async function cleanCover(cover) {
-  if (!cover) return;
+function pictureFormat(bytes) {
+  if (bytes.subarray(0, 3).equals(Buffer.from([255, 216, 255]))) return 'jpeg';
+  if (bytes.subarray(0, 8).equals(Buffer.from('89504e470d0a1a0a', 'hex')))
+    return 'png';
+  if (['GIF89a', 'GIF87a'].includes(bytes.toString('ascii', 0, 6)))
+    return 'gif';
+  if (
+    bytes.toString('ascii', 0, 4) === 'RIFF' &&
+    bytes.toString('ascii', 8, 12) === 'WEBP'
+  )
+    return 'webp';
+}
+
+async function cleanCover(directory, pictures = []) {
+  if (!pictures.length) return;
+  const candidates = pictures.toSorted(
+    (a, b) =>
+      Number(b.type === 'Cover (front)') - Number(a.type === 'Cover (front)'),
+  );
+  // Keep the pixel cache on the media volume, outside the web container's tmpfs.
+  const stage = await mkdtemp(join(directory, '.cover-'));
   try {
-    // Audio discovery and cached playback do not depend on native image bindings.
-    const { default: sharp } = await import('sharp');
-    sharp.cache(false);
-    sharp.concurrency(1);
-    // Keep the complete embedded picture, with a solid background for RSS.
-    const bytes = await sharp(cover.bytes, { limitInputPixels: 32_000_000 })
-      .rotate()
-      .resize(2000, 2000, { fit: 'contain', background: '#ffffff' })
-      .flatten({ background: '#ffffff' })
-      .toColourspace('srgb')
-      .jpeg({ quality: 90 })
-      .toBuffer();
-    return { extension: 'jpg', bytes };
-  } catch {
-    console.warn('Omitting unreadable embedded podcast artwork');
+    for (const { data } of candidates) {
+      const input = Buffer.from(data.buffer, data.byteOffset, data.byteLength);
+      const format = pictureFormat(input);
+      if (!format) continue;
+      try {
+        const bytes = execFileSync(
+          'convert',
+          [
+            '-define',
+            'jpeg:size=3000x3000',
+            format + ':-[0]',
+            '-auto-orient',
+            '-colorspace',
+            'sRGB',
+            '-background',
+            'white',
+            '-alpha',
+            'remove',
+            '-alpha',
+            'off',
+            '-resize',
+            '3000x3000',
+            '-gravity',
+            'center',
+            '-extent',
+            '3000x3000',
+            '+repage',
+            '-strip',
+            '-type',
+            'TrueColor',
+            '-quality',
+            '90',
+            'jpeg:-',
+          ],
+          {
+            input,
+            env: {
+              ...process.env,
+              MAGICK_TEMPORARY_PATH: stage,
+              MAGICK_MEMORY_LIMIT: '16MiB',
+              MAGICK_MAP_LIMIT: '0',
+              MAGICK_DISK_LIMIT: '768MiB',
+              MAGICK_THREAD_LIMIT: '1',
+            },
+            stdio: ['pipe', 'pipe', 'pipe'],
+            maxBuffer: 16 * 1024 * 1024,
+          },
+        );
+        return { extension: 'jpg', bytes };
+      } catch (error) {
+        if (error.code || error.signal) throw error;
+        // A damaged front cover can coexist with another usable embedded picture.
+      }
+    }
+    throw new Error('Could not convert the embedded podcast artwork');
+  } finally {
+    await rm(stage, { recursive: true, force: true });
   }
 }
 
@@ -82,12 +143,12 @@ export async function preparePodcastMedia(
   directory,
   key,
   sourceFd,
-  result,
+  episode,
   common,
 ) {
-  const midnight = podcastReleaseTime(result.episode.date);
-  const cover = await cleanCover(result.cover);
-  const tag = publicTag(result.episode, cover, common, midnight);
+  const midnight = podcastReleaseTime(episode.date);
+  const cover = await cleanCover(directory, common.picture);
+  const tag = publicTag(episode, cover, common, midnight);
   const temp = join(directory, `.${randomUUID()}.tmp`);
   const file = await open(temp, 'wx');
   try {
