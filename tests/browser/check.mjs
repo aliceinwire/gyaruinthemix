@@ -13,6 +13,10 @@ import {
 import { checkProductDetails } from './product-details.mjs';
 import { releaseVersion } from '../../src/data/release.mjs';
 
+const podcastConfiguration = JSON.parse(
+  await readFile(new URL('../../config/podcast.json', import.meta.url), 'utf8'),
+);
+
 const repo = fileURLToPath(new URL('../../', import.meta.url));
 const dist = resolve(repo, 'dist');
 const mode = process.env.CHECKOUT_MODE || 'payment_links';
@@ -425,15 +429,22 @@ async function inspect(page, pathname, width) {
           (await chooser.locator('input[readonly]').inputValue()) === feed,
         label + ' RSS chooser opens in place with the canonical feed',
       );
-      const apple = chooser.getByRole('link', {
-        name: 'Apple Podcasts',
-        exact: true,
-      });
       check(
-        (await apple.isVisible()) &&
+        (await chooser
+          .getByRole('link', { name: 'Apple Podcasts', exact: true })
+          .count()) === 0,
+        label + ' RSS app choices do not duplicate Apple Podcasts',
+      );
+      const apple = page
+        .locator('.podcast-listen > nav > a')
+        .filter({ hasText: 'Apple Podcasts' });
+      check(
+        (await apple.count()) === 1 &&
+          (await apple.isVisible()) &&
           (await apple.getAttribute('href')) ===
-            feed.replace(/^https:/, 'podcast:'),
-        label + ' Apple Podcasts link targets the show’s RSS feed',
+            podcastConfiguration.platforms.applePodcasts,
+        label +
+          ' Apple Podcasts remains available through its direct show link',
       );
       const pocket = await chooser
         .getByRole('link', { name: 'Pocket Casts' })

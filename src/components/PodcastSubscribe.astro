@@ -12,7 +12,6 @@ antennaFeed.search = new URLSearchParams({ url, title }).toString();
   <div class="subscribe-panel">
     <h3>{t('使うアプリを選ぶ', 'Choose a podcast app')}</h3>
     <div class="feed-apps">
-      <a href={url.replace(/^https:/, 'podcast:')}>Apple Podcasts</a>
       <a href={`https://pocketcasts.com/follow/${encodeURIComponent(url)}`}
         >Pocket Casts</a
       >
