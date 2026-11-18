@@ -1,11 +1,13 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import {
   mkdtemp,
   mkdir,
   readFile,
   readdir,
   readlink,
+  rename,
   rm,
   symlink,
   stat,
@@ -13,10 +15,13 @@ import {
   writeFile,
 } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import test from 'node:test';
 import { crc32 } from 'node:zlib';
 import sharp from 'sharp';
+
+sharp.cache(false);
+sharp.concurrency(1);
 const { refreshPodcast } = await import(
   process.env.PODCAST_INDEX_MODULE || '../scripts/podcast-index.mjs'
 );
@@ -25,28 +30,28 @@ const indexModule = new URL(
   import.meta.url,
 ).href;
 
-function scanWithImageFailure(options, terminate = false) {
-  const replacement = `const sharp = () => process.kill(process.pid, 'SIGKILL');
-    sharp.cache = sharp.concurrency = () => {}; export default sharp;`;
+async function scanWithImageFailure(options, terminate = false) {
+  const bin = join(dirname(options.source), 'bin');
+  await mkdir(bin, { recursive: true });
+  await writeFile(
+    join(bin, 'convert'),
+    terminate ? '#!/bin/sh\nkill -KILL "$PPID"\n' : '#!/bin/sh\nexit 1\n',
+    { mode: 0o755 },
+  );
   return spawnSync(
     process.execPath,
     [
       '--max-old-space-size=48',
       '--input-type=module',
       '-e',
-      `import { registerHooks } from 'node:module';
-       registerHooks({ resolve(specifier, context, next) {
-         if (specifier === 'sharp') {
-           if (${terminate}) return { shortCircuit: true,
-             url: ${JSON.stringify('data:text/javascript,' + encodeURIComponent(replacement))} };
-           throw new Error('Image processor unavailable');
-         }
-         return next(specifier, context);
-       }});
-       const { refreshPodcast } = await import(${JSON.stringify(indexModule)});
+      `const { refreshPodcast } = await import(${JSON.stringify(indexModule)});
        await refreshPodcast(${JSON.stringify(options)});`,
     ],
-    { encoding: 'utf8', timeout: 15000 },
+    {
+      env: { ...process.env, PATH: bin + ':' + process.env.PATH },
+      encoding: 'utf8',
+      timeout: 30000,
+    },
   );
 }
 
@@ -227,7 +232,7 @@ test('drop, retag and remove a real MP3 across both pages, artwork and the RSS',
   const image = await sharp(publishedCover).metadata();
   assert.equal(image.format, 'jpeg');
   assert.equal(image.width, image.height);
-  assert.ok(image.width >= 1400 && image.width <= 3000);
+  assert.equal(image.width, 3000);
   assert.equal(image.hasAlpha, false);
   assert.equal(image.exif, undefined);
   assert.ok(!publishedCover.includes(Buffer.from('1991:02')));
@@ -328,7 +333,7 @@ test('embedded WebP and GIF artwork becomes square RGB JPEG without cropping', a
     assert.equal(image.space, 'srgb');
     assert.equal(image.hasAlpha, false);
     assert.equal(image.width, image.height);
-    assert.ok(image.width >= 1400 && image.width <= 3000);
+    assert.equal(image.width, 3000);
     const border = await sharp(bytes)
       .extract({ left: 0, top: 0, width: 1, height: 1 })
       .raw()
@@ -369,24 +374,96 @@ test('rebuilds older cached media without changing the episode GUID or release d
   assert.deepEqual(await readdir(join(f.cache, 'audio')), [currentMedia]);
 });
 
-test('audio publishes when the optional image processor cannot load', async (t) => {
+test('a failed artwork update keeps the last edition and retries the same MP3', async (t) => {
   const f = await fixture(t);
+  f.config.feed.artworkUrl = 'https://gyaruinthemix.com/assets/show.jpg';
+  const path = join(f.source, 'episode.mp3');
+  await writeFile(path, mp3());
+  await refreshPodcast(f);
+  const before = await f.read('rss.xml');
+  assert.ok(before.split('<item>')[1].includes(f.config.feed.artworkUrl));
   await writeFile(
-    join(f.source, 'episode.mp3'),
+    path,
     mp3([
+      field('TIT2', 'Updated'),
       frame(
         'APIC',
-        Buffer.concat([Buffer.from('\x03image/png\x00\x03\x00'), png]),
+        Buffer.concat([Buffer.from('\x03image/png\x00\x00\x00'), png]),
       ),
     ]),
   );
-  const result = scanWithImageFailure(f);
+  const result = await scanWithImageFailure(f);
   assert.equal(result.status, 0, result.stderr);
-  assert.match(await f.read('rss.xml'), /<item>/);
-  for (const locale of ['ja', 'en'])
-    assert.match(await f.read(`${locale}.html`), /<audio\b/);
-  assert.ok(
-    (await readFile(join(f.pages, 'current/audio/episode.mp3'))).length,
+  assert.equal(await f.read('rss.xml'), before);
+  await refreshPodcast(f);
+  const [channel, item] = (await f.read('rss.xml')).split('<item>');
+  assert.ok(channel.includes(f.config.feed.artworkUrl));
+  assert.match(item, /<title>Updated<\/title>/);
+  assert.match(
+    item,
+    /<itunes:image href="https:\/\/gyaruinthemix\.com\/podcast\/artwork\/[a-f0-9]{64}\.jpg"/,
+  );
+  assert.ok(!item.includes(f.config.feed.artworkUrl));
+  assert.equal(
+    item.match(/<guid[^>]*>.*?<\/guid>/)[0],
+    before.match(/<guid[^>]*>.*?<\/guid>/)[0],
+  );
+});
+
+test('rescans an unchanged MP3 whose previous index missed its embedded picture', async (t) => {
+  const f = await fixture(t);
+  f.config.feed.artworkUrl = 'https://gyaruinthemix.com/assets/show.jpg';
+  const name = 'existing.mp3';
+  await writeFile(
+    join(f.source, name),
+    mp3([
+      frame(
+        'APIC',
+        Buffer.from('\x03image/jpeg\x00\x03\x00\xff\xd8\xff', 'latin1'),
+      ),
+      frame(
+        'APIC',
+        Buffer.concat([Buffer.from('\x03image/png\x00\x00\x00'), png]),
+      ),
+    ]),
+  );
+  await refreshPodcast(f);
+  const expected = await f.read('rss.xml');
+  const index = join(f.cache, 'index-v1.json');
+  const entries = JSON.parse(await readFile(index));
+  const entry = entries[0][1];
+  const oldMedia =
+    createHash('sha256')
+      .update(
+        JSON.stringify([
+          'release-v2-artwork',
+          name,
+          entry.signature,
+          entry.episode.date,
+        ]),
+      )
+      .digest('hex') + '.mp3';
+  await rename(
+    join(f.cache, 'audio', entry.media),
+    join(f.cache, 'audio', oldMedia),
+  );
+  await rm(
+    join(
+      f.cache,
+      'artwork',
+      new URL(entry.episode.artworkUrl).pathname.split('/').pop(),
+    ),
+  );
+  entry.media = oldMedia;
+  delete entry.episode.artworkUrl;
+  await writeFile(index, JSON.stringify(entries));
+  await rm(f.pages, { recursive: true });
+  await refreshPodcast(f);
+  const recovered = await f.read('rss.xml');
+  assert.equal(recovered, expected);
+  assert.match(
+    recovered.split('<item>')[1],
+    /\/podcast\/artwork\/[a-f0-9]{64}\.jpg/,
   );
 });
 
@@ -412,7 +489,7 @@ test('a restart restores published audio before an interrupted image rebuild', a
     ]),
   );
   await rm(f.pages, { recursive: true });
-  const result = scanWithImageFailure(f, true);
+  const result = await scanWithImageFailure(f, true);
   assert.equal(result.signal, 'SIGKILL', result.stderr);
   const restored = await f.read('rss.xml');
   assert.equal((restored.match(/<item>/g) || []).length, 1);
@@ -470,7 +547,7 @@ test('recovered legacy artwork stays out of RSS until a compatible cover is read
   await writeFile(cacheFile, JSON.stringify(entries));
   await rm(f.pages, { recursive: true });
 
-  const result = scanWithImageFailure(f, true);
+  const result = await scanWithImageFailure(f, true);
   assert.equal(result.signal, 'SIGKILL', result.stderr);
   const recovered = await f.read('rss.xml');
   const [channel, item] = recovered.split('<item>');
@@ -502,8 +579,8 @@ test('recovered legacy artwork stays out of RSS until a compatible cover is read
   const image = await sharp(
     await readFile(join(f.cache, 'artwork', cover)),
   ).metadata();
-  assert.equal(image.width, 2000);
-  assert.equal(image.height, 2000);
+  assert.equal(image.width, 3000);
+  assert.equal(image.height, 3000);
 });
 
 test('untagged episodes publish with a stable date while hidden, partial, corrupt and linked files stay out', async (t) => {

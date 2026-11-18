@@ -6,7 +6,7 @@ import {
   podcastFeedUrl,
 } from '../src/data/podcast-feed.mjs';
 import { getPodcast } from '../src/data/podcast.mjs';
-import { sharingImageTags } from '../src/data/podcast-view.mjs';
+import { episodeList, sharingImageTags } from '../src/data/podcast-view.mjs';
 import { GET } from '../src/pages/podcast/rss.xml.js';
 
 const configuration = JSON.parse(await readFile('config/podcast.json', 'utf8'));
@@ -388,6 +388,46 @@ test('a curated entry for an uploaded MP3 inherits its cover and keeps its exist
     xml,
     /<guid isPermaLink="false">[^<]*#episode-first-conversation<\/guid>/,
   );
+});
+
+test('each MP3 uses its own picture or the show cover on the pages and RSS', () => {
+  const manual = episode({ artworkUrl: 'https://example.com/editorial.jpg' });
+  const input = data([manual]);
+  const tagged = {
+    id: 'tagged',
+    audio: manual.audio,
+    artworkUrl: 'https://example.com/mp3-picture.jpg',
+  };
+  const other = episode({
+    id: 'untagged',
+    title: 'Untagged',
+    description: 'Notes',
+    audio: { ...manual.audio, url: 'https://example.com/untagged.mp3' },
+  });
+  for (const picture of [tagged.artworkUrl, undefined]) {
+    const library = [{ ...tagged, artworkUrl: picture }, other];
+    const expected = [picture || input.feed.artworkUrl, input.feed.artworkUrl];
+    const [channel, ...items] = createPodcastFeed(input, library).split(
+      '<item>',
+    );
+    assert.ok(
+      channel.includes(`<itunes:image href="${input.feed.artworkUrl}"`),
+    );
+    assert.deepEqual(
+      items.map((item) => item.match(/<itunes:image href="([^"]+)"/)[1]),
+      expected,
+    );
+    for (const locale of ['ja', 'en']) {
+      const { episodes } = getPodcast(input, locale, library);
+      const cards = episodeList(episodes, locale);
+      assert.deepEqual(
+        [...cards.matchAll(/class="podcast-episode-cover" src="([^"]+)"/g)].map(
+          (match) => match[1],
+        ),
+        expected,
+      );
+    }
+  }
 });
 
 test('link-only episodes cannot silently disappear from the feed', () => {

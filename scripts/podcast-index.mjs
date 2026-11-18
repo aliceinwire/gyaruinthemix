@@ -30,8 +30,8 @@ import { canonicalUrl } from '../src/data/urls.mjs';
 
 const hash = (data) => createHash('sha256').update(data).digest('hex');
 const uploadId = (name) => 'mp3-' + hash(name).slice(0, 24);
-const mediaKey = (name, signature, date) =>
-  hash(JSON.stringify(['release-v2-artwork', name, signature, date])) + '.mp3';
+const mediaKey = (name, signature, date, version = 'episode-art-3000') =>
+  hash(JSON.stringify([version, name, signature, date])) + '.mp3';
 const fingerprint = (stat) =>
   [stat.dev, stat.ino, stat.size, stat.mtimeNs, stat.ctimeNs].join(':');
 
@@ -70,31 +70,6 @@ async function atomicWrite(path, data) {
   }
 }
 
-function artwork(pictures = []) {
-  const candidates = [...pictures].sort(
-    (a, b) =>
-      Number(b.type === 'Cover (front)') - Number(a.type === 'Cover (front)'),
-  );
-  for (const { data } of candidates) {
-    const bytes = Buffer.from(data.buffer, data.byteOffset, data.byteLength);
-    let extension;
-    if (bytes.subarray(0, 3).equals(Buffer.from([255, 216, 255])))
-      extension = 'jpg';
-    else if (
-      bytes.subarray(0, 8).equals(Buffer.from('89504e470d0a1a0a', 'hex'))
-    )
-      extension = 'png';
-    else if (['GIF89a', 'GIF87a'].includes(bytes.toString('ascii', 0, 6)))
-      extension = 'gif';
-    else if (
-      bytes.toString('ascii', 0, 4) === 'RIFF' &&
-      bytes.toString('ascii', 8, 12) === 'WEBP'
-    )
-      extension = 'webp';
-    if (extension) return { extension, bytes };
-  }
-}
-
 function episodeFromTags(name, url, date, metadata) {
   const { common, format, native } = metadata;
   if (!/^MPEG .+ Layer 3$/.test(format.codec || '') || !format.sampleRate)
@@ -122,33 +97,29 @@ function episodeFromTags(name, url, date, metadata) {
     ...(common.category || []),
     ...custom(/^T(?:XXX|XX):(?:tags?|keywords?|genre|category)$/i),
   ];
-  const cover = artwork(common.picture);
   const duration = Math.round(format.duration || 0);
   return {
-    cover,
-    episode: {
-      id: uploadId(name),
-      date,
-      title: text(common.title) || text(name.slice(0, -4)) || 'MP3',
-      description: notes || '',
-      tags: [
-        ...new Set(
-          tags
-            .flatMap((s) =>
-              typeof s === 'string' ? s.split(/[,;、\u0000]/u) : [],
-            )
-            .map(text)
-            .filter(Boolean),
-        ),
-      ],
-      ...(Number.isSafeInteger(duration) &&
-        duration > 0 && {
-          durationSeconds: duration,
-          durationMinutes: Math.max(1, Math.round(duration / 60)),
-        }),
-      audio: { url, type: 'audio/mpeg' },
-      url,
-    },
+    id: uploadId(name),
+    date,
+    title: text(common.title) || text(name.slice(0, -4)) || 'MP3',
+    description: notes || '',
+    tags: [
+      ...new Set(
+        tags
+          .flatMap((s) =>
+            typeof s === 'string' ? s.split(/[,;、\u0000]/u) : [],
+          )
+          .map(text)
+          .filter(Boolean),
+      ),
+    ],
+    ...(Number.isSafeInteger(duration) &&
+      duration > 0 && {
+        durationSeconds: duration,
+        durationMinutes: Math.max(1, Math.round(duration / 60)),
+      }),
+    audio: { url, type: 'audio/mpeg' },
+    url,
   };
 }
 
@@ -166,17 +137,17 @@ async function readEpisode(path, name, stat, url, date, mediaDir, mediaKey) {
       maxMemoryAllocation: 16 * 1024 * 1024,
       maxMetadataEntries: 4096,
     });
-    const result = episodeFromTags(name, url, date, metadata);
+    const episode = episodeFromTags(name, url, date, metadata);
+    let media;
     try {
-      const media = await preparePodcastMedia(
+      media = await preparePodcastMedia(
         mediaDir,
         mediaKey,
         file.fd,
-        result,
+        episode,
         metadata.common,
       );
-      result.episode.audio.length = media.size;
-      result.cover = media.cover;
+      episode.audio.length = media.size;
     } catch (error) {
       console.warn(
         `Retrying podcast file ${JSON.stringify(name)} on the next scan: ${error.message}`,
@@ -185,14 +156,14 @@ async function readEpisode(path, name, stat, url, date, mediaDir, mediaKey) {
     }
     if (fingerprint(await lstat(path, { bigint: true })) !== fingerprint(stat))
       return;
-    return result;
+    return { episode, cover: media.cover };
   } finally {
     await file.close();
   }
 }
 
 async function publishPages(site, pages, config, mediaDir, published, key) {
-  key = 'normalized-rss-artwork-' + key;
+  key = 'episode-art-3000-' + key;
   await mkdir(pages, { recursive: true });
   const current = join(pages, 'current');
   if ((await optional(readFile(join(current, 'key'), 'utf8'))) === key) return;
@@ -200,19 +171,23 @@ async function publishPages(site, pages, config, mediaDir, published, key) {
   const stage = await mkdtemp(join(pages, 'edition-'));
   const next = stage + '.link';
   try {
-    const library = published.map(([, entry]) => ({
+    const library = published.map(([name, entry]) => ({
       ...entry.episode,
+      // Older scans could cache a conversion failure as an absent picture.
+      artworkPending:
+        entry.media !== mediaKey(name, entry.signature, entry.episode.date),
       explicit: config.feed.explicit,
     }));
-    // Older cached covers may exceed podcast artwork limits. Keep their audio
-    // and website images while RSS uses the show cover until conversion succeeds.
     const feedLibrary = library.map((episode, index) => {
+      if (!episode.artworkPending || !episode.artworkUrl) return episode;
       const [name, entry] = published[index];
-      if (entry.media === mediaKey(name, entry.signature, episode.date))
+      // The previous normalizer already produced RSS-compatible 2000px JPEGs.
+      if (
+        entry.media ===
+        mediaKey(name, entry.signature, episode.date, 'release-v2-artwork')
+      )
         return episode;
-      const restored = { ...episode };
-      delete restored.artworkUrl;
-      return restored;
+      return { ...episode, artworkUrl: undefined };
     });
     const audio = join(stage, 'audio');
     await mkdir(audio);
