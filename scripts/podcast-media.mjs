@@ -4,6 +4,8 @@ import { mkdtemp, open, rename, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { podcastReleaseTime } from '../src/data/podcast.mjs';
 
+const mediaTimeoutMs = 120_000;
+
 // ID3v2.4 sizes are stored in four seven-bit bytes.
 function tagSize(length) {
   if (length > 0x0fffffff) throw new Error('Podcast ID3 tag is too large');
@@ -89,6 +91,8 @@ async function cleanCover(directory, pictures = []) {
             },
             stdio: ['pipe', 'pipe', 'pipe'],
             maxBuffer: 16 * 1024 * 1024,
+            timeout: mediaTimeoutMs,
+            killSignal: 'SIGKILL',
           },
         );
         return { extension: 'jpg', bytes };
@@ -156,7 +160,11 @@ export async function preparePodcastMedia(
     await file.writeFile(tag);
     // Copy complete MPEG frames, including the original Xing/LAME seek data.
     // The extractor reads and writes already-open files at their current offsets.
-    execFileSync('mpg123-strip', [], { stdio: [sourceFd, file.fd, 'pipe'] });
+    execFileSync('mpg123-strip', [], {
+      stdio: [sourceFd, file.fd, 'pipe'],
+      timeout: mediaTimeoutMs,
+      killSignal: 'SIGKILL',
+    });
     const { size } = await file.stat();
     if (size <= byteLength(tag))
       throw new Error('No complete MP3 audio frames');

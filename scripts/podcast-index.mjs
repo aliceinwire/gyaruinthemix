@@ -339,15 +339,12 @@ export async function refreshPodcast({
       existingMedia.has(media) &&
       (!prior.episode.artworkUrl ||
         existingCovers.has(basename(prior.episode.artworkUrl)));
-    if (
-      reusable ||
-      (prior?.signature === signature && prior.skipped) ||
-      (settleMs > 0 && now - Number(before.ctimeMs) < settleMs)
-    ) {
+    if (reusable || (settleMs > 0 && now - Number(before.ctimeMs) < settleMs)) {
       if (prior) entries.set(name, prior);
       continue;
     }
     let result;
+    console.info(`Preparing podcast file ${JSON.stringify(name)}`);
     try {
       result = await readEpisode(
         path,
@@ -365,8 +362,6 @@ export async function refreshPodcast({
         `Skipping podcast file ${JSON.stringify(name)}: ${error.message}`,
       );
       if (prior?.episode) entries.set(name, prior);
-      else if (error.code !== 'EACCES' && error.code !== 'EPERM')
-        entries.set(name, { signature, skipped: true });
       continue;
     }
     if (!result) {

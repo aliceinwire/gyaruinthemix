@@ -583,6 +583,23 @@ test('recovered legacy artwork stays out of RSS until a compatible cover is read
   assert.equal(image.height, 3000);
 });
 
+test('retries unchanged files marked skipped by an older scan', async (t) => {
+  const f = await fixture(t);
+  await writeFile(join(f.source, 'episode.mp3'), mp3());
+  await refreshPodcast(f);
+  const cacheFile = join(f.cache, 'index-v1.json');
+  const [[name, entry]] = JSON.parse(await readFile(cacheFile, 'utf8'));
+  await writeFile(
+    cacheFile,
+    JSON.stringify([[name, { signature: entry.signature, skipped: true }]]),
+  );
+  await refreshPodcast(f);
+  const [[, recovered]] = JSON.parse(await readFile(cacheFile, 'utf8'));
+  assert.ok(recovered.episode);
+  assert.equal(recovered.skipped, undefined);
+  assert.equal((await f.read('rss.xml')).split('<item>').length - 1, 1);
+});
+
 test('untagged episodes publish with a stable date while hidden, partial, corrupt and linked files stay out', async (t) => {
   const f = await fixture(t);
   await writeFile(join(f.source, 'ひとやすみ.mp3'), mp3());
