@@ -721,7 +721,7 @@ function step(state, input, dt) {
       state.energyCapacity,
       state.energy + state.chargeRate * dt,
     );
-    routeMissionProgress(state, { type: "charge", seconds: dt });
+    routeMissionProgress(state, { type: "charge", seconds: dt, stationId: station.id, energyRestored: state.energy - previous });
     if (state.buildRuntime.shieldStation !== station.id) { state.buildRuntime.chargeSeconds = 0; state.buildRuntime.shieldStation = station.id; }
     state.buildRuntime.chargeSeconds += dt;
     if (state.buildModifiers.chargeShield && state.buildRuntime.chargeSeconds >= state.buildModifiers.chargeShieldSeconds) state.buildRuntime.shield = 1;
@@ -1084,7 +1084,7 @@ export function restoreCampaignSave(value) {
     next.distance = next.routeLength;
     next.routeDistance = next.routeLength;
     next.campaignComplete = next.routeIndex === ROUTES.length - 1;
-    // Never infer cleared stages from routeIndex: completion points require all twelve actual clears (or a validated legacy six-clear save).
+    // Keep the actual clear count from the checkpoint.
   }
   updateEnvironment(next, 0);
   return next;

@@ -38,7 +38,9 @@ import {
   startingCustomizationPrice,
   canUseGarage,
   startingWeaponPrice,
-  awardCompletion,
+  awardRoadPoints,
+  roadPointProgress,
+  ROAD_GP_MILESTONES,
   unlockCar,
   equipStartingCar,
 } from "./src/garage.js";
@@ -325,13 +327,15 @@ function openMap(next = false) {
     if (index === Math.floor(stageIndex/2)) stamp.setAttribute("aria-current", "step"); ribbon.append(stamp);
   });
   const arrived = $("#arrival-summary"); arrived.hidden = !next;
+  if (isSurvival(state))
+    localizeText($("#map-subtitle"), "次のクラブへ、うちらの音を届けよ。道と進化を選んで、72ウェーブの夜を走り抜こ。");
   if (next) {
     const mission = getRouteMission(state);
-    localizeText(arrived, message("{0}、到着や！ {1}人をフロアの仲間に。{2}", [state.route.goal, state.stageGyaru, mission?.complete ? message("道の目標も達成、+{0}コイン！", [mission.reward]) : "次の道でもうひと盛りしよ。"]));
-  }
-  if (isSurvival(state)) {
-    localizeText($("#map-subtitle"), "次のクラブへ、うちらの音を届けよ。道と進化を選んで、72ウェーブの夜を走り抜こ。");
-    if (next) localizeText(arrived, message("道を突破！ スコア {0} · 耐久 {1} · 次の6ウェーブへ", [number(Math.floor(state.score), { useGrouping: true }), Math.ceil(state.integrity)]));
+    const summary = isSurvival(state)
+      ? message("道を突破！ スコア {0} · 耐久 {1} · 次の6ウェーブへ", [number(Math.floor(state.score), { useGrouping: true }), Math.ceil(state.integrity)])
+      : message("{0}、到着や！ {1}人をフロアの仲間に。{2}", [state.route.goal, state.stageGyaru, mission?.complete ? message("道の目標も達成、+{0}コイン！", [mission.reward]) : "次の道でもうひと盛りしよ。"]);
+    localizeText(arrived, state.runBuild.masteredLegs.includes(state.routeIndex)
+      ? message("{0} · GPチャレンジ達成！ この旅 {1}/{2} GP", [summary, roadPointProgress(state).points, ROAD_GP_MILESTONES.length]) : summary);
   }
   hud();
   $("#depart").focus();
@@ -596,6 +600,7 @@ function renderGarage() {
   const current = getCarProfile(state);
   const atStart = atNewRunGarage();
   localizeText($("#car-select-wallet"), message("{0} ギャルポイント · 今回は {1}", [meta.completionPoints, current.name]));
+  localizeText($("#garage-gp-note"), message("GPチャレンジは1ツアーで{0}・{1}・{2}件達成すると、それぞれ1 GP。次のガレージで使えるで。", ROAD_GP_MILESTONES));
   $("#starting-customization").hidden = !atStart;
   if (!atStart) return;
   renderStyles();
@@ -620,7 +625,7 @@ function renderGarage() {
     const heading = document.createElement("h3");
     localizeText(heading, owned ? car.name : "まだ秘密のくるま");
     const copy = document.createElement("p");
-    localizeText(copy, owned ? car.description : "完走して解禁したら、姿も性能も見せるで。");
+    localizeText(copy, owned ? car.description : "ギャルポイントで解禁したら、姿も性能も見せるで。");
     const stats = document.createElement("div");
     stats.className = "car-stats";
     stats.hidden = !owned;
@@ -772,17 +777,20 @@ function showNightfallRecord() {
   setScreen('result');
   localizeText($('#result-eyebrow'), 'NIGHTFALL TOUR');
   localizeText($('#result-title'), state.campaignComplete ? '72ウェーブ、生き抜いた！' : 'このビルドで、ここまで来た。');
-  localizeText($('#result-copy'), '同じコースでも、選ぶ進化で違う走りに。もう一回なら、新しいビルドで最初から。');
+  localizeText($('#result-copy'), message('この旅で獲得したGPは {0}/{1}。次のガレージで使えるで。', [roadPointProgress(state).points, ROAD_GP_MILESTONES.length]));
   renderSurvivalResult(state, result, previous, $('#result-stats'));
   localizeText($('#continue'), '同じシードでもう一回');
   $('#continue').focus(); beep(state.campaignComplete ? 880 : 190, .2);
 }
 function showResult() {
+  const earned = awardRoadPoints(meta, state);
+  if (earned) {
+    saveMeta();
+    toast(message("道のチャレンジで +{0} GP！", [earned]));
+  }
   if (isSurvival(state)) {
     releaseInput();
     if (state.status === 'won') {
-      const earned = awardCompletion(meta, state);
-      if (earned) saveMeta();
       saveTour();
       if (state.campaignComplete) persistNightfallResult();
       const next = state.campaignComplete ? showNightfallRecord : () => openMap(true);
@@ -804,11 +812,6 @@ function showResult() {
     return;
   }
   $("#result-stats").classList.remove("survival-results");
-  const earned = awardCompletion(meta, state);
-  if (earned) {
-    saveMeta();
-    toast(message("ギャルポイント、{0}もらえたで！ 次の旅の準備に使お。", [earned]));
-  }
   saveTour();
   if (state.status === "won") {
     releaseInput();
@@ -897,7 +900,7 @@ $("#continue").addEventListener("click", () => {
     storyDirector.show("retry", () => enterPlay());
   }
 });
-// The encore is optional; leaving never changes already-earned completion credit.
+// Leaving the optional encore keeps the road rewards already banked.
 $("#finale-home").addEventListener("click", () => { const next = performanceNext; performanceNext = null; if (next) next(); else home(); });
 $('#performance-track').addEventListener('click', () => {
   if (screen !== 'finale' || paused) return;
@@ -923,7 +926,11 @@ function renderDestinationChoices() {
   const chosen = choices.find(node => node.nodeId === selectedNodeId);
   const mission = previewMission(chosen);
   localizeText($("#map-route-detail"), chosen ? survivalRouteDetail(chosen) : "");
-  localizeText($("#route-mission-preview"), mission ? message("寄り道の目標「{0}」 {1} {2}", [mission.label, mission.description, mission.rewardLabel]) : "");
+  localizeText($("#route-coin-goal"), mission ? message("寄り道の目標「{0}」 {1} {2}", [mission.label, mission.description, mission.rewardLabel]) : "");
+  const progress = roadPointProgress(state);
+  localizeText($("#route-gp-goal"), progress.next && mission
+    ? message("GP追加条件（次の1 GPまであと{0}件） · {1}", [progress.next - progress.mastered, mission.masteryDescription])
+    : message("この旅のGPは {0}/{1}", [progress.points, ROAD_GP_MILESTONES.length]));
   localizeText($("#map-selected-route"), chosen ? message("選んだ道：{0}", [chosen.districtName]) : "地図の行き先を選んでな");
   const host = $("#destination-choices"); host.replaceChildren();
   for (const [index,node] of choices.entries()) {

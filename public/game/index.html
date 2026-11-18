@@ -34,7 +34,7 @@
           <div id="style-options" class="style-options" aria-label="最初の自動武器を選ぶ"></div>
         </section>
         <h2 class="garage-label">相棒のくるま</h2>
-        <p class="section-note">ツアー完走で3ギャルポイント。くるま・武器・改造の解禁は、次の旅でも使えるで。</p>
+        <p id="garage-gp-note" class="section-note"></p>
         <div id="car-garage" class="car-grid" aria-label="新しい旅のくるま選び"></div>
         <fieldset id="starting-customization" class="car-customization">
           <legend>見た目も、うちら仕様。</legend>
@@ -142,7 +142,7 @@
             </div>
             <p id="map-selected-route" class="selected-route" aria-live="polite"></p>
             <p id="map-route-detail" class="map-route-detail"></p>
-            <div id="route-mission-preview" class="route-mission-preview"></div>
+            <div id="route-mission-preview" class="route-mission-preview"><span id="route-coin-goal"></span> <strong id="route-gp-goal"></strong></div>
             <p class="route-note">どの分岐も同じクラブへ。道の長さ・充電所・出会いが変わるで。</p>
             <section id="pit-service" class="pit-service" hidden aria-label="ボディリペア"><span id="pit-wallet"></span><button id="repair-car">ボディリペア</button></section>
             <div class="route-actions">

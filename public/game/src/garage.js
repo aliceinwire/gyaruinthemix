@@ -1,4 +1,4 @@
-import { JOURNEY_STAGE_COUNT } from "./journey.js";
+import { getJourneyNode, JOURNEY_STAGE_COUNT } from "./journey.js";
 import { SURVIVAL_STARTERS } from "./survival.js";
 import { RUN_MOD_CATALOG } from "./run-mod-catalog.js";
 /** Completion-point new-game car unlocks and start-only cosmetic customization. No network, payments, driving inputs, or DOM dependencies. */
@@ -155,10 +155,10 @@ export function canUseGarage(state) { return canChooseStartingCar(state); }
 export function buyCar() { return false; }
 export function equipCar() { return false; }
 export const META_PROGRESS_VERSION = 1;
-export const COMPLETION_POINT_REWARD = 3;
+export const ROAD_GP_MILESTONES = Object.freeze([1, 4, 9]);
 const validRunId = (id) => typeof id === "string" && /^[A-Za-z0-9_.:-]{1,128}$/.test(id);
 function emptyMeta() {
-  return { version: META_PROGRESS_VERSION, completionPoints: 0, ownedCars: [DEFAULT_CAR_ID], creditedRunIds: [],
+  return { version: META_PROGRESS_VERSION, completionPoints: 0, ownedCars: [DEFAULT_CAR_ID], roadCredits: [],
     ownedStartingWeapons: [], ownedRunMods: [],
     upgrades: Object.fromEntries(STARTING_UPGRADE_CATALOG.map(item => [item.id, 0])),
     cosmeticUnlocks: { paint: ["pink"], wheels: ["classic"], decal: ["none"] }, customizations: { [DEFAULT_CAR_ID]: { paint: "pink", wheels: "classic", decal: "none" } } };
@@ -200,7 +200,16 @@ export function restoreMetaProgress(value) {
       if (!meta.cosmeticUnlocks[key].includes(selection[key])) selection[key] = key === "paint" ? car.paint : key === "wheels" ? "classic" : "none";
     meta.customizations[id] = selection;
   }
-  meta.creditedRunIds = [...new Set((Array.isArray(value.creditedRunIds) ? value.creditedRunIds : []).filter(validRunId))];
+  const paid = new Map();
+  for (const row of Array.isArray(value.roadCredits) ? value.roadCredits : []) {
+    if (validRunId(row?.runId) && Number.isInteger(row.points) && row.points > 0 && row.points <= ROAD_GP_MILESTONES.length)
+      paid.set(row.runId, Math.max(row.points, paid.get(row.runId) || 0));
+  }
+  // Older wallets already paid three points to each of these finished tours.
+  for (const id of Array.isArray(value.creditedRunIds) ? value.creditedRunIds : []) {
+    if (validRunId(id)) paid.set(id, ROAD_GP_MILESTONES.length);
+  }
+  meta.roadCredits = Array.from(paid, ([runId, points]) => ({ runId, points }));
   return meta;
 }
 export function createMetaProgress(saved) { return restoreMetaProgress(saved) || emptyMeta(); }
@@ -247,18 +256,36 @@ export function equipStartingCar(state, meta, carId) {
   if (changed) emit(state, "car-equip", { carId });
   return true;
 }
-/** Only a complete journey credits this persisted run once; watching the DJ set is optional. */
-export function awardCompletion(meta, state) {
-  if (!plainObject(meta) || !state || state.status !== "won" || state.campaignComplete !== true ||
-      state.routeIndex !== JOURNEY_STAGE_COUNT - 1 || state.stagesCompleted !== JOURNEY_STAGE_COUNT || state.campaignStarted !== true ||
-      !Number.isFinite(state.routeLength) || state.routeLength <= 0 || state.distance < state.routeLength ||
+export function roadPointProgress(state) {
+  const build = state?.runBuild;
+  const masteredLegs = Array.isArray(build?.masteredLegs) ? build.masteredLegs : [];
+  const settledLegs = Array.isArray(build?.settledLegs) ? build.settledLegs : [];
+  const mastered = new Set(masteredLegs.filter(leg =>
+    Number.isInteger(leg) && leg >= 0 && leg < state.stagesCompleted && settledLegs.includes(leg) &&
+    getJourneyNode(state.journey?.completedNodeIds?.[leg])?.stageIndex === leg)).size;
+  const points = ROAD_GP_MILESTONES.filter(count => count <= mastered).length;
+  return { mastered, points, next: ROAD_GP_MILESTONES[points] };
+}
+/** Pay only the unpaid milestones on an actual arrival, including a resumed checkpoint. */
+export function awardRoadPoints(meta, state) {
+  if (!plainObject(meta) || state?.status !== "won" || state.campaignStarted !== true ||
+      !Number.isInteger(state.routeIndex) || state.routeIndex < 0 || state.routeIndex >= JOURNEY_STAGE_COUNT ||
+      state.stagesCompleted !== state.routeIndex + 1 || state.journey?.completedNodeIds?.[state.routeIndex] !== state.journeyNodeId ||
+      getJourneyNode(state.journeyNodeId)?.stageIndex !== state.routeIndex ||
+      !Number.isFinite(state.routeLength) || state.routeLength <= 0 || !Number.isFinite(state.distance) || state.distance < state.routeLength ||
       !validRunId(state.runId)) return 0;
+  const { points } = roadPointProgress(state);
+  if (!points) return 0;
   const normalized = restoreMetaProgress(meta);
-  if (!normalized || normalized.creditedRunIds.includes(state.runId)) return 0;
-  normalized.completionPoints = Math.min(1_000_000_000, normalized.completionPoints + COMPLETION_POINT_REWARD);
-  normalized.creditedRunIds.push(state.runId);
+  if (!normalized) return 0;
+  const receipt = normalized.roadCredits.find(row => row.runId === state.runId);
+  const earned = points - (receipt?.points || 0);
+  if (earned <= 0) return 0;
+  if (receipt) receipt.points = points;
+  else normalized.roadCredits.push({ runId: state.runId, points });
+  normalized.completionPoints = Math.min(1_000_000_000, normalized.completionPoints + earned);
   Object.assign(meta, normalized);
-  return COMPLETION_POINT_REWARD;
+  return earned;
 }
 /** Old free/midrun cosmetic API is deliberately disabled. */
 export function customizeCar() { return false; }

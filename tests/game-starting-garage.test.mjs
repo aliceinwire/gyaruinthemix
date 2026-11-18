@@ -9,7 +9,6 @@ import {
   equipStartingCar,
   buyStartingUpgrade,
   customizeStartingCar,
-  awardCompletion,
 } from '../public/game/src/garage.js';
 import {
   createState,
@@ -169,29 +168,6 @@ test('storage round trips preserve new unlocks, reject unknown IDs and migrate o
   });
   assert.deepEqual(bad.ownedStartingWeapons, ['cd']);
   assert.deepEqual(bad.ownedRunMods, []);
-});
-
-test('only a completed tour earns three points, once per run', () => {
-  const meta = createMetaProgress(),
-    state = fresh();
-  assert.equal(awardCompletion(meta, state), 0);
-  state.status = 'lost';
-  assert.equal(awardCompletion(meta, state), 0);
-  Object.assign(state, {
-    status: 'won',
-    campaignComplete: true,
-    campaignStarted: true,
-    routeIndex: 11,
-    stagesCompleted: 12,
-    distance: state.routeLength,
-  });
-  assert.equal(awardCompletion(meta, state), 3);
-  assert.equal(awardCompletion(meta, state), 0);
-  assert.equal(
-    awardCompletion(createMetaProgress(JSON.stringify(meta)), state),
-    0,
-  );
-  assert.equal(meta.completionPoints, 3);
 });
 
 test('an unarmed run earns its first weapon from precise dodges without free starters or GP', () => {

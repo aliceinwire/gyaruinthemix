@@ -25,11 +25,12 @@ const legNumber = value => Number.isInteger(value) && value >= 0 && value < JOUR
 const legList = value => [...new Set((Array.isArray(value) ? value : []).filter(legNumber))].sort((a, b) => a - b);
 const eventId = value => typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 ? `n:${value}` : typeof value === 'string' && /^[A-Za-z0-9_.:-]{1,96}$/.test(value) ? `s:${value}` : null;
 const eventIds = value => [...new Set((Array.isArray(value) ? value : []).filter(id => typeof id === 'string' && /^(n:\d+|s:[A-Za-z0-9_.:-]{1,96})$/.test(id)))].slice(0, 512);
-const emptyMission = (nodeId = null) => ({ nodeId, conversions: 0, bestCombo: 0, chargeSeconds: 0, hits: 0, rushes: 0, jumpClears: 0, fullCharges: 0, convertedIds: [], hitIds: [], jumpIds: [] });
+const emptyMission = (nodeId = null) => ({ nodeId, conversions: 0, bestCombo: 0, chargeSeconds: 0, energyRestored: 0, chargeStations: [], hits: 0, rushes: 0, jumpClears: 0, fullCharges: 0, convertedIds: [], hitIds: [], jumpIds: [] });
 function normalizeMission(value) {
   if (!plain(value) || !getJourneyNode(value.nodeId)) return emptyMission();
   return { nodeId: value.nodeId, conversions: integer(value.conversions, 512), bestCombo: integer(value.bestCombo, 512),
-    chargeSeconds: number(value.chargeSeconds, 1200), hits: integer(value.hits, 512), rushes: integer(value.rushes, 512),
+    chargeSeconds: number(value.chargeSeconds, 1200), energyRestored: number(value.energyRestored),
+    chargeStations: eventIds(value.chargeStations).slice(0, 2), hits: integer(value.hits, 512), rushes: integer(value.rushes, 512),
     jumpClears: integer(value.jumpClears, 512), fullCharges: integer(value.fullCharges, 512),
     convertedIds: eventIds(value.convertedIds), hitIds: eventIds(value.hitIds), jumpIds: eventIds(value.jumpIds) };
 }
@@ -39,7 +40,7 @@ export function normalizeRunBuild(value, context) {
   const saved = plain(value?.runBuild) ? value.runBuild : plain(value) ? value : {};
   const expectedCar = hasCarContext(context) ? carIdFrom(context) : null;
   const carId = expectedCar ?? carIdFrom(saved);
-  const fresh = { version: RUN_BUILD_VERSION, carId, mods: [], acquiredIds: [], purchasedLegs: [], settledLegs: [], mission: emptyMission() };
+  const fresh = { version: RUN_BUILD_VERSION, carId, mods: [], acquiredIds: [], purchasedLegs: [], settledLegs: [], masteredLegs: [], mission: emptyMission() };
   if (saved.version !== undefined && saved.version !== RUN_BUILD_VERSION) return fresh;
   const matchingCar = !saved.carId || validCar(saved.carId) && saved.carId === carId;
   const rawMods = Array.isArray(saved.mods) ? saved.mods : [];
@@ -52,6 +53,7 @@ export function normalizeRunBuild(value, context) {
   // Keep receipts even if a corrupt car binding invalidated its powers: no extra stop purchases/rewards.
   fresh.purchasedLegs = legList(saved.purchasedLegs);
   fresh.settledLegs = legList(saved.settledLegs);
+  fresh.masteredLegs = legList(saved.masteredLegs).filter(leg => fresh.settledLegs.includes(leg));
   fresh.mission = normalizeMission(saved.mission);
   return fresh;
 }
@@ -182,18 +184,22 @@ export function getRouteMission(state, node) {
   if (!target) return null;
   const build = stateBuild(state), progress = build.mission.nodeId === target.nodeId ? build.mission : emptyMission(target.nodeId);
   const tier = Math.floor(target.stageIndex / 4);
-  let label, description, goal, complete;
+  let label, description, goal, complete, masteryDescription, mastered;
   if (target.kind === 'ev') {
     label = 'EVでひと息'; goal = { chargeSeconds: 2 + tier * .5 };
     description = `EVで合計${goal.chargeSeconds}秒充電して到着や。電池満タンでも数えるで。`;
     complete = progress.chargeSeconds + 1e-8 >= goal.chargeSeconds;
+    masteryDescription = '充電は1か所だけ。電池を40以上補充して、残り20以上で到着。';
+    mastered = progress.chargeStations.length === 1 && progress.energyRestored + 1e-8 >= 40 && state.energy >= 20;
   } else if (target.kind === 'event') {
     label = '街角の招待リレー'; goal = { conversions: 3 + tier, bestCombo: 2 + (tier === 2 ? 1 : 0) };
     // Use the complete deterministic road plan, never the transient visible entities.
     // Map previews construct this same candidate road, so their promise matches play.
+    let crowd = 0;
     if (state?.journeyNodeId === target.nodeId && state.routeIndex === target.stageIndex && Array.isArray(state._encounterPlan)) {
       const distances = state._encounterPlan.filter(item => item?.type === 'salaryman' && Number.isFinite(item.distance))
         .map(item => item.distance).sort((a, b) => a - b);
+      crowd = distances.length;
       let longest = 0, consecutive = 0, previous = -Infinity;
       for (const distance of distances) {
         consecutive = distance - previous <= 80 ? consecutive + 1 : 1;
@@ -205,15 +211,20 @@ export function getRouteMission(state, node) {
     }
     description = `${goal.conversions}か所で招待かシグナル復旧、${goal.bestCombo}コンボを1回決めよ。どの武器でも数えるで。`;
     complete = progress.conversions >= goal.conversions && progress.bestCombo >= goal.bestCombo;
+    const invites = Math.max(goal.conversions, Math.ceil(crowd * (70 + 5 * tier) / 100));
+    masteryDescription = `招待・シグナル復旧を${invites}件決めて到着。`;
+    mastered = progress.conversions >= invites;
   } else {
     label = 'ピットまでスマートに'; goal = { maxHits: 2, rushes: 1 };
     description = 'ラッシュを1回使って、衝突2回以内で到着や。到着修理+20は別でもらえるで。';
     complete = progress.rushes >= goal.rushes && progress.hits <= goal.maxHits;
+    masteryDescription = '障害物を2回飛び越えて、ノーダメージで到着。';
+    mastered = progress.jumpClears >= 2 && progress.hits === 0;
   }
   const reward = 80 + tier * 20;
   return { id: `${target.nodeId}:goal`, nodeId: target.nodeId, kind: target.kind, stageIndex: target.stageIndex,
     label, description, goal, progress: { ...progress, convertedIds: [...progress.convertedIds], hitIds: [...progress.hitIds], jumpIds: [...progress.jumpIds] },
-    complete, reward, rewardLabel: `達成して到着：コイン+${reward}`, settled: build.settledLegs.includes(target.stageIndex) };
+    complete, masteryDescription, mastered: complete && mastered, reward, rewardLabel: `達成して到着：コイン+${reward}`, settled: build.settledLegs.includes(target.stageIndex) };
 }
 /** Consume simulation events only on the current road. Call for each charge tick, even at full battery. */
 export function routeMissionProgress(state, event) {
@@ -242,6 +253,11 @@ export function routeMissionProgress(state, event) {
   } else if (type === 'charge') {
     if (typeof event.seconds !== 'number' || !Number.isFinite(event.seconds) || event.seconds <= 0 || event.seconds > 1) return false;
     progress.chargeSeconds = Math.min(1200, progress.chargeSeconds + event.seconds);
+    const station = eventId(event.stationId);
+    if (station) {
+      if (progress.chargeStations.length < 2 && !progress.chargeStations.includes(station)) progress.chargeStations.push(station);
+      progress.energyRestored += number(event.energyRestored);
+    }
   } else if (type === 'collision') {
     if (!addUnique('hitIds', 'hits')) return false;
   } else if (type === 'jump-clear') {
@@ -263,6 +279,7 @@ export function settleRouteReward(state, node) {
   if (mission.settled) return false;
   const reward = mission.complete ? mission.reward : 0;
   build.settledLegs.push(target.stageIndex);
+  if (mission.mastered) build.masteredLegs.push(target.stageIndex);
   state.runBuild = normalizeRunBuild(build, state);
   state.money = Math.min(MONEY_LIMIT, state.money + reward);
   emit(state, { type: 'route-reward', nodeId: target.nodeId, completed: mission.complete, reward, money: state.money });

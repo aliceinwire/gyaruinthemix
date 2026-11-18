@@ -6,6 +6,7 @@ import {
   beginCampaign,
   chooseStartingWeapon,
   exportNightfallSave,
+  update,
 } from '../../public/game/src/simulation.js';
 import { createMetaProgress } from '../../public/game/src/garage.js';
 import { buyRunMod } from '../../public/game/src/run-build.js';
@@ -133,6 +134,7 @@ export async function checkStartingGarage(browser, { root, csp }) {
     await page.locator('#cars-ready').click();
     assert.equal(await page.locator('#garage-tab').count(), 0);
     assert.equal(await page.locator('#change-starting-car').isVisible(), true);
+    assert.match(await page.locator('#route-gp-goal').innerText(), /次の1 GPまであと1件/);
     await page.locator('#change-starting-car').click();
     assert.equal(await page.locator('#car-select').isVisible(), true);
 
@@ -326,6 +328,19 @@ export async function checkStartingGarage(browser, { root, csp }) {
       .locator('#change-starting-car')
       .evaluate((button) => button.click());
     assert.equal(await page.locator('#car-select').isVisible(), false);
+    const early = createState({ mode: 'survival', survivalDay: '2026-11-18' });
+    early.distance = early._stations[0] - 60;
+    early.energy = early.energyCapacity * 0.4;
+    update(early, {}, 1 / 60);
+    update(early, { charge: true }, 2.1);
+    early.distance = early.routeLength - 0.01;
+    update(early, {}, 0.01);
+    const arrival = exportNightfallSave(early);
+    await load(arrival, createMetaProgress());
+    assert.equal(await points(), 1);
+    const banked = await page.evaluate(key => JSON.parse(localStorage.getItem(key)), META_KEY);
+    await load(arrival, banked);
+    assert.equal(await points(), 1);
     assert.deepEqual(errors, []);
   } finally {
     await context.close();
