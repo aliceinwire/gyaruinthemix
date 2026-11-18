@@ -537,6 +537,8 @@ try {
         '.map-origin',
         '#destination-choices',
         '.map-goal',
+        '#route-mission-preview',
+        '#change-starting-car',
         '#depart',
       ]);
       await assertFrameFits(page, [

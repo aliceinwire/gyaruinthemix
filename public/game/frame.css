@@ -255,8 +255,9 @@ body[data-music-open="true"] .music-panel { margin: 0; padding: 20px; }
 }
 @media (max-height: 600px) and (min-width: 540px) {
  #route-content { display: grid; grid-template-columns: minmax(0, 1fr) 220px; gap: 4px 12px; }
- #route-content .journey-map { grid-column: 1; grid-row: 1 / 8; }
+ #route-content .journey-map { grid-column: 1; grid-row: 1 / 6; }
  #route-content > :not(.journey-map) { grid-column: 2; }
+ #route-content .route-mission-preview { grid-column: 1 / -1; grid-row: 6; }
  #destination-choices { padding-block: 10px; }
  .map-origin, .map-goal { display: grid; padding: 3px; }
  .map-stop strong { font-size: 12px; }

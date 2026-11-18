@@ -141,6 +141,21 @@ test('flight gaps leave EV windows, breathers, arrival and other collision envel
       }
 });
 
+test('open roads gain one extra flight gap starting on road five', () => {
+  const counts = Array.from(
+    { length: 12 },
+    (_, routeIndex) =>
+      addFlightObstacles([], {
+        seed: 175,
+        routeIndex,
+        routeLength: 6000,
+        stations: [],
+        stationRadius: 144,
+      }).length,
+  );
+  assert.deepEqual(counts, [2, 4, 4, 4, 6, 6, 6, 6, 7, 7, 7, 7]);
+});
+
 test('flight placement preserves authored actors and declines impossible or low-ceiling roads', () => {
   const options = {
     seed: 175,
@@ -178,6 +193,29 @@ test('flight placement preserves authored actors and declines impossible or low-
     }),
     [],
   );
+});
+
+test('missing a jump costs slightly more hull on later roads and still respects armor and assist', () => {
+  const damage = (
+    routeIndex,
+    { armor = 0, assist = false, type = 'pothole' } = {},
+  ) => {
+    const state = fresh({ routeIndex, routeOption: 'scenic' });
+    state.survival.upgrades = { armor };
+    state.assistMode = assist;
+    state._nextEncounter = 1e9;
+    state._stations = [];
+    state.entities = [{ id: 9000, type, distance: 12 }];
+    update(state, {}, 1 / 30);
+    return state.lastHit.damage;
+  };
+  assert.equal(damage(0), 25);
+  assert.equal(damage(3), 29);
+  assert.equal(damage(4), 32);
+  assert.equal(damage(11), 46);
+  assert.equal(damage(11, { armor: 1 }), 40);
+  assert.equal(damage(11, { assist: true }), 25);
+  assert.equal(damage(11, { type: 'barrier' }), 48);
 });
 
 test('fully upgraded automatic weapons cannot clear a flight gap, but holding flight avoids its damage', () => {

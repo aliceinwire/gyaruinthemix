@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { randomBytes } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import {
   chmod,
   copyFile,
@@ -94,7 +94,11 @@ try {
     'the storage identifier exception must apply only to its exact source path',
   );
   git('rm', '-f', 'unexpected.js');
-  const fakeStorageSecret = randomBytes(24).toString('hex');
+  // Use a repeatable synthetic sample for the entropy-based generic-key detector.
+  const fakeStorageSecret = createHash('sha256')
+    .update('offline survival storage fixture')
+    .digest('hex')
+    .slice(0, 48);
   await writeFile(
     storageFile,
     `export const SURVIVAL_RECORD_KEY = '${fakeStorageSecret}';\n`,

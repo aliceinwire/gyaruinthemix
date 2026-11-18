@@ -621,10 +621,14 @@ function collide(state, target, hazard) {
     state.buildRuntime.shield = 0; state.buildRuntime.chargeSeconds = 0; state.invulnerability = COLLISION_GRACE;
     emit(state, "shield-block", { distance: target.distance, entityId: target.id }); return;
   }
-  if (isSurvival(state) && state.assistMode) state.survival.assisted = true;
-  const damage = Math.round(
-    hazard.damage * (state.routeOption === "express" ? 1.12 : 1) * (isSurvival(state) ? (1.3 + state.routeIndex * .08) * (1 - (state.survival.upgrades.armor || 0) * .12) : 1) * (state.assistMode === true ? .55 : 1),
-  );
+  let impact = hazard.damage;
+  if (isSurvival(state)) {
+    if (state.assistMode) state.survival.assisted = true;
+    if (target.type === "pothole") impact += Math.floor(state.routeIndex / 4);
+    const armor = state.survival.upgrades.armor || 0;
+    impact *= (1.3 + state.routeIndex * .08) * (1 - armor * .12);
+  }
+  const damage = Math.round(impact * (state.routeOption === "express" ? 1.12 : 1) * (state.assistMode === true ? .55 : 1));
   state.integrity = Math.max(0, state.integrity - damage);
   state.invulnerability = COLLISION_GRACE;
   state.hitSlow = 0.75;
