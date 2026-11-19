@@ -63,7 +63,11 @@ function finishRoad(state) {
 }
 
 test('assistance reduces actual collision damage across roads and armor levels without changing encounters', () => {
-  for (const routeIndex of [0, 6, 11])
+  for (const [routeIndex, gapDamage] of [
+    [0, 19],
+    [6, 20],
+    [11, 21],
+  ])
     for (const armor of [0, 3]) {
       const normal = quiet({ routeIndex }),
         assisted = quiet({ routeIndex });
@@ -74,7 +78,8 @@ test('assistance reduces actual collision damage across roads and armor levels w
         state.entities = [hole(20)];
         update(state, {}, 0.1);
       }
-      const rawDamage = 19 * (1.3 + routeIndex * 0.08) * (1 - armor * 0.12);
+      const rawDamage =
+        gapDamage * (1.3 + routeIndex * 0.08) * (1 - armor * 0.12);
       assert.equal(normal.lastHit.damage, Math.round(rawDamage));
       assert.equal(assisted.lastHit.damage, Math.round(rawDamage * 0.55));
       assert.ok(assisted.integrity > normal.integrity);

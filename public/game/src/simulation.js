@@ -522,7 +522,7 @@ function convert(state, target) {
   state.comboTimer = COMBO_WINDOW;
   state.bestCombo = Math.max(state.bestCombo, state.combo);
   const reward = Math.round((50 + Math.min(state.combo - 1, 5) * 10) * (getJourneyNode(state.journeyNodeId)?.conversionRewardMultiplier ?? 1));
-  state.money += reward;
+  state.money += isSurvival(state) ? Math.round(reward / 10) : reward;
   if (target.headliner) {
     state.signalClears++;
     state.stageSignals++;
@@ -621,10 +621,14 @@ function collide(state, target, hazard) {
     state.buildRuntime.shield = 0; state.buildRuntime.chargeSeconds = 0; state.invulnerability = COLLISION_GRACE;
     emit(state, "shield-block", { distance: target.distance, entityId: target.id }); return;
   }
-  if (isSurvival(state) && state.assistMode) state.survival.assisted = true;
-  const damage = Math.round(
-    hazard.damage * (state.routeOption === "express" ? 1.12 : 1) * (isSurvival(state) ? (1.3 + state.routeIndex * .08) * (1 - (state.survival.upgrades.armor || 0) * .12) : 1) * (state.assistMode === true ? .55 : 1),
-  );
+  let impact = hazard.damage;
+  if (isSurvival(state)) {
+    if (state.assistMode) state.survival.assisted = true;
+    if (target.type === "pothole") impact += Math.floor(state.routeIndex / 4);
+    const armor = state.survival.upgrades.armor || 0;
+    impact *= (1.3 + state.routeIndex * .08) * (1 - armor * .12);
+  }
+  const damage = Math.round(impact * (state.routeOption === "express" ? 1.12 : 1) * (state.assistMode === true ? .55 : 1));
   state.integrity = Math.max(0, state.integrity - damage);
   state.invulnerability = COLLISION_GRACE;
   state.hitSlow = 0.75;
@@ -721,7 +725,7 @@ function step(state, input, dt) {
       state.energyCapacity,
       state.energy + state.chargeRate * dt,
     );
-    routeMissionProgress(state, { type: "charge", seconds: dt });
+    routeMissionProgress(state, { type: "charge", seconds: dt, stationId: station.id, energyRestored: state.energy - previous });
     if (state.buildRuntime.shieldStation !== station.id) { state.buildRuntime.chargeSeconds = 0; state.buildRuntime.shieldStation = station.id; }
     state.buildRuntime.chargeSeconds += dt;
     if (state.buildModifiers.chargeShield && state.buildRuntime.chargeSeconds >= state.buildModifiers.chargeShieldSeconds) state.buildRuntime.shield = 1;
@@ -1084,7 +1088,7 @@ export function restoreCampaignSave(value) {
     next.distance = next.routeLength;
     next.routeDistance = next.routeLength;
     next.campaignComplete = next.routeIndex === ROUTES.length - 1;
-    // Never infer cleared stages from routeIndex: completion points require all twelve actual clears (or a validated legacy six-clear save).
+    // Keep the actual clear count from the checkpoint.
   }
   updateEnvironment(next, 0);
   return next;

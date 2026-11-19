@@ -63,7 +63,7 @@ export function dailySurvival(date = new Date()) {
 export function createSurvival(day = '', startingWeapon = null) {
   const weapon = SURVIVAL_STARTERS.some(item => item.id === startingWeapon) ? startingWeapon : null;
   return { version: SURVIVAL_VERSION, recordEligible: true, assisted: false, musicDriven: true, musicVersion: MUSIC_RULES_VERSION, day, startingWeapon: weapon, xp: 0, level: 0, upgrades: weapon === null ? {} : { [weapon]: 1 }, evolutions: [],
-    quizRoads: [], heat: 0, fever: 0, sinceHit: 0, seconds: 0, wave: 0, waveStats: Array.from({ length: 6 }, () => ({ kills: 0, hits: 0 })), settledWaves: [],
+    rerolled: false, redrawsBought: 0, quizRoads: [], heat: 0, fever: 0, sinceHit: 0, seconds: 0, wave: 0, waveStats: Array.from({ length: 6 }, () => ({ kills: 0, hits: 0 })), settledWaves: [],
     cleanWaves: 0, kills: 0, elites: 0, bestMultiplier: 1, gems: [], receipts: [],
     flashClock: 0, vinylClock: 0, bassClock: 0, phoneClock: 0, cdClock: 0, cassetteClock: 0, cassetteLoops: [], echoClock: 0, echoPending: null, bestNotified: false };
 }
@@ -96,6 +96,9 @@ export function normalizeSurvivalSave(value) {
   if (value.startingWeapon !== null && !result.upgrades[value.startingWeapon]) return null;
   result.level = Object.values(result.upgrades).reduce((sum, level) => sum + level, 0) - (value.startingWeapon === null ? 0 : 1);
   if (value.level !== savedLevel || !Number.isFinite(value.xp) || value.xp < 0) return null;
+  result.rerolled = value.rerolled === true;
+  result.redrawsBought = Number.isSafeInteger(value.redrawsBought)
+    ? clamp(value.redrawsBought, 0, result.level + Number(result.rerolled)) : 0;
   result.xp = Math.min(1e8, value.xp);
   if (value.quizRoads !== undefined && (!Array.isArray(value.quizRoads) || value.quizRoads.some(road => !Number.isInteger(road) || road < 1 || road > 11 || road % 2 !== 1))) return null;
   result.quizRoads = [...new Set(value.quizRoads || [])].sort((a, b) => a - b);
@@ -224,11 +227,26 @@ export function queueSurvivalEcho(state, target, damage, bypassGuard = false) {
   state.survival.echoPending = { targetId: target.id, damage: damage * .5, bypassGuard, delay: .35 };
   state.survival.echoClock = survivalEchoCooldown(state.survival.upgrades.md);
 }
+function upgradePool(s) {
+  return SURVIVAL_UPGRADES.filter(item => (s.upgrades[item.id] || 0) < item.maxLevel && (item.id !== 'relay' || s.upgrades.heart > 0));
+}
+export function draftRerollPrice(state) {
+  if (!isSurvival(state) || state.status !== 'draft' || state.survival.rerolled || upgradePool(state.survival).length <= 3) return null;
+  return 80 + 20 * Math.floor(state.routeIndex / 4) + 35 * state.survival.redrawsBought;
+}
+export function buyDraftReroll(state) {
+  const price = draftRerollPrice(state);
+  if (price === null || !Number.isSafeInteger(state.money) || state.money < price || !survivalOffers(state).length) return false;
+  state.money -= price;
+  state.survival.rerolled = true;
+  state.survival.redrawsBought++;
+  return true;
+}
 export function survivalOffers(state) {
   if (!isSurvival(state)) return [];
   const s = state.survival;
   if (s.level >= levelLimit(s) || s.xp < survivalXpCost(s.level)) return [];
-  const pool = SURVIVAL_UPGRADES.filter(item => (s.upgrades[item.id] || 0) < item.maxLevel && (item.id !== 'relay' || s.upgrades.heart > 0));
+  const pool = upgradePool(s);
   // A separate seeded shuffle keeps an open draft stable without reserving slots
   // for equipped weapons or recipe ingredients, or consuming the road RNG.
   let roll = hash(`${state.seed}:upgrade:${s.level}`) || 1;
@@ -237,7 +255,7 @@ export function survivalOffers(state) {
     const j = Math.floor((roll >>> 0) / 4294967296 * (i + 1));
     [pool[i], pool[j]] = [pool[j], pool[i]];
   }
-  const picks = pool.slice(0, 3);
+  const picks = s.rerolled ? pool.slice(3).concat(pool.slice(0, 3)).slice(0, 3) : pool.slice(0, 3);
   return picks.map(item => {
     const level = (s.upgrades[item.id] || 0) + 1;
     const effects = { relay: `連鎖+${level} / ${40 + level * 16}m`,
@@ -277,6 +295,7 @@ export function openSurvivalDraft(state) {
 export function chooseSurvivalUpgrade(state, id) {
   if (state?.status !== 'draft' || !survivalOffers(state).some(item => item.id === id)) return false;
   const s = state.survival;
+  s.rerolled = false;
   s.xp -= survivalXpCost(s.level); s.level++;
   s.upgrades[id] = (s.upgrades[id] || 0) + 1;
   if (id === 'armor') state.integrity = Math.min(state.integrityCapacity, state.integrity + 12);

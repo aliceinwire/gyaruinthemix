@@ -34,7 +34,7 @@
           <div id="style-options" class="style-options" aria-label="最初の自動武器を選ぶ"></div>
         </section>
         <h2 class="garage-label">相棒のくるま</h2>
-        <p class="section-note">ツアー完走で3ギャルポイント。くるま・武器・改造の解禁は、次の旅でも使えるで。</p>
+        <p id="garage-gp-note" class="section-note"></p>
         <div id="car-garage" class="car-grid" aria-label="新しい旅のくるま選び"></div>
         <fieldset id="starting-customization" class="car-customization">
           <legend>見た目も、うちら仕様。</legend>
@@ -142,10 +142,10 @@
             </div>
             <p id="map-selected-route" class="selected-route" aria-live="polite"></p>
             <p id="map-route-detail" class="map-route-detail"></p>
-            <div id="route-mission-preview" class="route-mission-preview"></div>
+            <div id="route-mission-preview" class="route-mission-preview"><span id="route-coin-goal"></span> <strong id="route-gp-goal"></strong></div>
             <p class="route-note">どの分岐も同じクラブへ。道の長さ・充電所・出会いが変わるで。</p>
-            <section id="pit-service" class="pit-service" hidden aria-label="ボディリペア"><span id="pit-wallet"></span><button id="repair-car">ボディリペア</button></section>
             <div class="route-actions">
+              <section id="pit-service" class="pit-service" hidden aria-label="ボディリペア"><span id="pit-wallet"></span><button id="repair-car">ボディリペア</button></section>
               <button id="change-starting-car" hidden>ガレージに戻る</button>
               <button id="depart" class="primary departure">この道で出発 →</button>
             </div>
@@ -167,7 +167,7 @@
         </div>
       </section>
       <section id="draft-panel" class="modal draft-panel" hidden role="dialog" aria-modal="true" aria-labelledby="draft-title" aria-describedby="draft-copy" tabindex="-1">
-        <div class="draft-card modal-card"><p class="eyebrow">REMIX YOUR RUN</p><h2 id="draft-title">次の走り、どう盛る？</h2><p id="draft-copy">ひとつ選んで、この旅だけの組み合わせをつくろ。</p><div id="draft-options" class="draft-options"></div></div>
+        <div class="draft-card modal-card"><p class="eyebrow">REMIX YOUR RUN</p><h2 id="draft-title">次の走り、どう盛る？</h2><p id="draft-copy">ひとつ選んで、この旅だけの組み合わせをつくろ。</p><div id="draft-options" class="draft-options"></div><button id="draft-reroll" hidden></button></div>
       </section>
       <section id="result" class="result modal" hidden role="dialog" aria-modal="true" aria-labelledby="result-title" tabindex="-1">
         <div class="result-card modal-card"><p id="result-eyebrow" class="eyebrow"></p><h2 id="result-title"></h2><p id="result-copy"></p><div id="result-stats"></div><div class="modal-actions"><button id="continue" class="primary">次の音、集めに行こ</button><button id="home">タイトル戻ろか</button></div></div>

@@ -255,8 +255,9 @@ body[data-music-open="true"] .music-panel { margin: 0; padding: 20px; }
 }
 @media (max-height: 600px) and (min-width: 540px) {
  #route-content { display: grid; grid-template-columns: minmax(0, 1fr) 220px; gap: 4px 12px; }
- #route-content .journey-map { grid-column: 1; grid-row: 1 / 8; }
+ #route-content .journey-map { grid-column: 1; grid-row: 1 / 6; }
  #route-content > :not(.journey-map) { grid-column: 2; }
+ #route-content .route-mission-preview { grid-column: 1 / -1; grid-row: 6; }
  #destination-choices { padding-block: 10px; }
  .map-origin, .map-goal { display: grid; padding: 3px; }
  .map-stop strong { font-size: 12px; }
@@ -586,8 +587,16 @@ body[data-screen="finale"] #performance-track[hidden] + #finale-home { grid-colu
 .new-car-picker .card-pager { gap: 4px; }
 .new-car-picker .card-pager button { min-width: 0; padding-inline: 8px; }
 .new-car-picker .card-pager span { min-width: 36px; }
-.pit-service { padding: 4px 8px; margin: 4px 0; font-size: 12px; }
+.pit-service { flex: 2 1 0; min-width: 0; align-content: center; gap: 2px 6px; padding: 4px 8px; margin: 0; font-size: 12px; }
 .pit-service button { min-height: 32px; padding: 4px 8px; font-size: 12px; }
+@media (min-width: 540px) and (max-height: 450px), (max-width: 539px) and (max-height: 750px) {
+  .destination-option { min-height: 44px; }
+  .destination-status { display: none; }
+  .destination-option[aria-pressed="true"] .destination-kind::before { content: "✓ " / ""; }
+}
+@media (max-height: 750px) {
+  .arrival-summary { padding: 4px 6px; margin-bottom: 2px; line-height: 1.35; }
+}
 @media (max-width: 539px) {
   .new-car-picker .frame-tabs { gap: 4px; }
   .new-car-picker .frame-tabs button { font-size: 11px; padding-inline: 3px; }

@@ -311,7 +311,7 @@ const browser = await chromium.launch({
     : {}),
 });
 try {
-  await checkStartingGarage(browser, { root, csp });
+  await checkStartingGarage(browser, { root, csp, checkLanguages });
   await checkConditionHud(browser, { root, csp });
   await checkRadioSpectrum(browser, { root, csp });
   await checkRadioSpectrum(browser, { root, csp, nativeHls: true });
@@ -537,6 +537,8 @@ try {
         '.map-origin',
         '#destination-choices',
         '.map-goal',
+        '#route-mission-preview',
+        '#change-starting-car',
         '#depart',
       ]);
       await assertFrameFits(page, [
@@ -1031,7 +1033,9 @@ try {
         for (const viewport of [{ width: 390, height: 667 }, { width: 844, height: 390 }]) {
           await page.setViewportSize(viewport);
           await page.waitForFunction(width => document.querySelector('#draft-options').dataset.compare === String(width >= 760), viewport.width);
-          await checkLanguages(page, '#draft-panel select', ['#draft-panel .modal-card']);
+          await checkLanguages(page, '#draft-panel select', [
+            '#draft-panel .modal-card', '#draft-panel select', '#draft-options', '#draft-reroll',
+          ]);
         }
         await page.setViewportSize({ width, height });
         await page.screenshot({ path: resolve(root, `artifacts/browser/game-test/1440-${id}-level-six.png`), fullPage: true });

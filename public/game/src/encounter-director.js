@@ -380,14 +380,16 @@ export function createEncounterPlan(options = {}) {
 export function addFlightObstacles(plan, { seed, routeIndex, routeLength, stations, stationRadius, node = {} }) {
   const result = [...plan];
   if (node.lowCeiling || node.maxAltitude < 24) return result;
-  const quota = routeIndex === 0 ? 2 : routeIndex < 4 ? 4 : routeIndex < 8 ? 5 : 6;
+  const targetCount = routeIndex === 0 ? 2 : routeIndex < 4 ? 4 : routeIndex < 8 ? 5 : 6;
+  // Later roads can fit one more jump after filling their usual landing spots.
+  const quota = targetCount + (routeIndex >= 4 ? 1 : 0);
   const random = makeRandom(hashSeed(`${seed}:${routeIndex}:flight`));
   const end = routeLength - ENCOUNTER_RULES.arrivalClearance;
   for (let pass = 0; pass < quota; pass++) {
     const holes = result.filter(actor => actor.type === 'pothole');
     if (holes.length >= quota) break;
     const actor = descriptor(actorDefinition('pothole'), routeIndex, random, false);
-    const targets = Array.from({ length: quota }, (_, i) => routeLength * (i + 1) / (quota + 1));
+    const targets = Array.from({ length: targetCount }, (_, i) => routeLength * (i + 1) / (targetCount + 1));
     const preferred = targets.sort((a, b) => {
       const gap = value => holes.length ? Math.min(...holes.map(hole => Math.abs(hole.distance - value))) : routeLength - Math.abs(value - routeLength / 2);
       return gap(b) - gap(a);
