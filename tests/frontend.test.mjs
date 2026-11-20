@@ -33,8 +33,21 @@ function eventGroup(period, events) {
   };
 }
 
+// Keep event classification scenarios independent of changing editorial listings.
+const mediaFixtures = [
+  {
+    date: '2026-09-30',
+    startAt: '2026-09-30T01:59:00+09:00',
+    endAt: '2026-09-30T02:29:00+09:00',
+  },
+  {
+    date: '2026-11-17',
+    endDate: '2026-11-18',
+  },
+];
+
 test('an old static render archives finished broadcasts while preserving later overnight appearances', () => {
-  const media = site.events.filter((event) => event.category === 'media');
+  const media = mediaFixtures;
   const upcoming = eventGroup('upcoming', media);
   const archive = eventGroup('past', media);
   const root = { querySelectorAll: () => [upcoming, archive] };
@@ -67,7 +80,7 @@ test('an old static render archives finished broadcasts while preserving later o
 });
 
 test('client updates promptly at exact broadcast and Japan midnight boundaries', () => {
-  const media = site.events.filter((event) => event.category === 'media');
+  const media = mediaFixtures;
   const root = { querySelectorAll: () => [eventGroup('upcoming', media)] };
   assert.equal(
     refreshEventLists(root, new Date('2026-09-29T17:28:59Z')),
