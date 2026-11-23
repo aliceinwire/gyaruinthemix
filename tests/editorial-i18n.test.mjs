@@ -85,7 +85,7 @@ test('Japanese remains the default and English preserves canonical editorial fac
   assert.deepEqual(en.photos.map(photoFacts), site.photos.map(photoFacts));
 });
 
-test('English editorial data retains cancellations, broadcast precision, and pending release status', () => {
+test('English editorial data retains cancellations, broadcast times, merch availability and membership status', () => {
   const en = getSite('en');
   const cancelled = en.events.find((event) => event.cancelled);
   assert.match(cancelled.title, /October 3.*cancelled/);
@@ -97,10 +97,9 @@ test('English editorial data retains cancellations, broadcast precision, and pen
   assert.match(media.note, /Japan Standard Time/);
   assert.match(media.timeLabel, /September 30.*September 29/);
   assert.equal(media.linkLabel, 'ABEMA episode page');
-  assert.match(
-    en.news.find((item) => item.category === 'Merch').text,
-    /will be announced once confirmed/,
-  );
+  const merch = en.news.find((item) => item.category === 'Merch');
+  assert.match(merch.title, /GYARUINTHEMIX show/);
+  assert.match(merch.text, /Online sales are paused.*reopening date/);
   assert.match(en.fanClub.membershipNote, /when registration opens/);
   for (const photo of en.photos) {
     assert.ok(photo.alt.length > 15);

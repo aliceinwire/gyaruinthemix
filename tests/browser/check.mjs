@@ -668,6 +668,10 @@ async function cartScenarios() {
       async () => {
         await page.goto(origin + '/en' + base, { waitUntil: 'networkidle' });
         await page.locator('[data-add="sticker"]').click();
+        assert.equal(
+          await page.locator('.shop-notice [data-sales-paused]').isVisible(),
+          false,
+        );
         await page.locator('[data-open-cart]').first().click();
         check(
           (await page.locator('#cart-items').innerText()).includes(
@@ -1082,7 +1086,24 @@ async function shopDiscovery() {
   await scenario(
     'shop without JavaScript',
     async () => {
-      await page.goto(origin + '/en/shop/', { waitUntil: 'networkidle' });
+      for (const prefix of ['', '/en']) {
+        await page.goto(origin + prefix + '/shop/', {
+          waitUntil: 'networkidle',
+        });
+        const notice = page.locator('.shop-notice');
+        assert.equal(
+          await notice.locator('[data-sales-paused]').isVisible(),
+          true,
+        );
+        assert.equal(
+          await notice.locator('a').getAttribute('href'),
+          prefix + '/live/',
+        );
+        assert.equal(
+          await page.locator('.product-buy :is(button, a):visible').count(),
+          0,
+        );
+      }
       assert.equal(
         await page.locator('[data-shop-filters]').isVisible(),
         false,

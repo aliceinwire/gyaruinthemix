@@ -36,7 +36,10 @@ const availability =
   <ProductGallery product={product} locale={locale} index={index} />
   <div class="product-body">
     <div class="product-meta">
-      <span class="availability" data-availability
+      <span class="availability" data-sales-paused
+        >{t('通販休止中', 'Online sales paused')}</span
+      >
+      <span class="availability" data-availability data-online-orders
         >{cartEnabled ? t('販売準備中', 'Coming soon') : availability}</span
       >
       {
@@ -104,6 +107,7 @@ const availability =
       {
         cartEnabled ? (
           <button
+            data-online-orders
             data-add={product.slug}
             disabled
             aria-label={t(
@@ -115,6 +119,7 @@ const availability =
           </button>
         ) : product.checkoutUrl ? (
           <a
+            data-online-orders
             href={product.checkoutUrl}
             rel="noreferrer"
             aria-label={t(
@@ -125,7 +130,7 @@ const availability =
             {t('購入する ↗', 'Buy now ↗')}
           </a>
         ) : (
-          <button disabled>
+          <button disabled data-online-orders>
             {product.availability === 'sold_out'
               ? t('売り切れ', 'Sold out')
               : t('準備中', 'Coming soon')}
