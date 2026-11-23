@@ -38,13 +38,21 @@ test('public shop uses the shared product component and grid', async () => {
   }
 });
 
-test('shop opening notice shows the approximate launch time in both languages', async () => {
+test('the shop leads with the event recommendation, online sales pause and local schedule', async () => {
   const page = await readFile(
     new URL('../src/pages/shop/index.astro', import.meta.url),
     'utf8',
   );
-  assert.match(page, /2026年11月17日18時ごろオープン予定（日本時間）/);
-  assert.match(page, /Opening around 18:00 JST on November 17, 2026\./);
-  assert.ok(page.indexOf('data-shop-opening') < page.indexOf('<ShopHero'));
-  assert.doesNotMatch(page, /prices and release dates will be announced/);
+  const aboveCatalog = page.split('<ShopHero')[0];
+  assert.match(aboveCatalog, /ギャルインザミックスの出演イベントがおすすめ/);
+  assert.match(
+    aboveCatalog,
+    /best place to get GYARUINTHEMIX merch is at our shows/,
+  );
+  assert.match(
+    aboveCatalog,
+    /オンライン販売は現在休止中です。再開時期は未定です/,
+  );
+  assert.match(aboveCatalog, /Online sales are paused.*reopening date/);
+  assert.ok(aboveCatalog.includes("localizePath('/live/', locale)"));
 });

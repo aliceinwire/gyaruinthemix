@@ -1206,6 +1206,10 @@ body:has(dialog[open]) {
 .shop-section {
   padding-top: 40px;
 }
+.shop-section[data-online-sales='paused'] [data-online-orders],
+.shop-section[data-online-sales='open'] [data-sales-paused] {
+  display: none;
+}
 .shop-hero {
   background: var(--ink);
   color: #fff;

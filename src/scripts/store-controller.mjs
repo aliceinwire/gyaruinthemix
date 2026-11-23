@@ -77,7 +77,7 @@ export function initializeStore({ definitions }, environment = globalThis) {
   function change(product, delta) {
     if (busy) return;
     const p = catalog?.products.find((p) => p.slug === product);
-    if (!p || p.availability !== 'available') return;
+    if (!catalog?.salesEnabled || !p || p.availability !== 'available') return;
     const existing = cart.find((item) => item.product === product);
     if (
       delta > 0 &&
@@ -265,7 +265,8 @@ export function initializeStore({ definitions }, environment = globalThis) {
               ? 'SOLD OUT'
               : t('販売準備中');
         const button = card.querySelector('[data-add]');
-        button.disabled = p.availability !== 'available';
+        button.disabled =
+          !catalog.salesEnabled || p.availability !== 'available';
         button.textContent =
           p.availability === 'available'
             ? t('バッグに追加 ＋')
@@ -274,11 +275,12 @@ export function initializeStore({ definitions }, environment = globalThis) {
               : t('準備中');
       }
       const status = document.querySelector('#catalog-status');
-      if (status && catalog.salesEnabled) {
-        status.hidden = catalog.mode === 'live';
-        status.textContent = t(
-          'テストショップです。実際の購入・発送はありません。',
-        );
+      if (status) {
+        status.hidden = !catalog.salesEnabled || catalog.mode === 'live';
+        if (!status.hidden)
+          status.textContent = t(
+            'テストショップです。実際の購入・発送はありません。',
+          );
       }
     } catch {
       if (requestId !== catalogRequest) return;
@@ -300,6 +302,9 @@ export function initializeStore({ definitions }, environment = globalThis) {
         );
       }
     }
+    const shop = document.querySelector('[data-online-sales]');
+    if (shop)
+      shop.dataset.onlineSales = catalog?.salesEnabled ? 'open' : 'paused';
     render();
   }
   checkout.addEventListener('click', async () => {
