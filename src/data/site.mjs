@@ -117,7 +117,10 @@ const englishSite = validateSite({
     'joinLabel',
     'membershipNote',
   ]),
-  tracks: translateItems(data.tracks, english.tracks, ['linkLabel']),
+  tracks: translateItems(data.tracks, english.tracks, [
+    'linkLabel',
+    'socialAudioNote',
+  ]),
   events: translateItems(data.events, english.events, [
     'title',
     'venue',

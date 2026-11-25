@@ -39,6 +39,7 @@
     {
       "title": "おーりとーりギャル",
       "linkLabel": "配信先を選ぶ",
+      "socialAudioNote": "InstagramのリールやTikTokの動画でも使えるで！ 音源は「おーりとーりギャル」で探してな。",
       "release": {
         "slug": "ooritoori-gyaru",
         "date": "2026-11-24",
@@ -196,7 +197,7 @@
     {
       "category": "音楽",
       "title": "「おーりとーりギャル」配信スタート！",
-      "text": "Spotify、Apple Music、YouTube Music、Beatportにうちらの曲が出たで！ いつものアプリで聴いてな。",
+      "text": "Spotify、Apple Music、YouTube Music、Beatportで配信中！ InstagramのリールやTikTokの動画にも、うちらの曲を使ってな。",
       "url": "/music/#ooritoori-gyaru",
       "date": "2026-11-24"
     },

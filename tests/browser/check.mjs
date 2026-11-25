@@ -622,6 +622,16 @@ async function artistInteractions(page, prefix, width) {
     label + ' four named music services available',
   );
   check(
+    await single
+      .getByText(
+        prefix
+          ? /Instagram Reels and TikTok videos/
+          : /InstagramのリールやTikTokの動画/,
+      )
+      .isVisible(),
+    label + ' release explains where to use the song in videos',
+  );
+  check(
     await serviceLinks.evaluateAll((links) =>
       links.every((link) => {
         const box = link.getBoundingClientRect();

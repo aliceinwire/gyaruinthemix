@@ -40,7 +40,7 @@ const releaseDate = new Intl.DateTimeFormat(locale, {
     />
   </Fragment>
   {
-    releases.map(({ title, release }, index) => {
+    releases.map(({ title, release, socialAudioNote }, index) => {
       const Heading = index === 0 ? 'h1' : 'h2';
       return (
         <section
@@ -66,20 +66,25 @@ const releaseDate = new Intl.DateTimeFormat(locale, {
               <Heading id={`title-${release.slug}`}>{title}</Heading>
               <p>{artistName}</p>
             </div>
-            <nav
-              class="release-platforms"
-              aria-label={t(`「${title}」の配信先`, `Listen to ${title}`)}
-            >
-              {release.platforms.map(({ label, url }) => (
-                <a
-                  class="button button-light"
-                  href={url}
-                  rel="noopener noreferrer"
-                >
-                  {label}
-                </a>
-              ))}
-            </nav>
+            <div class="release-listening">
+              <nav
+                class="release-platforms"
+                aria-label={t(`「${title}」の配信先`, `Listen to ${title}`)}
+              >
+                {release.platforms.map(({ label, url }) => (
+                  <a
+                    class="button button-light"
+                    href={url}
+                    rel="noopener noreferrer"
+                  >
+                    {label}
+                  </a>
+                ))}
+              </nav>
+              {socialAudioNote && (
+                <p class="release-social-note">{socialAudioNote}</p>
+              )}
+            </div>
           </div>
         </section>
       );
@@ -198,9 +203,15 @@ const releaseDate = new Intl.DateTimeFormat(locale, {
     margin: 8px 0;
     overflow-wrap: anywhere;
   }
-  .release-platforms {
+  .release-listening {
     grid-area: links;
     align-self: start;
+  }
+  .release-social-note {
+    margin: 12px 0 0;
+    line-height: 1.5;
+  }
+  .release-platforms {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;

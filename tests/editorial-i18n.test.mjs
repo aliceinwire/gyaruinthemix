@@ -43,11 +43,17 @@ test('both catalogs and their release announcements link to the same single and 
     assert.equal(single.title, 'おーりとーりギャル');
     assert.equal(single.url, '/music/#ooritoori-gyaru');
     assert.equal(single.release.date, '2026-11-24');
-    assert.ok(
-      catalog.news.some(
-        (item) => item.url === single.url && item.date === single.release.date,
-      ),
+    const announcement = catalog.news.find(
+      (item) => item.url === single.url && item.date === single.release.date,
     );
+    assert.ok(announcement);
+    const socialAudio =
+      locale === 'ja'
+        ? /InstagramのリールやTikTokの動画/
+        : /Instagram Reels and TikTok videos/;
+    assert.match(announcement.text, socialAudio);
+    assert.match(single.socialAudioNote, socialAudio);
+    assert.ok(single.socialAudioNote.includes(single.title));
     assert.deepEqual(
       single.release.platforms.map(({ label, url }) => [label, decodeURI(url)]),
       [
