@@ -13,6 +13,7 @@ Disallow: /
 User-agent: *
 Allow: /
 Disallow: /api/
+Disallow: /analytics/
 Disallow: /game/
 Disallow: /game-test/
 

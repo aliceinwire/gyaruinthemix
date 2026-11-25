@@ -86,6 +86,7 @@ services:
         bind:
           create_host_path: false
       - gyaruinthemix_podcast_cache:/var/lib/podcast
+      - gyaruinthemix_analytics_state:/var/lib/analytics
     mem_limit: ${GYARUINTHEMIX_WEB_MEMORY_LIMIT:-128m}
     cpus: '0.50'
     pids_limit: 50
@@ -102,6 +103,8 @@ services:
       ENABLE_HTTP_ON_MISSING_CERT: 'false'
       # Resolved by the installed updater; no client-side source toggle is needed.
       GAME_AUDIO_ENABLED: ${GAME_AUDIO_ENABLED:-false}
+      ANALYTICS_ENABLED: ${ANALYTICS_ENABLED:-false}
+      ANALYTICS_PROXY_HOST: ${ANALYTICS_PROXY_HOST:-proxy}
     networks:
       - proxy-tier
       - gyaruinthemix
@@ -234,6 +237,7 @@ volumes:
   html:
   gyaruinthemix_webhook_state:
   gyaruinthemix_podcast_cache:
+  gyaruinthemix_analytics_state:
 
 networks:
   proxy-tier:

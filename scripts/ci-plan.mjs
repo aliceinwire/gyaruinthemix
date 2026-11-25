@@ -74,6 +74,8 @@ export function classify(path) {
       'site',
       ...(/streaming-guidelines|\/urls.mjs$/.test(path) ? ['game'] : []),
     ]);
+  if (path.startsWith('analytics/') || path.startsWith('deploy/analytics-'))
+    return affected(web, ['site', 'deployment']);
   if (
     path.startsWith('assets/originals/') ||
     path === 'scripts/images.mjs' ||

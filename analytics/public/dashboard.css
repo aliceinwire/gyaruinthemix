@@ -1,0 +1,399 @@
+:root {
+  color-scheme: dark;
+  font-family: Arial, 'Noto Sans JP', sans-serif;
+  color: #f8f5f7;
+  background: #111014;
+  font-size: 16px;
+  line-height: 1.55;
+  --muted: #bdb5c0;
+  --pink: #ff48a3;
+  --line: #3d3541;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+[hidden] {
+  display: none !important;
+}
+a {
+  color: inherit;
+}
+button,
+select {
+  font: inherit;
+}
+button,
+select,
+summary {
+  cursor: pointer;
+}
+button,
+select {
+  min-height: 44px;
+  border: 1px solid #79697d;
+  border-radius: 8px;
+  padding: 0.65rem 1rem;
+  background: #241e29;
+  color: #fff;
+}
+button {
+  background: var(--pink);
+  color: #210a17;
+  border-color: var(--pink);
+  font-weight: 700;
+}
+button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+button.secondary {
+  background: transparent;
+  color: #fff;
+  border-color: #79697d;
+}
+button:hover {
+  filter: brightness(1.12);
+}
+:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 4px;
+}
+select {
+  appearance: none;
+  padding-right: 2.6rem;
+  width: 100%;
+}
+.select-wrap {
+  position: relative;
+}
+.select-wrap::after {
+  content: '';
+  position: absolute;
+  right: 1rem;
+  top: 1.1rem;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-right: 2px solid white;
+  border-bottom: 2px solid white;
+  transform: rotate(45deg);
+  pointer-events: none;
+}
+header,
+main,
+footer {
+  max-width: 1240px;
+  margin: auto;
+  padding-left: 2rem;
+  padding-right: 2rem;
+}
+header {
+  min-height: 112px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid var(--line);
+}
+.wordmark {
+  font-weight: 900;
+  font-size: 1.5rem;
+  letter-spacing: -0.05em;
+  text-decoration: none;
+}
+.wordmark span {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+}
+.private {
+  color: var(--pink);
+  font-size: 0.875rem;
+  border: 1px solid #7a3156;
+  padding: 0.35rem 0.7rem;
+  border-radius: 4px;
+}
+.intro {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 2rem;
+  margin: 3rem 0 1.5rem;
+}
+.eyebrow {
+  color: var(--pink);
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+}
+h1 {
+  font-size: clamp(2rem, 4vw, 3.1rem);
+  line-height: 1.1;
+  letter-spacing: -0.045em;
+  margin: 0.6rem 0 1rem;
+}
+h2 {
+  font-size: 1.25rem;
+  margin: 0;
+}
+p {
+  margin: 0.5rem 0;
+}
+.intro p:not(.eyebrow),
+.panel > p,
+.section-heading p {
+  color: var(--muted);
+}
+.controls {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem;
+  min-width: 290px;
+}
+label {
+  grid-column: 1 / -1;
+  font-size: 0.875rem;
+}
+label span {
+  color: var(--muted);
+  margin-left: 0.4rem;
+}
+#status {
+  color: var(--muted);
+  margin: 1rem 0;
+  font-size: 0.875rem;
+}
+#status.error {
+  padding: 1rem;
+  border: 1px solid var(--pink);
+  color: #ffc2de;
+}
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.metric {
+  padding: 1.3rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #1b171f;
+}
+.metric.accent {
+  background: #361627;
+  border-color: #a32c68;
+}
+.metric p {
+  color: #e2d6e6;
+  margin: 0;
+}
+.metric strong {
+  display: block;
+  font-size: clamp(2rem, 3vw, 2.8rem);
+  letter-spacing: -0.05em;
+  margin: 0.3rem 0;
+}
+.metric.accent strong {
+  color: #ff8ec4;
+}
+.metric span {
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+.panel {
+  padding: 1.5rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #1b171f;
+  min-width: 0;
+}
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.section-heading p,
+.panel > p {
+  font-size: 0.875rem;
+}
+#chart {
+  display: block;
+  width: 100%;
+  height: auto;
+  min-height: 140px;
+  margin: 1rem 0;
+  overflow: visible;
+}
+#chart text {
+  fill: #c9c0cc;
+  font-size: 14px;
+}
+#chart .bar {
+  fill: var(--pink);
+}
+#chart .visitor-line {
+  fill: none;
+  stroke: #86e7df;
+  stroke-width: 3;
+}
+.legend {
+  display: flex;
+  gap: 1.5rem;
+  font-size: 0.875rem;
+}
+.legend span::before {
+  content: '';
+  display: inline-block;
+  width: 0.8rem;
+  height: 0.5rem;
+  background: var(--pink);
+  margin-right: 0.5rem;
+}
+.legend span + span::before {
+  background: #86e7df;
+}
+#chart .grid {
+  stroke: #433849;
+  stroke-width: 1;
+}
+#empty {
+  padding: 1rem 0;
+  color: var(--muted);
+}
+summary {
+  color: #ffc0df;
+  min-height: 44px;
+  padding-top: 0.5rem;
+}
+.table-scroll {
+  overflow-x: auto;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+th,
+td {
+  text-align: left;
+  padding: 0.8rem 0.15rem;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+th {
+  color: var(--muted);
+  font-weight: 400;
+}
+td:not(:first-child),
+th:not(:first-child) {
+  text-align: right;
+  white-space: nowrap;
+  padding-left: 0.7rem;
+}
+td:first-child {
+  overflow-wrap: anywhere;
+}
+tbody tr:last-child td {
+  border-bottom: 0;
+}
+.breakdowns {
+  margin: 1.5rem 0;
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr;
+  gap: 1rem;
+}
+.notes {
+  max-width: 920px;
+  margin: 2rem 0;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+.notes h2 {
+  color: #e3dae7;
+  font-size: 1rem;
+}
+.notes p {
+  margin: 0.75rem 0;
+}
+footer {
+  padding-top: 1.5rem;
+  padding-bottom: 2rem;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+footer span {
+  float: right;
+}
+@media (max-width: 950px) {
+  .intro {
+    align-items: start;
+    flex-direction: column;
+  }
+  .breakdowns {
+    grid-template-columns: 1fr 1fr;
+  }
+  .breakdowns .panel:first-child {
+    grid-column: 1 / -1;
+  }
+  .metrics {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 550px) {
+  header,
+  main,
+  footer {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  header {
+    min-height: 96px;
+  }
+  .wordmark {
+    font-size: 1.15rem;
+  }
+  .wordmark span {
+    font-size: 0.75rem;
+  }
+  .private {
+    max-width: 90px;
+    font-size: 0.75rem;
+  }
+  .intro {
+    margin-top: 2rem;
+  }
+  .controls {
+    min-width: 0;
+    width: 100%;
+  }
+  .metrics {
+    gap: 0.65rem;
+  }
+  .metric {
+    padding: 1rem;
+  }
+  .breakdowns {
+    display: block;
+  }
+  .breakdowns .panel {
+    margin-bottom: 1rem;
+  }
+  .panel {
+    padding: 1rem;
+  }
+  .section-heading {
+    align-items: start;
+    flex-direction: column;
+  }
+  footer span {
+    float: none;
+    display: block;
+  }
+}

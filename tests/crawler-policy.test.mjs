@@ -29,7 +29,7 @@ test('archive crawlers are excluded without blocking ordinary search crawlers', 
   }
   assert.equal(
     groups[1],
-    'User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /game/\nDisallow: /game-test/',
+    'User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /analytics/\nDisallow: /game/\nDisallow: /game-test/',
   );
   assert.equal(groups[2], `Sitemap: ${siteOrigin}/sitemap.xml`);
 });
