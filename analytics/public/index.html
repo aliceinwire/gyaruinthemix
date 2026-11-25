@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow, noarchive" />
+    <meta name="theme-color" content="#ed1689" />
+    <title>Analytics | GYARUINTHEMIX</title>
+    <link rel="stylesheet" href="/analytics/dashboard.css" />
+    <script type="module" src="/analytics/dashboard.mjs"></script>
+  </head>
+  <body>
+    <header>
+      <a class="wordmark" href="/"
+        >GYARUINTHEMIX<span>ギャルインザミックス</span></a
+      >
+      <span class="private">Private analytics</span>
+    </header>
+    <main>
+      <section class="intro">
+        <div>
+          <p class="eyebrow">THE SITE, IN NUMBERS</p>
+          <h1>Who’s checking us out?</h1>
+          <p>See which pages get attention and where requests come from.</p>
+        </div>
+        <div class="controls">
+          <label for="period">Period <span>Japan time (JST)</span></label>
+          <div class="select-wrap">
+            <select id="period">
+              <option value="7">Last 7 days</option>
+              <option value="30">Last 30 days</option>
+              <option value="90">Last 90 days</option>
+            </select>
+          </div>
+          <button id="refresh" type="button">Refresh</button>
+        </div>
+      </section>
+      <p id="status" role="status" aria-live="polite">Loading analytics…</p>
+      <noscript><p>Enable JavaScript to display the dashboard.</p></noscript>
+      <div id="report" hidden>
+        <section class="metrics" aria-label="Overview">
+          <article class="metric accent">
+            <p>Daily visitors · estimated</p>
+            <strong id="visitors">—</strong
+            ><span>Sum of each day’s unique estimates</span>
+          </article>
+          <article class="metric">
+            <p>Page requests</p>
+            <strong id="views">0</strong><span>Successful page loads</span>
+          </article>
+          <article class="metric">
+            <p>Mobile + tablet</p>
+            <strong id="mobile">0%</strong><span>Share of page requests</span>
+          </article>
+          <article class="metric">
+            <p>HTTP errors</p>
+            <strong id="errors">0</strong><span>On tracked pages</span>
+          </article>
+        </section>
+        <section class="panel trend">
+          <div class="section-heading">
+            <div>
+              <h2>Daily attention</h2>
+              <p id="range"></p>
+            </div>
+            <button id="export" type="button" class="secondary">
+              Export daily CSV
+            </button>
+          </div>
+          <p id="empty" hidden>No page requests recorded in this period yet.</p>
+          <p class="legend">
+            <span>Page requests</span><span>Daily visitors</span>
+          </p>
+          <svg
+            id="chart"
+            viewBox="0 0 900 240"
+            role="img"
+            aria-label="Daily page requests and estimated visitors"
+          ></svg>
+          <details>
+            <summary>View daily numbers</summary>
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th scope="col">Date (JST)</th>
+                    <th scope="col">Visitors</th>
+                    <th scope="col">Page requests</th>
+                    <th scope="col">HTTP errors</th>
+                  </tr>
+                </thead>
+                <tbody id="daily"></tbody>
+              </table>
+            </div>
+          </details>
+        </section>
+        <div class="breakdowns">
+          <section class="panel">
+            <h2>Popular pages</h2>
+            <p>Successful page requests</p>
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th scope="col">Page</th>
+                    <th scope="col">Requests</th>
+                    <th scope="col">Share</th>
+                  </tr>
+                </thead>
+                <tbody id="pages"></tbody>
+              </table>
+            </div>
+          </section>
+          <section class="panel">
+            <h2>Traffic sources</h2>
+            <p>Referrers on page requests</p>
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th scope="col">Source</th>
+                    <th scope="col">Requests</th>
+                    <th scope="col">Share</th>
+                  </tr>
+                </thead>
+                <tbody id="sources"></tbody>
+              </table>
+            </div>
+          </section>
+          <section class="panel">
+            <h2>Devices</h2>
+            <p>Estimated from browser headers</p>
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th scope="col">Device</th>
+                    <th scope="col">Requests</th>
+                    <th scope="col">Share</th>
+                  </tr>
+                </thead>
+                <tbody id="devices"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+        <section class="notes">
+          <h2>What these numbers mean</h2>
+          <p id="visitor-coverage"></p>
+          <p>
+            Visitors are estimated from a daily rotating hash of the client
+            address, browser family, and device category. Repeat visits on the
+            same day count once; the same person on different days counts again.
+            Shared networks can undercount, and changing networks or browsers
+            can overcount.
+          </p>
+          <p>
+            Reloads add page requests; browser-cached pages may not reach the
+            server. Known bots, assets, redirects, checkout returns, and this
+            dashboard are excluded. Some bots may still appear.
+          </p>
+          <p>
+            “Direct / unknown” includes apps, internal links, and browsers that
+            hide referrers. These figures do not measure music streams, podcast
+            listeners, sales, or link clicks.
+          </p>
+          <p>
+            No analytics cookies or browser storage are used. Raw IP addresses,
+            query strings, and full referrer URLs are not saved by analytics.
+            Daily counts and daily visitor hashes are retained for 90 days.
+          </p>
+          <p id="coverage"></p>
+        </section>
+      </div>
+    </main>
+    <footer>GYARUINTHEMIX <span>Private site overview</span></footer>
+  </body>
+</html>

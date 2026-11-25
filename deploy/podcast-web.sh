@@ -1,4 +1,5 @@
 #!/bin/sh
+. /opt/analytics/start.sh
 # Only the podcast directory delivered by the VPS enables file discovery.
 if [ -d /podcast-source ]; then
   (

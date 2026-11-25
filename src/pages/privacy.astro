@@ -40,6 +40,13 @@ const t = translator(locale);
           'We may record identifiers associated with access to the site and payment notifications to prevent misuse and troubleshoot issues. We do not use analytics scripts for advertising.',
         )
       }
+    </p><h2>{t('サイトの利用状況', 'Site analytics')}</h2><p>
+      {
+        t(
+          'サイト改善のため、ページごとのアクセス数、参照元の分類、端末の種類、日別の推定訪問者数を自社サーバーで集計することがあります。解析用のCookieやブラウザ保存領域は使用しません。訪問者の推定にはIPアドレス・ブラウザの種類・端末の分類から日ごとに変わるハッシュ値を作成します。解析データには生のIPアドレス、URLのクエリ文字列、参照元の完全なURLを保存せず、日別集計と日別ハッシュ値は90日間保持します。',
+          'To improve the site, we may collect page request totals, referrer categories, device types, and estimated daily visitors on our own server. Analytics uses no cookies or browser storage. Visitor estimates use a daily rotating hash of the IP address, browser family, and device category. Analytics does not save raw IP addresses, URL query strings, or complete referrer URLs. Daily aggregates and daily hashes are retained for 90 days.',
+        )
+      }
     </p><h2>{t('YouTubeの動画', 'YouTube videos')}</h2><p>
       {
         t(

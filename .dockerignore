@@ -3,6 +3,9 @@
 !package-lock.json
 !astro.config.mjs
 !api/**
+!analytics/**
+!deploy/analytics-maps.conf
+!deploy/analytics-proxy.conf
 !config/**
 !src/**
 !public/favicon.svg
