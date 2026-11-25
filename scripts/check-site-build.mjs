@@ -9,6 +9,7 @@ import {
   podcastFeedUrl,
 } from '../src/data/podcast-feed.mjs';
 import podcast from '../config/podcast.json' with { type: 'json' };
+import site from '../config/site.json' with { type: 'json' };
 import { escapeMarkup, getPodcast, showArtwork } from '../src/data/podcast.mjs';
 
 const read = (path) =>
@@ -26,6 +27,10 @@ const siteImage = canonicalUrl('/assets/logo.webp');
 const podcastImage = escapeMarkup(
   showArtwork(podcast.feed, getPodcast(podcast).episodes).social || siteImage,
 );
+const musicImage = canonicalUrl(
+  site.tracks.find((track) => track.release)?.release.cover ??
+    '/assets/logo.webp',
+);
 for (const path of publicPaths) {
   const html = await read(`${path.slice(1)}index.html`);
   assert.doesNotMatch(html, /shop-test|test-store/);
@@ -40,7 +45,12 @@ for (const path of publicPaths) {
   );
   const head = html.split('</head>')[0];
   const isPodcast = path.endsWith('/podcast/');
-  const expectedImage = isPodcast ? podcastImage : siteImage;
+  const isMusic = path.endsWith('/music/');
+  const expectedImage = isMusic
+    ? musicImage
+    : isPodcast
+      ? podcastImage
+      : siteImage;
   assert.deepEqual(
     [...head.matchAll(/property="og:image" content="([^"]+)"/g)].map(
       (match) => match[1],
@@ -48,7 +58,7 @@ for (const path of publicPaths) {
     [expectedImage],
     path,
   );
-  if (isPodcast) {
+  if (isPodcast || isMusic) {
     assert.deepEqual(
       [...head.matchAll(/name="twitter:image" content="([^"]+)"/g)].map(
         (match) => match[1],

@@ -573,6 +573,13 @@ async function artistInteractions(page, prefix, width) {
     label + ' player lazy before opt-in',
   );
   const card = page.locator('[data-music-video]').first();
+  check(
+    (await card.locator('h3').textContent()) === 'オーリトーリ' &&
+      (await card.locator('p').textContent()).includes('おーりとーりギャル') &&
+      (await card.locator('a.text-link').getAttribute('href')) ===
+        'https://www.youtube.com/watch?v=gsMH5iENNuM',
+    label + ' earlier video retains its title and watch link',
+  );
   for (let i = 0; i < 2; i++) {
     await card.locator('[data-video-load]').click();
     check(
@@ -595,6 +602,63 @@ async function artistInteractions(page, prefix, width) {
       label + ' player focus restored ' + i,
     );
   }
+  await page.goto(origin + prefix + '/');
+  const singleLink = page
+    .locator('.hero-actions a')
+    .filter({ hasText: 'おーりとーりギャル' });
+  await singleLink.click();
+  await page.waitForURL(origin + prefix + '/music/#ooritoori-gyaru');
+  const single = page.locator('section:target');
+  check(
+    (await single.getByRole('heading', { level: 1 }).textContent()) ===
+      'おーりとーりギャル',
+    label + ' homepage opens the released single',
+  );
+  const serviceLinks = single.getByRole('navigation').getByRole('link');
+  check(
+    (await serviceLinks.allTextContents())
+      .map((name) => name.trim())
+      .join(',') === 'Spotify,Apple Music,YouTube Music,Beatport',
+    label + ' four named music services available',
+  );
+  check(
+    await single
+      .getByText(
+        prefix
+          ? /Instagram Reels and TikTok videos/
+          : /InstagramのリールやTikTokの動画/,
+      )
+      .isVisible(),
+    label + ' release explains where to use the song in videos',
+  );
+  check(
+    await serviceLinks.evaluateAll((links) =>
+      links.every((link) => {
+        const box = link.getBoundingClientRect();
+        return (
+          box.width >= 44 &&
+          box.height >= 44 &&
+          box.left >= 0 &&
+          box.right <= innerWidth
+        );
+      }),
+    ),
+    label + ' all service buttons fit and have accessible touch targets',
+  );
+  await single.locator('img').evaluate((img) => img.decode());
+  check(
+    await single.locator('img').evaluate((img) => img.naturalWidth > 0),
+    label + ' released single cover loads',
+  );
+  const trackRow = page
+    .locator('.track-list li')
+    .filter({ hasText: 'おーりとーりギャル' });
+  check(
+    (await trackRow.getByRole('link').getAttribute('href')) ===
+      prefix + '/music/#ooritoori-gyaru' &&
+      !/準備中|coming soon/i.test(await trackRow.innerText()),
+    label + ' catalog links the released single in this language',
+  );
 }
 async function switchLanguage(page) {
   for (const path of paths) {

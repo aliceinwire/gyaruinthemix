@@ -10,6 +10,7 @@ import { getLocale, translator, localizePath } from '../data/i18n.mjs';
 const locale = getLocale(Astro.url.pathname);
 const t = translator(locale);
 const site = getSite(locale);
+const featuredTrack = site.tracks.find((track) => track.release);
 ---
 
 <Layout>
@@ -41,9 +42,17 @@ const site = getSite(locale);
       </p>
       <SoundIdentity />
       <div class="hero-actions">
-        <a class="button button-pink" href={localizePath('/music/', locale)}
-          >{t('うちらの音楽 ', 'Our music ')}<span aria-hidden="true">↗</span
-          ></a
+        <a
+          class="button button-pink"
+          href={localizePath(featuredTrack?.url ?? '/music/', locale)}
+          >{
+            featuredTrack
+              ? t(
+                  `「${featuredTrack.title}」を聴く`,
+                  `Listen to ${featuredTrack.title}`,
+                )
+              : t('うちらの音楽', 'Our music')
+          }</a
         ><a class="hero-live-link" href={localizePath('/live/', locale)}
           >{t('出演情報 ↗', 'Appearances ↗')}</a
         >
@@ -159,7 +168,7 @@ const site = getSite(locale);
           title={t('うちらの音楽', 'Our music')}
         /><MusicVideos featured /><a
           class="text-link"
-          href={localizePath('/music/', locale)}
+          href={localizePath('/music/#music-videos-title', locale)}
           >{
             t(
               'すべてのミュージックビデオを見る ↗',

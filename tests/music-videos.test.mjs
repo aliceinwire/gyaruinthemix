@@ -52,8 +52,12 @@ function fixture(id = musicVideos[0].id) {
 test('the music catalog contains only the two verified official-channel videos', () => {
   assert.equal(youtubeChannel, 'https://www.youtube.com/@arisu_gyaru');
   assert.deepEqual(musicVideos, [
+    {
+      id: 'gsMH5iENNuM',
+      title: 'オーリトーリ',
+      releaseSlug: 'ooritoori-gyaru',
+    },
     { id: 'aKUpdL75XwA', title: 'Floors becomes mandatory' },
-    { id: 'gsMH5iENNuM', title: 'オーリトーリ' },
   ]);
 });
 
@@ -67,10 +71,10 @@ test('players make no request until activated and never enable autoplay', () => 
   assert.equal(ui.frames.length, 1);
   assert.equal(
     ui.frames[0].src,
-    'https://www.youtube-nocookie.com/embed/aKUpdL75XwA?playsinline=1',
+    'https://www.youtube-nocookie.com/embed/gsMH5iENNuM?playsinline=1',
   );
   assert.doesNotMatch(ui.frames[0].src + ui.frames[0].allow, /autoplay/);
-  assert.match(ui.frames[0].title, /Floors becomes mandatory/);
+  assert.match(ui.frames[0].title, /オーリトーリ/);
   assert.equal(ui.frames[0].referrerPolicy, 'strict-origin-when-cross-origin');
   assert.equal(ui.frames[0].allowFullscreen, true);
   assert.equal(ui.focused, 'frame');
@@ -111,7 +115,7 @@ test('the component retains direct watch links without JS and uses no remote thu
   assert.match(component, /https:\/\/www.youtube.com\/watch\?v=/);
   assert.doesNotMatch(component, /<iframe|<img|preconnect|allow=.*autoplay/);
   assert.match(component, /data-video-load\s+hidden/);
-  assert.match(component, /data-video-close hidden/);
+  assert.match(component, /data-video-close\s+hidden/);
   const music = await readFile('src/pages/music.astro', 'utf8');
   assert.match(music, /<MusicVideos\s*\/>/);
   assert.match(music, /<TrackList\s*\/>/);

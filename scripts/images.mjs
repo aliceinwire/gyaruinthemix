@@ -13,6 +13,7 @@ for (const [source, name, width] of [
   ['keychain-styled.webp', 'keychain-styled', 1254],
   ['gyaruinthemix_artists_photo.JPG', 'artists', 900],
   ['portrait.jpeg', 'portrait', 1108],
+  ['ooritoori-gyaru.jpg', 'ooritoori-gyaru', 640],
   ['live.jpeg', 'live', 900],
   ['banner.jpeg', 'banner', 1536],
   ['duo-camera.jpeg', 'duo-camera', 1536],

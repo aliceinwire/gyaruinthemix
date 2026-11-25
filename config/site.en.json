@@ -13,7 +13,10 @@
     "membershipNote": "How to join, membership fees, and club activities will be announced when registration opens."
   },
   "tracks": [
-    { "linkLabel": "Listen" },
+    {
+      "linkLabel": "Choose a music service",
+      "socialAudioNote": "Use the song in Instagram Reels and TikTok videos. Search for “おーりとーりギャル” when choosing a sound."
+    },
     { "linkLabel": "Listen" },
     { "linkLabel": "Listen" },
     { "linkLabel": "Listen" }
@@ -78,6 +81,11 @@
     }
   ],
   "news": [
+    {
+      "category": "Music",
+      "title": "おーりとーりギャル is out now",
+      "text": "Listen to our single on Spotify, Apple Music or YouTube Music, or pick it up on Beatport. You can also use it in Instagram Reels and TikTok videos."
+    },
     {
       "category": "Appearances",
       "title": "Main appearance planned for アキナのギャルしか勝たん, late night on Tuesday, November 24.",

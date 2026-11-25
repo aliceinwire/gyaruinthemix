@@ -162,9 +162,11 @@ test('official contact and member destinations are explicit, without opening sal
     assert.doesNotMatch(source, /販売開始前にお問い合わせ先をご案内/);
   }
   assert.equal(site.tracks.length, 4);
-  assert.equal(
-    site.tracks.every((track) => track.url === ''),
-    true,
+  assert.deepEqual(
+    site.tracks
+      .filter((track) => track.release || track.url)
+      .map((track) => track.title),
+    ['おーりとーりギャル'],
   );
   assert.equal(site.fanClub.registrationOpen, false);
   assert.equal(site.fanClub.joinUrl, '');
