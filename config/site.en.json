@@ -13,7 +13,7 @@
     "membershipNote": "How to join, membership fees, and club activities will be announced when registration opens."
   },
   "tracks": [
-    { "linkLabel": "Listen" },
+    { "linkLabel": "Choose a music service" },
     { "linkLabel": "Listen" },
     { "linkLabel": "Listen" },
     { "linkLabel": "Listen" }
@@ -78,6 +78,11 @@
     }
   ],
   "news": [
+    {
+      "category": "Music",
+      "title": "おーりとーりギャル is out now",
+      "text": "Listen to our single on Spotify, Apple Music or YouTube Music, or pick it up on Beatport."
+    },
     {
       "category": "Appearances",
       "title": "Main appearance planned for アキナのギャルしか勝たん, late night on Tuesday, November 24.",

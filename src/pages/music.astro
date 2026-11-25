@@ -3,28 +3,111 @@ import Layout from '../layouts/Layout.astro';
 import TrackList from '../components/TrackList.astro';
 import MusicVideos from '../components/MusicVideos.astro';
 import { getSite } from '../data/site.mjs';
+import { canonicalUrl } from '../data/urls.mjs';
 import SoundIdentity from '../components/SoundIdentity.astro';
 import { getLocale, translator, localizePath } from '../data/i18n.mjs';
 const locale = getLocale(Astro.url.pathname);
 const t = translator(locale);
 const site = getSite(locale);
+const releases = site.tracks.filter((track) => track.release);
+const [featured] = releases;
+const pageTitle = t('音楽｜ギャルインザミックス', 'Music | GYARUINTHEMIX');
+const artistName = t('ギャルインザミックス', 'GYARUINTHEMIX');
+const shareImage = canonicalUrl(featured?.release.cover ?? '/assets/logo.webp');
+const releaseDate = new Intl.DateTimeFormat(locale, {
+  dateStyle: 'long',
+  timeZone: 'UTC',
+});
 ---
 
-<Layout title={t('音楽｜ギャルインザミックス', 'Music | GYARUINTHEMIX')}>
-  <section class="page-heading dark-heading">
-    <p class="eyebrow">
-      {site.artist.aesthetic}{t('、音まで全開。', ', turned all the way up.')}
-    </p><h1>
-      {t('跳ねて、', 'Bounce. ')}<em>{t('ぶちアゲ。', 'Turn it up.')}</em>
-    </h1><SoundIdentity /><p>
-      {
-        t(
-          '跳ねるビート。うちらのラップ。DJありねぇとDJちゃなの音、ここに集合。',
-          'Bouncing beats. Our rap. The sounds of DJ Arinee and DJ Chana, all here.',
-        )
-      }
-    </p>
-  </section>
+<Layout
+  title={featured ? `${featured.title} | ${pageTitle}` : pageTitle}
+  description={featured &&
+    t(
+      `${artistName}のシングル「${featured.title}」の配信先とミュージックビデオ。`,
+      `Listen to ${featured.title} by ${artistName} on your favorite music service or watch the earlier music video.`,
+    )}
+>
+  <Fragment slot="share-image">
+    <meta property="og:image" content={shareImage} />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:image" content={shareImage} />
+    <meta
+      property="og:image:alt"
+      content={featured
+        ? t(`「${featured.title}」ジャケット`, `Cover of ${featured.title}`)
+        : artistName}
+    />
+  </Fragment>
+  {
+    releases.map(({ title, release }, index) => {
+      const Heading = index === 0 ? 'h1' : 'h2';
+      return (
+        <section
+          class="release-hero"
+          id={release.slug}
+          aria-labelledby={`title-${release.slug}`}
+        >
+          <div class="release-inner">
+            <img
+              class="release-cover"
+              src={release.cover}
+              width="640"
+              height="640"
+              alt=""
+            />
+            <div class="release-details">
+              <p class="eyebrow">
+                {t('シングル', 'Single')} ·{' '}
+                <time datetime={release.date}>
+                  {releaseDate.format(new Date(release.date))}
+                </time>
+              </p>
+              <Heading id={`title-${release.slug}`}>{title}</Heading>
+              <p>{artistName}</p>
+            </div>
+            <nav
+              class="release-platforms"
+              aria-label={t(`「${title}」の配信先`, `Listen to ${title}`)}
+            >
+              {release.platforms.map(({ label, url }) => (
+                <a
+                  class="button button-light"
+                  href={url}
+                  rel="noopener noreferrer"
+                >
+                  {label}
+                </a>
+              ))}
+            </nav>
+          </div>
+        </section>
+      );
+    })
+  }
+  {
+    !featured && (
+      <section class="page-heading dark-heading">
+        <>
+          <p class="eyebrow">
+            {site.artist.aesthetic}
+            {t('、音まで全開。', ', turned all the way up.')}
+          </p>
+          <h1>
+            {t('跳ねて、', 'Bounce. ')}
+            <em>{t('ぶちアゲ。', 'Turn it up.')}</em>
+          </h1>
+          <SoundIdentity />
+          <p>
+            {t(
+              '跳ねるビート。うちらのラップ。DJありねぇとDJちゃなの音、ここに集合。',
+              'Bouncing beats. Our rap. The sounds of DJ Arinee and DJ Chana, all here.',
+            )}
+          </p>
+        </>
+      </section>
+    )
+  }
   <section class="section" aria-labelledby="music-videos-title">
     <p class="eyebrow">
       {
@@ -64,7 +147,7 @@ const site = getSite(locale);
     </div><div>
       <p class="eyebrow">{t('うちらの楽曲', 'Our tracks')}</p><h2>
         {t('ギャルマインド、鳴らしてこ。', 'Let that gyaru spirit play.')}
-      </h2><TrackList />{
+      </h2>{featured && <SoundIdentity />}<TrackList />{
         !site.tracks.some((track) => track.url) && (
           <p class="collection-note">
             {t(
@@ -79,3 +162,76 @@ const site = getSite(locale);
     </div>
   </section>
 </Layout>
+
+<style>
+  .release-hero {
+    background:
+      radial-gradient(ellipse at top left, #57112f, transparent 65%), #140e13;
+    color: #fff;
+    padding: clamp(28px, 6vw, 76px) 5%;
+  }
+  .release-inner {
+    max-width: 64rem;
+    margin: auto;
+    display: grid;
+    grid-template-columns: minmax(0, 14rem) minmax(0, 1fr);
+    grid-template-areas: 'cover details' 'cover links';
+    gap: 16px clamp(20px, 4vw, 56px);
+    align-items: center;
+  }
+  .release-cover {
+    grid-area: cover;
+    width: 100%;
+    height: auto;
+  }
+  .release-details {
+    grid-area: details;
+    align-self: end;
+  }
+  .release-details .eyebrow {
+    color: #ffa2d1;
+    letter-spacing: 0.04em;
+  }
+  .release-details :is(h1, h2) {
+    font-size: clamp(1.75rem, 4vw, 3.6rem);
+    line-height: 1.15;
+    margin: 8px 0;
+    overflow-wrap: anywhere;
+  }
+  .release-platforms {
+    grid-area: links;
+    align-self: start;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .release-platforms .button {
+    min-height: 46px;
+    padding: 10px 16px;
+    justify-content: center;
+  }
+  .release-platforms :focus-visible {
+    outline-color: #ffbade;
+  }
+  @media (max-width: 600px) {
+    .release-inner {
+      grid-template-columns: minmax(0, 28%) minmax(0, 1fr);
+      grid-template-areas: 'cover details' 'links links';
+    }
+    .release-details {
+      align-self: center;
+    }
+    .release-details :is(h1, h2) {
+      font-size: clamp(1.25rem, 6vw, 2rem);
+      letter-spacing: -0.025em;
+      text-wrap: balance;
+    }
+    .release-platforms {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .release-platforms .button {
+      padding-inline: 4px;
+    }
+  }
+</style>

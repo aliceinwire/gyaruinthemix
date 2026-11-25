@@ -5,7 +5,8 @@ import { isCalendarDate, isEventTimestamp, japanDate } from './events.mjs';
 // Editorial links are public, build-time data. Never put tokens or secrets here.
 function safeLink(value, { local = false } = {}) {
   if (!value) return '';
-  if (local && /^\/(?!\/)[a-z0-9/_-]*$/.test(value)) return value;
+  if (local && /^\/(?!\/)[a-z0-9/_-]*(?:#[a-z0-9-]+)?$/.test(value))
+    return value;
   try {
     const url = new URL(value);
     if (url.protocol === 'https:' && !url.username && !url.password)
@@ -15,6 +16,27 @@ function safeLink(value, { local = false } = {}) {
   }
   throw new Error('Site links must use HTTPS without embedded credentials');
 }
+
+function trackWithLinks(track) {
+  if (!track.release) return { ...track, url: safeLink(track.url) };
+  const { slug, date, platforms } = track.release;
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug ?? '') || !isCalendarDate(date))
+    throw new Error('A release needs a stable slug and a release date');
+  if (!platforms?.length || platforms.some(({ label, url }) => !label || !url))
+    throw new Error('A release needs named music services with links');
+  return {
+    ...track,
+    url: `/music/#${slug}`,
+    release: {
+      ...track.release,
+      platforms: platforms.map(({ label, url }) => ({
+        label,
+        url: safeLink(url),
+      })),
+    },
+  };
+}
+
 function validateSite(data) {
   if (data.fanClub.registrationOpen && !data.fanClub.joinUrl)
     throw new Error('Open fan-club registration requires a join URL');
@@ -25,7 +47,7 @@ function validateSite(data) {
     soundcloudUrl: safeLink(data.soundcloudUrl),
     socials: data.socials.map((item) => ({ ...item, url: safeLink(item.url) })),
     fanClub: { ...data.fanClub, joinUrl: safeLink(data.fanClub.joinUrl) },
-    tracks: data.tracks.map((item) => ({ ...item, url: safeLink(item.url) })),
+    tracks: data.tracks.map(trackWithLinks),
     events: data.events
       .filter((item) => item.published === true)
       .map((item) => {

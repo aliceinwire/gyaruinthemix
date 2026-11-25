@@ -36,6 +36,34 @@ async function loadSite(data = japanese, translations = english) {
 
 const { site, getSite } = await loadSite();
 
+test('both catalogs and their release announcements link to the same single and recordings', () => {
+  for (const locale of ['ja', 'en']) {
+    const catalog = getSite(locale);
+    const [single, ...upcoming] = catalog.tracks;
+    assert.equal(single.title, 'おーりとーりギャル');
+    assert.equal(single.url, '/music/#ooritoori-gyaru');
+    assert.equal(single.release.date, '2026-11-24');
+    assert.ok(
+      catalog.news.some(
+        (item) => item.url === single.url && item.date === single.release.date,
+      ),
+    );
+    assert.deepEqual(
+      single.release.platforms.map(({ label, url }) => [label, decodeURI(url)]),
+      [
+        ['Spotify', 'https://open.spotify.com/track/4gaZQmuFwSLRn0oMo6CkbI'],
+        [
+          'Apple Music',
+          'https://music.apple.com/jp/album/おーりとーりギャル/6837677346?i=6837677347',
+        ],
+        ['YouTube Music', 'https://music.youtube.com/watch?v=hzf8vyXf-bs'],
+        ['Beatport', 'https://www.beatport.com/release/---/7758976'],
+      ],
+    );
+    assert.ok(upcoming.every((track) => track.url === ''));
+  }
+});
+
 test('Japanese remains the default and English preserves canonical editorial facts', () => {
   assert.equal(getSite(), site);
   assert.equal(getSite('ja'), site);
@@ -155,6 +183,9 @@ test('shared safety validation still rejects unsafe canonical links and dates', 
   const unsafeLink = structuredClone(japanese);
   unsafeLink.bookingUrl = 'javascript:alert(1)';
   await assert.rejects(loadSite(unsafeLink), /Site links must use HTTPS/);
+  const unsafeService = structuredClone(japanese);
+  unsafeService.tracks[0].release.platforms[0].url = 'http://example.com/';
+  await assert.rejects(loadSite(unsafeService), /Site links must use HTTPS/);
   const invalidDate = structuredClone(japanese);
   invalidDate.events[0].date = '2026-02-30';
   await assert.rejects(
